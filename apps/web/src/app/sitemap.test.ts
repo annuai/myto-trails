@@ -12,6 +12,7 @@ describe("buildSitemap", () => {
     const urls = buildSitemap(entries, site).map((e) => e.url);
     expect(urls).toEqual([
       "https://moto-trails.com",
+      "https://moto-trails.com/trails",
       "https://moto-trails.com/regions",
       "https://moto-trails.com/regions/kerala",
       "https://moto-trails.com/regions/kerala/wayanad",

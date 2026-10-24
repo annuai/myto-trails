@@ -8,6 +8,7 @@ const sentence = (value: string) => {
 export const terrainLabel = (t: Terrain | string) => sentence(t);
 export const difficultyLabel = (d: Difficulty) => sentence(d);
 export const suitabilityLabel = (s: Suitability | string) => sentence(s);
+export const suggestionLabel = (s: Suitability | string) => sentence(s);
 export const hazardLabel = (h: Hazard | string) => sentence(h);
 export const routeShapeLabel = (r: RouteShape) => sentence(r);
 export const conditionReasonLabel = (r: ConditionReason | string) => sentence(r);

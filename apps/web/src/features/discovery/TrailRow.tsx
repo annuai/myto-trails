@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { StatusBadge } from "@/ui/StatusBadge/StatusBadge";
 import { formatDate } from "@/lib/format";
 import type { TrailSummaryDto } from "@/server/queries/types";
@@ -6,7 +7,7 @@ import { formatKm } from "../trail/labels";
 import { difficultyLabel } from "../trail/labels";
 
 /** One trail in a list: a single link plus the facts a rider scans first. No card. */
-export function TrailRow({ trail }: { trail: TrailSummaryDto }) {
+export function TrailRow({ trail, children }: { trail: TrailSummaryDto; children?: ReactNode }) {
   const place = [trail.district?.name, trail.state.name].filter(Boolean).join(", ");
   const facts = [place, trail.distanceKm !== null ? formatKm(trail.distanceKm) : null, difficultyLabel(trail.difficulty)].filter(Boolean).join(" · ");
   return (
@@ -18,6 +19,7 @@ export function TrailRow({ trail }: { trail: TrailSummaryDto }) {
         {trail.isSample ? <span className="font-mono text-xs text-muted">Sample</span> : null}
       </div>
       <p className="text-sm text-muted">{facts}</p>
+      {children}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
         <StatusBadge kind="access" value={trail.accessClass} />
         <StatusBadge kind="condition" value={trail.condition} />
