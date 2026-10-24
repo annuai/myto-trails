@@ -1,5 +1,5 @@
 import type { Sql, TransactionSql } from "postgres";
-import { CLUB_CREATES_PER_DAY, CLUB_POSTS_PER_HOUR, JOIN_PHONE_RETENTION_DAYS, JOIN_REQUESTS_PER_DAY } from "./constants";
+import { CLUB_CREATES_PER_DAY, CLUB_POSTS_PER_HOUR, JOIN_PHONE_RETENTION_DAYS, JOIN_REQUEST_TTL_DAYS, JOIN_REQUESTS_PER_DAY } from "./constants";
 import { cleanBody, LINK } from "./comments";
 import { decryptSecret, encryptSecret } from "./crypto-box";
 import { isMember } from "./members";
@@ -71,12 +71,14 @@ export async function listClubs(sql: Sql, userId: string): Promise<ClubSummary[]
 export type ClubView = ClubSummary & { myHandle: string };
 
 export async function getClub(sql: Sql, i: { userId: string; clubId: string }): Promise<ClubView | null> {
-  if (!(await isMember(sql, i.userId))) return null;
-  const all = await listClubs(sql, i.userId);
-  const c = all.find((x) => x.clubId === i.clubId);
-  if (!c) return null;
-  const [u] = await sql`select public_id from app_user where id = ${i.userId}`;
-  return { ...c, myHandle: u!.public_id as string };
+  if (!(await isMember(sql, i.userId)) || !UUID.test(i.clubId)) return null;
+  const [r] = await sql`
+    select c.public_id, c.name, c.description, c.women_only, u.public_id as my_handle,
+      (select count(*)::int from club_member m where m.club_id = c.id) as members,
+      (select m.role from club_member m where m.club_id = c.id and m.user_id = ${i.userId}) as role,
+      exists (select 1 from club_join_request r where r.club_id = c.id and r.user_id = ${i.userId} and r.status = 'pending') as requested
+    from club c, app_user u where c.public_id = ${i.clubId} and c.archived_at is null and u.id = ${i.userId}`;
+  return r ? { clubId: r.public_id, name: r.name, description: r.description, womenOnly: r.women_only, memberCount: r.members, role: r.role, requested: r.requested, myHandle: r.my_handle } : null;
 }
 
 export type ClubMember = { handle: string; name: string; role: "admin" | "member" };
@@ -161,8 +163,11 @@ export async function decideJoinRequest(sql: Sql, i: { userId: string; requestId
 
 /** Wipes numbers whose retention time has passed. Runs from the scheduled job and whenever requests are listed. */
 export async function purgeJoinPhones(sql: Db, now: Date): Promise<number> {
+  const stale = await sql`
+    update club_join_request set status = 'withdrawn', phone_ciphertext = null
+    where status = 'pending' and created_at <= ${new Date(now.getTime() - JOIN_REQUEST_TTL_DAYS * DAY)} returning id`;
   const rows = await sql`update club_join_request set phone_ciphertext = null where phone_ciphertext is not null and phone_delete_at <= ${now} returning id`;
-  return rows.length;
+  return stale.length + rows.length;
 }
 
 /** Ids of a club's admins, for notifications. */
@@ -180,7 +185,7 @@ export async function leaveClub(sql: Sql, i: { userId: string; clubId: string })
   const club = await findClub(sql, i.clubId);
   if (!club) return { ok: false, reason: "not_found" };
   return sql.begin(async (tx) => {
-    const admins = await tx`select user_id from club_member where club_id = ${club.id} and role = 'admin' for update`;
+    const admins = await tx`select m.user_id from club_member m join app_user u on u.id = m.user_id where m.club_id = ${club.id} and m.role = 'admin' and u.status = 'active' for update of m`;
     if (admins.length === 1 && admins[0]!.user_id === i.userId) return { ok: false, reason: "last_admin" } as const;
     await tx`delete from club_member where club_id = ${club.id} and user_id = ${i.userId}`;
     return { ok: true } as const;
@@ -201,6 +206,11 @@ export async function removeMember(sql: Sql, i: { userId: string; clubId: string
     const r = await adminTarget(tx, i);
     if (r.fail) return r.fail;
     if (r.target.id === i.userId) return { ok: false, reason: "invalid" } as const;
+    if (r.target.role === "admin") {
+      // Lock the admins, then check the actor is still one of them, so two admins cannot remove each other at once.
+      const admins = await tx`select m.user_id from club_member m join app_user u on u.id = m.user_id where m.club_id = ${r.club.id} and m.role = 'admin' and u.status = 'active' order by m.user_id for update of m`;
+      if (!admins.some((a) => a.user_id === i.userId)) return { ok: false, reason: "not_admin" } as const;
+    }
     await tx`delete from club_member where club_id = ${r.club.id} and user_id = ${r.target.id}`;
     await tx`insert into audit_log (actor_id, actor_role, action, entity_type, entity_id) values (${i.userId}, 'member', 'club_member_remove', 'club', ${r.club.id})`;
     return { ok: true } as const;
@@ -213,7 +223,7 @@ export async function setMemberRole(sql: Sql, i: { userId: string; clubId: strin
     const r = await adminTarget(tx, i);
     if (r.fail) return r.fail;
     if (i.role === "member" && r.target.role === "admin") {
-      const admins = await tx`select 1 as x from club_member where club_id = ${r.club.id} and role = 'admin' for update`;
+      const admins = await tx`select 1 as x from club_member m join app_user u on u.id = m.user_id where m.club_id = ${r.club.id} and m.role = 'admin' and u.status = 'active' for update of m`;
       if (admins.length < 2) return { ok: false, reason: "last_admin" } as const;
     }
     await tx`update club_member set role = ${i.role} where club_id = ${r.club.id} and user_id = ${r.target.id}`;

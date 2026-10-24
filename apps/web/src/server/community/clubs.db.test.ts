@@ -237,4 +237,57 @@ describe("posts and ride plans", () => {
     for (let i = 0; i < 21; i++) last = await postToClub(db.sql, { userId: admin, clubId: id, body: `Post ${i}`, now: t0 });
     expect(last).toEqual({ ok: false, reason: "rate_limited" });
   });
+
+describe("review fixes", () => {
+  it("finds a club by id even when more than 100 newer clubs exist", async () => {
+    const a = await rider("Old Owner");
+    const id = await club(a);
+    for (let k = 0; k < 101; k++) {
+      await db.sql`insert into club (name, created_by, created_at) values (${`Filler club ${k}`}, ${a}, now() + interval '1 day')`;
+    }
+    expect(await getClub(db.sql, { userId: a, clubId: id })).toMatchObject({ clubId: id, role: "admin" });
+  });
+
+  it("never lets two admins remove each other at the same time", async () => {
+    const a = await rider("Race A");
+    const id = await club(a);
+    const b = await rider("Race B");
+    const r = await requestJoin(db.sql, { userId: b, clubId: id, phone: "9812345678", now: t0 });
+    if (!r.ok) throw new Error(r.reason);
+    await decideJoinRequest(db.sql, { userId: a, requestId: r.requestId, accept: true, now: t0 });
+    const handleA = (await getClub(db.sql, { userId: a, clubId: id }))!.myHandle;
+    const handleB = (await getClub(db.sql, { userId: b, clubId: id }))!.myHandle;
+    await setMemberRole(db.sql, { userId: a, clubId: id, memberId: handleB, role: "admin" });
+    await Promise.all([
+      removeMember(db.sql, { userId: a, clubId: id, memberId: handleB }),
+      removeMember(db.sql, { userId: b, clubId: id, memberId: handleA }),
+    ]);
+    const [{ n }] = await db.sql`select count(*)::int as n from club_member m join club c on c.id = m.club_id where c.public_id = ${id} and m.role = 'admin'`;
+    expect(n).toBeGreaterThanOrEqual(1);
+  });
+
+  it("does not count a suspended admin when keeping at least one admin", async () => {
+    const a = await rider("Active Admin");
+    const id = await club(a);
+    const b = await rider("Sleeper");
+    const r = await requestJoin(db.sql, { userId: b, clubId: id, phone: "9812345678", now: t0 });
+    if (!r.ok) throw new Error(r.reason);
+    await decideJoinRequest(db.sql, { userId: a, requestId: r.requestId, accept: true, now: t0 });
+    await setMemberRole(db.sql, { userId: a, clubId: id, memberId: (await getClub(db.sql, { userId: b, clubId: id }))!.myHandle, role: "admin" });
+    await db.sql`update app_user set status = 'suspended' where id = ${b}`;
+    expect(await leaveClub(db.sql, { userId: a, clubId: id })).toEqual({ ok: false, reason: "last_admin" });
+  });
+
+  it("wipes the number of a request nobody decided after 30 days", async () => {
+    const admin = await rider("Idle Admin");
+    const id = await club(admin);
+    const j = await rider("Patient");
+    await requestJoin(db.sql, { userId: j, clubId: id, phone: "9812345678", now: t0 });
+    await purgeJoinPhones(db.sql, days(29));
+    expect((await phoneInDb(id))[0]).not.toBeNull();
+    await purgeJoinPhones(db.sql, days(31));
+    expect(await phoneInDb(id)).toEqual([null]);
+    expect((await listJoinRequests(db.sql, { userId: admin, clubId: id }, days(31)))!.filter((x) => x.status === "pending")).toEqual([]);
+  });
+});
 });

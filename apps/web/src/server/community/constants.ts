@@ -10,3 +10,4 @@ export const CLUB_CREATES_PER_DAY = 2;
 export const JOIN_REQUESTS_PER_DAY = 5;
 export const CLUB_POSTS_PER_HOUR = 20;
 export const JOIN_PHONE_RETENTION_DAYS = 7; // a join request's phone number is wiped this long after the decision
+export const JOIN_REQUEST_TTL_DAYS = 30; // an undecided request is withdrawn, and its phone number wiped, after this long
