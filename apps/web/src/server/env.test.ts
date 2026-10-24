@@ -80,6 +80,27 @@ describe("loadServerEnv", () => {
     expect(env.storage).toEqual({ provider: "memory" });
   });
 
+  it("requires DATABASE_URL in production", () => {
+    try {
+      loadServerEnv({ NODE_ENV: "production", SITE_URL: "https://moto-trails.com", STORAGE_PROVIDER: "r2", ...r2 });
+      expect.unreachable();
+    } catch (e) {
+      expect(e).toBeInstanceOf(EnvError);
+      expect((e as EnvError).missing).toEqual(["DATABASE_URL"]);
+    }
+  });
+
+  it("accepts a production configuration that includes DATABASE_URL", () => {
+    const env = loadServerEnv({
+      NODE_ENV: "production",
+      SITE_URL: "https://moto-trails.com",
+      STORAGE_PROVIDER: "r2",
+      DATABASE_URL: "postgres://u:p@h/db",
+      ...r2,
+    });
+    expect(env.databaseUrl).toBe("postgres://u:p@h/db");
+  });
+
   it("requires a provider in production", () => {
     expect(() => loadServerEnv({ NODE_ENV: "production", SITE_URL: "https://moto-trails.com" })).toThrow(/STORAGE_PROVIDER/);
   });

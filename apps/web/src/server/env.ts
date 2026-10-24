@@ -42,9 +42,13 @@ function require(source: Source, names: string[]): Record<string, string> {
   return Object.fromEntries(names.map((n) => [n, source[n]!.trim()]));
 }
 
+/** Vercel preview deployments run with NODE_ENV=production but are not production. */
+function isProduction(source: Source): boolean {
+  return source.NODE_ENV === "production" && source.VERCEL_ENV !== "preview";
+}
+
 function loadStorage(source: Source): StorageConfig {
-  // Vercel preview deployments run with NODE_ENV=production but are not production.
-  const production = source.NODE_ENV === "production" && source.VERCEL_ENV !== "preview";
+  const production = isProduction(source);
   const raw = source.STORAGE_PROVIDER?.trim() || (production ? undefined : "memory");
   if (!raw) throw new EnvError("Missing environment variables: STORAGE_PROVIDER", ["STORAGE_PROVIDER"]);
 
@@ -79,9 +83,14 @@ function loadStorage(source: Source): StorageConfig {
 }
 
 export function loadServerEnv(source: Source): ServerEnv {
+  const siteUrl = getSiteUrl(source);
+  const storage = loadStorage(source);
+  if (isProduction(source) && !source.DATABASE_URL?.trim()) {
+    throw new EnvError("Missing environment variables: DATABASE_URL", ["DATABASE_URL"]);
+  }
   return {
-    siteUrl: getSiteUrl(source),
-    storage: loadStorage(source),
+    siteUrl,
+    storage,
     supabaseUrl: source.NEXT_PUBLIC_SUPABASE_URL || undefined,
     supabaseAnonKey: source.NEXT_PUBLIC_SUPABASE_ANON_KEY || undefined,
     databaseUrl: source.DATABASE_URL || undefined,
