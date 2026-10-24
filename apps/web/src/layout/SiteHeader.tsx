@@ -44,7 +44,7 @@ export function SiteHeader({ account }: { account?: ReactNode }) {
       >
         <div className={`relative mx-auto flex w-full items-center justify-between gap-4 ${floating ? "p-2.5" : "container-wide min-h-16"}`}>
           <Link href="/" className={`inline-flex min-h-11 items-center ${floating ? "pl-4" : ""}`}>
-            <Image src="/brand/logo.png" alt="Moto Trails" width={99} height={32} priority />
+            <Image src="/brand/moto-trails-logo.svg" alt="Moto Trails" width={142} height={25} priority unoptimized />
           </Link>
 
           <nav aria-label="Primary" className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 md:flex">
