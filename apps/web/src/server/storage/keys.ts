@@ -30,3 +30,13 @@ export function assertExpiry(seconds: number): void {
     throw new InvalidExpiryError("expiresInSeconds must be an integer from 30 to 3600");
   }
 }
+
+/** Makes a user-visible download name safe for a Content-Disposition header. */
+export function sanitizeDownloadFilename(name: string): string {
+  const cleaned = name
+    .replace(/[\u0000-\u001f\u007f"\\/]/g, "")
+    .replace(/[^\x20-\x7e]/g, "_")
+    .trim()
+    .slice(0, 100);
+  return cleaned || "download";
+}
