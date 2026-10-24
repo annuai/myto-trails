@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TrailDetail } from "@/features/trail/TrailDetail";
 import { serializeJsonLd, trailJsonLd, trailMetadata } from "@/features/trail/seo";
@@ -39,7 +40,14 @@ export default async function TrailPage({ params }: PageProps<"/trails/[slug]">)
       <TrailDetail
         trail={trail}
         media={media}
-        actions={<SaveButton slug={slug} signedIn={Boolean(user)} initialSaved={saved} save={saveTrailAction} unsave={unsaveTrailAction} />}
+        actions={
+          <>
+            <SaveButton slug={slug} signedIn={Boolean(user)} initialSaved={saved} save={saveTrailAction} unsave={unsaveTrailAction} />
+            <Link href={`/trails/${slug}/report`} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">
+              Report an issue
+            </Link>
+          </>
+        }
       />
     </>
   );

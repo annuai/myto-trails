@@ -58,6 +58,14 @@ export function TrailNotices({ trail }: { trail: TrailDetailDto }) {
       break;
   }
 
+  if (trail.openClosureReports > 0 && trail.condition !== "temporarily_closed" && trail.condition !== "permanently_closed") {
+    notices.push(
+      <Notice key="reports" tone="caution" title="Riders have reported this trail closed">
+        These reports are awaiting review. Check locally before you go.
+      </Notice>,
+    );
+  }
+
   if (notices.length === 0) return null;
   return <div className="flex flex-col gap-4">{notices}</div>;
 }

@@ -45,4 +45,16 @@ describe("TrailNotices", () => {
     render(<TrailNotices trail={makeTrail({ condition: "seasonal", seasonNotes: "Closed June to September." })} />);
     expect(screen.getByText("Closed June to September.")).toBeInTheDocument();
   });
+
+  it("warns about reported closures that are awaiting review", () => {
+    render(<TrailNotices trail={makeTrail({ openClosureReports: 2 })} />);
+    expect(screen.getByText("Riders have reported this trail closed")).toBeInTheDocument();
+    expect(screen.getByText(/awaiting review/i)).toBeInTheDocument();
+  });
+  it("does not repeat the warning when the trail is already shown as closed, or when there are no reports", () => {
+    const { rerender } = render(<TrailNotices trail={makeTrail({ openClosureReports: 3, condition: "temporarily_closed", conditionExpectedUntil: "2026-12-01" })} />);
+    expect(screen.queryByText("Riders have reported this trail closed")).toBeNull();
+    rerender(<TrailNotices trail={makeTrail({ openClosureReports: 0 })} />);
+    expect(screen.queryByText("Riders have reported this trail closed")).toBeNull();
+  });
 });

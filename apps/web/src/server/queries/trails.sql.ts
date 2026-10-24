@@ -63,6 +63,7 @@ export async function queryTrailBySlug(sql: Sql, slug: string, now: Date): Promi
     sensitivity: r.sensitivity,
     location: r.lon === null || r.lat === null ? null : { lon: Number(r.lon), lat: Number(r.lat) },
     firstPublishedAt: r.first_published_at ? iso(r.first_published_at) : null,
+    openClosureReports: Number(r.open_closure_reports ?? 0),
   };
 }
 

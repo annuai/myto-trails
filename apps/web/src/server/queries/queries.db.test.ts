@@ -81,6 +81,16 @@ describe("queryTrailBySlug", () => {
   });
 });
 
+describe("open closure reports on the trail DTO", () => {
+  it("counts recent open closure reports and is zero otherwise", async () => {
+    const t = await insertTrailFixture(db.sql, { ...loc("rp") });
+    const [u] = await db.sql`insert into app_user (email, display_name) values ('rp@example.test', 'Rep') returning id`;
+    expect((await asAnon(db.sql, (tx) => queryTrailBySlug(tx, t.slug, now)))!.openClosureReports).toBe(0);
+    await db.sql`insert into trail_report (trail_id, reporter_id, type, details) values (${t.trailId}, ${u!.id}, 'closure', 'The gate was locked when I arrived on Saturday.')`;
+    expect((await asAnon(db.sql, (tx) => queryTrailBySlug(tx, t.slug, now)))!.openClosureReports).toBe(1);
+  });
+});
+
 describe("queryTrailMedia", () => {
   it("returns media in position order", async () => {
     const t = await insertTrailFixture(db.sql, { ...loc("h"), mediaCount: 3 });

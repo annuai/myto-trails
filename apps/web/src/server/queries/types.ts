@@ -54,6 +54,8 @@ export type TrailDetailDto = TrailSummaryDto & {
   /** Public location only: the exact start is never exposed for sensitive trails. */
   location: { lon: number; lat: number } | null;
   firstPublishedAt: string | null;
+  /** Recent closure reports that moderators have not resolved yet (no reporter details). */
+  openClosureReports: number;
 };
 
 export type RegionDto = {
