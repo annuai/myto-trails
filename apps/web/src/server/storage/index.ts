@@ -1,5 +1,6 @@
 import { loadServerEnv, type StorageConfig } from "../env";
 import { MemoryStorageProvider } from "./memory-provider";
+import { LocalStorageProvider } from "./local-provider";
 import { createR2Provider } from "./r2-provider";
 import { createSupabaseProvider } from "./supabase-provider";
 import type { StorageProvider } from "./types";
@@ -12,6 +13,8 @@ export function createStorage(config: StorageConfig): StorageProvider {
   switch (config.provider) {
     case "memory":
       return new MemoryStorageProvider();
+    case "local":
+      return new LocalStorageProvider({ rootDir: config.rootDir, secret: config.secret });
     case "r2":
       return createR2Provider(config);
     case "supabase":

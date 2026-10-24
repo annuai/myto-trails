@@ -69,6 +69,18 @@ export function createR2Provider(config: R2Config): StorageProvider {
       }
     },
 
+    async get(bucket, key) {
+      const Key = objectKey(bucket, key);
+      try {
+        const res = await client.send(new GetObjectCommand({ Bucket: config.bucket, Key }));
+        return res.Body ? await res.Body.transformToByteArray() : null;
+      } catch (e) {
+        const err = e as { name?: string; $metadata?: { httpStatusCode?: number } };
+        if (err.name === "NoSuchKey" || err.name === "NotFound" || err.$metadata?.httpStatusCode === 404) return null;
+        throw e;
+      }
+    },
+
     async remove(bucket, key) {
       const Key = objectKey(bucket, key);
       await client.send(new DeleteObjectCommand({ Bucket: config.bucket, Key }));

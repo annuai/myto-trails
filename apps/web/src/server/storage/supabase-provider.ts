@@ -56,6 +56,16 @@ export function createSupabaseProvider(config: SupabaseConfig, client: SupabaseC
       return { sizeBytes: data.size ?? 0, contentType: data.contentType ?? "" };
     },
 
+    async get(bucket, key) {
+      assertSafeKey(key);
+      const { data, error } = await from(bucket).download(key);
+      if (error) {
+        if (isNotFound(error as StorageErrorLike)) return null;
+        throw new Error(error.message);
+      }
+      return data ? new Uint8Array(await data.arrayBuffer()) : null;
+    },
+
     async remove(bucket, key) {
       assertSafeKey(key);
       const { error } = await from(bucket).remove([key]);

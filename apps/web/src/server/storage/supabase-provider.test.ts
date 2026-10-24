@@ -28,6 +28,10 @@ function stubClient(overrides: Record<string, unknown> = {}) {
       calls.push({ bucket, method: "info", args });
       return (overrides.info as () => unknown)?.() ?? { data: null, error: notFound };
     },
+    download: async (...args: unknown[]) => {
+      calls.push({ bucket, method: "download", args });
+      return (overrides.download as () => unknown)?.() ?? { data: null, error: notFound };
+    },
     remove: async (...args: unknown[]) => {
       calls.push({ bucket, method: "remove", args });
       return { data: [], error: null };
@@ -94,6 +98,14 @@ describe("Supabase provider (offline)", () => {
   it("head rethrows errors that are not 'not found'", async () => {
     const { client } = stubClient({ info: () => ({ data: null, error: { message: "boom", status: 500, statusCode: "500" } }) });
     await expect(createSupabaseProvider(config, client).head("quarantine", key())).rejects.toThrow("boom");
+  });
+
+  it("get returns the bytes, null when not found, and rethrows other errors", async () => {
+    const ok = stubClient({ download: () => ({ data: new Blob([Uint8Array.from([1, 2, 3])]), error: null }) });
+    expect(Array.from((await createSupabaseProvider(config, ok.client).get("quarantine", key()))!)).toEqual([1, 2, 3]);
+    expect(await createSupabaseProvider(config, stubClient().client).get("quarantine", key())).toBeNull();
+    const bad = stubClient({ download: () => ({ data: null, error: { message: "boom", status: 500, statusCode: "500" } }) });
+    await expect(createSupabaseProvider(config, bad.client).get("quarantine", key())).rejects.toThrow("boom");
   });
 
   it("rejects unsafe keys and bad expiries without calling Supabase", async () => {

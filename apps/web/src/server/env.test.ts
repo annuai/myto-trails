@@ -16,6 +16,16 @@ describe("loadServerEnv", () => {
     expect(env.siteUrl).toBe("http://localhost:3000");
   });
 
+  it("reads the local file provider with defaults and refuses it in production", () => {
+    expect(loadServerEnv({ NODE_ENV: "development", STORAGE_PROVIDER: "local" }).storage).toEqual({
+      provider: "local", rootDir: ".storage", secret: "development-only-storage-secret",
+    });
+    expect(loadServerEnv({ NODE_ENV: "development", STORAGE_PROVIDER: "local", STORAGE_LOCAL_DIR: "/tmp/x", STORAGE_LOCAL_SECRET: "s" }).storage).toEqual({
+      provider: "local", rootDir: "/tmp/x", secret: "s",
+    });
+    expect(() => loadServerEnv({ NODE_ENV: "production", SITE_URL: "https://moto-trails.com", STORAGE_PROVIDER: "local" })).toThrow(/not allowed in production/);
+  });
+
   it("reads a complete r2 configuration", () => {
     const env = loadServerEnv({ NODE_ENV: "development", STORAGE_PROVIDER: "r2", ...r2 });
     expect(env.storage).toEqual({
@@ -154,7 +164,7 @@ describe("loadServerEnv", () => {
       loadServerEnv({ NODE_ENV: "development", STORAGE_PROVIDER: "hunter2-nope" });
       expect.unreachable();
     } catch (e) {
-      expect((e as Error).message).toMatch(/memory, r2, supabase/);
+      expect((e as Error).message).toMatch(/memory, local, r2, supabase/);
       expect((e as Error).message).not.toContain("hunter2-nope");
     }
   });

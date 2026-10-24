@@ -26,6 +26,18 @@ export function runStorageContract(name: string, make: () => Promise<Harness>): 
       await provider.remove("quarantine", key);
     });
 
+    it("get returns the stored bytes, and null for an unknown key", async () => {
+      const { provider, upload } = await make();
+      const key = freshKey();
+      const bytes = Uint8Array.from({ length: 64 }, (_, i) => (i * 7) % 256);
+      expect(await provider.get("quarantine", key)).toBeNull();
+      await upload("quarantine", key, bytes, "application/gpx+xml");
+      const got = await provider.get("quarantine", key);
+      expect(got && Array.from(got)).toEqual(Array.from(bytes));
+      await provider.remove("quarantine", key);
+      expect(await provider.get("quarantine", key)).toBeNull();
+    });
+
     it("remove is idempotent", async () => {
       const { provider, upload } = await make();
       const key = freshKey();
@@ -62,6 +74,7 @@ export function runStorageContract(name: string, make: () => Promise<Harness>): 
         provider.createUploadUrl({ bucket: "quarantine", key: "/abs", contentType: "application/gpx+xml", sizeBytes: 1, expiresInSeconds: 60 }),
       ).rejects.toThrow(InvalidKeyError);
       await expect(provider.remove("quarantine", "a\\b")).rejects.toThrow(InvalidKeyError);
+      await expect(provider.get("quarantine", "../x")).rejects.toThrow(InvalidKeyError);
     });
 
     it("rejects out-of-range expiries", async () => {

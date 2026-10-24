@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { GPX_MAX_BYTES } from "@moto-trails/domain";
 import { loadServerEnv } from "../src/server/env";
 import { buildObjectKey, createStorage, verifyUpload } from "../src/server/storage";
+import { LocalStorageProvider } from "../src/server/storage/local-provider";
 import { MemoryStorageProvider } from "../src/server/storage/memory-provider";
 
 const body = new TextEncoder().encode('<?xml version="1.0"?><gpx version="1.1" creator="smoke"/>');
@@ -20,6 +21,8 @@ try {
   step = "upload";
   if (provider instanceof MemoryStorageProvider) {
     provider.put("quarantine", key, body, contentType);
+  } else if (provider instanceof LocalStorageProvider) {
+    provider.writeObject("quarantine", key, body, contentType);
   } else {
     const headers = { ...target.headers };
     delete headers["Content-Length"];
@@ -39,7 +42,7 @@ try {
 
   step = "download";
   const downloadUrl = await provider.createDownloadUrl({ bucket: "quarantine", key, expiresInSeconds: 60, downloadFilename: "smoke.gpx" });
-  if (!(provider instanceof MemoryStorageProvider)) {
+  if (!(provider instanceof MemoryStorageProvider) && !(provider instanceof LocalStorageProvider)) {
     const res = await fetch(downloadUrl);
     if (!res.ok) throw new Error(`download returned status ${res.status}`);
     if ((await res.text()) !== new TextDecoder().decode(body)) throw new Error("downloaded content differs");

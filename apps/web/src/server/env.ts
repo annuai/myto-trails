@@ -5,6 +5,7 @@ type Source = Record<string, string | undefined>;
 
 export type StorageConfig =
   | { provider: "memory" }
+  | { provider: "local"; rootDir: string; secret: string }
   | {
       provider: "r2";
       accountId: string;
@@ -37,7 +38,7 @@ export class EnvError extends Error {
   }
 }
 
-const providerSchema = z.enum(["memory", "r2", "supabase"]);
+const providerSchema = z.enum(["memory", "local", "r2", "supabase"]);
 const emailProviderSchema = z.enum(["console", "resend"]);
 
 function require(source: Source, names: string[]): Record<string, string> {
@@ -57,12 +58,19 @@ function loadStorage(source: Source): StorageConfig {
   if (!raw) throw new EnvError("Missing environment variables: STORAGE_PROVIDER", ["STORAGE_PROVIDER"]);
 
   const parsed = providerSchema.safeParse(raw);
-  if (!parsed.success) throw new EnvError("STORAGE_PROVIDER must be one of memory, r2, supabase");
+  if (!parsed.success) throw new EnvError("STORAGE_PROVIDER must be one of memory, local, r2, supabase");
 
   switch (parsed.data) {
     case "memory":
       if (production) throw new EnvError("STORAGE_PROVIDER=memory is not allowed in production");
       return { provider: "memory" };
+    case "local":
+      if (production) throw new EnvError("STORAGE_PROVIDER=local is not allowed in production");
+      return {
+        provider: "local",
+        rootDir: source.STORAGE_LOCAL_DIR?.trim() || ".storage",
+        secret: source.STORAGE_LOCAL_SECRET?.trim() || "development-only-storage-secret",
+      };
     case "r2": {
       const v = require(source, ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET", "R2_PUBLIC_BASE_URL"]);
       return {

@@ -9,3 +9,4 @@ coverage
 *.tsbuildinfo
 .pgdata
 public/vendor
+.storage

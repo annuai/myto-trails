@@ -1,7 +1,7 @@
 import { assertExpiry, assertSafeKey } from "./keys";
 import type { StorageBucket, StorageProvider, UploadTarget } from "./types";
 
-type Stored = { sizeBytes: number; contentType: string };
+type Stored = { sizeBytes: number; contentType: string; bytes: Uint8Array };
 
 /** In-memory provider for local development and tests. Signed URLs use a `memory://` scheme and are not fetchable. */
 export class MemoryStorageProvider implements StorageProvider {
@@ -15,7 +15,7 @@ export class MemoryStorageProvider implements StorageProvider {
 
   /** Test and development helper: simulates a completed upload. */
   put(bucket: StorageBucket, key: string, bytes: Uint8Array, contentType: string): void {
-    this.objects.set(this.id(bucket, key), { sizeBytes: bytes.byteLength, contentType });
+    this.objects.set(this.id(bucket, key), { sizeBytes: bytes.byteLength, contentType, bytes: Uint8Array.from(bytes) });
   }
 
   async createUploadUrl(i: { bucket: StorageBucket; key: string; contentType: string; sizeBytes: number; expiresInSeconds: number }): Promise<UploadTarget> {
@@ -36,8 +36,14 @@ export class MemoryStorageProvider implements StorageProvider {
     return `memory://download/${id}?expires=${i.expiresInSeconds}${name}`;
   }
 
-  async head(bucket: StorageBucket, key: string): Promise<Stored | null> {
-    return this.objects.get(this.id(bucket, key)) ?? null;
+  async head(bucket: StorageBucket, key: string): Promise<{ sizeBytes: number; contentType: string } | null> {
+    const o = this.objects.get(this.id(bucket, key));
+    return o ? { sizeBytes: o.sizeBytes, contentType: o.contentType } : null;
+  }
+
+  async get(bucket: StorageBucket, key: string): Promise<Uint8Array | null> {
+    const o = this.objects.get(this.id(bucket, key));
+    return o ? Uint8Array.from(o.bytes) : null;
   }
 
   async remove(bucket: StorageBucket, key: string): Promise<void> {
