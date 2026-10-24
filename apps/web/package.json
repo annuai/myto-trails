@@ -16,7 +16,8 @@
     "db:stop": "bash scripts/dev-db.sh stop",
     "db:reset": "bash scripts/dev-db.sh reset",
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/db-migrate.mts",
-    "test:db": "vitest run --config vitest.db.config.ts"
+    "test:db": "vitest run --config vitest.db.config.ts",
+    "db:seed:regions": "tsx --env-file-if-exists=.env.local scripts/db-seed-regions.mts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",
