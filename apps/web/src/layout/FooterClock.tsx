@@ -20,7 +20,7 @@ export function FooterClock() {
   const msg = now ? rideMessage(now) : null;
   return (
     <div className="flex flex-col items-start gap-2 sm:items-end">
-      <p className="font-mono text-xs uppercase tracking-widest text-muted">India</p>
+      <p className="font-mono text-xs uppercase tracking-widest text-muted">Kerala, India</p>
       <p className="font-mono text-4xl tabular-nums sm:text-5xl" aria-label={now ? `Time in India ${formatClock(now)}` : "Time in India"} suppressHydrationWarning>
         <span aria-hidden="true">{now ? formatClock(now) : "--:--:-- --"}</span>
       </p>

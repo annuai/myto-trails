@@ -63,7 +63,12 @@ export function SiteFooter() {
             </a>
             .
           </p>
-          <p className="font-mono text-xs">© Moto Trails</p>
+          <p className="flex items-center gap-3 font-mono text-xs">
+            <span>© Moto Trails</span>
+            <span aria-hidden="true">·</span>
+            <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
+            <Link href="/terms" className="hover:text-foreground">Terms</Link>
+          </p>
         </div>
       </div>
     </footer>
