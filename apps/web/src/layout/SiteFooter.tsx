@@ -11,9 +11,21 @@ export function SiteFooter() {
           </a>
           .
         </p>
-        <nav aria-label="Footer" className="flex gap-6">
+        <nav aria-label="Footer" className="flex flex-wrap gap-x-6">
           <Link href="/regions" className="inline-flex min-h-11 items-center text-foreground underline underline-offset-4">
             Regions
+          </Link>
+          <Link href="/about" className="inline-flex min-h-11 items-center text-foreground underline underline-offset-4">
+            About
+          </Link>
+          <Link href="/responsible-riding" className="inline-flex min-h-11 items-center text-foreground underline underline-offset-4">
+            Ride responsibly
+          </Link>
+          <Link href="/terms" className="inline-flex min-h-11 items-center text-foreground underline underline-offset-4">
+            Terms
+          </Link>
+          <Link href="/privacy" className="inline-flex min-h-11 items-center text-foreground underline underline-offset-4">
+            Privacy
           </Link>
           <Link href="/donate" className="inline-flex min-h-11 items-center text-foreground underline underline-offset-4">
             Donate
