@@ -8,7 +8,7 @@ export const LOGIN_TOKEN_MINUTES = 15;
 export const SESSION_DAYS = 30;
 
 export type Role = "moderator" | "admin";
-export type SessionUser = { id: string; email: string; displayName: string; roles: Role[] };
+export type SessionUser = { id: string; email: string; displayName: string; roles: Role[]; /** The rider has made the 18+ and driving licence declaration. */ confirmed: boolean };
 
 const EMAIL = /^[^@\s]+@[^@\s]+$/;
 
@@ -84,7 +84,7 @@ export async function confirmSignIn(sql: Sql, i: { token: string }): Promise<Con
     const [user] = await tx`
       insert into app_user (email, display_name, last_seen_at) values (${email}, ${nameFromEmail(email)}, now())
       on conflict (email) do update set last_seen_at = now()
-      returning id, email, display_name, status`;
+      returning id, email, display_name, status, adult_confirmed_at`;
     if (!user || user.status !== "active") return { ok: false as const, reason: "invalid" as const };
     const sessionToken = generateToken();
     await tx`
@@ -94,7 +94,7 @@ export async function confirmSignIn(sql: Sql, i: { token: string }): Promise<Con
     return {
       ok: true as const,
       sessionToken,
-      user: { id: user.id as string, email: user.email as string, displayName: user.display_name as string, roles: roles.map((r) => r.role as Role) },
+      user: { id: user.id as string, email: user.email as string, displayName: user.display_name as string, roles: roles.map((r) => r.role as Role), confirmed: user.adult_confirmed_at !== null },
     };
   });
   return result as ConfirmResult;
@@ -104,13 +104,13 @@ export async function getSessionUser(sql: Sql, token: string): Promise<SessionUs
   if (!token || token.length > 200) return null;
   const hash = hashToken(token);
   const [row] = await sql`
-    select u.id, u.email, u.display_name, s.id as session_id
+    select u.id, u.email, u.display_name, u.adult_confirmed_at, s.id as session_id
     from auth_session s join app_user u on u.id = s.user_id
     where s.token_hash = ${hash} and s.expires_at > now() and u.status = 'active'`;
   if (!row) return null;
   await sql`update auth_session set last_seen_at = now() where id = ${row.session_id} and last_seen_at < now() - interval '1 hour'`;
   const roles = await sql`select role from user_role where user_id = ${row.id}`;
-  return { id: row.id, email: row.email, displayName: row.display_name, roles: roles.map((r) => r.role as Role) };
+  return { id: row.id, email: row.email, displayName: row.display_name, roles: roles.map((r) => r.role as Role), confirmed: row.adult_confirmed_at !== null };
 }
 
 export async function signOut(sql: Sql, token: string): Promise<void> {

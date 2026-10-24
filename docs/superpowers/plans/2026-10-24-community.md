@@ -17,10 +17,15 @@
 - **Women-only:** eligibility is a private, self-declared profile setting; admins approve each request; the member list is visible to members only; a written policy and women moderators are a launch requirement owned by the owner (blocker in the final report).
 - **Bike photos** on rider profiles use the existing image pipeline; optional, shown only for public profiles.
 
+## Update from the owner (later in the same conversation)
+- The community is called **Club**. It is a main menu item and its content is shown only to signed-in members (others are sent to sign in).
+- Riders can **create clubs** and **request to join** any club. A join request carries the rider's phone number (entered in the request form with a clear notice); only that club's admins can see it, they can accept or decline, and the number is deleted 7 days after the decision (or when the request is withdrawn). It is encrypted at rest like the question-sharing numbers.
+- Clubs replace "groups" below. Chat is not built; the Club page says it is coming if there is enough demand, and offers the optional members-only external chat link meanwhile.
+
 ## Stages
 1. **C1 Members, ridden, comments:** migration, welcome flow and gating, ridden service and panel, comments with moderation, report queue.
 2. **C2 Ask a rider and contact sharing:** questions, answers, blocks, encrypted time-limited phone share, notifications.
-3. **C3 Groups:** groups, membership and requests, invites (link and email), feed, ride plans and replies, women-only rules.
+3. **C3 Clubs:** clubs, join requests with phone for admins, membership, invites (link and email), feed, ride plans and replies, women-only rules, the Club menu item.
 4. **C4 Profiles and bike photos.**
 
 ## Global constraints
