@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 const nav = [
   { href: "/trails", label: "Explore" },
@@ -7,7 +8,7 @@ const nav = [
   { href: "/regions", label: "Regions" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ account }: { account?: ReactNode }) {
   return (
     <header className="mx-auto flex min-h-16 w-full max-w-5xl flex-wrap items-center justify-between gap-x-6 px-4">
       <Link href="/" className="inline-flex min-h-11 items-center">
@@ -19,6 +20,7 @@ export function SiteHeader() {
             {item.label}
           </Link>
         ))}
+        {account}
       </nav>
     </header>
   );

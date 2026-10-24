@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Michroma } from "next/font/google";
+import { Suspense } from "react";
+import { HeaderAccount } from "@/layout/HeaderAccount";
 import { SiteFooter } from "@/layout/SiteFooter";
 import { SiteHeader } from "@/layout/SiteHeader";
 import { getSiteUrl } from "@/lib/site";
@@ -19,7 +21,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${michroma.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <SiteHeader />
+        <SiteHeader
+          account={
+            <Suspense fallback={null}>
+              <HeaderAccount />
+            </Suspense>
+          }
+        />
         <main className="mx-auto w-full max-w-5xl flex-1 px-4">{children}</main>
         <SiteFooter />
       </body>
