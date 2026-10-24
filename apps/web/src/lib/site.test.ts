@@ -15,7 +15,7 @@ describe("getSiteUrl", () => {
     expect(() => getSiteUrl({ NODE_ENV: "production", SITE_URL: "http://x.com" })).toThrow(/https/);
   });
   it("uses the Vercel deployment host for previews when SITE_URL is unset", () => {
-    expect(getSiteUrl({ NODE_ENV: "production", VERCEL_URL: "myto-trails-git-x.vercel.app" })).toBe(
+    expect(getSiteUrl({ NODE_ENV: "production", VERCEL_ENV: "preview", VERCEL_URL: "myto-trails-git-x.vercel.app" })).toBe(
       "https://myto-trails-git-x.vercel.app",
     );
   });
@@ -23,5 +23,8 @@ describe("getSiteUrl", () => {
     expect(getSiteUrl({ NODE_ENV: "production", SITE_URL: "https://moto-trails.com", VERCEL_URL: "x.vercel.app" })).toBe(
       "https://moto-trails.com",
     );
+  });
+  it("does not fall back to the deployment host in a Vercel production deploy", () => {
+    expect(() => getSiteUrl({ NODE_ENV: "production", VERCEL_ENV: "production", VERCEL_URL: "x.vercel.app" })).toThrow(/SITE_URL/);
   });
 });

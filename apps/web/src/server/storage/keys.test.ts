@@ -19,7 +19,10 @@ describe("buildObjectKey", () => {
 });
 
 describe("assertSafeKey", () => {
-  it.each([["../x"], ["/abs"], ["a\\b"], ["a\u0000b"], ["a/./b"], ["a//b"], [""], ["x".repeat(300)]])("rejects %j", (key) => {
+  it.each([
+    ["../x"], ["/abs"], ["a\\b"], ["a\u0000b"], ["a/./b"], ["a//b"], [""], ["x".repeat(300)],
+    ["a b"], ["a?b"], ["a#b"], ["a%2e%2e/b"], ["a\u0085b"], ["a\u2028b"], ["caf\u00e9/x.gpx"],
+  ])("rejects %j", (key) => {
     expect(() => assertSafeKey(key)).toThrow(InvalidKeyError);
   });
   it("accepts a built key", () => {

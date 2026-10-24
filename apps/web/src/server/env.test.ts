@@ -75,6 +75,11 @@ describe("loadServerEnv", () => {
     );
   });
 
+  it("allows the memory provider in a Vercel preview deployment", () => {
+    const env = loadServerEnv({ NODE_ENV: "production", VERCEL_ENV: "preview", VERCEL_URL: "x.vercel.app" });
+    expect(env.storage).toEqual({ provider: "memory" });
+  });
+
   it("requires a provider in production", () => {
     expect(() => loadServerEnv({ NODE_ENV: "production", SITE_URL: "https://moto-trails.com" })).toThrow(/STORAGE_PROVIDER/);
   });

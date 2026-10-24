@@ -43,7 +43,8 @@ function require(source: Source, names: string[]): Record<string, string> {
 }
 
 function loadStorage(source: Source): StorageConfig {
-  const production = source.NODE_ENV === "production";
+  // Vercel preview deployments run with NODE_ENV=production but are not production.
+  const production = source.NODE_ENV === "production" && source.VERCEL_ENV !== "preview";
   const raw = source.STORAGE_PROVIDER?.trim() || (production ? undefined : "memory");
   if (!raw) throw new EnvError("Missing environment variables: STORAGE_PROVIDER", ["STORAGE_PROVIDER"]);
 

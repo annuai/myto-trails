@@ -34,7 +34,8 @@ npm run test:live -w @moto-trails/web       # opt-in contract tests against the 
 ## Vercel
 1. Import `annuai/myto-trails` in Vercel and set the project's **Root Directory** to `apps/web`.
 2. Add the same environment variables. For previews you can leave `SITE_URL` unset (Vercel's `VERCEL_URL` is used); for production set `SITE_URL=https://moto-trails.com`.
-3. The Hobby plan is for non-commercial use: move to a paid plan before launch.
+3. Preview deployments may leave `STORAGE_PROVIDER` unset (they use the in-memory provider, so uploads do not persist). Production must set it, and the server refuses to start otherwise (`src/instrumentation.ts`).
+4. The Hobby plan is for non-commercial use: move to a paid plan before launch.
 
 ## Free-tier cautions
 Supabase free projects pause after a week of inactivity and have no automated backups; keep only test data there.
