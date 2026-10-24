@@ -51,13 +51,13 @@ export function ReportForm({
           defaultValue={values?.details}
           aria-invalid={errors?.details ? true : undefined}
           aria-describedby={errors?.details ? "details-hint details-error" : "details-hint"}
-          className="mt-2 w-full rounded-sm border border-foreground/40 bg-background p-3"
+          className="mt-2 w-full rounded-lg border border-foreground/40 bg-background p-3"
         />
         {errors?.details ? <p id="details-error" className="mt-2 text-sm font-medium text-status-stop">{errors.details}</p> : null}
       </div>
 
       {message ? <p role="status" className="text-sm font-medium text-status-stop">{message}</p> : null}
-      <button type="submit" className="min-h-12 self-start rounded-md bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Send report</button>
+      <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Send report</button>
     </form>
   );
 }

@@ -35,7 +35,7 @@ export function NearMeButton({ href = "/trails?near=me" }: { href?: string }) {
         type="button"
         onClick={locate}
         disabled={state.kind === "locating"}
-        className="inline-flex min-h-11 items-center rounded-md border border-foreground px-4 text-sm font-medium disabled:opacity-60"
+        className="inline-flex min-h-11 items-center rounded-lg border border-foreground px-4 text-sm font-medium disabled:opacity-60"
       >
         {state.kind === "locating" ? "Locating…" : "Use my location"}
       </button>

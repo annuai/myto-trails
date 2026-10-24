@@ -24,7 +24,7 @@ export default async function ConfirmPage({ searchParams }: PageProps<"/auth/con
           <input type="hidden" name="token" value={token} />
           <input type="hidden" name="next" value={next} />
           <p className="max-w-prose">Press the button to finish signing in on this device.</p>
-          <button type="submit" className="min-h-12 self-start rounded-md bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
+          <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
             Sign in
           </button>
         </form>

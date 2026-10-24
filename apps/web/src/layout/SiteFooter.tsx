@@ -35,7 +35,7 @@ const columns = [
 export function SiteFooter() {
   return (
     <footer className="mt-(--space-section) border-t border-border">
-      <div className="mx-auto w-full max-w-6xl px-4">
+      <div className="container-wide">
         <div className="flex flex-col justify-between gap-10 py-14 sm:flex-row sm:items-start">
           <div className="max-w-sm">
             <Image src="/brand/logo.png" alt="Moto Trails" width={120} height={39} />

@@ -43,17 +43,17 @@ function CoverImage({ trail }: { trail: TrailSummaryDto }) {
 export function TrailCard({ trail, children }: { trail: TrailSummaryDto; children?: ReactNode }) {
   const place = [trail.district?.name, trail.state.name].filter(Boolean).join(", ");
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface transition-shadow duration-[var(--duration-base)] hover:shadow-lg">
-      <Link href={`/trails/${trail.slug}`} tabIndex={-1} aria-hidden="true" className="relative block aspect-[16/10] overflow-hidden bg-stone">
+    <article className="group flex h-full flex-col">
+      <Link href={`/trails/${trail.slug}`} tabIndex={-1} aria-hidden="true" className="relative block aspect-[4/3] overflow-hidden rounded-3xl bg-card-stone">
         <CoverImage trail={trail} />
         {trail.isSample ? <span className="absolute left-3 top-3 rounded-full bg-foreground/80 px-2 py-0.5 font-mono text-[11px] text-white">Sample</span> : null}
       </Link>
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex flex-1 flex-col gap-3 pt-5">
         <div>
-          <h3 className="text-lg font-semibold leading-snug">
+          <p className="mb-1 text-xs font-medium uppercase tracking-widest text-muted">{place}</p>
+          <h3 className="text-lg font-medium leading-snug">
             <Link href={`/trails/${trail.slug}`} className="underline-offset-4 hover:underline">{trail.name}</Link>
           </h3>
-          <p className="mt-0.5 text-sm text-muted">{place}</p>
         </div>
         <ul className="flex flex-wrap gap-1.5" aria-label="Key facts">
           {trail.distanceKm !== null ? <li><Chip title="Trail length">{formatKm(trail.distanceKm)}</Chip></li> : null}
@@ -72,7 +72,7 @@ export function TrailCard({ trail, children }: { trail: TrailSummaryDto; childre
               ? `Verified ${formatDate(trail.verifiedAt)}`
               : "Not verified"}
         </p>
-        {children ? <div className="mt-auto flex flex-col gap-2 border-t border-border pt-3">{children}</div> : null}
+        {children ? <div className="mt-auto flex flex-col gap-2 pt-2">{children}</div> : null}
       </div>
     </article>
   );

@@ -18,7 +18,7 @@ export function SavedItemCard({ item, remove }: { item: SavedItem; remove: (form
   const removeButton = "inline-flex min-h-11 items-center text-sm underline underline-offset-4";
   if (!item.trail) {
     return (
-      <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4">
+      <div className="flex flex-col gap-2 rounded-3xl bg-card-cream p-5">
         <p className="text-muted">This trail is no longer published.</p>
         <form action={remove}>
           <input type="hidden" name="trailId" value={item.unavailableId} />

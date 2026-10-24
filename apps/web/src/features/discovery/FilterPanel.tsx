@@ -74,7 +74,7 @@ export function FilterPanel({ params }: { params: SearchParams }) {
             Include closed trails
           </label>
         </div>
-        <button type="submit" className="min-h-11 self-start rounded-md bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
+        <button type="submit" className="min-h-11 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
           Apply filters
         </button>
       </form>

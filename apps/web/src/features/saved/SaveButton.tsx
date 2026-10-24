@@ -17,7 +17,7 @@ export function SaveButton({
 }) {
   const [saved, setSaved] = useState(initialSaved);
   const [message, setMessage] = useState<string | null>(null);
-  const style = "inline-flex min-h-11 items-center rounded-md border border-foreground px-4 text-sm font-medium";
+  const style = "inline-flex min-h-11 items-center rounded-lg border border-foreground px-4 text-sm font-medium";
 
   if (!signedIn) {
     return (

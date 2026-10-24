@@ -32,7 +32,7 @@ export default function DesignPage() {
         <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {swatches.map(([name, cls]) => (
             <li key={name}>
-              <div className={`h-12 rounded-sm border border-border ${cls}`} />
+              <div className={`h-12 rounded-lg border border-border ${cls}`} />
               <p className="mt-2 font-mono text-xs text-muted">{name}</p>
             </li>
           ))}
@@ -73,7 +73,7 @@ export default function DesignPage() {
       <section aria-labelledby="focus">
         <h2 id="focus" className="text-xl font-semibold">Focus</h2>
         <p className="mt-4 text-muted">Every interactive element shows a 2 px accent outline on keyboard focus.</p>
-        <a href="#focus" className="mt-4 inline-flex min-h-11 items-center rounded-md bg-accent px-4 text-sm font-medium text-white hover:bg-accent-hover">
+        <a href="#focus" className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-accent px-4 text-sm font-medium text-white hover:bg-accent-hover">
           Focus this link
         </a>
       </section>

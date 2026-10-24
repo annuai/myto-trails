@@ -9,9 +9,9 @@ import { trailActionAction } from "../../actions";
 export const instant = false;
 export const metadata: Metadata = { title: "Trail controls", robots: { index: false, follow: false } };
 
-const input = "min-h-12 w-full rounded-sm border border-foreground/40 bg-background px-3";
+const input = "min-h-12 w-full rounded-lg border border-foreground/40 bg-background px-3";
 const box = "flex flex-col gap-3 border border-border p-4";
-const btn = "min-h-12 self-start rounded-md border border-foreground px-5 text-sm font-medium";
+const btn = "min-h-12 self-start rounded-lg border border-foreground px-5 text-sm font-medium";
 
 export default async function TrailControls({ params, searchParams }: PageProps<"/moderate/trails/[slug]">) {
   const { slug } = await params;

@@ -7,7 +7,7 @@ import { resolveReportAction } from "../actions";
 
 export const instant = false;
 export const metadata: Metadata = { title: "Reports", robots: { index: false, follow: false } };
-const input = "min-h-12 w-full rounded-sm border border-foreground/40 bg-background px-3";
+const input = "min-h-12 w-full rounded-lg border border-foreground/40 bg-background px-3";
 
 export default async function ReportsPage({ searchParams }: PageProps<"/moderate/reports">) {
   const actor = await requireModerator("/moderate/reports");
@@ -42,7 +42,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/moderate
                     <input id={`e-${i.reportId}`} name="expectedUntil" placeholder="2026-12-01" className={input} />
                   </>
                 ) : null}
-                <button type="submit" className="min-h-12 self-start rounded-md border border-foreground px-5 text-sm font-medium">Record outcome</button>
+                <button type="submit" className="min-h-12 self-start rounded-lg border border-foreground px-5 text-sm font-medium">Record outcome</button>
               </form>
             </li>
           ))}

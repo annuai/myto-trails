@@ -10,3 +10,4 @@ coverage
 .pgdata
 public/vendor
 .storage
+.reference/

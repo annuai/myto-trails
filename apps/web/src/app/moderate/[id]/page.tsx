@@ -12,8 +12,8 @@ export const instant = false;
 export const metadata: Metadata = { title: "Review", robots: { index: false, follow: false } };
 
 const label = (v: string) => v.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
-const btn = "min-h-12 rounded-md px-5 text-sm font-medium";
-const input = "min-h-12 w-full rounded-sm border border-foreground/40 bg-background px-3";
+const btn = "min-h-12 rounded-lg px-5 text-sm font-medium";
+const input = "min-h-12 w-full rounded-lg border border-foreground/40 bg-background px-3";
 
 export default async function ReviewPage({ params, searchParams }: PageProps<"/moderate/[id]">) {
   const { id } = await params;

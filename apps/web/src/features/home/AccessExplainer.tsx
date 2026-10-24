@@ -11,7 +11,7 @@ export function AccessExplainer() {
   return (
     <ul className="grid gap-4 md:grid-cols-3">
       {ITEMS.map((i) => (
-        <li key={i.kind} className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-5">
+        <li key={i.kind} className="flex flex-col gap-3 rounded-3xl bg-card-cream p-6">
           <StatusBadge kind="access" value={i.kind} chip />
           <h3 className="text-lg font-semibold">{i.title}</h3>
           <p className="text-muted">{i.text}</p>

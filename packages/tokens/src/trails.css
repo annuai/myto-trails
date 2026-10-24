@@ -16,9 +16,16 @@
   --color-status-unknown-dark: #a8a29b;
   --color-status-info-dark: #7fb2d6;
 
+  /* Radii and shadow follow myto-moto's site (reference copy in .reference/myto): soft, large radii, shadow only on the floating nav. */
   --radius-none: 0;
-  --radius-sm: 2px;
-  --radius-md: 4px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --shadow-nav: 0 4px 24px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06);
+
+  --color-card-cream: #ede8de;
+  --color-card-warmgrey: #e1e1dc;
 }
 
 :root {

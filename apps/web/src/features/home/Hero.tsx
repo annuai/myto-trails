@@ -19,9 +19,9 @@ export function Hero({ imageSrc }: { imageSrc: string }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={imageSrc} alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover object-[75%_bottom] sm:object-right-bottom" />
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background/75 to-background/20 sm:bg-gradient-to-r sm:from-background sm:via-background/60 sm:to-transparent" />
-      <div className="relative mx-auto flex min-h-[28rem] max-w-6xl flex-col justify-center gap-6 px-4 py-16 sm:min-h-[34rem] sm:py-24">
+      <div className="relative container-wide flex min-h-[28rem] flex-col justify-center gap-6 py-16 sm:min-h-[34rem] sm:py-24">
         <p className="font-mono text-xs uppercase tracking-widest text-muted">Motorcycle trails across India</p>
-        <h1 id="hero-title" className="max-w-2xl font-display text-3xl leading-tight sm:text-5xl">Find a trail you can actually ride.</h1>
+        <h1 id="hero-title" className="display-lg max-w-2xl">Find a trail you can actually ride.</h1>
         <p className="max-w-xl text-lg text-muted">Every trail shows who is allowed to ride it, how we know, and when it was last checked.</p>
         <div className="max-w-xl rounded-lg border border-border bg-white/90 p-3 shadow-lg backdrop-blur">
           <SearchCombobox />

@@ -29,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </Suspense>
           }
         />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4">{children}</main>
+        <main className="container-wide w-full flex-1">{children}</main>
         <SiteFooter />
         <FooterBanner />
       </body>

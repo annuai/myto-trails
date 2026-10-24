@@ -39,10 +39,10 @@ export function SiteHeader({ account }: { account?: ReactNode }) {
     <header className={`sticky top-0 z-40 transition-[padding] duration-300 ${floating ? "px-4 pt-3" : ""}`}>
       <div
         className={`mx-auto transition-all duration-300 ${
-          floating ? "max-w-6xl rounded-full bg-white/95 shadow-[0_4px_24px_rgba(0,0,0,0.10)] backdrop-blur" : "border-b border-border bg-background/90 backdrop-blur"
+          floating ? "max-w-[1400px] rounded-full bg-white/95 shadow-nav backdrop-blur" : "border-b border-border bg-background/90 backdrop-blur"
         }`}
       >
-        <div className={`relative mx-auto flex min-h-16 w-full items-center justify-between gap-4 ${floating ? "px-6" : "max-w-6xl px-4"}`}>
+        <div className={`relative mx-auto flex min-h-16 w-full items-center justify-between gap-4 ${floating ? "px-6" : "container-wide"}`}>
           <Link href="/" className="inline-flex min-h-11 items-center">
             <Image src="/brand/logo.png" alt="Moto Trails" width={99} height={32} priority />
           </Link>

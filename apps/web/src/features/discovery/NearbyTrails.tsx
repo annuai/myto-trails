@@ -58,9 +58,9 @@ export function NearbyTrails() {
   return (
     <div className="flex flex-col gap-6" aria-live="polite">
       {state.kind === "idle" || state.kind === "denied" || state.kind === "error" ? (
-        <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-border bg-surface p-6">
+        <div className="flex flex-col items-start gap-3 rounded-3xl bg-card-cream p-6">
           <p className="max-w-prose text-muted">See the trails closest to you, with how far each one is and roughly how long it takes to get there.</p>
-          <button type="button" onClick={locate} className="min-h-12 rounded-md bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Show trails near me</button>
+          <button type="button" onClick={locate} className="min-h-12 rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Show trails near me</button>
           {state.kind === "denied" ? (
             <p role="status" className="text-sm">Your location is off, so we can&apos;t sort by distance. Allow it in your browser, or <Link href="/regions" className="underline underline-offset-4">browse by region</Link>.</p>
           ) : null}
@@ -68,8 +68,8 @@ export function NearbyTrails() {
         </div>
       ) : null}
       {state.kind === "locating" ? <p role="status">Finding your position…</p> : null}
-      {state.kind === "empty" ? <p role="status" className="rounded-lg border border-border bg-surface p-6">No trails within 300 km yet. <Link href="/trails" className="underline underline-offset-4">See all trails</Link> or <Link href="/submit" className="underline underline-offset-4">add one you know</Link>.</p> : null}
-      {state.kind === "outside" ? <p role="status" className="rounded-lg border border-border bg-surface p-6">We only list trails in India for now. <Link href="/trails" className="underline underline-offset-4">Browse all trails</Link>.</p> : null}
+      {state.kind === "empty" ? <p role="status" className="rounded-3xl bg-card-cream p-6">No trails within 300 km yet. <Link href="/trails" className="underline underline-offset-4">See all trails</Link> or <Link href="/submit" className="underline underline-offset-4">add one you know</Link>.</p> : null}
+      {state.kind === "outside" ? <p role="status" className="rounded-3xl bg-card-cream p-6">We only list trails in India for now. <Link href="/trails" className="underline underline-offset-4">Browse all trails</Link>.</p> : null}
       {state.kind === "loaded" ? (
         <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {state.items.map((t) => (

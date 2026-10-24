@@ -31,20 +31,20 @@ export default function Home() {
   return (
     <>
       <Hero imageSrc="/images/hero/home-hero-rider-on-dirt-trail.webp" />
-      <Section id="nearby" title="Trails near you" intro="Allow your location to see the closest trails and roughly how long each takes to reach.">
+      <Section id="nearby" eyebrow="Nearby" title="Trails near you" intro="Allow your location to see the closest trails and roughly how long each takes to reach.">
         <NearbyTrails />
       </Section>
-      <Section id="new" title="Recently added" href="/trails" hrefLabel="See all trails">
+      <Section id="new" eyebrow="New" title="Recently added" href="/trails" hrefLabel="See all trails">
         <Suspense fallback={<p className="text-muted">Loading trails…</p>}>
           <Featured />
         </Suspense>
       </Section>
-      <Section id="regions" title="Browse by region" href="/regions" hrefLabel="All regions">
+      <Section id="regions" eyebrow="Regions" title="Browse by region" href="/regions" hrefLabel="All regions">
         <Suspense fallback={null}>
           <Regions />
         </Suspense>
       </Section>
-      <Section id="access" title="Access comes first" intro="A trail is only useful if you are allowed to ride it. Every listing says which of these it is.">
+      <Section id="access" eyebrow="Access" title="Access comes first" intro="A trail is only useful if you are allowed to ride it. Every listing says which of these it is.">
         <AccessExplainer />
       </Section>
       <ContributeBand />

@@ -7,7 +7,7 @@ import { roleAction } from "../actions";
 
 export const instant = false;
 export const metadata: Metadata = { title: "People", robots: { index: false, follow: false } };
-const input = "min-h-12 w-full rounded-sm border border-foreground/40 bg-background px-3";
+const input = "min-h-12 w-full rounded-lg border border-foreground/40 bg-background px-3";
 
 export default async function UsersPage({ searchParams }: PageProps<"/moderate/users">) {
   const actor = await requireAdmin("/moderate/users");
@@ -36,7 +36,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/moderate/u
         <input id="email" name="email" type="email" required className={input} />
         <label className="text-sm font-medium" htmlFor="role">Role</label>
         <select id="role" name="role" className={input}><option value="moderator">Moderator</option><option value="admin">Admin</option></select>
-        <button type="submit" name="intent" value="grant" className="min-h-12 self-start rounded-md border border-foreground px-5 text-sm font-medium">Grant role</button>
+        <button type="submit" name="intent" value="grant" className="min-h-12 self-start rounded-lg border border-foreground px-5 text-sm font-medium">Grant role</button>
       </form>
     </section>
   );

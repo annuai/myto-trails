@@ -105,9 +105,9 @@ export function SearchCombobox({ initialQuery = "" }: { initialQuery?: string })
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="Search a place, region or trail name"
-          className="min-h-12 w-full rounded-sm border border-foreground/40 bg-background px-3"
+          className="min-h-12 w-full rounded-lg border border-foreground/40 bg-background px-3"
         />
-        <button type="button" onClick={searchText} className="min-h-12 rounded-md bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
+        <button type="button" onClick={searchText} className="min-h-12 rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
           Search
         </button>
       </div>

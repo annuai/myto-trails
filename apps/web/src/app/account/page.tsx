@@ -18,20 +18,20 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       </div>
       <form action={updateNameAction} className="flex max-w-md flex-col gap-3">
         <label htmlFor="name" className="text-sm font-medium">Display name</label>
-        <input id="name" name="name" defaultValue={user.displayName} minLength={2} maxLength={40} required className="min-h-12 rounded-sm border border-foreground/40 bg-background px-3" />
+        <input id="name" name="name" defaultValue={user.displayName} minLength={2} maxLength={40} required className="min-h-12 rounded-lg border border-foreground/40 bg-background px-3" />
         <p className="text-sm text-muted">Shown with trails you contribute.</p>
         {sp.saved ? <p role="status" className="text-sm font-medium text-status-good">Saved.</p> : null}
         {sp.error ? <p role="status" className="text-sm font-medium text-status-stop">Use 2 to 40 characters.</p> : null}
-        <button type="submit" className="min-h-12 self-start rounded-md bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save name</button>
+        <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save name</button>
       </form>
       <p><Link href="/account/contributions" className="underline underline-offset-4">Your contributions</Link></p>
       <p><Link href="/account/devices" className="underline underline-offset-4">Connected devices</Link></p>
       <div className="flex flex-wrap gap-4">
         <form action={signOutAction}>
-          <button type="submit" className="min-h-12 rounded-md border border-foreground px-5 text-sm font-medium">Sign out</button>
+          <button type="submit" className="min-h-12 rounded-lg border border-foreground px-5 text-sm font-medium">Sign out</button>
         </form>
         <form action={signOutEverywhereAction}>
-          <button type="submit" className="min-h-12 rounded-md border border-foreground px-5 text-sm font-medium">Sign out on all devices</button>
+          <button type="submit" className="min-h-12 rounded-lg border border-foreground px-5 text-sm font-medium">Sign out on all devices</button>
         </form>
       </div>
     </section>

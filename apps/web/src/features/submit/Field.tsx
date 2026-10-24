@@ -1,6 +1,6 @@
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 
-export const inputClass = "min-h-12 w-full rounded-sm border border-foreground/40 bg-background px-3";
+export const inputClass = "min-h-12 w-full rounded-lg border border-foreground/40 bg-background px-3";
 
 /** A labelled field with an optional hint and error, wired together for screen readers. */
 export function Field({ label, name, hint, error, children }: { label: string; name: string; hint?: string; error?: string; children: ReactNode }) {

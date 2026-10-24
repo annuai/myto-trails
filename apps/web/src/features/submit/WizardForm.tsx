@@ -41,7 +41,7 @@ export function WizardForm({
   }, [autosave, id, step]);
 
   const last = step === 6;
-  const button = "min-h-12 rounded-md px-5 text-sm font-medium";
+  const button = "min-h-12 rounded-lg px-5 text-sm font-medium";
   return (
     <form ref={form} action={formAction} className="flex max-w-prose flex-col gap-6">
       <input type="hidden" name="id" value={id} />

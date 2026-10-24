@@ -25,7 +25,7 @@ export function TrailGallery({ media }: { media: MediaDto[] }) {
                   height={m.height ?? undefined}
                   loading="lazy"
                   decoding="async"
-                  className="h-auto w-full rounded-sm"
+                  className="h-auto w-full rounded-lg"
                 />
                 {m.caption || m.credit ? (
                   <figcaption className="mt-2 font-mono text-xs text-muted">

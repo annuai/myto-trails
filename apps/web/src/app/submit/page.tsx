@@ -24,7 +24,7 @@ export default async function SubmitPage({ searchParams }: PageProps<"/submit">)
       </ul>
       {sp.error === "too_many_drafts" ? <p role="alert" className="border-l-4 border-status-stop py-1 pl-4 font-medium">You have ten drafts open. Finish or delete one first.</p> : null}
       <form action={startSubmissionAction}>
-        <button type="submit" className="min-h-12 rounded-md bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Start a new trail</button>
+        <button type="submit" className="min-h-12 rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Start a new trail</button>
       </form>
 
       {drafts.length > 0 ? (
