@@ -139,3 +139,21 @@ export async function listDueForRecheck(sql: Sql, actorId: string, now: Date, wi
     order by t.access_verified_until asc, t.slug limit 500`;
   return { ok: true, items: rows.map((r) => ({ slug: r.slug, name: r.name, accessClass: r.access_class, level: r.level, validUntil: r.valid_until, overdue: r.valid_until <= today })) };
 }
+
+export type TrailModerationView = {
+  trailId: string; slug: string; name: string; lifecycle: string; accessClass: string; level: string; validUntil: string | null;
+  condition: string; permissionContact: string | null; evidenceCount: number;
+};
+
+export async function getTrailForModeration(sql: Sql, actorId: string, slug: string): Promise<{ ok: true; trail: TrailModerationView } | typeof FORBIDDEN | { ok: false; reason: "not_found" }> {
+  if (!(await getActor(sql, actorId))) return FORBIDDEN;
+  const [t] = await sql`
+    select t.id, t.slug, t.lifecycle, t.access_class_current, t.access_verification_level_current, t.access_verified_until::text as valid_until, t.condition_current,
+      coalesce(rev.name, t.slug) as name, a.permission_contact, coalesce((select count(*)::int from evidence e where e.assessment_id = a.id), 0) as evidence_count
+    from trail t
+    left join trail_revision rev on rev.id = coalesce(t.published_revision_id, (select id from trail_revision where trail_id = t.id order by version_no desc limit 1))
+    left join lateral (select id, permission_contact from access_assessment where trail_id = t.id order by created_at desc, id desc limit 1) a on true
+    where t.slug = ${slug}`;
+  if (!t) return { ok: false, reason: "not_found" };
+  return { ok: true, trail: { trailId: t.id, slug: t.slug, name: t.name, lifecycle: t.lifecycle, accessClass: t.access_class_current, level: t.access_verification_level_current, validUntil: t.valid_until, condition: t.condition_current, permissionContact: t.permission_contact ?? null, evidenceCount: t.evidence_count } };
+}

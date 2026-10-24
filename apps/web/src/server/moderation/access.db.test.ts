@@ -4,7 +4,7 @@ import { seedRegions } from "../db/seed-regions";
 import { asAnon, createTestDatabase } from "../testing/db";
 import { insertTrailFixture } from "../testing/fixtures";
 import { makeUser } from "../testing/submission-fixture";
-import { listDueForRecheck, setCondition, unpublish, verifyAccess } from "./access";
+import { getTrailForModeration, listDueForRecheck, setCondition, unpublish, verifyAccess } from "./access";
 import { listReports, resolveReport } from "./reports";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
@@ -143,5 +143,16 @@ describe("reports", () => {
     const b = await report();
     expect(await resolveReport(db.sql, { actorId: m, reportId: b.reportId, outcome: "deleted" as never, note: "", now })).toEqual({ ok: false, reason: "invalid" });
     expect(await resolveReport(db.sql, { actorId: await makeUser(db.sql), reportId: b.reportId, outcome: "rejected", note: "", now })).toEqual({ ok: false, reason: "forbidden" });
+  });
+});
+
+describe("getTrailForModeration", () => {
+  it("returns the moderator's view of a trail, including unpublished ones, and refuses riders", async () => {
+    const m = await mod();
+    const t = await trail({ lifecycle: "unpublished", accessClass: "permission_required", permissionContact: "ranger@example.test" });
+    const r = await getTrailForModeration(db.sql, m, t.slug);
+    expect(r).toMatchObject({ ok: true, trail: { trailId: t.trailId, lifecycle: "unpublished", accessClass: "permission_required", permissionContact: "ranger@example.test" } });
+    expect(await getTrailForModeration(db.sql, m, "nope")).toEqual({ ok: false, reason: "not_found" });
+    expect(await getTrailForModeration(db.sql, await makeUser(db.sql), t.slug)).toEqual({ ok: false, reason: "forbidden" });
   });
 });
