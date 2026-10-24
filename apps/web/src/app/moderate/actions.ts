@@ -4,6 +4,7 @@ import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { getEmailSender, getCurrentUser } from "@/server/auth/session";
 import { getSql } from "@/server/db/client";
+import { requireAdmin } from "@/server/moderation/session";
 import { getSiteUrl } from "@/lib/site";
 import { release, verifyAccess, setCondition, unpublish } from "@/server/moderation/access";
 import { approve, rejectSubmission, requestChanges, REASON_CODES, type ReasonCode } from "@/server/moderation/decisions";
@@ -139,4 +140,11 @@ export async function dismissQuestionReportAction(formData: FormData): Promise<v
   const actor = await actorId("/moderate/comments");
   const r = await dismissQuestionReport(getSql(), { actorId: actor, reportId: text(formData, "reportId") });
   back("/moderate/comments", r.ok ? "saved" : r.reason);
+}
+
+/** Admin only: clears the saved copies of trail, region and listing pages, for after a change made directly in the database. */
+export async function refreshSiteCacheAction(): Promise<void> {
+  await requireAdmin("/moderate");
+  refresh();
+  redirect("/moderate?refreshed=1");
 }

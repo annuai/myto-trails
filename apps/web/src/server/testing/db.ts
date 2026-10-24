@@ -13,6 +13,11 @@ export async function createTestDatabase(opts: { migrations?: false } = {}): Pro
   const adminUrl = process.env.TEST_ADMIN_URL ?? "postgres://localhost:54329/postgres";
   const name = `moto_test_${randomBytes(6).toString("hex")}`;
   const admin = postgres(adminUrl, { max: 1, onnotice: () => {} });
+  // Roles belong to the whole cluster, so test files running in parallel can race to create them (the migration does
+  // the same check). Create them here first, tolerating the race.
+  for (const role of ["anon", "authenticated"]) {
+    await admin.unsafe(`do $$ begin create role ${role} nologin; exception when duplicate_object or unique_violation then null; end $$`);
+  }
   await admin.unsafe(`create database "${name}"`);
 
   const url = new URL(adminUrl);
