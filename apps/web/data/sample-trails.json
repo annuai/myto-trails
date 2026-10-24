@@ -1,0 +1,348 @@
+[
+  {
+    "sample": true,
+    "sensitivity": "standard",
+    "contributorCredit": "Sample data (fictional)",
+    "publish": true,
+    "hazards": [
+      "slippery_after_rain",
+      "river_crossing"
+    ],
+    "suitableFor": [
+      "adventure_tourer",
+      "dual_sport"
+    ],
+    "bestMonths": [
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "slug": "sample-wayanad-ridge-track",
+    "name": "Sample Wayanad ridge track",
+    "state": "kerala",
+    "district": "Wayanad",
+    "nearestTown": "Sampletown",
+    "summary": "A fictional gravel ridge track used to show a public, open and verified trail in development.",
+    "description": "This is invented sample content. It exists so every page state can be reviewed before real trails are added. Do not ride this: it is not a real trail.",
+    "startPoint": {
+      "lon": 76.1,
+      "lat": 11.62
+    },
+    "routeShape": "out_and_back",
+    "distanceKm": 24.1,
+    "estDurationMin": 150,
+    "elevationGainM": 612,
+    "difficulty": "moderate",
+    "terrain": [
+      "gravel",
+      "forest_track"
+    ],
+    "seasonNotes": "Best from November to March (sample text).",
+    "safetyNotes": "Sample safety note: carry water and tell someone your plan.",
+    "surfaceNotes": "Packed gravel with short loose sections (sample).",
+    "access": {
+      "accessClass": "public",
+      "restrictions": [],
+      "basis": "official_notice",
+      "level": "moderator_verified",
+      "verifiedAt": "2026-01-15",
+      "validUntil": "2030-12-31",
+      "evidence": [
+        {
+          "kind": "signage_photo",
+          "description": "Sample signage photo (fictional)."
+        }
+      ]
+    },
+    "condition": {
+      "status": "open",
+      "effectiveFrom": "2026-01-15"
+    }
+  },
+  {
+    "sample": true,
+    "sensitivity": "standard",
+    "contributorCredit": "Sample data (fictional)",
+    "publish": true,
+    "hazards": [],
+    "suitableFor": [
+      "adventure_tourer",
+      "dual_sport"
+    ],
+    "bestMonths": [
+      10,
+      11,
+      12,
+      1,
+      2
+    ],
+    "slug": "sample-idukki-estate-loop",
+    "name": "Sample Idukki estate loop",
+    "state": "kerala",
+    "district": "Idukki",
+    "nearestTown": "Sample Estate Town",
+    "summary": "A fictional estate loop that needs permission and is closed for the monsoon, to show a seasonal, permission-required trail.",
+    "description": "Invented sample content showing how permission instructions and a seasonal closure appear. Not a real trail.",
+    "startPoint": {
+      "lon": 76.97,
+      "lat": 9.85
+    },
+    "routeShape": "loop",
+    "distanceKm": 18.4,
+    "estDurationMin": 120,
+    "elevationGainM": 420,
+    "difficulty": "easy",
+    "terrain": [
+      "dirt",
+      "mixed"
+    ],
+    "seasonNotes": "Closed June to September for the monsoon (sample text).",
+    "access": {
+      "accessClass": "permission_required",
+      "restrictions": [
+        "private_estate"
+      ],
+      "basis": "owner_confirmed",
+      "level": "community_reported",
+      "permissionInstructions": "Sample instructions: ask at the estate office on weekdays before riding.",
+      "permissionContact": "estate-office@example.test"
+    },
+    "condition": {
+      "status": "seasonal",
+      "reason": "weather",
+      "effectiveFrom": "2026-06-01",
+      "note": "Closed June to September (sample)."
+    }
+  },
+  {
+    "sample": true,
+    "sensitivity": "standard",
+    "contributorCredit": "Sample data (fictional)",
+    "publish": true,
+    "hazards": [
+      "steep_descent",
+      "loose_rock"
+    ],
+    "suitableFor": [
+      "enduro",
+      "dual_sport"
+    ],
+    "bestMonths": [
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "slug": "sample-munnar-cloud-climb",
+    "name": "Sample Munnar cloud climb",
+    "state": "kerala",
+    "district": "Idukki",
+    "nearestTown": "Sample Hill Town",
+    "summary": "A fictional restricted climb with a closure whose end date has passed, to show the condition-unknown fallback.",
+    "description": "Invented sample content. The expected reopening date has passed, so the page should say the condition is unknown rather than closed.",
+    "startPoint": {
+      "lon": 77.06,
+      "lat": 10.09
+    },
+    "routeShape": "point_to_point",
+    "distanceKm": 31.0,
+    "estDurationMin": 210,
+    "elevationGainM": 980,
+    "difficulty": "hard",
+    "terrain": [
+      "mountain_road",
+      "rock"
+    ],
+    "access": {
+      "accessClass": "restricted",
+      "restrictions": [
+        "forest_dept",
+        "permit"
+      ],
+      "basis": "authority_confirmed",
+      "level": "moderator_verified",
+      "verifiedAt": "2026-01-10",
+      "validUntil": "2030-12-31",
+      "permissionInstructions": "Sample: a forest permit is required. Apply in advance.",
+      "evidence": [
+        {
+          "kind": "official_document",
+          "description": "Sample permit notice (fictional)."
+        }
+      ]
+    },
+    "condition": {
+      "status": "temporarily_closed",
+      "reason": "landslide",
+      "effectiveFrom": "2026-01-20",
+      "expectedUntil": "2026-03-01",
+      "note": "Sample landslide closure."
+    }
+  },
+  {
+    "sample": true,
+    "sensitivity": "standard",
+    "contributorCredit": "Sample data (fictional)",
+    "publish": true,
+    "hazards": [
+      "steep_descent"
+    ],
+    "suitableFor": [
+      "adventure_tourer",
+      "dual_sport"
+    ],
+    "bestMonths": [
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "slug": "sample-chikkamagaluru-old-road",
+    "name": "Sample Chikkamagaluru old road",
+    "state": "karnataka",
+    "district": "Chikkamagaluru",
+    "nearestTown": "Sample Ghat Town",
+    "summary": "A fictional public road that is permanently closed after a landslide, to show the permanently closed notice.",
+    "description": "Invented sample content. A permanently closed trail keeps its page, with a clear notice and no download.",
+    "startPoint": {
+      "lon": 75.77,
+      "lat": 13.32
+    },
+    "routeShape": "point_to_point",
+    "distanceKm": 12.7,
+    "estDurationMin": 90,
+    "elevationGainM": 300,
+    "difficulty": "moderate",
+    "terrain": [
+      "mountain_road"
+    ],
+    "access": {
+      "accessClass": "public",
+      "restrictions": [],
+      "basis": "official_notice",
+      "level": "officially_verified",
+      "verifiedAt": "2026-02-01",
+      "validUntil": "2030-12-31",
+      "evidence": [
+        {
+          "kind": "official_document",
+          "description": "Sample closure order (fictional)."
+        }
+      ]
+    },
+    "condition": {
+      "status": "permanently_closed",
+      "reason": "landslide",
+      "effectiveFrom": "2026-02-01",
+      "note": "Closed for good after a landslide (sample)."
+    }
+  },
+  {
+    "sample": true,
+    "sensitivity": "standard",
+    "contributorCredit": "Sample data (fictional)",
+    "publish": true,
+    "hazards": [
+      "river_crossing",
+      "no_mobile_signal"
+    ],
+    "suitableFor": [
+      "enduro"
+    ],
+    "bestMonths": [
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "slug": "sample-cherrapunji-river-track",
+    "name": "Sample Cherrapunji river track",
+    "state": "meghalaya",
+    "district": "East Khasi Hills",
+    "nearestTown": "Sample Falls Town",
+    "summary": "A fictional riverbed track with unknown access and no verification, to show the cautious unverified state.",
+    "description": "Invented sample content. Access has not been established, so the page must not suggest it is allowed.",
+    "startPoint": {
+      "lon": 91.72,
+      "lat": 25.27
+    },
+    "routeShape": "out_and_back",
+    "distanceKm": 9.5,
+    "estDurationMin": 75,
+    "difficulty": "hard",
+    "terrain": [
+      "riverbed",
+      "rock"
+    ],
+    "access": {
+      "accessClass": "unknown",
+      "restrictions": [],
+      "basis": "none",
+      "level": "unverified"
+    },
+    "condition": {
+      "status": "unknown",
+      "effectiveFrom": "2026-03-01"
+    }
+  },
+  {
+    "sample": true,
+    "sensitivity": "sensitive",
+    "contributorCredit": "Sample data (fictional)",
+    "publish": true,
+    "hazards": [],
+    "suitableFor": [
+      "adventure_tourer",
+      "dual_sport"
+    ],
+    "bestMonths": [
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "slug": "sample-shillong-sensitive-ridge",
+    "name": "Sample Shillong sensitive ridge",
+    "state": "meghalaya",
+    "district": "East Khasi Hills",
+    "nearestTown": "Sample Peak Town",
+    "summary": "A fictional trail in a sensitive area that shows only an approximate location, to show reduced precision.",
+    "description": "Invented sample content. The exact start is withheld; only an approximate point is published.",
+    "startPoint": {
+      "lon": 91.883,
+      "lat": 25.571
+    },
+    "publicPoint": {
+      "lon": 91.9,
+      "lat": 25.6
+    },
+    "routeShape": "loop",
+    "distanceKm": 15.2,
+    "estDurationMin": 100,
+    "elevationGainM": 350,
+    "difficulty": "moderate",
+    "terrain": [
+      "forest_track",
+      "dirt"
+    ],
+    "access": {
+      "accessClass": "permission_required",
+      "restrictions": [
+        "protected_area"
+      ],
+      "basis": "rider_observed",
+      "level": "community_reported",
+      "permissionInstructions": "Sample: check with the local community council before riding."
+    },
+    "condition": {
+      "status": "open",
+      "effectiveFrom": "2026-04-01"
+    }
+  }
+]
