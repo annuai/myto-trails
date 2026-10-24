@@ -64,6 +64,20 @@ describe("errors, auth and limits", () => {
     expect((await call("GET", "/openapi.json", { headers: { "x-real-ip": "203.0.113.78" } })).status).toBe(200);
   });
 
+  it("treats HEAD as GET, ignores bearer case, and does not let route dots match other characters", async () => {
+    expect((await call("HEAD", "/trails")).status).toBe(200);
+    const { token } = await rider();
+    expect((await call("GET", "/me/saved", { headers: { authorization: `bearer ${token}` } })).status).toBe(200);
+    expect((await call("GET", "/openapiXjson")).status).toBe(404);
+  });
+
+  it("stops reading a body that is bigger than the limit, even without a content-length", async () => {
+    const { token } = await rider();
+    const big = new ReadableStream({ start(c) { for (let i = 0; i < 20; i++) c.enqueue(new TextEncoder().encode("x".repeat(10_000))); c.close(); } });
+    const res = await dispatch(new Request("http://localhost/api/v1/submissions", { method: "POST", headers: { authorization: `Bearer ${token}` }, body: big, duplex: "half" } as RequestInit), routes, { sql: db.sql, storage, now, siteUrl: "x" });
+    expect(res.status).toBe(413);
+  });
+
   it("rejects oversized and malformed bodies cleanly", async () => {
     const { token } = await rider();
     expect((await call("POST", "/submissions", { token, raw: "{not json" })).body.error.code).toBe("invalid_json");
@@ -130,6 +144,8 @@ describe("saved and sync", () => {
     expect(before.body.changed.map((x: { slug: string }) => x.slug)).toEqual([t.slug]);
     const later = await call("GET", "/sync?since=2999-01-01T00:00:00Z", { token: a.token });
     expect(later.body.changed).toEqual([]);
+    // A trail saved after `since` is reported even if the trail itself is old.
+    expect((await call("GET", `/sync?since=${new Date(Date.now() - 60_000).toISOString()}`, { token: a.token })).body.changed.map((x: { slug: string }) => x.slug)).toEqual([t.slug]);
     await db.sql`update trail set lifecycle = 'unpublished' where id = ${t.trailId}`;
     expect((await call("GET", "/sync?since=2020-01-01T00:00:00Z", { token: a.token })).body.removed).toHaveLength(1);
     expect((await call("GET", "/sync?since=garbage", { token: a.token })).status).toBe(400);

@@ -26,7 +26,7 @@ const asObject = async (c: Ctx): Promise<Record<string, unknown>> => {
 const noContent = () => new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 
 function searchRaw(url: URL) {
-  const raw: Record<string, string | string[]> = {};
+  const raw: Record<string, string | string[]> = Object.create(null);
   for (const k of new Set(url.searchParams.keys())) {
     const all = url.searchParams.getAll(k);
     raw[k] = all.length > 1 ? all : all[0]!;
@@ -114,7 +114,7 @@ export const routes: RouteDef[] = [
       const items = await listSaved(c.sql, c.userId, c.now);
       return ok({
         serverTime: c.now.toISOString(),
-        changed: items.filter((i) => i.trail && new Date(i.trail.updatedAt) > since).map((i) => i.trail),
+        changed: items.filter((i) => i.trail && (new Date(i.trail.updatedAt) > since || new Date(i.addedAt) > since || i.changes.length > 0)).map((i) => i.trail),
         removed: items.filter((i) => i.unavailableId).map((i) => i.unavailableId),
       });
     },

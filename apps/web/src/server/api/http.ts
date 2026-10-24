@@ -40,7 +40,8 @@ export const ok = (body: unknown, status = 200) => json(status, body);
 export const fail = (status: number, code: string, message: string, extra?: Record<string, unknown>) => json(status, { error: { code, message, ...extra } });
 
 function compile(path: string): RegExp {
-  return new RegExp(`^${path.replace(/\{(\w+)\}/g, "([^/]+)")}/?$`);
+  const escaped = path.split(/(\{\w+\})/).map((part) => (/^\{\w+\}$/.test(part) ? "([^/]+)" : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))).join("");
+  return new RegExp(`^${escaped}/?$`);
 }
 
 export function matchRoute(routes: RouteDef[], method: string, path: string): { route: RouteDef; params: Record<string, string> } | "method" | null {
@@ -64,12 +65,34 @@ export function matchRoute(routes: RouteDef[], method: string, path: string): { 
   return pathMatched ? "method" : null;
 }
 
+/** Reads the body but stops as soon as it exceeds the cap, so a huge upload never sits in memory. */
+async function readCapped(req: Request): Promise<string> {
+  const tooLarge = () => new ApiError(413, "body_too_large", "The request body is too large.");
+  const declared = Number(req.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) throw tooLarge();
+  if (!req.body) return "";
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_BODY_BYTES) {
+      await reader.cancel();
+      throw tooLarge();
+    }
+    chunks.push(value);
+  }
+  return new TextDecoder().decode(Buffer.concat(chunks));
+}
+
 /** The single entry point for /api/v1: authentication, scopes, rate limits, body limits and one error shape. */
 export async function dispatch(req: Request, routes: RouteDef[], deps: Deps): Promise<Response> {
   try {
     const url = new URL(req.url);
     const path = url.pathname.replace(/^\/api\/v1/, "") || "/";
-    const matched = matchRoute(routes, req.method, path);
+    const matched = matchRoute(routes, req.method === "HEAD" ? "GET" : req.method, path);
     if (matched === null) return fail(404, "not_found", "No such endpoint.");
     if (matched === "method") return fail(405, "method_not_allowed", "That method is not supported here.");
     const { route, params } = matched;
@@ -77,7 +100,7 @@ export async function dispatch(req: Request, routes: RouteDef[], deps: Deps): Pr
     let auth: VerifiedToken | null = null;
     const header = req.headers.get("authorization");
     if (header !== null) {
-      const m = /^Bearer (\S+)$/.exec(header);
+      const m = /^bearer (\S+)$/i.exec(header);
       auth = m ? await verifyToken(deps.sql, m[1]!) : null;
       if (!auth) return fail(401, "invalid_token", "The token is missing, revoked or not valid.", undefined);
     }
@@ -96,8 +119,7 @@ export async function dispatch(req: Request, routes: RouteDef[], deps: Deps): Pr
       ...deps, req, url, params, auth, userId: auth?.userId ?? "",
       async body() {
         if (read) return cached;
-        const text = await req.text();
-        if (text.length > MAX_BODY_BYTES) throw new ApiError(413, "body_too_large", "The request body is too large.");
+        const text = await readCapped(req);
         try {
           cached = JSON.parse(text);
         } catch {

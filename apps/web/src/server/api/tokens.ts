@@ -32,10 +32,13 @@ export type VerifiedToken = { userId: string; tokenId: string; scopes: TokenScop
 export async function verifyToken(sql: Sql, token: string): Promise<VerifiedToken | null> {
   if (!SHAPE.test(token)) return null;
   const [row] = await sql`
-    update api_token t set last_used_at = now()
-    from app_user u
-    where t.token_hash = ${hashToken(token)} and t.revoked_at is null and u.id = t.user_id and u.status = 'active'
-    returning t.id, t.user_id, t.scopes, t.kind`;
+    select t.id, t.user_id, t.scopes, t.kind, t.last_used_at
+    from api_token t join app_user u on u.id = t.user_id
+    where t.token_hash = ${hashToken(token)} and t.revoked_at is null and u.status = 'active'`;
+  // Record use at most once a minute, so a busy device does not write on every request.
+  if (row && (row.last_used_at === null || Date.now() - (row.last_used_at as Date).getTime() > 60_000)) {
+    await sql`update api_token set last_used_at = now() where id = ${row.id}`;
+  }
   return row ? { userId: row.user_id, tokenId: row.id, scopes: row.scopes, kind: row.kind } : null;
 }
 
