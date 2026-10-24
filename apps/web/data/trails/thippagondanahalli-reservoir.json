@@ -1,0 +1,90 @@
+{
+  "sample": false,
+  "slug": "thippagondanahalli-reservoir",
+  "name": "Thippagondanahalli Reservoir",
+  "summary": "A short, easy ride off the road to a quiet spot on the shore of the Thippagondanahalli Reservoir, west of Bengaluru. The entrance is not marked as a viewpoint on maps and is hard to find; after about 500 m you walk the rest.",
+  "description": "A very beautiful entrance to the Thippagondanahalli lake. It is not a marked viewpoint on maps and is relatively hard to find. There is no road: ride about 500 m on the dirt, then continue on foot to the water.\n\nThippagondanahalli Reservoir (T.G. Halli), also called Chamarajasagara, was built on the Arkavathy river in the early 1930s, after Hesaraghatta's supply fell short, and became one of Bengaluru's main sources of drinking water. Pollution in its catchment later made the water unfit to drink, and supply from it stopped around 2012. Older reports describe the reservoir and its surroundings as controlled by the Bangalore Water Supply and Sewerage Board, with entry restricted, so check before you go and keep to existing tracks.",
+  "state": "karnataka",
+  "district": "Bengaluru Urban",
+  "nearestTown": "Thippagondanahalli",
+  "startPoint": {
+    "lon": 77.339083,
+    "lat": 12.981278
+  },
+  "sensitivity": "standard",
+  "routeShape": "out_and_back",
+  "distanceKm": 0.5,
+  "estDurationMin": 5,
+  "difficulty": "easy",
+  "terrain": [
+    "dirt"
+  ],
+  "suitableFor": [],
+  "bestMonths": [],
+  "seasonNotes": "Ridden in autumn (October). Summer might be better. Best months are not known yet.",
+  "hazards": [],
+  "safetyNotes": "There is no road and the way in is not obvious. Record a GPX track on the way in so you can find your way back, and walk the last stretch rather than riding to the water's edge.",
+  "surfaceNotes": "Dirt track and grass, no marked path.",
+  "contributorCredit": "Annuai",
+  "access": {
+    "accessClass": "unknown",
+    "restrictions": [],
+    "basis": "rider_observed",
+    "level": "community_reported",
+    "evidence": [
+      {
+        "kind": "other",
+        "description": "Ridden by the contributor on 18 October 2026, who reports it is open to everyone and not a road. Not checked by a moderator. Older reports say the Bangalore Water Supply and Sewerage Board restricts entry."
+      }
+    ]
+  },
+  "condition": {
+    "status": "open",
+    "effectiveFrom": "2026-10-18"
+  },
+  "media": [
+    {
+      "role": "cover",
+      "position": 0,
+      "altText": "Calm reservoir at dusk, with patches of green water plants and low hills across the water",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/thippagondanahalli-reservoir/photo-1-400.webp",
+        "800": "/photos/thippagondanahalli-reservoir/photo-1-800.webp",
+        "1200": "/photos/thippagondanahalli-reservoir/photo-1-1200.webp",
+        "1800": "/photos/thippagondanahalli-reservoir/photo-1-1800.webp"
+      },
+      "width": 2400,
+      "height": 1800
+    },
+    {
+      "role": "gallery",
+      "position": 1,
+      "altText": "Still water and a grassy bank with white boulders under a cloudy dusk sky",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/thippagondanahalli-reservoir/photo-2-400.webp",
+        "800": "/photos/thippagondanahalli-reservoir/photo-2-800.webp",
+        "1200": "/photos/thippagondanahalli-reservoir/photo-2-1200.webp",
+        "1800": "/photos/thippagondanahalli-reservoir/photo-2-1800.webp"
+      },
+      "width": 2400,
+      "height": 1800
+    },
+    {
+      "role": "gallery",
+      "position": 2,
+      "altText": "The reservoir shore from the grassy bank at dusk, with water plants and low hills in the distance",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/thippagondanahalli-reservoir/photo-3-400.webp",
+        "800": "/photos/thippagondanahalli-reservoir/photo-3-800.webp",
+        "1200": "/photos/thippagondanahalli-reservoir/photo-3-1200.webp",
+        "1800": "/photos/thippagondanahalli-reservoir/photo-3-1800.webp"
+      },
+      "width": 1800,
+      "height": 2400
+    }
+  ],
+  "publish": true
+}
