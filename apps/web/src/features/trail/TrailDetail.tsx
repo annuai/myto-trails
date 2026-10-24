@@ -5,6 +5,7 @@ import type { MediaDto, RouteDto, TrailDetailDto } from "@/server/queries/types"
 import { PlaceholderArt } from "@/ui/PlaceholderArt/PlaceholderArt";
 import { AccessDetails } from "./AccessDetails";
 import { GoNoGoStrip } from "./GoNoGoStrip";
+import { LocationSection } from "./LocationSection";
 import { RouteSection } from "./RouteSection";
 import { SafetyInformation } from "./SafetyInformation";
 import { SeasonStrip } from "./SeasonStrip";
@@ -98,6 +99,7 @@ export function TrailDetail({ trail, media, route = null, actions }: { trail: Tr
       </section>
 
       <RouteSection trail={trail} route={route} />
+      <LocationSection trail={trail} showMap={!route} />
       <SeasonStrip bestMonths={trail.bestMonths} />
       <SafetyInformation hazards={trail.hazards} safetyNotes={trail.safetyNotes} />
       <TrailGallery media={media.filter((m) => m !== cover)} />
