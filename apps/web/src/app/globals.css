@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "@moto-trails/tokens/tokens.css";
+@import "@moto-trails/tokens/trails.css";
+
+@layer base {
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition-duration: 0s !important;
+      animation-duration: 0s !important;
+    }
+  }
+}
