@@ -1,12 +1,12 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
+import { OSM_ATTRIBUTION, OSM_STYLE } from "./osm-style";
 import { useEffect, useRef, useState } from "react";
 
-const DEMO_STYLE = "https://demotiles.maplibre.org/style.json";
 
 /** One trail's line on a map. The elevation table and statistics beside it carry the same information. */
-export function RouteMap({ line, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? DEMO_STYLE }: { line: [number, number][]; styleUrl?: string }) {
+export function RouteMap({ line, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_URL }: { line: [number, number][]; styleUrl?: string }) {
   const container = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
@@ -21,7 +21,7 @@ export function RouteMap({ line, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_UR
         const maplibregl = await import("maplibre-gl");
         maplibregl.setWorkerUrl("/vendor/maplibre/maplibre-gl-worker.mjs");
         if (cancelled || !container.current) return;
-        const m = new maplibregl.Map({ container: container.current, style: styleUrl, center: line[0], zoom: 10, attributionControl: { compact: true } });
+        const m = new maplibregl.Map({ container: container.current, style: styleUrl || OSM_STYLE, center: line[0], zoom: 10, attributionControl: { compact: true } });
         map = m;
         m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
         m.on("error", () => {
@@ -58,7 +58,7 @@ export function RouteMap({ line, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_UR
         <div ref={container} className="absolute inset-0" />
         {status === "loading" ? <p className="absolute left-3 top-3 bg-surface px-2 py-1 text-sm">Loading map…</p> : null}
       </div>
-      <p className="text-xs text-muted">{process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ?? "Development map tiles. Set NEXT_PUBLIC_MAP_STYLE_URL and NEXT_PUBLIC_MAP_ATTRIBUTION for production."}</p>
+      <p className="text-xs text-muted">{process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ?? OSM_ATTRIBUTION}</p>
     </div>
   );
 }

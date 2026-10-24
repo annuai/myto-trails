@@ -1,5 +1,7 @@
 type Options = { dev: boolean; mapStyleUrl?: string; publicAssetBase?: string };
 
+const OSM_TILES = "https://tile.openstreetmap.org";
+
 const origin = (u?: string): string | null => {
   if (!u) return null;
   try {
@@ -17,8 +19,8 @@ export function buildCsp(o: Options): string {
   const mapHost = origin(o.mapStyleUrl);
   const demo = "https://demotiles.maplibre.org";
   const assets = origin(o.publicAssetBase);
-  const connect = ["'self'", mapHost ?? demo, ...(assets ? [assets] : [])];
-  const img = ["'self'", "data:", "blob:", ...(mapHost ? [mapHost] : []), ...(assets ? [assets] : [])];
+  const connect = ["'self'", mapHost ?? demo, OSM_TILES, ...(assets ? [assets] : [])];
+  const img = ["'self'", "data:", "blob:", OSM_TILES, ...(mapHost ? [mapHost] : []), ...(assets ? [assets] : [])];
   return [
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${o.dev ? " 'unsafe-eval'" : ""}`,

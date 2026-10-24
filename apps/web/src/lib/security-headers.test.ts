@@ -19,6 +19,11 @@ describe("buildCsp", () => {
     expect(directive(csp, "img-src")).toContain("data:");
     expect(directive(csp, "script-src")).not.toContain("'unsafe-eval'");
   });
+  it("allows OpenStreetMap tiles for the default basemap", () => {
+    const csp = buildCsp({ dev: false });
+    expect(directive(csp, "img-src")).toContain("https://tile.openstreetmap.org");
+    expect(directive(csp, "connect-src")).toContain("https://tile.openstreetmap.org"); // MapLibre fetches tiles with fetch()
+  });
   it("allows eval only while developing", () => {
     expect(directive(buildCsp({ dev: true }), "script-src")).toContain("'unsafe-eval'");
   });

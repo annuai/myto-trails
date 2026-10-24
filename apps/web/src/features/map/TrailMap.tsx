@@ -1,11 +1,11 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
+import { OSM_ATTRIBUTION, OSM_STYLE } from "./osm-style";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toFeatureCollection, type MapPoint, type MarkerShape } from "./geojson";
 
-const DEMO_STYLE = "https://demotiles.maplibre.org/style.json";
 const INDIA_CENTER: [number, number] = [78.9, 22.5];
 
 type Status = "loading" | "ready" | "failed";
@@ -48,7 +48,7 @@ function drawMarker(shape: MarkerShape, color: string): ImageData {
   return ctx.getImageData(0, 0, size, size);
 }
 
-export function TrailMap({ points, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? DEMO_STYLE }: { points: MapPoint[]; styleUrl?: string }) {
+export function TrailMap({ points, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_URL }: { points: MapPoint[]; styleUrl?: string }) {
   const container = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [selected, setSelected] = useState<Selected | null>(null);
@@ -66,7 +66,7 @@ export function TrailMap({ points, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_
         const maplibregl = await import("maplibre-gl");
         maplibregl.setWorkerUrl("/vendor/maplibre/maplibre-gl-worker.mjs");
         if (cancelled || !container.current) return;
-        const m = new maplibregl.Map({ container: container.current, style: styleUrl, center: INDIA_CENTER, zoom: 3.5, attributionControl: { compact: true } });
+        const m = new maplibregl.Map({ container: container.current, style: styleUrl || OSM_STYLE, center: INDIA_CENTER, zoom: 3.5, attributionControl: { compact: true } });
         map = m;
         m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
         m.on("error", (e) => {
@@ -154,7 +154,7 @@ export function TrailMap({ points, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_
         </div>
       )}
       {!empty && status !== "failed" ? (
-        <p className="text-xs text-muted">{process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ?? "Development map tiles. Set NEXT_PUBLIC_MAP_STYLE_URL and NEXT_PUBLIC_MAP_ATTRIBUTION for production."}</p>
+        <p className="text-xs text-muted">{process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ?? OSM_ATTRIBUTION}</p>
       ) : null}
       {selected ? (
         <div role="status" className="border-l-4 border-accent py-1 pl-4">
