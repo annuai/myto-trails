@@ -31,5 +31,4 @@ function art(slug: string, w: number, h: number, hero = false): string {
 for (const slug of [...samples.map((s) => s.slug), "generic"]) {
   for (const w of [400, 800, 1600]) await sharp(Buffer.from(art(slug, w, Math.round(w * 0.625)))).webp({ quality: 82 }).toFile(`public/placeholders/${slug}-${w}.webp`);
 }
-await sharp(Buffer.from(art("home-hero", 2400, 1100, true))).webp({ quality: 82 }).toFile("public/placeholders/hero-2400.webp");
 console.log("done");

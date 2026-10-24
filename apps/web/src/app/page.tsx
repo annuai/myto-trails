@@ -30,7 +30,7 @@ async function Regions() {
 export default function Home() {
   return (
     <>
-      <Hero imageSrc="/placeholders/hero-2400.webp" />
+      <Hero imageSrc="/images/hero/home-hero-rider-on-dirt-trail.webp" />
       <Section id="nearby" title="Trails near you" intro="Allow your location to see the closest trails and roughly how long each takes to reach.">
         <NearbyTrails />
       </Section>

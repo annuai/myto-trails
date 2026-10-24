@@ -4,7 +4,7 @@ import Image from "next/image";
 export function FooterBanner() {
   return (
     <div className="w-full overflow-hidden bg-background" aria-hidden="true">
-      <Image src="/brand/footer-ridge.webp" alt="" width={2000} height={667} sizes="100vw" className="h-auto w-full" />
+      <Image src="/images/footer/footer-rider-on-mountain-ridge.webp" alt="" width={2000} height={667} sizes="100vw" className="h-auto w-full" />
     </div>
   );
 }
