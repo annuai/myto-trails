@@ -27,6 +27,8 @@ export type TrailFixture = {
   distanceKm: number | null;
   difficulty: "easy" | "moderate" | "hard" | "expert";
   terrain: string[];
+  bestMonths: number[];
+  suitableFor: string[];
 };
 
 let counter = 0;
@@ -64,6 +66,8 @@ export async function insertTrailFixture(
     distanceKm: 24.1,
     difficulty: "moderate",
     terrain: ["gravel"],
+    bestMonths: [],
+    suitableFor: [],
     ...overrides,
   };
 
@@ -87,9 +91,9 @@ export async function insertTrailFixture(
   const trailId = trail!.id as string;
 
   const [revision] = await sql`
-    insert into trail_revision (trail_id, version_no, state, name, summary, nearest_town, start_point, difficulty, terrain, distance_km, decided_at)
+    insert into trail_revision (trail_id, version_no, state, name, summary, nearest_town, start_point, difficulty, terrain, distance_km, best_months, suitable_for, decided_at)
     values (${trailId}, 1, 'approved', ${f.name}, ${f.summary}, 'Fixture Town',
-      ST_SetSRID(ST_MakePoint(${f.startPoint.lon}, ${f.startPoint.lat}), 4326)::geography, ${f.difficulty}, ${f.terrain}, ${f.distanceKm}, now())
+      ST_SetSRID(ST_MakePoint(${f.startPoint.lon}, ${f.startPoint.lat}), 4326)::geography, ${f.difficulty}, ${f.terrain}, ${f.distanceKm}, ${f.bestMonths}, ${f.suitableFor}, now())
     returning id`;
   const revisionId = revision!.id as string;
   if (f.linkPublishedRevision) await sql`update trail set published_revision_id = ${revisionId} where id = ${trailId}`;
