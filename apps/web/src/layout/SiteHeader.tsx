@@ -42,8 +42,8 @@ export function SiteHeader({ account }: { account?: ReactNode }) {
           floating ? "max-w-6xl rounded-full bg-white/95 shadow-nav backdrop-blur" : "border-b border-border bg-background/90 backdrop-blur"
         }`}
       >
-        <div className={`relative mx-auto flex min-h-16 w-full items-center justify-between gap-4 ${floating ? "px-6" : "container-wide"}`}>
-          <Link href="/" className="inline-flex min-h-11 items-center">
+        <div className={`relative mx-auto flex w-full items-center justify-between gap-4 ${floating ? "p-2.5" : "container-wide min-h-16"}`}>
+          <Link href="/" className={`inline-flex min-h-11 items-center ${floating ? "pl-4" : ""}`}>
             <Image src="/brand/logo.png" alt="Moto Trails" width={99} height={32} priority />
           </Link>
 
