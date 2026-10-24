@@ -5,7 +5,9 @@ export type { Sql };
 
 export function createSql(databaseUrl: string): Sql {
   // prepare:false keeps this compatible with transaction-mode connection poolers (Supabase pooler).
-  return postgres(databaseUrl, { max: 5, prepare: false, onnotice: () => {} });
+  // One connection while `next build` prerenders pages, so the build cannot use up a small pooler (Supabase session mode allows 15).
+  const max = process.env.NEXT_PHASE === "phase-production-build" ? 1 : 5;
+  return postgres(databaseUrl, { max, prepare: false, onnotice: () => {} });
 }
 
 let cached: Sql | undefined;
