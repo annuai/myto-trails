@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { requireUser } from "@/server/auth/session";
 import { signOutAction, signOutEverywhereAction, updateNameAction } from "./actions";
 
@@ -23,6 +24,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         {sp.error ? <p role="status" className="text-sm font-medium text-status-stop">Use 2 to 40 characters.</p> : null}
         <button type="submit" className="min-h-12 self-start rounded-md bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save name</button>
       </form>
+      <p><Link href="/account/contributions" className="underline underline-offset-4">Your contributions</Link></p>
       <div className="flex flex-wrap gap-4">
         <form action={signOutAction}>
           <button type="submit" className="min-h-12 rounded-md border border-foreground px-5 text-sm font-medium">Sign out</button>
