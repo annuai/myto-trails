@@ -38,6 +38,17 @@ export function runStorageContract(name: string, make: () => Promise<Harness>): 
       expect(await provider.get("quarantine", key)).toBeNull();
     });
 
+    it("put stores bytes server-side that head and get then report, and refuses to overwrite unsafe keys", async () => {
+      const { provider } = await make();
+      const key = freshKey();
+      const bytes = Uint8Array.from({ length: 40 }, (_, i) => i);
+      await provider.put("originals", key, bytes, "application/gpx+xml");
+      expect(await provider.head("originals", key)).toEqual({ sizeBytes: 40, contentType: "application/gpx+xml" });
+      expect(Array.from((await provider.get("originals", key))!)).toEqual(Array.from(bytes));
+      await expect(provider.put("originals", "../x", bytes, "text/plain")).rejects.toThrow(InvalidKeyError);
+      await provider.remove("originals", key);
+    });
+
     it("remove is idempotent", async () => {
       const { provider, upload } = await make();
       const key = freshKey();

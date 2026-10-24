@@ -14,7 +14,7 @@ export class MemoryStorageProvider implements StorageProvider {
   }
 
   /** Test and development helper: simulates a completed upload. */
-  put(bucket: StorageBucket, key: string, bytes: Uint8Array, contentType: string): void {
+  put_(bucket: StorageBucket, key: string, bytes: Uint8Array, contentType: string): void {
     this.objects.set(this.id(bucket, key), { sizeBytes: bytes.byteLength, contentType, bytes: Uint8Array.from(bytes) });
   }
 
@@ -39,6 +39,10 @@ export class MemoryStorageProvider implements StorageProvider {
   async head(bucket: StorageBucket, key: string): Promise<{ sizeBytes: number; contentType: string } | null> {
     const o = this.objects.get(this.id(bucket, key));
     return o ? { sizeBytes: o.sizeBytes, contentType: o.contentType } : null;
+  }
+
+  async put(bucket: StorageBucket, key: string, bytes: Uint8Array, contentType: string): Promise<void> {
+    this.put_(bucket, key, bytes, contentType);
   }
 
   async get(bucket: StorageBucket, key: string): Promise<Uint8Array | null> {

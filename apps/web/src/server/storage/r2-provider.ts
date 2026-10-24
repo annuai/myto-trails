@@ -69,6 +69,11 @@ export function createR2Provider(config: R2Config): StorageProvider {
       }
     },
 
+    async put(bucket, key, bytes, contentType) {
+      const Key = objectKey(bucket, key);
+      await client.send(new PutObjectCommand({ Bucket: config.bucket, Key, Body: bytes, ContentType: contentType, ContentLength: bytes.byteLength }));
+    },
+
     async get(bucket, key) {
       const Key = objectKey(bucket, key);
       try {

@@ -132,6 +132,10 @@ export class LocalStorageProvider implements StorageProvider {
     }
   }
 
+  async put(bucket: StorageBucket, key: string, bytes: Uint8Array, contentType: string): Promise<void> {
+    this.writeObject(bucket, key, bytes, contentType);
+  }
+
   async get(bucket: StorageBucket, key: string): Promise<Uint8Array | null> {
     const file = this.#file(bucket, key);
     try {

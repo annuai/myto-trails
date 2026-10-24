@@ -56,6 +56,12 @@ export function createSupabaseProvider(config: SupabaseConfig, client: SupabaseC
       return { sizeBytes: data.size ?? 0, contentType: data.contentType ?? "" };
     },
 
+    async put(bucket, key, bytes, contentType) {
+      assertSafeKey(key);
+      const { error } = await from(bucket).upload(key, bytes, { contentType, upsert: false });
+      if (error) throw new Error(`Could not store object: ${error.message}`);
+    },
+
     async get(bucket, key) {
       assertSafeKey(key);
       const { data, error } = await from(bucket).download(key);

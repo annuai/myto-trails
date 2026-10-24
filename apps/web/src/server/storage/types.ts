@@ -20,6 +20,8 @@ export interface StorageProvider {
     downloadFilename?: string;
   }): Promise<string>;
   head(bucket: StorageBucket, key: string): Promise<{ sizeBytes: number; contentType: string } | null>;
+  /** Stores bytes from the server (used by processing jobs). */
+  put(bucket: StorageBucket, key: string, bytes: Uint8Array, contentType: string): Promise<void>;
   /** The object's bytes, or null when it does not exist. */
   get(bucket: StorageBucket, key: string): Promise<Uint8Array | null>;
   remove(bucket: StorageBucket, key: string): Promise<void>;
