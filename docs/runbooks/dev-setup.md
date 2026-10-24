@@ -9,6 +9,23 @@ npm run dev -w @moto-trails/web   # http://localhost:3000
 ```
 With no configuration the app runs with `STORAGE_PROVIDER=memory`.
 
+## Local database (PostgreSQL 17 + PostGIS)
+Install once: `brew install postgresql@17 postgis` (large: it pulls in gdal, boost and others; if `node` stops working afterwards run `brew upgrade node`).
+
+```bash
+npm run db:start -w @moto-trails/web          # project-local cluster in .pgdata on port 54329, creates database moto_trails
+export DATABASE_URL=postgres://localhost:54329/moto_trails
+npm run db:migrate -w @moto-trails/web         # apply db/migrations
+npm run db:seed:regions -w @moto-trails/web    # India, 28 states, 8 union territories
+npm run db:import -w @moto-trails/web -- data/sample-trails.json   # six fictional SAMPLE trails
+npm run dev -w @moto-trails/web
+npm run test:db -w @moto-trails/web            # database tests (own throwaway databases)
+npm run db:stop -w @moto-trails/web
+```
+Sample trails are clearly labelled, are never indexed, and the importer refuses them in production. Real trails go in a JSON file with the same shape (see `src/server/import/schema.ts`) and are imported the same way.
+
+**Production builds query the database** (cached pages such as `/regions` and `/sitemap.xml` are prerendered), so a build needs a reachable, migrated `DATABASE_URL`; the same applies to Vercel builds. Run `npm run db:migrate` against Supabase only when you decide to (it is not run automatically).
+
 ## Environment variables
 Copy `.env.example` to `apps/web/.env.local` and fill it in yourself. Never paste keys into chat or commit them; `.env*` is git-ignored except `.env.example`.
 

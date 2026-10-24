@@ -5,11 +5,28 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       SITE_URL: https://ci.example.test
+      TEST_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/moto_ci
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,6 +37,11 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      - run: npm run test:db -w @moto-trails/web
       - run: npm run check:colors
+      # The build queries the database (cached pages such as /regions are prerendered), so give it a migrated one.
+      - run: PGPASSWORD=postgres psql -h localhost -U postgres -c "create database moto_ci"
+      - run: npm run db:migrate -w @moto-trails/web
+      - run: npm run db:seed:regions -w @moto-trails/web
       - run: npm run build
       - run: npm run storage:smoke -w @moto-trails/web

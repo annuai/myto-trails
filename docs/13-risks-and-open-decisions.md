@@ -71,3 +71,10 @@ Likelihood (L) and impact (I): Low / Medium / High. Owner suggestions are placeh
 14. Which payment gateway will Myto use for donations, and does it support UPI and international cards?
 15. Does Supabase offer a region close to India, and what do Vercel's commercial terms require? (not verified)
 16. Which open place dataset (and licence) will seed the gazetteer?
+
+## 4. M1 implementation deviations from the data model (doc 06)
+- `trail.id` (a never-reused UUID) is the stable public id; there is no separate `public_id` column.
+- `contributor_credit` (text) replaces `author_id` until accounts exist (M3).
+- `route`, `gpx_file`, `place`, `device`, `donation` and `submission` tables arrive in later milestones; `trail_slug_history` (permanent redirects on rename) is deferred to M6.
+- `verified_at`, `valid_until` and `expected_until` are `date` columns; a date means "valid through the end of that UTC day".
+- Public reads go through `public_*` views under the `anon` role (ADR 0004). Sample trails (`is_sample`) exist only for development and are excluded from the production sitemap and from indexing.
