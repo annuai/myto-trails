@@ -1,0 +1,1314 @@
+[
+ {
+  "slug": "bengaluru",
+  "name": "Bengaluru",
+  "altNames": [
+   "Bangalore",
+   "Bengalooru"
+  ],
+  "kind": "city",
+  "state": "karnataka",
+  "lat": 12.9716,
+  "lon": 77.5946,
+  "rank": 1
+ },
+ {
+  "slug": "mysuru",
+  "name": "Mysuru",
+  "altNames": [
+   "Mysore"
+  ],
+  "kind": "city",
+  "state": "karnataka",
+  "lat": 12.2958,
+  "lon": 76.6394,
+  "rank": 2
+ },
+ {
+  "slug": "mangaluru",
+  "name": "Mangaluru",
+  "altNames": [
+   "Mangalore"
+  ],
+  "kind": "city",
+  "state": "karnataka",
+  "lat": 12.9141,
+  "lon": 74.856,
+  "rank": 2
+ },
+ {
+  "slug": "hubballi",
+  "name": "Hubballi",
+  "altNames": [
+   "Hubli"
+  ],
+  "kind": "city",
+  "state": "karnataka",
+  "lat": 15.3647,
+  "lon": 75.124,
+  "rank": 3
+ },
+ {
+  "slug": "belagavi",
+  "name": "Belagavi",
+  "altNames": [
+   "Belgaum"
+  ],
+  "kind": "city",
+  "state": "karnataka",
+  "lat": 15.8497,
+  "lon": 74.4977,
+  "rank": 3
+ },
+ {
+  "slug": "chikkamagaluru",
+  "name": "Chikkamagaluru",
+  "altNames": [
+   "Chikmagalur",
+   "Chikmagalur"
+  ],
+  "kind": "town",
+  "state": "karnataka",
+  "lat": 13.3161,
+  "lon": 75.772,
+  "rank": 3
+ },
+ {
+  "slug": "madikeri",
+  "name": "Madikeri",
+  "altNames": [
+   "Coorg",
+   "Kodagu",
+   "Mercara"
+  ],
+  "kind": "hill_station",
+  "state": "karnataka",
+  "lat": 12.4244,
+  "lon": 75.7382,
+  "rank": 4
+ },
+ {
+  "slug": "sakleshpur",
+  "name": "Sakleshpur",
+  "altNames": [
+   "Sakleshpura"
+  ],
+  "kind": "town",
+  "state": "karnataka",
+  "lat": 12.942,
+  "lon": 75.785,
+  "rank": 4
+ },
+ {
+  "slug": "shivamogga",
+  "name": "Shivamogga",
+  "altNames": [
+   "Shimoga"
+  ],
+  "kind": "city",
+  "state": "karnataka",
+  "lat": 13.9299,
+  "lon": 75.5681,
+  "rank": 3
+ },
+ {
+  "slug": "hampi",
+  "name": "Hampi",
+  "altNames": [],
+  "kind": "village",
+  "state": "karnataka",
+  "lat": 15.335,
+  "lon": 76.46,
+  "rank": 4
+ },
+ {
+  "slug": "dandeli",
+  "name": "Dandeli",
+  "altNames": [],
+  "kind": "town",
+  "state": "karnataka",
+  "lat": 15.267,
+  "lon": 74.617,
+  "rank": 4
+ },
+ {
+  "slug": "udupi",
+  "name": "Udupi",
+  "altNames": [
+   "Udipi"
+  ],
+  "kind": "town",
+  "state": "karnataka",
+  "lat": 13.3409,
+  "lon": 74.7421,
+  "rank": 3
+ },
+ {
+  "slug": "kudremukh",
+  "name": "Kudremukh",
+  "altNames": [],
+  "kind": "village",
+  "state": "karnataka",
+  "lat": 13.219,
+  "lon": 75.25,
+  "rank": 5
+ },
+ {
+  "slug": "thiruvananthapuram",
+  "name": "Thiruvananthapuram",
+  "altNames": [
+   "Trivandrum"
+  ],
+  "kind": "city",
+  "state": "kerala",
+  "lat": 8.5241,
+  "lon": 76.9366,
+  "rank": 2
+ },
+ {
+  "slug": "kochi",
+  "name": "Kochi",
+  "altNames": [
+   "Cochin",
+   "Ernakulam"
+  ],
+  "kind": "city",
+  "state": "kerala",
+  "lat": 9.9312,
+  "lon": 76.2673,
+  "rank": 2
+ },
+ {
+  "slug": "kozhikode",
+  "name": "Kozhikode",
+  "altNames": [
+   "Calicut"
+  ],
+  "kind": "city",
+  "state": "kerala",
+  "lat": 11.2588,
+  "lon": 75.7804,
+  "rank": 2
+ },
+ {
+  "slug": "thrissur",
+  "name": "Thrissur",
+  "altNames": [
+   "Trichur"
+  ],
+  "kind": "city",
+  "state": "kerala",
+  "lat": 10.5276,
+  "lon": 76.2144,
+  "rank": 3
+ },
+ {
+  "slug": "kannur",
+  "name": "Kannur",
+  "altNames": [
+   "Cannanore"
+  ],
+  "kind": "city",
+  "state": "kerala",
+  "lat": 11.8745,
+  "lon": 75.3704,
+  "rank": 3
+ },
+ {
+  "slug": "munnar",
+  "name": "Munnar",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "kerala",
+  "lat": 10.0889,
+  "lon": 77.0595,
+  "rank": 4
+ },
+ {
+  "slug": "kalpetta",
+  "name": "Kalpetta",
+  "altNames": [
+   "Wayanad"
+  ],
+  "kind": "town",
+  "state": "kerala",
+  "lat": 11.6085,
+  "lon": 76.083,
+  "rank": 4
+ },
+ {
+  "slug": "idukki",
+  "name": "Idukki",
+  "altNames": [],
+  "kind": "town",
+  "state": "kerala",
+  "lat": 9.8494,
+  "lon": 76.971,
+  "rank": 4
+ },
+ {
+  "slug": "thekkady",
+  "name": "Thekkady",
+  "altNames": [
+   "Periyar"
+  ],
+  "kind": "village",
+  "state": "kerala",
+  "lat": 9.599,
+  "lon": 77.167,
+  "rank": 4
+ },
+ {
+  "slug": "palakkad",
+  "name": "Palakkad",
+  "altNames": [
+   "Palghat"
+  ],
+  "kind": "city",
+  "state": "kerala",
+  "lat": 10.7867,
+  "lon": 76.6548,
+  "rank": 3
+ },
+ {
+  "slug": "kollam",
+  "name": "Kollam",
+  "altNames": [
+   "Quilon"
+  ],
+  "kind": "city",
+  "state": "kerala",
+  "lat": 8.8932,
+  "lon": 76.6141,
+  "rank": 3
+ },
+ {
+  "slug": "kottayam",
+  "name": "Kottayam",
+  "altNames": [],
+  "kind": "city",
+  "state": "kerala",
+  "lat": 9.5916,
+  "lon": 76.5222,
+  "rank": 3
+ },
+ {
+  "slug": "alappuzha",
+  "name": "Alappuzha",
+  "altNames": [
+   "Alleppey"
+  ],
+  "kind": "town",
+  "state": "kerala",
+  "lat": 9.4981,
+  "lon": 76.3388,
+  "rank": 3
+ },
+ {
+  "slug": "vagamon",
+  "name": "Vagamon",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "kerala",
+  "lat": 9.685,
+  "lon": 76.905,
+  "rank": 5
+ },
+ {
+  "slug": "chennai",
+  "name": "Chennai",
+  "altNames": [
+   "Madras"
+  ],
+  "kind": "city",
+  "state": "tamil-nadu",
+  "lat": 13.0827,
+  "lon": 80.2707,
+  "rank": 1
+ },
+ {
+  "slug": "coimbatore",
+  "name": "Coimbatore",
+  "altNames": [
+   "Kovai"
+  ],
+  "kind": "city",
+  "state": "tamil-nadu",
+  "lat": 11.0168,
+  "lon": 76.9558,
+  "rank": 2
+ },
+ {
+  "slug": "madurai",
+  "name": "Madurai",
+  "altNames": [],
+  "kind": "city",
+  "state": "tamil-nadu",
+  "lat": 9.9252,
+  "lon": 78.1198,
+  "rank": 2
+ },
+ {
+  "slug": "ooty",
+  "name": "Ooty",
+  "altNames": [
+   "Udhagamandalam",
+   "Ootacamund"
+  ],
+  "kind": "hill_station",
+  "state": "tamil-nadu",
+  "lat": 11.4064,
+  "lon": 76.6932,
+  "rank": 4
+ },
+ {
+  "slug": "kodaikanal",
+  "name": "Kodaikanal",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "tamil-nadu",
+  "lat": 10.2381,
+  "lon": 77.4892,
+  "rank": 4
+ },
+ {
+  "slug": "tiruchirappalli",
+  "name": "Tiruchirappalli",
+  "altNames": [
+   "Trichy",
+   "Tiruchi"
+  ],
+  "kind": "city",
+  "state": "tamil-nadu",
+  "lat": 10.7905,
+  "lon": 78.7047,
+  "rank": 3
+ },
+ {
+  "slug": "salem",
+  "name": "Salem",
+  "altNames": [],
+  "kind": "city",
+  "state": "tamil-nadu",
+  "lat": 11.6643,
+  "lon": 78.146,
+  "rank": 3
+ },
+ {
+  "slug": "coonoor",
+  "name": "Coonoor",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "tamil-nadu",
+  "lat": 11.353,
+  "lon": 76.7959,
+  "rank": 5
+ },
+ {
+  "slug": "yercaud",
+  "name": "Yercaud",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "tamil-nadu",
+  "lat": 11.775,
+  "lon": 78.209,
+  "rank": 5
+ },
+ {
+  "slug": "puducherry",
+  "name": "Puducherry",
+  "altNames": [
+   "Pondicherry",
+   "Pondy"
+  ],
+  "kind": "city",
+  "state": "puducherry",
+  "lat": 11.9416,
+  "lon": 79.8083,
+  "rank": 3
+ },
+ {
+  "slug": "hyderabad",
+  "name": "Hyderabad",
+  "altNames": [
+   "Secunderabad"
+  ],
+  "kind": "city",
+  "state": "telangana",
+  "lat": 17.385,
+  "lon": 78.4867,
+  "rank": 1
+ },
+ {
+  "slug": "visakhapatnam",
+  "name": "Visakhapatnam",
+  "altNames": [
+   "Vizag",
+   "Waltair"
+  ],
+  "kind": "city",
+  "state": "andhra-pradesh",
+  "lat": 17.6868,
+  "lon": 83.2185,
+  "rank": 2
+ },
+ {
+  "slug": "vijayawada",
+  "name": "Vijayawada",
+  "altNames": [
+   "Bezawada"
+  ],
+  "kind": "city",
+  "state": "andhra-pradesh",
+  "lat": 16.5062,
+  "lon": 80.648,
+  "rank": 2
+ },
+ {
+  "slug": "tirupati",
+  "name": "Tirupati",
+  "altNames": [],
+  "kind": "city",
+  "state": "andhra-pradesh",
+  "lat": 13.6288,
+  "lon": 79.4192,
+  "rank": 3
+ },
+ {
+  "slug": "araku-valley",
+  "name": "Araku Valley",
+  "altNames": [
+   "Araku"
+  ],
+  "kind": "hill_station",
+  "state": "andhra-pradesh",
+  "lat": 18.3273,
+  "lon": 82.8775,
+  "rank": 5
+ },
+ {
+  "slug": "mumbai",
+  "name": "Mumbai",
+  "altNames": [
+   "Bombay"
+  ],
+  "kind": "city",
+  "state": "maharashtra",
+  "lat": 19.076,
+  "lon": 72.8777,
+  "rank": 1
+ },
+ {
+  "slug": "pune",
+  "name": "Pune",
+  "altNames": [
+   "Poona"
+  ],
+  "kind": "city",
+  "state": "maharashtra",
+  "lat": 18.5204,
+  "lon": 73.8567,
+  "rank": 1
+ },
+ {
+  "slug": "nashik",
+  "name": "Nashik",
+  "altNames": [
+   "Nasik"
+  ],
+  "kind": "city",
+  "state": "maharashtra",
+  "lat": 19.9975,
+  "lon": 73.7898,
+  "rank": 3
+ },
+ {
+  "slug": "nagpur",
+  "name": "Nagpur",
+  "altNames": [],
+  "kind": "city",
+  "state": "maharashtra",
+  "lat": 21.1458,
+  "lon": 79.0882,
+  "rank": 2
+ },
+ {
+  "slug": "lonavala",
+  "name": "Lonavala",
+  "altNames": [
+   "Lonavla"
+  ],
+  "kind": "hill_station",
+  "state": "maharashtra",
+  "lat": 18.7557,
+  "lon": 73.4091,
+  "rank": 4
+ },
+ {
+  "slug": "mahabaleshwar",
+  "name": "Mahabaleshwar",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "maharashtra",
+  "lat": 17.9237,
+  "lon": 73.6586,
+  "rank": 4
+ },
+ {
+  "slug": "kolhapur",
+  "name": "Kolhapur",
+  "altNames": [],
+  "kind": "city",
+  "state": "maharashtra",
+  "lat": 16.705,
+  "lon": 74.2433,
+  "rank": 3
+ },
+ {
+  "slug": "chhatrapati-sambhajinagar",
+  "name": "Chhatrapati Sambhajinagar",
+  "altNames": [
+   "Aurangabad"
+  ],
+  "kind": "city",
+  "state": "maharashtra",
+  "lat": 19.8762,
+  "lon": 75.3433,
+  "rank": 3
+ },
+ {
+  "slug": "panchgani",
+  "name": "Panchgani",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "maharashtra",
+  "lat": 17.9244,
+  "lon": 73.8,
+  "rank": 5
+ },
+ {
+  "slug": "igatpuri",
+  "name": "Igatpuri",
+  "altNames": [],
+  "kind": "town",
+  "state": "maharashtra",
+  "lat": 19.695,
+  "lon": 73.562,
+  "rank": 5
+ },
+ {
+  "slug": "matheran",
+  "name": "Matheran",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "maharashtra",
+  "lat": 18.9867,
+  "lon": 73.2672,
+  "rank": 5
+ },
+ {
+  "slug": "panaji",
+  "name": "Panaji",
+  "altNames": [
+   "Panjim"
+  ],
+  "kind": "city",
+  "state": "goa",
+  "lat": 15.4909,
+  "lon": 73.8278,
+  "rank": 3
+ },
+ {
+  "slug": "margao",
+  "name": "Margao",
+  "altNames": [
+   "Madgaon"
+  ],
+  "kind": "town",
+  "state": "goa",
+  "lat": 15.2832,
+  "lon": 73.9862,
+  "rank": 4
+ },
+ {
+  "slug": "ahmedabad",
+  "name": "Ahmedabad",
+  "altNames": [
+   "Amdavad"
+  ],
+  "kind": "city",
+  "state": "gujarat",
+  "lat": 23.0225,
+  "lon": 72.5714,
+  "rank": 1
+ },
+ {
+  "slug": "surat",
+  "name": "Surat",
+  "altNames": [],
+  "kind": "city",
+  "state": "gujarat",
+  "lat": 21.1702,
+  "lon": 72.8311,
+  "rank": 2
+ },
+ {
+  "slug": "vadodara",
+  "name": "Vadodara",
+  "altNames": [
+   "Baroda"
+  ],
+  "kind": "city",
+  "state": "gujarat",
+  "lat": 22.3072,
+  "lon": 73.1812,
+  "rank": 2
+ },
+ {
+  "slug": "rajkot",
+  "name": "Rajkot",
+  "altNames": [],
+  "kind": "city",
+  "state": "gujarat",
+  "lat": 22.3039,
+  "lon": 70.8022,
+  "rank": 3
+ },
+ {
+  "slug": "bhuj",
+  "name": "Bhuj",
+  "altNames": [
+   "Kutch"
+  ],
+  "kind": "town",
+  "state": "gujarat",
+  "lat": 23.242,
+  "lon": 69.6669,
+  "rank": 4
+ },
+ {
+  "slug": "saputara",
+  "name": "Saputara",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "gujarat",
+  "lat": 20.571,
+  "lon": 73.751,
+  "rank": 5
+ },
+ {
+  "slug": "jaipur",
+  "name": "Jaipur",
+  "altNames": [],
+  "kind": "city",
+  "state": "rajasthan",
+  "lat": 26.9124,
+  "lon": 75.7873,
+  "rank": 2
+ },
+ {
+  "slug": "jodhpur",
+  "name": "Jodhpur",
+  "altNames": [],
+  "kind": "city",
+  "state": "rajasthan",
+  "lat": 26.2389,
+  "lon": 73.0243,
+  "rank": 3
+ },
+ {
+  "slug": "udaipur",
+  "name": "Udaipur",
+  "altNames": [],
+  "kind": "city",
+  "state": "rajasthan",
+  "lat": 24.5854,
+  "lon": 73.7125,
+  "rank": 3
+ },
+ {
+  "slug": "jaisalmer",
+  "name": "Jaisalmer",
+  "altNames": [],
+  "kind": "town",
+  "state": "rajasthan",
+  "lat": 26.9157,
+  "lon": 70.9083,
+  "rank": 4
+ },
+ {
+  "slug": "pushkar",
+  "name": "Pushkar",
+  "altNames": [],
+  "kind": "town",
+  "state": "rajasthan",
+  "lat": 26.49,
+  "lon": 74.551,
+  "rank": 5
+ },
+ {
+  "slug": "mount-abu",
+  "name": "Mount Abu",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "rajasthan",
+  "lat": 24.5926,
+  "lon": 72.7156,
+  "rank": 4
+ },
+ {
+  "slug": "bikaner",
+  "name": "Bikaner",
+  "altNames": [],
+  "kind": "city",
+  "state": "rajasthan",
+  "lat": 28.0229,
+  "lon": 73.3119,
+  "rank": 3
+ },
+ {
+  "slug": "ajmer",
+  "name": "Ajmer",
+  "altNames": [],
+  "kind": "city",
+  "state": "rajasthan",
+  "lat": 26.4499,
+  "lon": 74.6399,
+  "rank": 3
+ },
+ {
+  "slug": "new-delhi",
+  "name": "New Delhi",
+  "altNames": [
+   "Delhi"
+  ],
+  "kind": "city",
+  "state": "delhi",
+  "lat": 28.6139,
+  "lon": 77.209,
+  "rank": 1
+ },
+ {
+  "slug": "gurugram",
+  "name": "Gurugram",
+  "altNames": [
+   "Gurgaon"
+  ],
+  "kind": "city",
+  "state": "haryana",
+  "lat": 28.4595,
+  "lon": 77.0266,
+  "rank": 2
+ },
+ {
+  "slug": "noida",
+  "name": "Noida",
+  "altNames": [],
+  "kind": "city",
+  "state": "uttar-pradesh",
+  "lat": 28.5355,
+  "lon": 77.391,
+  "rank": 2
+ },
+ {
+  "slug": "chandigarh",
+  "name": "Chandigarh",
+  "altNames": [],
+  "kind": "city",
+  "state": "chandigarh",
+  "lat": 30.7333,
+  "lon": 76.7794,
+  "rank": 2
+ },
+ {
+  "slug": "amritsar",
+  "name": "Amritsar",
+  "altNames": [],
+  "kind": "city",
+  "state": "punjab",
+  "lat": 31.634,
+  "lon": 74.8723,
+  "rank": 3
+ },
+ {
+  "slug": "ludhiana",
+  "name": "Ludhiana",
+  "altNames": [],
+  "kind": "city",
+  "state": "punjab",
+  "lat": 30.901,
+  "lon": 75.8573,
+  "rank": 3
+ },
+ {
+  "slug": "shimla",
+  "name": "Shimla",
+  "altNames": [
+   "Simla"
+  ],
+  "kind": "hill_station",
+  "state": "himachal-pradesh",
+  "lat": 31.1048,
+  "lon": 77.1734,
+  "rank": 3
+ },
+ {
+  "slug": "manali",
+  "name": "Manali",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "himachal-pradesh",
+  "lat": 32.2396,
+  "lon": 77.1887,
+  "rank": 4
+ },
+ {
+  "slug": "dharamshala",
+  "name": "Dharamshala",
+  "altNames": [
+   "Dharamsala"
+  ],
+  "kind": "hill_station",
+  "state": "himachal-pradesh",
+  "lat": 32.219,
+  "lon": 76.3234,
+  "rank": 4
+ },
+ {
+  "slug": "mcleod-ganj",
+  "name": "McLeod Ganj",
+  "altNames": [
+   "Mcleodganj"
+  ],
+  "kind": "hill_station",
+  "state": "himachal-pradesh",
+  "lat": 32.2426,
+  "lon": 76.3213,
+  "rank": 5
+ },
+ {
+  "slug": "kasol",
+  "name": "Kasol",
+  "altNames": [],
+  "kind": "village",
+  "state": "himachal-pradesh",
+  "lat": 32.01,
+  "lon": 77.315,
+  "rank": 5
+ },
+ {
+  "slug": "kaza",
+  "name": "Kaza",
+  "altNames": [
+   "Spiti"
+  ],
+  "kind": "town",
+  "state": "himachal-pradesh",
+  "lat": 32.225,
+  "lon": 78.071,
+  "rank": 5
+ },
+ {
+  "slug": "kullu",
+  "name": "Kullu",
+  "altNames": [],
+  "kind": "town",
+  "state": "himachal-pradesh",
+  "lat": 31.9592,
+  "lon": 77.1089,
+  "rank": 4
+ },
+ {
+  "slug": "dehradun",
+  "name": "Dehradun",
+  "altNames": [],
+  "kind": "city",
+  "state": "uttarakhand",
+  "lat": 30.3165,
+  "lon": 78.0322,
+  "rank": 2
+ },
+ {
+  "slug": "rishikesh",
+  "name": "Rishikesh",
+  "altNames": [],
+  "kind": "town",
+  "state": "uttarakhand",
+  "lat": 30.0869,
+  "lon": 78.2676,
+  "rank": 4
+ },
+ {
+  "slug": "mussoorie",
+  "name": "Mussoorie",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "uttarakhand",
+  "lat": 30.4598,
+  "lon": 78.0644,
+  "rank": 4
+ },
+ {
+  "slug": "nainital",
+  "name": "Nainital",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "uttarakhand",
+  "lat": 29.3919,
+  "lon": 79.4542,
+  "rank": 4
+ },
+ {
+  "slug": "haridwar",
+  "name": "Haridwar",
+  "altNames": [],
+  "kind": "city",
+  "state": "uttarakhand",
+  "lat": 29.9457,
+  "lon": 78.1642,
+  "rank": 3
+ },
+ {
+  "slug": "srinagar",
+  "name": "Srinagar",
+  "altNames": [],
+  "kind": "city",
+  "state": "jammu-and-kashmir",
+  "lat": 34.0837,
+  "lon": 74.7973,
+  "rank": 2
+ },
+ {
+  "slug": "jammu",
+  "name": "Jammu",
+  "altNames": [],
+  "kind": "city",
+  "state": "jammu-and-kashmir",
+  "lat": 32.7266,
+  "lon": 74.857,
+  "rank": 3
+ },
+ {
+  "slug": "leh",
+  "name": "Leh",
+  "altNames": [],
+  "kind": "town",
+  "state": "ladakh",
+  "lat": 34.1526,
+  "lon": 77.577,
+  "rank": 4
+ },
+ {
+  "slug": "kargil",
+  "name": "Kargil",
+  "altNames": [],
+  "kind": "town",
+  "state": "ladakh",
+  "lat": 34.5539,
+  "lon": 76.1349,
+  "rank": 5
+ },
+ {
+  "slug": "lucknow",
+  "name": "Lucknow",
+  "altNames": [],
+  "kind": "city",
+  "state": "uttar-pradesh",
+  "lat": 26.8467,
+  "lon": 80.9462,
+  "rank": 2
+ },
+ {
+  "slug": "varanasi",
+  "name": "Varanasi",
+  "altNames": [
+   "Banaras",
+   "Benares",
+   "Kashi"
+  ],
+  "kind": "city",
+  "state": "uttar-pradesh",
+  "lat": 25.3176,
+  "lon": 82.9739,
+  "rank": 2
+ },
+ {
+  "slug": "agra",
+  "name": "Agra",
+  "altNames": [],
+  "kind": "city",
+  "state": "uttar-pradesh",
+  "lat": 27.1767,
+  "lon": 78.0081,
+  "rank": 2
+ },
+ {
+  "slug": "kanpur",
+  "name": "Kanpur",
+  "altNames": [
+   "Cawnpore"
+  ],
+  "kind": "city",
+  "state": "uttar-pradesh",
+  "lat": 26.4499,
+  "lon": 80.3319,
+  "rank": 2
+ },
+ {
+  "slug": "patna",
+  "name": "Patna",
+  "altNames": [],
+  "kind": "city",
+  "state": "bihar",
+  "lat": 25.5941,
+  "lon": 85.1376,
+  "rank": 2
+ },
+ {
+  "slug": "ranchi",
+  "name": "Ranchi",
+  "altNames": [],
+  "kind": "city",
+  "state": "jharkhand",
+  "lat": 23.3441,
+  "lon": 85.3096,
+  "rank": 2
+ },
+ {
+  "slug": "kolkata",
+  "name": "Kolkata",
+  "altNames": [
+   "Calcutta"
+  ],
+  "kind": "city",
+  "state": "west-bengal",
+  "lat": 22.5726,
+  "lon": 88.3639,
+  "rank": 1
+ },
+ {
+  "slug": "darjeeling",
+  "name": "Darjeeling",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "west-bengal",
+  "lat": 27.036,
+  "lon": 88.2627,
+  "rank": 4
+ },
+ {
+  "slug": "siliguri",
+  "name": "Siliguri",
+  "altNames": [],
+  "kind": "city",
+  "state": "west-bengal",
+  "lat": 26.7271,
+  "lon": 88.3953,
+  "rank": 3
+ },
+ {
+  "slug": "bhubaneswar",
+  "name": "Bhubaneswar",
+  "altNames": [],
+  "kind": "city",
+  "state": "odisha",
+  "lat": 20.2961,
+  "lon": 85.8245,
+  "rank": 2
+ },
+ {
+  "slug": "puri",
+  "name": "Puri",
+  "altNames": [],
+  "kind": "town",
+  "state": "odisha",
+  "lat": 19.8135,
+  "lon": 85.8312,
+  "rank": 4
+ },
+ {
+  "slug": "gangtok",
+  "name": "Gangtok",
+  "altNames": [],
+  "kind": "city",
+  "state": "sikkim",
+  "lat": 27.3389,
+  "lon": 88.6065,
+  "rank": 4
+ },
+ {
+  "slug": "shillong",
+  "name": "Shillong",
+  "altNames": [],
+  "kind": "city",
+  "state": "meghalaya",
+  "lat": 25.5788,
+  "lon": 91.8933,
+  "rank": 3
+ },
+ {
+  "slug": "cherrapunji",
+  "name": "Cherrapunji",
+  "altNames": [
+   "Sohra",
+   "Cherrapunjee"
+  ],
+  "kind": "town",
+  "state": "meghalaya",
+  "lat": 25.2702,
+  "lon": 91.7323,
+  "rank": 5
+ },
+ {
+  "slug": "guwahati",
+  "name": "Guwahati",
+  "altNames": [
+   "Gauhati"
+  ],
+  "kind": "city",
+  "state": "assam",
+  "lat": 26.1445,
+  "lon": 91.7362,
+  "rank": 2
+ },
+ {
+  "slug": "imphal",
+  "name": "Imphal",
+  "altNames": [],
+  "kind": "city",
+  "state": "manipur",
+  "lat": 24.817,
+  "lon": 93.9368,
+  "rank": 3
+ },
+ {
+  "slug": "kohima",
+  "name": "Kohima",
+  "altNames": [],
+  "kind": "city",
+  "state": "nagaland",
+  "lat": 25.6701,
+  "lon": 94.1077,
+  "rank": 4
+ },
+ {
+  "slug": "aizawl",
+  "name": "Aizawl",
+  "altNames": [],
+  "kind": "city",
+  "state": "mizoram",
+  "lat": 23.7271,
+  "lon": 92.7176,
+  "rank": 4
+ },
+ {
+  "slug": "itanagar",
+  "name": "Itanagar",
+  "altNames": [],
+  "kind": "city",
+  "state": "arunachal-pradesh",
+  "lat": 27.0844,
+  "lon": 93.6053,
+  "rank": 4
+ },
+ {
+  "slug": "agartala",
+  "name": "Agartala",
+  "altNames": [],
+  "kind": "city",
+  "state": "tripura",
+  "lat": 23.8315,
+  "lon": 91.2868,
+  "rank": 3
+ },
+ {
+  "slug": "tawang",
+  "name": "Tawang",
+  "altNames": [],
+  "kind": "town",
+  "state": "arunachal-pradesh",
+  "lat": 27.586,
+  "lon": 91.859,
+  "rank": 5
+ },
+ {
+  "slug": "dawki",
+  "name": "Dawki",
+  "altNames": [],
+  "kind": "village",
+  "state": "meghalaya",
+  "lat": 25.187,
+  "lon": 92.027,
+  "rank": 5
+ },
+ {
+  "slug": "mawlynnong",
+  "name": "Mawlynnong",
+  "altNames": [],
+  "kind": "village",
+  "state": "meghalaya",
+  "lat": 25.2013,
+  "lon": 91.9159,
+  "rank": 5
+ },
+ {
+  "slug": "bhopal",
+  "name": "Bhopal",
+  "altNames": [],
+  "kind": "city",
+  "state": "madhya-pradesh",
+  "lat": 23.2599,
+  "lon": 77.4126,
+  "rank": 2
+ },
+ {
+  "slug": "indore",
+  "name": "Indore",
+  "altNames": [],
+  "kind": "city",
+  "state": "madhya-pradesh",
+  "lat": 22.7196,
+  "lon": 75.8577,
+  "rank": 2
+ },
+ {
+  "slug": "jabalpur",
+  "name": "Jabalpur",
+  "altNames": [],
+  "kind": "city",
+  "state": "madhya-pradesh",
+  "lat": 23.1815,
+  "lon": 79.9864,
+  "rank": 3
+ },
+ {
+  "slug": "pachmarhi",
+  "name": "Pachmarhi",
+  "altNames": [],
+  "kind": "hill_station",
+  "state": "madhya-pradesh",
+  "lat": 22.4674,
+  "lon": 78.433,
+  "rank": 5
+ },
+ {
+  "slug": "raipur",
+  "name": "Raipur",
+  "altNames": [],
+  "kind": "city",
+  "state": "chhattisgarh",
+  "lat": 21.2514,
+  "lon": 81.6296,
+  "rank": 2
+ },
+ {
+  "slug": "port-blair",
+  "name": "Port Blair",
+  "altNames": [],
+  "kind": "city",
+  "state": "andaman-and-nicobar-islands",
+  "lat": 11.6234,
+  "lon": 92.7265,
+  "rank": 4
+ }
+]
