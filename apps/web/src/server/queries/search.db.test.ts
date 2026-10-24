@@ -150,6 +150,19 @@ describe("sorting and paging", () => {
   });
 });
 
+describe("stable ordering", () => {
+  it("breaks ties between identically named trails by slug, for every sort", async () => {
+    const slugs = ["tie-z", "tie-a", "tie-m"];
+    for (const slug of slugs) await mk("tie", { slug, name: "Same name trail", difficulty: "moderate", distanceKm: 10 });
+    await db.sql`update trail set first_published_at = '2026-01-01' where slug like 'tie-%'`; // a real tie for "recent"
+    for (const sort of ["recent", "relevance", "distance", "difficulty"]) {
+      const q = sort === "relevance" ? { q: "same name" } : {};
+      const result = await run({ state: "ss-tie", sort, ...q });
+      expect(result.items.map((i) => i.slug), sort).toEqual(["tie-a", "tie-m", "tie-z"]);
+    }
+  });
+});
+
 describe("hostile input", () => {
   it.each(["'; drop table trail;--", "%", "_", "\\", "&|!():*", "a".repeat(500), "\u0000", "😀", '"unterminated', "OR 1=1"])("is safe for q=%j", async (q) => {
     await expect(run({ q })).resolves.toBeDefined();

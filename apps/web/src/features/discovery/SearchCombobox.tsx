@@ -26,6 +26,12 @@ export function SearchCombobox({ initialQuery = "" }: { initialQuery?: string })
   const router = useRouter();
   const base = useId();
   const [text, setText] = useState(initialQuery);
+  // Follow the URL: when the server renders a different query (a filter chip was removed, a link followed), show it.
+  const [seenInitial, setSeenInitial] = useState(initialQuery);
+  if (initialQuery !== seenInitial) {
+    setSeenInitial(initialQuery);
+    setText(initialQuery);
+  }
   const [options, setOptions] = useState<Option[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);

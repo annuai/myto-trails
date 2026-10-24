@@ -20,7 +20,8 @@ const COORD = /^-?\d{1,3}(\.\d{1,6})?$/;
 
 export function parseNearCookie(value: string | undefined): LatLon | undefined {
   if (!value) return undefined;
-  const parts = decodeURIComponent(value).split(",");
+  // Next.js has already decoded the cookie value; decoding again would throw on a stray "%".
+  const parts = value.split(",");
   if (parts.length !== 2 || !parts.every((p) => COORD.test(p))) return undefined;
   const lat = Number(parts[0]);
   const lon = Number(parts[1]);

@@ -32,6 +32,13 @@ describe("SearchCombobox", () => {
     return input;
   };
 
+  it("follows the URL: a new initialQuery replaces the text", () => {
+    const { rerender } = render(<SearchCombobox initialQuery="bangalore" />);
+    expect(screen.getByRole("combobox")).toHaveValue("bangalore");
+    rerender(<SearchCombobox initialQuery="" />);
+    expect(screen.getByRole("combobox")).toHaveValue("");
+  });
+
   it("is a labelled combobox that starts collapsed", () => {
     render(<SearchCombobox />);
     const input = screen.getByRole("combobox", { name: /search/i });

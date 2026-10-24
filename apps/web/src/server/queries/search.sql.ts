@@ -105,11 +105,11 @@ export async function searchTrails(
   let sort = p.sort;
   if (sort === "nearest" && !originGeog) sort = "recent";
   const order =
-    sort === "relevance" ? sql`rank desc, name asc`
-    : sort === "nearest" ? sql`distance_from_km asc nulls last, name asc`
-    : sort === "distance" ? sql`distance_km asc nulls last, name asc`
-    : sort === "difficulty" ? sql`(case difficulty when 'easy' then 1 when 'moderate' then 2 when 'hard' then 3 else 4 end) asc, name asc`
-    : sql`first_published_at desc nulls last, name asc`;
+    sort === "relevance" ? sql`rank desc, name asc, slug asc`
+    : sort === "nearest" ? sql`distance_from_km asc nulls last, name asc, slug asc`
+    : sort === "distance" ? sql`distance_km asc nulls last, name asc, slug asc`
+    : sort === "difficulty" ? sql`(case difficulty when 'easy' then 1 when 'moderate' then 2 when 'hard' then 3 else 4 end) asc, name asc, slug asc`
+    : sql`first_published_at desc nulls last, name asc, slug asc`;
 
   const rows = (await sql`
     select s.*, ${distance} as distance_from_km, ${rank} as rank, count(*) over()::int as total_count
@@ -181,7 +181,7 @@ export async function searchMapPoints(
     select slug, name, district_name, state_name, lon, lat, access_class
     from public_trail_search s
     where ${f.where} and geog is not null
-    order by name asc
+    order by name asc, slug asc
     limit ${limit}`) as Row[];
   return rows.map((r) => ({
     slug: r.slug,

@@ -8,6 +8,12 @@ describe("near-me cookie", () => {
   it("round-trips a point", () => {
     expect(parseNearCookie(serializeNearCookie({ lat: 12.9716, lon: 77.5946 }))).toEqual({ lat: 12.97, lon: 77.59 });
   });
+  it("does not decode again: Next already decodes cookie values, so malformed percent sequences must not throw", () => {
+    for (const v of ["%", "%E0%A4%A", "12.97%2C77.59", "%25"]) expect(() => parseNearCookie(v)).not.toThrow();
+    expect(parseNearCookie("%")).toBeUndefined();
+    expect(parseNearCookie("12.97%2C77.59")).toBeUndefined();
+    expect(parseNearCookie("12.97,77.59")).toEqual({ lat: 12.97, lon: 77.59 });
+  });
   it.each(["", "abc", "1,2,3", "NaN,5", "91,10", "10,181", "12.97", ",", "12.97,", "1e999,5"])("rejects %j", (v) => {
     expect(parseNearCookie(v)).toBeUndefined();
   });
