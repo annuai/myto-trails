@@ -1,6 +1,8 @@
+import { connection } from "next/server";
 import { getLocalStorage } from "@/server/storage/local-instance";
 
 export async function GET(request: Request) {
+  await connection(); // request-time only: never evaluated during the build
   const storage = getLocalStorage();
   if (!storage) return new Response("Not found", { status: 404 });
   const result = await storage.handleGet(new URL(request.url).searchParams.get("t") ?? "");
