@@ -32,6 +32,8 @@ describe("buildCsp", () => {
   });
   it("allows the public image host when one is configured", () => {
     expect(directive(buildCsp({ dev: false, publicAssetBase: "https://cdn.example.com/public" }), "img-src")).toContain("https://cdn.example.com");
+    expect(directive(buildCsp({ dev: false, publicAssetBase: "https://cdn.example.com/public" }), "media-src")).toEqual("media-src 'self' https://cdn.example.com");
+    expect(directive(buildCsp({ dev: false }), "media-src")).toEqual("media-src 'self'");
   });
 });
 

@@ -32,7 +32,7 @@ try {
   for (const record of Array.isArray(records) ? records : [records]) {
     const label = (record as { slug?: string; name?: string })?.slug ?? (record as { name?: string })?.name ?? "(unnamed)";
     try {
-      const { slug } = await importTrail(sql, record, { production, allowSamples, gpx });
+      const { slug } = await importTrail(sql, record, { production, allowSamples, gpx, mediaBaseUrl: storage.name === "r2" ? process.env.R2_PUBLIC_BASE_URL : undefined });
       console.log(`${slug}: imported`);
     } catch (e) {
       if (e instanceof ImportError && e.code === "exists") {

@@ -11,6 +11,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:live": "STORAGE_TEST_LIVE=1 node --env-file-if-exists=.env.local ../../node_modules/vitest/vitest.mjs run live",
     "storage:setup": "tsx --env-file-if-exists=.env.local scripts/storage-setup.mts",
+    "media:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate-media-to-r2.mts",
     "storage:smoke": "tsx --env-file-if-exists=.env.local scripts/storage-smoke.mts",
     "db:start": "bash scripts/dev-db.sh start",
     "db:stop": "bash scripts/dev-db.sh stop",

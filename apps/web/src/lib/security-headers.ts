@@ -26,6 +26,7 @@ export function buildCsp(o: Options): string {
     `script-src 'self' 'unsafe-inline'${o.dev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src ${img.join(" ")}`,
+    `media-src ${["'self'", ...(assets ? [assets] : [])].join(" ")}`,
     "font-src 'self' data:",
     `connect-src ${connect.join(" ")}${o.dev ? " ws: wss:" : ""}`,
     "worker-src 'self' blob:",

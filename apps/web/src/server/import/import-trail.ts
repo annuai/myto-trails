@@ -1,3 +1,4 @@
+import { resolveMediaUrl } from "./media-url";
 import { createHash, randomUUID } from "node:crypto";
 import { slugify } from "@moto-trails/domain";
 import type { Sql } from "postgres";
@@ -25,7 +26,7 @@ const point = (p: { lon: number; lat: number }) => `SRID=4326;POINT(${p.lon} ${p
 export async function importTrail(
   sql: Sql,
   record: unknown,
-  opts: { production: boolean; allowSamples?: boolean; gpx?: { read(path: string): Uint8Array | null; storage: StorageProvider } },
+  opts: { production: boolean; allowSamples?: boolean; mediaBaseUrl?: string; gpx?: { read(path: string): Uint8Array | null; storage: StorageProvider } },
 ): Promise<{ slug: string; trailId: string }> {
   const parsed = TrailImportSchema.safeParse(record);
   if (!parsed.success) {
@@ -97,13 +98,13 @@ export async function importTrail(
       await tx`
         insert into media (revision_id, role, position, caption, alt_text, credit, variants, width, height)
         values (${revisionId}, ${m.role}, ${m.position}, ${m.caption ?? null}, ${m.altText}, ${m.credit ?? null},
-          ${tx.json(m.variants)}, ${m.width ?? null}, ${m.height ?? null})`;
+          ${tx.json(Object.fromEntries(Object.entries(m.variants).map(([k, u]) => [k, resolveMediaUrl(u, opts.mediaBaseUrl)])))}, ${m.width ?? null}, ${m.height ?? null})`;
     }
 
     for (const v of t.videos) {
       await tx`
         insert into trail_video (revision_id, position, description, caption, credit, mp4_url, poster_url, width, height, duration_s)
-        values (${revisionId}, ${v.position}, ${v.description}, ${v.caption ?? null}, ${v.credit ?? null}, ${v.mp4}, ${v.poster}, ${v.width}, ${v.height}, ${v.durationS})`;
+        values (${revisionId}, ${v.position}, ${v.description}, ${v.caption ?? null}, ${v.credit ?? null}, ${resolveMediaUrl(v.mp4, opts.mediaBaseUrl)}, ${resolveMediaUrl(v.poster, opts.mediaBaseUrl)}, ${v.width}, ${v.height}, ${v.durationS})`;
     }
 
     if (route && opts.gpx) {
