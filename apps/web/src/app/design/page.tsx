@@ -24,7 +24,7 @@ export default function DesignPage() {
     <div className="flex flex-col gap-(--space-section) py-(--space-section)">
       <header>
         <h1 className="font-display text-3xl leading-tight">Design system</h1>
-        <p className="mt-4 max-w-prose text-muted">Tokens and primitives for Myto Trails. Internal reference; not indexed.</p>
+        <p className="mt-4 max-w-prose text-muted">Tokens and primitives for Moto Trails. Internal reference; not indexed.</p>
       </header>
 
       <section aria-labelledby="colour">

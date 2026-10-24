@@ -20,7 +20,7 @@ Likelihood (L) and impact (I): Low / Medium / High. Owner suggestions are placeh
 | R13 | **Privacy of contributors** (home location in GPX, EXIF GPS, identifiable photos) | M | High | Start/end trimming option; EXIF stripped; face/plate guidance; private evidence | Privacy complaint |
 | R14 | **Security incident** via uploads or auth | L | High | Doc 11 controls; security review in M7 | Anomalous uploads |
 | R15 | **Brand divergence** from myto-moto.com | M | Low | Shared tokens; design review checkpoint | Visual drift |
-| R16 | **New independent domain starts with no search authority; "moto" vs "myto" spelling mismatch** | M | Medium | Cross-links from myto-moto.com and the Journal; defensive redirect domains; "subsidiary of myto-moto" statement; quality unique pages; canonical host config allows later migration | Low indexing; branded-search misses |
+| R16 | **New independent domain starts with no search authority; product name "Moto Trails" vs parent brand "Myto" may confuse some visitors** | M | Medium | Cross-links from myto-moto.com and the Journal; optional redirect domains; "subsidiary of myto-moto" statement; quality unique pages; canonical host config allows later migration | Low indexing; branded-search misses |
 | R17 | **Over-scoping the MVP** | H | High | Explicit non-goals; stage gates | Milestone creep |
 | R18 | **Cold start:** too few trails or contributors at launch | H | High | Curated seed; Club Myto outreach; targeted regions first | Low submission count |
 | R19 | **Background recording unreliable on budget Android phones** (battery killers) or rejected by store review | H | High | Foreground service, crash-safe incremental writes, in-app guidance, early spike on real devices before framework choice, store policy dry run | Spike loses points; review rejection |
@@ -34,7 +34,7 @@ Likelihood (L) and impact (I): Low / Medium / High. Owner suggestions are placeh
 
 | ID | Decision | Recommendation | Alternatives |
 |---|---|---|---|
-| D-1 | Placement and domain | **Decided:** independent site on `moto-trails.com`; `trails.myto-moto.com`, `mytotrails.com`, `myto-trails.com` and `www` redirect (301) to it; footer, About and legal pages state that Myto Trails is a subsidiary of myto-moto. Ownership of the domain(s) still to be confirmed | Subdomain `trails.myto-moto.com`; path `myto-moto.com/trails` via multi-zone |
+| D-1 | Placement and domain | **Decided:** independent site on `moto-trails.com`; `trails.myto-moto.com` and `www` redirect (301) to it (`mytotrails.com` and `myto-trails.com` optional); footer, About and legal pages state that Moto Trails is a subsidiary of myto-moto. Ownership of the domain(s) still to be confirmed | Subdomain `trails.myto-moto.com`; path `myto-moto.com/trails` via multi-zone |
 | D-2 | Launch geography | Start with 3–5 states where the Myto team has local knowledge | National launch |
 | D-3 | Brand divergence: tighter radii, sentence-case labels, new accent | Approve Direction A as specified | Match the marketing site's rounded/uppercase style exactly |
 | D-4 | Authentication | Separate Trails accounts (email link + Google) now (an independent domain cannot share cookies with myto-moto.com anyway); "Sign in with Myto" later if the shop's auth supports it | Shared accounts from launch (requires auth discovery) |
@@ -47,7 +47,7 @@ Likelihood (L) and impact (I): Low / Medium / High. Owner suggestions are placeh
 | D-11 | Default for "Private – no public access" trails | Do not publish | Publish stub with "Do not ride" notice |
 | D-12 | Downloads: interstitial acknowledging permission/responsible riding before first GPX download | Yes | No interstitial |
 | D-13 | Language at launch | English only | English + Hindi |
-| D-14 | Name | Keep "Myto Trails"; mitigate the "moto" vs "myto" domain mismatch with defensive redirect domains and the footer subsidiary statement | Alternative name or domain spelling |
+| D-14 | Name | **Decided:** the product is called "Moto Trails" (matches the logo and `moto-trails.com`); the parent brand stays "Myto" and is named in the footer subsidiary statement | "Myto Trails" |
 | D-15 | Donations | **Decided:** "Donate" button; Myto (the company) receives funds; page says donations are not charitable or tax-deductible and never influence listings or moderation; hosted payment page for MVP. Open: GST treatment, overseas payments, gateway choice (accountant) | Integrated checkout from day one |
 | D-16 | Brand alignment between Trails (responsible riding, verified access) and Navi ("without limits") | Navi always shows access class, condition and verification date for Trails content; Trails never labels restricted/private trails open; no "without limits" messaging for Trails content | Looser coupling with no display rule |
 | D-17 | Companion stage sequencing | Web MVP first (API-ready), then public API (M9), recording spike and Trails app (M10), Navi integration (M11) | Build the app in parallel with the web MVP (needs more team capacity) |
@@ -65,7 +65,7 @@ Likelihood (L) and impact (I): Low / Medium / High. Owner suggestions are placeh
 8. Is a landowner-facing process needed (e.g. a way for owners to claim a trail and set access)? Suggested for stage 2.
 9. What analytics and consent tooling does Myto currently use, and should the product follow it?
 10. Does the Myto brand allow the survey-blue accent and the tighter radii, and who signs off?
-11. Do you own `moto-trails.com`, and will you register `mytotrails.com` and `myto-trails.com` as redirects?
+11. Do you own `moto-trails.com`, and and do you want `mytotrails.com` and `myto-trails.com` as optional redirects?
 12. Which GPX features and file-size limits does Navi's viewer support? Can the Trails project test on a Navi unit?
 13. Who owns the Navi-side integration work?
 14. Which payment gateway will Myto use for donations, and does it support UPI and international cards?

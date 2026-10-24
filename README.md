@@ -1,4 +1,4 @@
-# Myto Trails
+# Moto Trails
 
 A moderated, community-contributed directory of motorcycle trails in India.
 

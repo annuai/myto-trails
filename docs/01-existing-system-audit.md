@@ -48,7 +48,7 @@ The homepage HTML contained no references to Shopify, Stripe, Razorpay, Supabase
 
 | Question | Why it matters | How to resolve |
 |---|---|---|
-| What powers `/account/login` and the `/shop` checkout (own backend, a commerce platform, an auth library)? | Decides whether Myto Trails can share sign-in | Access to the repo, or the Vercel project's environment variable names |
+| What powers `/account/login` and the `/shop` checkout (own backend, a commerce platform, an auth library)? | Decides whether Moto Trails can share sign-in | Access to the repo, or the Vercel project's environment variable names |
 | Is there a database? Which one? | Reuse vs. separate data store | Repo / Vercel integrations |
 | Does the site expose an API (`/api/*` is disallowed in robots)? | Navi integration (companion stage) | Repo |
 | Is the Navi product backed by any web service or data format? | Stage-3 integration | Myto team |
@@ -70,18 +70,18 @@ The homepage HTML contained no references to Shopify, Stripe, Razorpay, Supabase
 
 - Next.js on Vercel is the deployment baseline. Anything that does not fit serverless (long-running GPX processing, heavy image work) must run as a background job or small external worker.
 - Tailwind v4 is CSS-first; tokens live in CSS, not a JS config. Design-token tooling should target that.
-- The site is mostly static/ISR; Myto Trails is dynamic (user data, search, uploads). It should be a separate deployable so the shop's reliability is not coupled to trail traffic or user-generated content.
-- `/account/*` is disallowed for crawlers and likely holds user data. Whatever the existing account system is, Myto Trails must not read from it without an explicit integration decision.
+- The site is mostly static/ISR; Moto Trails is dynamic (user data, search, uploads). It should be a separate deployable so the shop's reliability is not coupled to trail traffic or user-generated content.
+- `/account/*` is disallowed for crawlers and likely holds user data. Whatever the existing account system is, Moto Trails must not read from it without an explicit integration decision.
 
 ## Differences between the existing site and the brief
 
-The brief asks Myto Trails to avoid oversized rounded cards and excessive uppercase labels. The live site uses both heavily (`rounded-3xl`, uppercase tracking-widest eyebrows). Those are expressions of the **marketing** site, not its token foundation. The recommendation (docs 08/09) is to inherit colours, type families, spacing and the hairline border treatment, and to deliberately use tighter radii and sentence-case labels for this information-dense product. This is a divergence the Myto team should consciously approve (decision D-3 in doc 13).
+The brief asks Moto Trails to avoid oversized rounded cards and excessive uppercase labels. The live site uses both heavily (`rounded-3xl`, uppercase tracking-widest eyebrows). Those are expressions of the **marketing** site, not its token foundation. The recommendation (docs 08/09) is to inherit colours, type families, spacing and the hairline border treatment, and to deliberately use tighter radii and sentence-case labels for this information-dense product. This is a divergence the Myto team should consciously approve (decision D-3 in doc 13).
 
 ## Potential risks
 
 | Risk | Note |
 |---|---|
 | Hidden coupling to the shop | Resolved by decision: Trails is an independent site on `moto-trails.com`, so cookies are not shared and Trails has its own accounts. "Sign in with Myto" remains a later option if the shop's auth supports it. |
-| SEO | An independent domain starts with no authority from myto-moto.com. Mitigated by cross-links, the subsidiary statement, defensive redirect domains and a single canonical host config (doc 05 §1). |
+| SEO | An independent domain starts with no authority from myto-moto.com. Mitigated by cross-links, the subsidiary statement, optional redirect domains and a single canonical host config (doc 05 §1). |
 | Brand drift | Without a shared token package the two sites will diverge. |
 | Unknowns above | The largest planning risk is the auth/data unknowns; the proposed architecture is deliberately independent of them. |

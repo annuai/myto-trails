@@ -8,7 +8,7 @@ Legend: `[ ]` control, `▓` image, `░` map, `◆ ● ▲ ■` status glyphs (
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ Myto Trails        Explore  Map  Submit a trail    ⌕  Saved  ◯│
+│ Moto Trails        Explore  Map  Submit a trail    ⌕  Saved  ◯│
 ├──────────────────────────────────────────────────────────────┤
 │  Find a trail you can actually ride.                          │
 │  [ Search a place, region or trail name      ⌕ ] [◎ Near me] │
@@ -173,5 +173,5 @@ Rationale: dense, keyboard-friendly two-pane layout; the queue shows age and pri
 - Primary action per screen is one button; destructive actions are confirmed with the consequence stated.
 - Touch targets ≥ 44 px, key actions in thumb reach on mobile.
 - No infinite scroll on results (URL-addressable pagination); "Load more" in map sheet.
-- Footer on every page: link columns, **Donate**, and "Myto Trails is a subsidiary of myto-moto" (links to myto-moto.com). `/donate` is a plain content page: who receives donations, where funds go, independence statement, one button to the hosted payment page.
+- Footer on every page: link columns, **Donate**, and "Moto Trails is a subsidiary of myto-moto" (links to myto-moto.com). `/donate` is a plain content page: who receives donations, where funds go, independence statement, one button to the hosted payment page.
 - Visual tone: modern, simple, minimal (doc 08): generous whitespace, one accent, few boxes.

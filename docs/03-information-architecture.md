@@ -53,11 +53,11 @@ Rationale for flat trail slugs vs `/trails/kerala/…`: geography changes (distr
 
 **Primary (desktop header and mobile bottom bar):** `Explore` · `Map` · `Submit a trail`
 **Secondary (header right):** search (⌘K / `/`), `Saved`, account menu (Contributions, Profile, Sign out) or `Sign in`.
-**Footer:** Regions, Responsible riding, About, Help, Donate, Terms, Privacy, and the line "Myto Trails is a subsidiary of myto-moto" linking to myto-moto.com. The same statement appears on About and the legal pages.
+**Footer:** Regions, Responsible riding, About, Help, Donate, Terms, Privacy, and the line "Moto Trails is a subsidiary of myto-moto" linking to myto-moto.com. The same statement appears on About and the legal pages.
 
-**Mobile:** a bottom tab bar with Explore, Map, Submit, Saved, Account — the five most-used destinations, all within thumb reach, outdoors with one hand. The top bar shows the Myto Trails mark and search only.
+**Mobile:** a bottom tab bar with Explore, Map, Submit, Saved, Account — the five most-used destinations, all within thumb reach, outdoors with one hand. The top bar shows the Moto Trails mark and search only.
 
-The header carries only the Myto Trails mark (no parent-brand link): Trails is an independent product, and the relationship to myto-moto is stated in the footer, About and legal pages.
+The header carries only the Moto Trails mark (no parent-brand link): Trails is an independent product, and the relationship to myto-moto is stated in the footer, About and legal pages.
 
 Moderators see a `Moderate` item in the account menu only (not a separate site).
 

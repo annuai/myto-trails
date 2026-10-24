@@ -5,7 +5,7 @@ Sequenced so that the **trust model (access/condition/verification) and the data
 **Global definition of done** (applies to every milestone): code reviewed; unit/integration tests for the milestone's logic pass in CI; accessibility checks (axe + keyboard pass) on new screens; mobile and desktop checked; no unresolved high-severity issues; docs and ADRs updated; deployed to staging.
 
 ## M0 — Foundations and decisions
-- **Scope:** resolve open decisions (doc 13); register and confirm ownership of `moto-trails.com` (plus `mytotrails.com`, `myto-trails.com` as redirects); open Vercel and Supabase accounts (free tier for development/staging only; Cloudflare R2 is set up later, before beta); confirm Vercel plan terms for commercial use; confirm Myto auth/DNS facts (doc 01 unknowns); legal review kick-off (terms, licence, takedown policy); seed content plan (30–60 trails to curate); repo, CI, environments, shared tokens extracted.
+- **Scope:** resolve open decisions (doc 13); register and confirm ownership of `moto-trails.com` (optionally also `mytotrails.com`, `myto-trails.com` as redirects); open Vercel and Supabase accounts (free tier for development/staging only; Cloudflare R2 is set up later, before beta); confirm Vercel plan terms for commercial use; confirm Myto auth/DNS facts (doc 01 unknowns); legal review kick-off (terms, licence, takedown policy); seed content plan (30–60 trails to curate); repo, CI, environments, shared tokens extracted.
 - **Dependencies:** Myto team access.
 - **Deliverables:** ADRs, empty app deployed to staging on the chosen domain, tokens package, design-system page skeleton, moderator recruitment.
 - **Testing:** CI pipeline, preview deploys, lint rules banning hard-coded colours.

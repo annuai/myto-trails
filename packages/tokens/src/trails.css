@@ -1,4 +1,4 @@
-/* Myto Trails layer: accent, status colours, radii, spacing. Components use these semantic tokens only. */
+/* Moto Trails layer: accent, status colours, radii, spacing. Components use these semantic tokens only. */
 @theme static {
   --color-accent: #1f4a6b;
   --color-accent-hover: #173a55;

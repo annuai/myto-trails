@@ -5,7 +5,7 @@ Warm paper-like neutrals (`#f2ede8` / `#f2f0ec`), near-black ink (`#1a1a1a`), mu
 
 What to inherit: palette family, the two typefaces, hairline borders, restrained motion, the "engineered" tone. What to change for this product: smaller radii, sentence-case labels, no card-per-everything, a distinct trail accent, a data/mono voice.
 
-**Constraint discovered:** brand red `#be3a23` is the danger colour in most UIs. Using it as Myto Trails' accent would collide with "closed/restricted". So the brand red is used rarely (logo, brand moments) and Trails gets its own accent.
+**Constraint discovered:** brand red `#be3a23` is the danger colour in most UIs. Using it as Moto Trails' accent would collide with "closed/restricted". So the brand red is used rarely (logo, brand moments) and Trails gets its own accent.
 
 All contrast values below were computed (WCAG 2.x relative luminance); they are not estimates.
 
@@ -54,7 +54,7 @@ Direction A stays, tuned towards quiet and modern:
 - **Progressive disclosure.** Hazards, facilities, access sources and history collapse behind clear "Show details" controls on mobile.
 - **No ornament.** The contour-line motif appears only inside maps and elevation views. No gradients, no shadows except popovers/dialogs/sheets, no decorative icons.
 - **Photography:** fewer, larger images, aspect ratio preserved, caption in mono beneath.
-- **Footer:** same paper background, hairline above, quiet link columns, **Donate** as a plain link, and "Myto Trails is a subsidiary of myto-moto" with a link.
+- **Footer:** same paper background, hairline above, quiet link columns, **Donate** as a plain link, and "Moto Trails is a subsidiary of myto-moto" with a link.
 - **Review tests before sign-off:** the *squint test* (is the access status the first thing seen?), the *remove-one-thing test* (delete the least useful element on each page; does anything suffer?), and the *sunlight test* (screenshots at 40% brightness, grayscale).
 - **Honest tension:** "minimal" and "everything a rider needs at a glance" pull in opposite directions. Resolution: keep the go/no-go strip complete, and make everything else quieter and collapsible, instead of removing information.
 

@@ -1,7 +1,7 @@
 # 00 — Project overview
 
 **Status:** Architecture & design specification, draft 1. No code exists. Awaiting review.
-**Working name:** Myto Trails (subsidiary product of myto-moto.com)
+**Working name:** Moto Trails (subsidiary product of myto-moto.com)
 
 ## What this is
 
@@ -37,7 +37,7 @@ Root summaries: [ARCHITECTURE.md](../ARCHITECTURE.md), [DESIGN.md](../DESIGN.md)
 3. **Geometry is gated.** Precise route coordinates and GPX files are never public until a trail has passed moderation *and* has an acceptable access classification. Sensitive areas can publish with deliberately reduced geometry.
 4. **One boring stack.** A single Next.js app plus a managed PostgreSQL/PostGIS database. No microservices, no search cluster, no separate API tier in the MVP.
 5. **Inherit the Myto design language, not its decoration.** Same typefaces, warm neutrals and token structure; a trail-specific accent; tighter radii and sentence-case labels. The look is modern, simple and minimal: generous whitespace, one accent, few boxes.
-6. **Independent site, stated subsidiary.** Canonical host `moto-trails.com`; the footer, About and legal pages say Myto Trails is a subsidiary of myto-moto. It has its own accounts.
+6. **Independent site, stated subsidiary.** Canonical host `moto-trails.com`; the footer, About and legal pages say Moto Trails is a subsidiary of myto-moto. It has its own accounts.
 7. **Three clients, one backend.** Web first, built API-ready; then a public API, the Trails companion app (background ride recording and submission) and Myto Navi integration (doc 14).
 8. **Find trails by place.** Search a city (e.g. Bangalore) or use "near me" to list nearby trails with approximate travel time.
 9. **Donate button** (Myto the company receives funds; never influences listings or moderation).

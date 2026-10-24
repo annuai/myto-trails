@@ -4,7 +4,7 @@ Detail: [docs/08](docs/08-visual-direction.md), [docs/09](docs/09-design-system.
 
 **Direction: "Survey sheet."** A cartographic, editorial, information-first interface that inherits Myto's palette and typefaces and drops the marketing site's decorative devices.
 
-**Tone: modern, simple, minimal.** Generous whitespace (64 px section gaps), hairlines only between rows and around notices, one accent, three type sizes per page plus mono, almost no boxes, and a quiet footer with Donate and "Myto Trails is a subsidiary of myto-moto". See [docs/08](docs/08-visual-direction.md) §3b.
+**Tone: modern, simple, minimal.** Generous whitespace (64 px section gaps), hairlines only between rows and around notices, one accent, three type sizes per page plus mono, almost no boxes, and a quiet footer with Donate and "Moto Trails is a subsidiary of myto-moto". See [docs/08](docs/08-visual-direction.md) §3b.
 
 **Philosophy:** decision order drives hierarchy (access → condition → verification → difficulty → distance). Maps are functional, photographs are evidence, status is always glyph + word + colour. Few strong decisions, executed with restraint.
 
