@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { FooterClock } from "./FooterClock";
+import { FooterLocation } from "./FooterLocation";
 
 // Sizes follow myto-moto's footer: small type, compact columns.
 const link = "inline-block py-1 text-sm text-muted transition-opacity hover:opacity-50";
@@ -43,7 +45,9 @@ export function SiteFooter() {
               <Image src="/brand/moto-trails-logo.svg" alt="Moto Trails" width={142} height={25} className="mb-5 h-auto w-36" unoptimized />
               <p className="max-w-[260px] text-sm leading-relaxed text-muted">A moderated directory of motorcycle trails in India: who may ride, how we know, and when it was last checked.</p>
             </div>
-            <FooterClock />
+            <Suspense fallback={<FooterClock place={null} />}>
+              <FooterLocation />
+            </Suspense>
           </div>
 
           <nav aria-label="Footer" className="mb-14 grid grid-cols-2 gap-x-8 gap-y-10 border-t border-black/[0.07] pt-12 md:grid-cols-3">

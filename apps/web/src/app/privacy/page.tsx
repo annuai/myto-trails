@@ -14,6 +14,7 @@ export default function PrivacyPage() {
       </ul>
       <h2>Your location</h2>
       <p>If you use &quot;near me&quot;, your approximate position stays in your browser and in a short-lived cookie; it is not stored in your account or in our logs.</p>
+      <p>The clock in the footer shows the time where you are. Its place name comes from your approximate location as reported by our hosting provider for that request, or from your browser&apos;s time zone. We do not store it.</p>
       <h2>Who sees what</h2>
       <p>Your display name appears as credit on trails you contribute. Your email address is never shown publicly. Moderators see your submissions, and the permission contacts and evidence you provide.</p>
       <h2>Your choices</h2>

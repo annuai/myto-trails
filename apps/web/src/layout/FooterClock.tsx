@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { formatClock, rideMessage } from "./ride-message";
+import { formatClock, placeFromZone, rideMessage, zoneLabel } from "./ride-message";
 
 function subscribe(onChange: () => void) {
   const id = setInterval(onChange, 1000);
@@ -9,23 +9,26 @@ function subscribe(onChange: () => void) {
 }
 
 /**
- * India Standard Time as a clock with a badge underneath, sized like the clock on myto-moto.com. It renders after
- * mount, so the server and the browser never disagree about the time. The badge carries a moon or sun as well as
- * words, so it never relies on colour.
+ * The visitor's local time with the place name above it, and a ride badge underneath. The place comes from the
+ * server (the hosting platform's approximate location for the request) when it knows it, otherwise from the
+ * browser's time zone. It renders after mount, so the server and the browser never disagree about the time.
  */
-export function FooterClock() {
+export function FooterClock({ place, timeZone }: { place?: string | null; timeZone?: string }) {
   // A once-a-second tick from the browser clock; the server (and first hydration) sees no time at all.
   const second = useSyncExternalStore(subscribe, () => Math.floor(Date.now() / 1000), () => null);
   const now = second === null ? null : new Date(second * 1000);
+  const zone = timeZone ?? (now ? Intl.DateTimeFormat().resolvedOptions().timeZone : null);
 
-  const msg = now ? rideMessage(now) : null;
+  const ready = now !== null && zone !== null;
+  const msg = ready ? rideMessage(now, zone) : null;
+  const label = place || (zone ? placeFromZone(zone) : "");
   return (
     <div className="flex flex-col sm:items-end">
-      <p className="mb-2.5 text-xs font-semibold uppercase tracking-widest text-muted">Kerala, India</p>
-      <p className="font-mono text-2xl font-medium tracking-tight tabular-nums" aria-label={now ? `Time in India ${formatClock(now)}` : "Time in India"} suppressHydrationWarning>
-        <span aria-hidden="true">{now ? formatClock(now) : "—:—:—"}</span>
+      <p className="mb-2.5 min-h-4 text-xs font-semibold uppercase tracking-widest text-muted">{label}</p>
+      <p className="font-mono text-2xl font-medium tracking-tight tabular-nums" aria-label={ready ? `Local time in ${label} ${formatClock(now, zone)}` : "Local time"} suppressHydrationWarning>
+        <span aria-hidden="true">{ready ? formatClock(now, zone) : "—:—:—"}</span>
       </p>
-      <p className="mt-1.5 font-mono text-xs text-muted/45">IST · UTC +5:30</p>
+      <p className="mt-1.5 min-h-4 font-mono text-xs text-muted/45">{ready ? zoneLabel(now, zone) : ""}</p>
       <p role="status" className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/60 px-3 py-1 text-xs font-medium">
         <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true" className="shrink-0">
           {msg?.night ? (
