@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Michroma } from "next/font/google";
 import { Suspense } from "react";
 import { HeaderAccount } from "@/layout/HeaderAccount";
+import { FooterBanner } from "@/layout/FooterBanner";
 import { SiteFooter } from "@/layout/SiteFooter";
 import { SiteHeader } from "@/layout/SiteHeader";
 import { getSiteUrl } from "@/lib/site";
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4">{children}</main>
         <SiteFooter />
+        <FooterBanner />
       </body>
     </html>
   );
