@@ -33,6 +33,13 @@ Accounts: sign-in is by emailed link. In development `EMAIL_PROVIDER=console` pr
 
 Map: the default style is MapLibre's free demo style, for development only. Set `NEXT_PUBLIC_MAP_STYLE_URL` and `NEXT_PUBLIC_MAP_ATTRIBUTION` for production (see `.env.example`). The MapLibre worker is copied to `public/vendor` by `npm run assets:maplibre` (runs before `dev` and `build`).
 
+## Contributing, moderating and the API in development
+- Submit a trail at `/submit` (sign in first). Uploads use the configured storage provider; use `STORAGE_PROVIDER=local` so files survive restarts.
+- Moderation lives at `/moderate` and is visible only to users with a role. Give yourself one in the dev database:
+  `psql postgres://localhost:54329/moto_trails -c "insert into user_role (user_id, role) select id, 'admin' from app_user where email = 'you@example.com'"`. You cannot decide on your own submission, so use a second account to submit.
+- API: `GET /api/v1/openapi.json` describes `/api/v1`. Create a device token on `/account/devices` and send it as `Authorization: Bearer <token>`.
+- Donate button: set `NEXT_PUBLIC_DONATE_URL` (https only) to a hosted payment page; without it the page says donations are not open.
+
 ## Environment variables
 Copy `.env.example` to `apps/web/.env.local` and fill it in yourself. Never paste keys into chat or commit them; `.env*` is git-ignored except `.env.example`.
 
