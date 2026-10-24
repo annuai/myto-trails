@@ -4,3 +4,9 @@ export const OFFER_TTL_HOURS = 24; // how long an offered number waits to be rev
 export const QUESTION_TTL_DAYS = 14;
 export const QUESTIONS_PER_DAY = 5;
 export const PHONE_OFFERS_PER_DAY = 3;
+
+/** Clubs. */
+export const CLUB_CREATES_PER_DAY = 2;
+export const JOIN_REQUESTS_PER_DAY = 5;
+export const CLUB_POSTS_PER_HOUR = 20;
+export const JOIN_PHONE_RETENTION_DAYS = 7; // a join request's phone number is wiped this long after the decision

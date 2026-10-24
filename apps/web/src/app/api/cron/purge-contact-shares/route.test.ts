@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/server/db/client", () => ({ getSql: () => ({}) }));
 const purge = vi.hoisted(() => vi.fn(async () => 3));
 vi.mock("@/server/community/questions", () => ({ purgeExpiredContactShares: purge }));
+vi.mock("@/server/community/clubs", () => ({ purgeJoinPhones: async () => 2 }));
 vi.mock("next/server", () => ({ connection: async () => {} }));
 
 import { GET } from "./route";
@@ -23,7 +24,7 @@ describe("purge contact shares cron", () => {
     process.env.CRON_SECRET = SECRET;
     const res = await GET(new Request(url, { headers: { authorization: `Bearer ${SECRET}` } }));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ purged: 3 });
+    expect(await res.json()).toEqual({ purged: 3, clubPhonesPurged: 2 });
   });
 
   it("is closed when no secret is configured", async () => {

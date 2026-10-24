@@ -9,6 +9,7 @@ const nav = [
   { href: "/trails", label: "Explore" },
   { href: "/trails?view=map", label: "Map" },
   { href: "/regions", label: "Regions" },
+  { href: "/club", label: "Club" },
 ];
 
 /**

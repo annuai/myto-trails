@@ -12,13 +12,14 @@ describe("SiteHeader", () => {
     expect(link).toHaveAttribute("href", "/");
     expect(screen.getByRole("img", { name: "Moto Trails" })).toBeInTheDocument();
   });
-  it("has a primary navigation with Explore, Map and Regions", () => {
+  it("has a primary navigation with Explore, Map, Regions and Club", () => {
     render(<SiteHeader />);
     const nav = screen.getByRole("navigation", { name: "Primary" });
     expect(nav).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Explore" })).toHaveAttribute("href", "/trails");
     expect(screen.getByRole("link", { name: "Map" })).toHaveAttribute("href", "/trails?view=map");
     expect(screen.getByRole("link", { name: "Regions" })).toHaveAttribute("href", "/regions");
+    expect(screen.getByRole("link", { name: "Club" })).toHaveAttribute("href", "/club");
   });
   it("has a Submit a trail button", () => {
     render(<SiteHeader />);

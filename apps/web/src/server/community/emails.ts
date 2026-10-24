@@ -27,3 +27,17 @@ export function phoneOfferedEmail(riderName: string, siteUrl: string, hours: num
     ].join("\n"),
   };
 }
+
+/** Club emails say who and where, never the phone number or the message. */
+export function joinRequestEmail(riderName: string, clubName: string, clubUrl: string): Msg {
+  return {
+    subject: `${oneLine(riderName)} asked to join ${oneLine(clubName)}`,
+    text: ["A rider asked to join a club you manage.", "", `Review the request (you can see their phone number there): ${clubUrl}`, "", "The number is not in this email on purpose."].join("\n"),
+  };
+}
+
+export function joinDecisionEmail(clubName: string, accepted: boolean, clubUrl: string): Msg {
+  return accepted
+    ? { subject: `You are in: ${oneLine(clubName)}`, text: ["Your request to join the club was accepted.", "", `Open the club: ${clubUrl}`].join("\n") }
+    : { subject: `Your request to join ${oneLine(clubName)}`, text: "The club's admins did not accept your request this time." };
+}
