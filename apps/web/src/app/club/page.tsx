@@ -6,6 +6,7 @@ import { CLUB_NOTES } from "@/features/club/messages";
 import { requireUser } from "@/server/auth/session";
 import { listClubs } from "@/server/community/clubs";
 import { getSql } from "@/server/db/client";
+import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 export const instant = false;
 export const metadata: Metadata = { title: "Club", robots: { index: false, follow: false } };
@@ -46,7 +47,7 @@ export default async function ClubPage({ searchParams }: PageProps<"/club">) {
         <textarea id="description" name="description" rows={3} maxLength={500} className={input} />
         <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="womenOnly" className="mt-1" /> Women-only club (only riders who have said they ride as women can join)</label>
         <p className="text-sm text-muted">You become the club&apos;s admin. People who ask to join give you their phone number, which you can see until a week after you decide.</p>
-        <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Create club</button>
+        <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Create club</SubmitButton>
       </form>
     </section>
   );

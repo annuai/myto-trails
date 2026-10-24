@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { RiddenSummary } from "@/server/community/ridden";
 import { resultMessage } from "./messages";
+import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 type Action = (formData: FormData) => void | Promise<void>;
 const input = "min-h-12 w-full rounded-lg border border-foreground/40 bg-background px-3";
@@ -39,7 +40,7 @@ export function RiddenPanel({
           <p className="font-medium">You have ridden here{mine.riddenMonth ? ` (${monthLabel(mine.riddenMonth)})` : ""}.</p>
           <form action={actions.unmark}>
             <input type="hidden" name="slug" value={slug} />
-            <button type="submit" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Remove me from the list</button>
+            <SubmitButton className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Remove me from the list</SubmitButton>
           </form>
         </div>
       ) : signedIn ? (
@@ -53,7 +54,7 @@ export function RiddenPanel({
             <input id="ridden-bike" name="bike" maxLength={60} className={input} />
             <label htmlFor="ridden-note" className="text-sm font-medium">A note for other riders (optional)</label>
             <input id="ridden-note" name="note" maxLength={200} className={input} />
-            <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Add me to the list</button>
+            <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Add me to the list</SubmitButton>
           </form>
         </details>
       ) : (
@@ -76,7 +77,7 @@ export function RiddenPanel({
                     <label htmlFor={`ask-${r.riderId}`} className="text-sm">Your question about this trail</label>
                     <textarea id={`ask-${r.riderId}`} name="question" rows={3} minLength={5} maxLength={500} required className="w-full rounded-lg border border-foreground/40 bg-background px-3 py-2" />
                     <p className="text-xs text-muted">{r.displayName} gets an email and can answer, decline, or block you. No web addresses, please.</p>
-                    <button type="submit" className="min-h-11 self-start rounded-lg bg-accent px-4 text-sm font-medium text-white">Send question</button>
+                    <SubmitButton className="min-h-11 self-start rounded-lg bg-accent px-4 text-sm font-medium text-white">Send question</SubmitButton>
                   </form>
                 </details>
               ) : null}

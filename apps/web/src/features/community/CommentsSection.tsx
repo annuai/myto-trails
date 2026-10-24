@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CommentTag, CommentView } from "@/server/community/comments";
 import { resultMessage } from "./messages";
+import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 type Action = (formData: FormData) => void | Promise<void>;
 const input = "w-full rounded-lg border border-foreground/40 bg-background px-3 py-2";
@@ -30,13 +31,13 @@ function CommentBody({ c, slug, actions, isReply }: { c: CommentView; slug: stri
                 <input type="hidden" name="commentId" value={c.id} />
                 <label htmlFor={`edit-${c.id}`} className="sr-only">Edit your comment</label>
                 <textarea id={`edit-${c.id}`} name="body" defaultValue={c.body} rows={3} maxLength={1500} required className={input} />
-                <button type="submit" className="min-h-11 self-start rounded-lg border border-foreground px-4 text-sm font-medium">Save</button>
+                <SubmitButton className="min-h-11 self-start rounded-lg border border-foreground px-4 text-sm font-medium">Save</SubmitButton>
               </form>
             </details>
             <form action={actions.remove}>
               <input type="hidden" name="slug" value={slug} />
               <input type="hidden" name="commentId" value={c.id} />
-              <button type="submit" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Delete</button>
+              <SubmitButton className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Delete</SubmitButton>
             </form>
           </>
         ) : actions.canReport ? (
@@ -47,7 +48,7 @@ function CommentBody({ c, slug, actions, isReply }: { c: CommentView; slug: stri
               <input type="hidden" name="commentId" value={c.id} />
               <label htmlFor={`report-${c.id}`} className="text-sm">What is the problem?</label>
               <input id={`report-${c.id}`} name="reason" minLength={5} maxLength={500} required className={input} />
-              <button type="submit" className="min-h-11 self-start rounded-lg border border-foreground px-4 text-sm font-medium">Send report</button>
+              <SubmitButton className="min-h-11 self-start rounded-lg border border-foreground px-4 text-sm font-medium">Send report</SubmitButton>
             </form>
           </details>
         ) : null}
@@ -59,7 +60,7 @@ function CommentBody({ c, slug, actions, isReply }: { c: CommentView; slug: stri
               <input type="hidden" name="parentId" value={c.id} />
               <label htmlFor={`reply-${c.id}`} className="sr-only">Your reply</label>
               <textarea id={`reply-${c.id}`} name="body" rows={3} maxLength={1500} required className={input} />
-              <button type="submit" className="min-h-11 self-start rounded-lg bg-accent px-4 text-sm font-medium text-white">Reply</button>
+              <SubmitButton className="min-h-11 self-start rounded-lg bg-accent px-4 text-sm font-medium text-white">Reply</SubmitButton>
             </form>
           </details>
         ) : null}
@@ -102,7 +103,7 @@ export function CommentsSection({
             {(Object.keys(TAG_LABEL) as CommentTag[]).map((t) => <option key={t} value={t}>{TAG_LABEL[t]}</option>)}
           </select>
           <p className="text-xs text-muted">No web addresses, please. Be kind: abusive comments are removed.</p>
-          <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Post comment</button>
+          <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Post comment</SubmitButton>
         </form>
       ) : (
         <p><Link href={`/sign-in?next=${encodeURIComponent(`/trails/${slug}#comments`)}`} className="inline-flex min-h-11 items-center underline underline-offset-4">Sign in to comment</Link></p>

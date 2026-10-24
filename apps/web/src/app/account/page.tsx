@@ -4,6 +4,7 @@ import { requireUser } from "@/server/auth/session";
 import { getMemberState } from "@/server/community/members";
 import { getSql } from "@/server/db/client";
 import { signOutAction, signOutEverywhereAction, updateNameAction, updatePrivacyAction } from "./actions";
+import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 export const instant = false;
 export const metadata: Metadata = { title: "Account", robots: { index: false, follow: false } };
@@ -25,7 +26,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <p className="text-sm text-muted">Shown with trails you contribute.</p>
         {sp.saved ? <p role="status" className="text-sm font-medium text-status-good">Saved.</p> : null}
         {sp.error ? <p role="status" className="text-sm font-medium text-status-stop">Use 2 to 40 characters.</p> : null}
-        <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save name</button>
+        <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save name</SubmitButton>
       </form>
       <form action={updatePrivacyAction} className="flex max-w-md flex-col gap-3">
         <fieldset className="flex flex-col gap-2">
@@ -39,17 +40,17 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <p className="text-sm text-muted">Comments always show your display name, whatever you choose here.</p>
         {sp.privacy === "saved" ? <p role="status" className="text-sm font-medium text-status-good">Saved.</p> : null}
         {sp.privacy === "error" ? <p role="status" className="text-sm font-medium text-status-stop">We could not save that.</p> : null}
-        <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save privacy</button>
+        <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save privacy</SubmitButton>
       </form>
       <p><Link href="/account/contributions" className="underline underline-offset-4">Your contributions</Link></p>
       <p><Link href="/account/questions" className="underline underline-offset-4">Your questions</Link></p>
       <p><Link href="/account/devices" className="underline underline-offset-4">Connected devices</Link></p>
       <div className="flex flex-wrap gap-4">
         <form action={signOutAction}>
-          <button type="submit" className="min-h-12 rounded-lg border border-foreground px-5 text-sm font-medium">Sign out</button>
+          <SubmitButton className="min-h-12 rounded-lg border border-foreground px-5 text-sm font-medium">Sign out</SubmitButton>
         </form>
         <form action={signOutEverywhereAction}>
-          <button type="submit" className="min-h-12 rounded-lg border border-foreground px-5 text-sm font-medium">Sign out on all devices</button>
+          <SubmitButton className="min-h-12 rounded-lg border border-foreground px-5 text-sm font-medium">Sign out on all devices</SubmitButton>
         </form>
       </div>
     </section>

@@ -9,6 +9,7 @@ import { CLUB_NOTES } from "@/features/club/messages";
 import { requireUser } from "@/server/auth/session";
 import { getClub, listFeed, listJoinRequests, listMembers, type FeedPost } from "@/server/community/clubs";
 import { getSql } from "@/server/db/client";
+import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 export const instant = false;
 export const metadata: Metadata = { title: "Club", robots: { index: false, follow: false } };
@@ -51,7 +52,7 @@ export default async function ClubDetailPage({ params, searchParams }: PageProps
           <form action={withdrawJoinAction} className="flex flex-col gap-3 rounded-3xl bg-card-cream p-6">
             <input type="hidden" name="clubId" value={id} />
             <p className="font-medium">Your request is waiting for the club&apos;s admins.</p>
-            <button type="submit" className={`${outline} self-start`}>Withdraw request and delete my number</button>
+            <SubmitButton className={`${outline} self-start`}>Withdraw request and delete my number</SubmitButton>
           </form>
         ) : (
           <form action={requestJoinAction} className="flex max-w-xl flex-col gap-3 rounded-3xl bg-card-cream p-6">
@@ -62,7 +63,7 @@ export default async function ClubDetailPage({ params, searchParams }: PageProps
             <p className="text-sm text-muted">Only this club&apos;s admins can see your number, so they know who they are letting in. It is deleted a week after they decide, or straight away if you withdraw.</p>
             <label htmlFor="message" className="text-sm font-medium">A line about you <span className="text-muted">(optional)</span></label>
             <textarea id="message" name="message" rows={2} maxLength={300} className={input} />
-            <button type="submit" className={`${primary} self-start`}>Send request</button>
+            <SubmitButton className={`${primary} self-start`}>Send request</SubmitButton>
           </form>
         )
       ) : null}
@@ -81,8 +82,8 @@ export default async function ClubDetailPage({ params, searchParams }: PageProps
                     <form action={decideJoinAction} className="flex gap-2">
                       <input type="hidden" name="clubId" value={id} />
                       <input type="hidden" name="requestId" value={r.id} />
-                      <button type="submit" name="decision" value="accept" className={primary}>Accept</button>
-                      <button type="submit" name="decision" value="decline" className={outline}>Decline</button>
+                      <SubmitButton name="decision" value="accept" className={primary}>Accept</SubmitButton>
+                      <SubmitButton name="decision" value="decline" className={outline}>Decline</SubmitButton>
                     </form>
                   ) : null}
                 </li>
@@ -107,7 +108,7 @@ export default async function ClubDetailPage({ params, searchParams }: PageProps
                 <label className="flex flex-col gap-1 text-sm">Meeting place<input name="place" maxLength={120} className={input} /></label>
               </div>
             </details>
-            <button type="submit" className={`${primary} self-start`}>Post</button>
+            <SubmitButton className={`${primary} self-start`}>Post</SubmitButton>
           </form>
           {feed.posts.length === 0 ? <p className="text-muted">Nothing here yet.</p> : (
             <ul className="flex flex-col gap-4">{feed.posts.map((p) => <Post key={p.id} p={p} clubId={id} canModerate={isAdmin} />)}</ul>
@@ -127,11 +128,11 @@ export default async function ClubDetailPage({ params, searchParams }: PageProps
                     <form action={setRoleAction}>
                       <input type="hidden" name="clubId" value={id} /><input type="hidden" name="memberId" value={m.handle} />
                       <input type="hidden" name="role" value={m.role === "admin" ? "member" : "admin"} />
-                      <button type="submit" className={outline}>{m.role === "admin" ? "Make member" : "Make admin"}</button>
+                      <SubmitButton className={outline}>{m.role === "admin" ? "Make member" : "Make admin"}</SubmitButton>
                     </form>
                     <form action={removeMemberAction}>
                       <input type="hidden" name="clubId" value={id} /><input type="hidden" name="memberId" value={m.handle} />
-                      <button type="submit" className={outline}>Remove</button>
+                      <SubmitButton className={outline}>Remove</SubmitButton>
                     </form>
                   </span>
                 ) : null}
@@ -140,7 +141,7 @@ export default async function ClubDetailPage({ params, searchParams }: PageProps
           </ul>
           <form action={leaveClubAction}>
             <input type="hidden" name="clubId" value={id} />
-            <button type="submit" className={outline}>Leave club</button>
+            <SubmitButton className={outline}>Leave club</SubmitButton>
           </form>
         </div>
       ) : null}
@@ -157,9 +158,9 @@ function Post({ p, clubId, canModerate }: { p: FeedPost; clubId: string; canMode
       {p.kind === "ride_plan" ? (
         <form action={respondAction} className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="clubId" value={clubId} /><input type="hidden" name="postId" value={p.id} />
-          <button type="submit" name="response" value="going" aria-pressed={p.myResponse === "going"} className={p.myResponse === "going" ? primary : outline}>Going ({p.going})</button>
-          <button type="submit" name="response" value="maybe" aria-pressed={p.myResponse === "maybe"} className={p.myResponse === "maybe" ? primary : outline}>Maybe ({p.maybe})</button>
-          {p.myResponse ? <button type="submit" name="response" value="" className="text-sm underline underline-offset-4">Clear</button> : null}
+          <SubmitButton name="response" value="going" aria-pressed={p.myResponse === "going"} className={p.myResponse === "going" ? primary : outline}>Going ({p.going})</SubmitButton>
+          <SubmitButton name="response" value="maybe" aria-pressed={p.myResponse === "maybe"} className={p.myResponse === "maybe" ? primary : outline}>Maybe ({p.maybe})</SubmitButton>
+          {p.myResponse ? <SubmitButton name="response" value="" className="text-sm underline underline-offset-4">Clear</SubmitButton> : null}
         </form>
       ) : null}
       {p.replies.length ? (
@@ -171,12 +172,12 @@ function Post({ p, clubId, canModerate }: { p: FeedPost; clubId: string; canMode
         <input type="hidden" name="clubId" value={clubId} /><input type="hidden" name="parentId" value={p.id} />
         <label className="sr-only" htmlFor={`reply-${p.id}`}>Reply</label>
         <input id={`reply-${p.id}`} name="body" required maxLength={1000} placeholder="Reply" className={input} />
-        <button type="submit" className={outline}>Reply</button>
+        <SubmitButton className={outline}>Reply</SubmitButton>
       </form>
       {p.mine || canModerate ? (
         <form action={hidePostAction}>
           <input type="hidden" name="clubId" value={clubId} /><input type="hidden" name="postId" value={p.id} />
-          <button type="submit" className="text-sm underline underline-offset-4">Remove post</button>
+          <SubmitButton className="text-sm underline underline-offset-4">Remove post</SubmitButton>
         </form>
       ) : null}
     </li>

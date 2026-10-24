@@ -1,4 +1,5 @@
 import type { ReportType } from "@moto-trails/domain";
+import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 const TYPES: { value: ReportType; label: string }[] = [
   { value: "closure", label: "The trail is closed" },
@@ -57,7 +58,7 @@ export function ReportForm({
       </div>
 
       {message ? <p role="status" className="text-sm font-medium text-status-stop">{message}</p> : null}
-      <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Send report</button>
+      <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Send report</SubmitButton>
     </form>
   );
 }

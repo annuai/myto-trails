@@ -4,6 +4,7 @@ import { safeNextPath } from "@/server/auth/safe-next";
 import { peekLoginToken } from "@/server/auth/auth";
 import { getSql } from "@/server/db/client";
 import { confirmAction } from "./actions";
+import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 export const instant = false;
 export const metadata: Metadata = { title: "Confirm sign-in", robots: { index: false, follow: false } };
@@ -24,9 +25,9 @@ export default async function ConfirmPage({ searchParams }: PageProps<"/auth/con
           <input type="hidden" name="token" value={token} />
           <input type="hidden" name="next" value={next} />
           <p className="max-w-prose">Press the button to finish signing in on this device.</p>
-          <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
+          <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
             Sign in
-          </button>
+          </SubmitButton>
         </form>
       ) : (
         <div className="mt-6">

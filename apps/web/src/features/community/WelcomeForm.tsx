@@ -2,12 +2,13 @@
 
 import { useActionState } from "react";
 import type { WelcomeState } from "@/app/welcome/actions";
+import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 const input = "min-h-12 w-full rounded-lg border border-foreground/40 bg-background px-3";
 
 /** The one-time step after the first sign-in: the declaration, a display name and the visibility choice. */
 export function WelcomeForm({ action, next, displayName }: { action: (prev: WelcomeState, formData: FormData) => Promise<WelcomeState>; next: string; displayName: string }) {
-  const [state, formAction, pending] = useActionState(action, {} as WelcomeState);
+  const [state, formAction] = useActionState(action, {} as WelcomeState);
   const v = state.values;
   return (
     <form action={formAction} className="flex max-w-xl flex-col gap-6">
@@ -42,7 +43,7 @@ export function WelcomeForm({ action, next, displayName }: { action: (prev: Welc
         <span><span className="font-medium">I am a woman rider (optional)</span><span className="block text-sm text-muted">Private. Lets you create and join women-only clubs. It is never shown on your profile.</span></span>
       </label>
 
-      <button type="submit" disabled={pending} className="min-h-12 self-start rounded-lg bg-accent px-6 text-sm font-medium text-white hover:bg-accent-hover">Continue</button>
+      <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-6 text-sm font-medium text-white hover:bg-accent-hover">Continue</SubmitButton>
     </form>
   );
 }

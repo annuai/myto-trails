@@ -1,6 +1,7 @@
 import type { QuestionView } from "@/server/community/questions";
 import type { RevealState } from "./question-actions";
 import { RevealPhone } from "./RevealPhone";
+import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 type Action = (formData: FormData) => void | Promise<void>;
 const input = "w-full rounded-lg border border-foreground/40 bg-background px-3 py-2";
@@ -30,18 +31,18 @@ function Received({ q, a }: { q: QuestionView; a: InboxActions }) {
             <Hidden id={q.id} />
             <label htmlFor={`ans-${q.id}`} className="text-sm font-medium">Your answer</label>
             <textarea id={`ans-${q.id}`} name="answer" rows={3} maxLength={1000} required className={input} />
-            <button type="submit" className="min-h-11 self-start rounded-lg bg-accent px-4 text-sm font-medium text-white">Send answer</button>
+            <SubmitButton className="min-h-11 self-start rounded-lg bg-accent px-4 text-sm font-medium text-white">Send answer</SubmitButton>
           </form>
           <div className="flex flex-wrap gap-x-5">
-            <form action={a.decline}><Hidden id={q.id} /><button type="submit" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Decline</button></form>
-            <form action={a.block}><Hidden id={q.id} /><button type="submit" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Block this rider</button></form>
+            <form action={a.decline}><Hidden id={q.id} /><SubmitButton className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Decline</SubmitButton></form>
+            <form action={a.block}><Hidden id={q.id} /><SubmitButton className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Block this rider</SubmitButton></form>
             <details>
               <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm text-muted underline underline-offset-4">Report</summary>
               <form action={a.report} className="mb-2 flex max-w-md flex-col gap-2">
                 <Hidden id={q.id} />
                 <label htmlFor={`rep-${q.id}`} className="text-sm">What is the problem?</label>
                 <input id={`rep-${q.id}`} name="reason" minLength={5} maxLength={500} required className={input} />
-                <button type="submit" className="min-h-11 self-start rounded-lg border border-foreground px-4 text-sm font-medium">Send report</button>
+                <SubmitButton className="min-h-11 self-start rounded-lg border border-foreground px-4 text-sm font-medium">Send report</SubmitButton>
               </form>
             </details>
           </div>
@@ -56,7 +57,7 @@ function Received({ q, a }: { q: QuestionView; a: InboxActions }) {
             <label htmlFor={`ph-${q.id}`} className="text-sm font-medium">Your number</label>
             <input id={`ph-${q.id}`} name="phone" type="tel" inputMode="tel" autoComplete="tel" required placeholder="98123 45678" className={input} />
             <p className="text-xs text-muted">{q.otherName} must press Reveal within 24 hours. They then see it once, for 5 minutes, and have to save it in that time. After that it is deleted and nobody, including us, can see it. You can take the offer back until it is revealed.</p>
-            <button type="submit" className="min-h-11 self-start rounded-lg bg-accent px-4 text-sm font-medium text-white">Offer my number</button>
+            <SubmitButton className="min-h-11 self-start rounded-lg bg-accent px-4 text-sm font-medium text-white">Offer my number</SubmitButton>
           </form>
         </details>
       ) : null}
@@ -64,7 +65,7 @@ function Received({ q, a }: { q: QuestionView; a: InboxActions }) {
         <form action={a.withdraw} className="flex flex-wrap items-center gap-3">
           <Hidden id={q.id} />
           <p className="text-sm">Your number is offered to {q.otherName} ({minutes(q.share.remainingSeconds)} left to reveal it).</p>
-          <button type="submit" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Take it back</button>
+          <SubmitButton className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Take it back</SubmitButton>
         </form>
       ) : null}
       {q.share.state === "revealed" ? <p className="text-sm">{q.otherName} has seen your number. It is deleted now or within minutes.</p> : null}
@@ -104,7 +105,7 @@ export function QuestionsInbox({ received, sent, blocked, actions, unblock }: { 
         <section aria-labelledby="blocked"><h2 id="blocked" className="text-xl font-semibold">Riders you blocked</h2>
           <ul className="mt-3 flex flex-col gap-2">{blocked.map((b) => (
             <li key={b.blockedId} className="flex flex-wrap items-center gap-4"><span>{b.name}</span>
-              <form action={unblock}><input type="hidden" name="blockedId" value={b.blockedId} /><button type="submit" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Unblock</button></form>
+              <form action={unblock}><input type="hidden" name="blockedId" value={b.blockedId} /><SubmitButton className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Unblock</SubmitButton></form>
             </li>))}
           </ul>
         </section>

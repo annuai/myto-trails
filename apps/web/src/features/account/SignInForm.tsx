@@ -1,3 +1,5 @@
+import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
+
 export function SignInForm({ action, next, message }: { action: (formData: FormData) => void | Promise<void>; next: string; message?: string }) {
   return (
     <form action={action} className="flex max-w-md flex-col gap-4">
@@ -16,9 +18,9 @@ export function SignInForm({ action, next, message }: { action: (formData: FormD
         <p className="mt-2 text-sm text-muted">We&apos;ll email you a link that signs you in. No password needed.</p>
       </div>
       {message ? <p role="status" className="text-sm font-medium text-status-caution">{message}</p> : null}
-      <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
+      <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
         Email me a sign-in link
-      </button>
+      </SubmitButton>
     </form>
   );
 }
