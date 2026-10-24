@@ -9,8 +9,7 @@ import { LocationSection } from "./LocationSection";
 import { RouteSection } from "./RouteSection";
 import { SafetyInformation } from "./SafetyInformation";
 import { SeasonStrip } from "./SeasonStrip";
-import { TrailGallery } from "./TrailGallery";
-import { TrailVideos } from "./TrailVideos";
+import { TrailMedia } from "./TrailMedia";
 import { TrailNotices } from "./TrailNotices";
 import { routeShapeLabel, suitabilityLabel, terrainLabel } from "./labels";
 
@@ -103,8 +102,7 @@ export function TrailDetail({ trail, media, videos = [], route = null, actions }
       <LocationSection trail={trail} showMap={!route} />
       <SeasonStrip bestMonths={trail.bestMonths} />
       <SafetyInformation hazards={trail.hazards} safetyNotes={trail.safetyNotes} />
-      <TrailGallery media={media.filter((m) => m !== cover)} />
-      <TrailVideos videos={videos} />
+      <TrailMedia photos={media.filter((m) => m !== cover)} videos={videos} />
       <AccessDetails trail={trail} />
 
       <footer className="border-t border-border pt-4 text-sm text-muted">

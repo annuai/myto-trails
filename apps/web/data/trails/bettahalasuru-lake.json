@@ -1,0 +1,127 @@
+{
+  "sample": false,
+  "slug": "bettahalasuru-lake",
+  "name": "Bettahalasuru Lake",
+  "summary": "A short, moderate off-road ride to a granite stone quarry with several small lakes, north of Bengaluru. It sits near the Bettahalasuru lake viewpoint but is hard to find, and you can explore on foot.",
+  "description": "A very beautiful stone quarry and lake, with several small bodies of water among the granite. It is close to the Bettahalasuru lake viewpoint but relatively difficult to find, and the ground is rough, so the ride is short and slow. You can leave the bike and hike around the quarry over small distances.\n\nBettahalasur is a town in north Bengaluru, about 16 km from Bengaluru's international airport, and is known for stone quarrying. Reports say quarrying there has been stopped. Older reports also describe open quarry pits 100 to 200 feet deep and a number of drownings, so treat all the water here as deep and dangerous.",
+  "state": "karnataka",
+  "district": "Bengaluru Urban",
+  "nearestTown": "Bettahalasuru",
+  "startPoint": {
+    "lon": 77.619806,
+    "lat": 13.161861
+  },
+  "sensitivity": "standard",
+  "routeShape": "out_and_back",
+  "distanceKm": 1,
+  "estDurationMin": 10,
+  "difficulty": "moderate",
+  "terrain": [
+    "rock",
+    "dirt"
+  ],
+  "suitableFor": [],
+  "bestMonths": [],
+  "seasonNotes": "Summer may be better, when the ground is drier. Ridden in October, after rain. Best months are not known yet.",
+  "hazards": [
+    "slippery_after_rain",
+    "river_crossing",
+    "loose_rock"
+  ],
+  "safetyNotes": "There is no road, and the way in is not obvious. Record a GPX track on the way in so you can follow it back. The quarry pits hold deep water and people have drowned in them in the past: do not swim, and keep well back from edges. Rock is slippery when wet.",
+  "surfaceNotes": "Bare granite, broken rock, grass and dirt, with water to cross after rain.",
+  "contributorCredit": "Annuai",
+  "access": {
+    "accessClass": "public",
+    "restrictions": [],
+    "basis": "rider_observed",
+    "level": "community_reported",
+    "evidence": [
+      {
+        "kind": "other",
+        "description": "Ridden and walked by the contributor on 24 October 2026, who reports it is open to everyone. Not checked by a moderator."
+      }
+    ]
+  },
+  "condition": {
+    "status": "open",
+    "effectiveFrom": "2026-10-24"
+  },
+  "media": [
+    {
+      "role": "cover",
+      "position": 0,
+      "altText": "A tall grey granite quarry face rising above a still, dark pool in the early morning light",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/bettahalasuru-lake/photo-1-400.webp",
+        "800": "/photos/bettahalasuru-lake/photo-1-800.webp",
+        "1200": "/photos/bettahalasuru-lake/photo-1-1200.webp",
+        "1800": "/photos/bettahalasuru-lake/photo-1-1800.webp"
+      },
+      "width": 2400,
+      "height": 1800
+    },
+    {
+      "role": "gallery",
+      "position": 1,
+      "altText": "The same granite quarry wall and pool seen in portrait, with rain rings on the water",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/bettahalasuru-lake/photo-2-400.webp",
+        "800": "/photos/bettahalasuru-lake/photo-2-800.webp",
+        "1200": "/photos/bettahalasuru-lake/photo-2-1200.webp",
+        "1800": "/photos/bettahalasuru-lake/photo-2-1800.webp"
+      },
+      "width": 1800,
+      "height": 2400
+    },
+    {
+      "role": "gallery",
+      "position": 2,
+      "altText": "A motorcycle parked on bare granite and grass among broken rock in the quarry, with apartment blocks beyond",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/bettahalasuru-lake/photo-3-400.webp",
+        "800": "/photos/bettahalasuru-lake/photo-3-800.webp",
+        "1200": "/photos/bettahalasuru-lake/photo-3-1200.webp",
+        "1800": "/photos/bettahalasuru-lake/photo-3-1800.webp"
+      },
+      "width": 1800,
+      "height": 2400
+    }
+  ],
+  "videos": [
+    {
+      "position": 0,
+      "description": "A 9-second pan across the granite quarry face above a still pool in the early morning.",
+      "credit": "Annuai",
+      "mp4": "/videos/bettahalasuru-lake/video-1.mp4",
+      "poster": "/videos/bettahalasuru-lake/video-1-poster.webp",
+      "width": 720,
+      "height": 1280,
+      "durationS": 9
+    },
+    {
+      "position": 1,
+      "description": "An 8-second look at a rock face and the flat quarry floor, with a person standing far off near its base.",
+      "credit": "Annuai",
+      "mp4": "/videos/bettahalasuru-lake/video-2.mp4",
+      "poster": "/videos/bettahalasuru-lake/video-2-poster.webp",
+      "width": 720,
+      "height": 1280,
+      "durationS": 8
+    },
+    {
+      "position": 2,
+      "description": "A 10-second view from the quarry rim over pools of water and broken rock towards the buildings of the town.",
+      "credit": "Annuai",
+      "mp4": "/videos/bettahalasuru-lake/video-3.mp4",
+      "poster": "/videos/bettahalasuru-lake/video-3-poster.webp",
+      "width": 720,
+      "height": 1280,
+      "durationS": 10
+    }
+  ],
+  "publish": true
+}
