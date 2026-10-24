@@ -17,12 +17,12 @@ npm run db:start -w @moto-trails/web          # project-local cluster in .pgdata
 export DATABASE_URL=postgres://localhost:54329/moto_trails
 npm run db:migrate -w @moto-trails/web         # apply db/migrations
 npm run db:seed:regions -w @moto-trails/web    # India, 28 states, 8 union territories
-npm run db:import -w @moto-trails/web -- data/sample-trails.json   # six fictional SAMPLE trails
+npm run db:import -w @moto-trails/web -- data/sample-trails.json --allow-samples   # six fictional SAMPLE trails (development databases only)
 npm run dev -w @moto-trails/web
 npm run test:db -w @moto-trails/web            # database tests (own throwaway databases)
 npm run db:stop -w @moto-trails/web
 ```
-Sample trails are clearly labelled, are never indexed, and the importer refuses them in production. Real trails go in a JSON file with the same shape (see `src/server/import/schema.ts`) and are imported the same way.
+Sample trails are clearly labelled and never indexed; the importer refuses them unless you pass `--allow-samples`, and always refuses them when `NODE_ENV=production`. Never point `DATABASE_URL` at a production database while importing samples. Real trails go in a JSON file with the same shape (see `src/server/import/schema.ts`) and are imported the same way.
 
 **Production builds query the database** (cached pages such as `/regions` and `/sitemap.xml` are prerendered), so a build needs a reachable, migrated `DATABASE_URL`; the same applies to Vercel builds. Run `npm run db:migrate` against Supabase only when you decide to (it is not run automatically).
 

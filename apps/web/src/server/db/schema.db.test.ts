@@ -124,3 +124,19 @@ describe("current-state triggers", () => {
     expect((await current(trailId)).condition_current).toBe("temporarily_closed");
   });
 });
+
+describe("condition events that are not yet in effect", () => {
+  it("do not replace the current condition", async () => {
+    const trailId = await makeTrail();
+    await db.sql`insert into condition_event (trail_id, status, effective_from, source) values (${trailId}, 'temporarily_closed', '2026-01-01', 'moderator')`;
+    await db.sql`insert into condition_event (trail_id, status, effective_from, source) values (${trailId}, 'open', '2099-01-01', 'moderator')`;
+    const [row] = await db.sql`select condition_current from trail where id = ${trailId}`;
+    expect(row!.condition_current).toBe("temporarily_closed");
+  });
+  it("leave the condition unknown when every event is in the future", async () => {
+    const trailId = await makeTrail();
+    await db.sql`insert into condition_event (trail_id, status, effective_from, source) values (${trailId}, 'open', '2099-01-01', 'moderator')`;
+    const [row] = await db.sql`select condition_current from trail where id = ${trailId}`;
+    expect(row!.condition_current).toBe("unknown");
+  });
+});

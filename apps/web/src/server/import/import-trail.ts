@@ -22,7 +22,7 @@ const point = (p: { lon: number; lat: number }) => `SRID=4326;POINT(${p.lon} ${p
 export async function importTrail(
   sql: Sql,
   record: unknown,
-  opts: { production: boolean },
+  opts: { production: boolean; allowSamples?: boolean },
 ): Promise<{ slug: string; trailId: string }> {
   const parsed = TrailImportSchema.safeParse(record);
   if (!parsed.success) {
@@ -30,6 +30,9 @@ export async function importTrail(
   }
   const t = parsed.data;
   if (t.sample && opts.production) throw new ImportError("Sample records cannot be imported in production", "rule");
+  if (t.sample && !opts.allowSamples) {
+    throw new ImportError("Sample records are for development databases only; pass --allow-samples to import them", "rule");
+  }
   if (t.publish && t.access.accessClass === "private_no_access") {
     throw new ImportError("A trail with access class private_no_access cannot be published", "rule");
   }

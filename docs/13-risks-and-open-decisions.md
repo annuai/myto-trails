@@ -78,3 +78,5 @@ Likelihood (L) and impact (I): Low / Medium / High. Owner suggestions are placeh
 - `route`, `gpx_file`, `place`, `device`, `donation` and `submission` tables arrive in later milestones; `trail_slug_history` (permanent redirects on rename) is deferred to M6.
 - `verified_at`, `valid_until` and `expected_until` are `date` columns; a date means "valid through the end of that UTC day".
 - Public reads go through `public_*` views under the `anon` role (ADR 0004). Sample trails (`is_sample`) exist only for development and are excluded from the production sitemap and from indexing.
+- Condition events dated in the future are not in effect: the public views compute the current condition at read time from events with `effective_from <= current_date`, and the stored `trail.condition_current` follows the same rule (it needs a nightly refresh when search filters use it, planned with the M6 expiry sweep).
+- Cached DTOs keep stored values (`rawCondition`, `rawVerificationLevel`); the effective condition and verification are recomputed on every request with `applyNow`.

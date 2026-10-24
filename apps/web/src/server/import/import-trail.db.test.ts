@@ -13,7 +13,7 @@ const record = (overrides: Partial<TrailImport> = {}): TrailImport => {
   const n = ++counter;
   return { ...structuredClone(samples[0]!), name: `Sample import trail ${n}`, slug: `sample-import-trail-${n}`, publish: true, ...overrides };
 };
-const production = { production: false };
+const production = { production: false, allowSamples: true };
 
 beforeAll(async () => {
   db = await createTestDatabase();
@@ -44,8 +44,13 @@ describe("importTrail", () => {
     }
   });
 
-  it("refuses sample records in production", async () => {
-    await expect(importTrail(db.sql, record(), { production: true })).rejects.toThrow(ImportError);
+  it("refuses sample records in production even when samples are allowed", async () => {
+    await expect(importTrail(db.sql, record(), { production: true, allowSamples: true })).rejects.toThrow(ImportError);
+  });
+
+  it("refuses sample records unless samples are explicitly allowed", async () => {
+    await expect(importTrail(db.sql, record(), { production: false })).rejects.toThrow(/allow-samples/);
+    await expect(importTrail(db.sql, record(), { production: false, allowSamples: false })).rejects.toThrow(/allow-samples/);
   });
 
   it("refuses to publish a private_no_access trail", async () => {

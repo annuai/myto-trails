@@ -152,3 +152,23 @@ describe("public_trail_media and public_regions", () => {
     expect(rows.find((r) => r.slug === "count-d")!.published_trail_count).toBe(2);
   });
 });
+
+describe("public views and conditions that are not yet in effect", () => {
+  it("ignore future-dated events and do not depend on the stored current value", async () => {
+    const t = await insertTrailFixture(db.sql, { conditionStatus: "temporarily_closed", conditionReason: "landslide" });
+    await db.sql`insert into condition_event (trail_id, status, reason, note, effective_from, source)
+      values (${t.trailId}, 'open', 'weather', 'future note', '2099-01-01', 'moderator')`;
+    await db.sql`update trail set condition_current = 'open' where id = ${t.trailId}`; // simulate a stale denormalised value
+    const [trail] = await asAnon(db.sql, (tx) => tx`select condition_current from public_trails where slug = ${t.slug}`);
+    const [detail] = await asAnon(db.sql, (tx) => tx`select condition_reason, condition_note from public_trail_detail where slug = ${t.slug}`);
+    expect(trail!.condition_current).toBe("temporarily_closed");
+    expect(detail).toMatchObject({ condition_reason: "landslide", condition_note: null });
+  });
+
+  it("report unknown when the only event is in the future", async () => {
+    const t = await insertTrailFixture(db.sql, { conditionStatus: null });
+    await db.sql`insert into condition_event (trail_id, status, effective_from, source) values (${t.trailId}, 'open', '2099-01-01', 'moderator')`;
+    const [row] = await asAnon(db.sql, (tx) => tx`select condition_current from public_trails where slug = ${t.slug}`);
+    expect(row!.condition_current).toBe("unknown");
+  });
+});

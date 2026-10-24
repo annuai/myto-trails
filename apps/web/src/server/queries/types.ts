@@ -17,11 +17,15 @@ export type TrailSummaryDto = {
   distanceKm: number | null;
   estDurationMin: number | null;
   accessClass: AccessClass;
-  /** Effective condition: an overdue temporary closure is reported as unknown. */
+  /** Effective condition: an overdue temporary closure is reported as unknown. Recompute with applyNow(). */
   condition: OperationalStatus;
+  /** Stored condition, kept so the effective one can be recomputed after caching. */
+  rawCondition: OperationalStatus;
   conditionExpectedUntil: string | null;
   /** Effective verification: expired verification asks for a re-check, then downgrades to unverified. */
   verification: { level: VerificationLevel; needsRecheck: boolean };
+  /** Stored verification level, kept so the effective one can be recomputed after caching. */
+  rawVerificationLevel: VerificationLevel;
   verifiedAt: string | null;
   validUntil: string | null;
   isSample: boolean;
