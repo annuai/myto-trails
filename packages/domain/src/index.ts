@@ -5,3 +5,4 @@ export * from "./condition";
 export * from "./gpx";
 export * from "./slug";
 export * from "./regions";
+export * from "./geo";
