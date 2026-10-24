@@ -1,0 +1,96 @@
+{
+  "sample": false,
+  "slug": "hesarghatta-wetlands",
+  "name": "Hesarghatta Wetlands",
+  "summary": "A short, hard off-road ride across the open grassland and wet lake bed at Hesaraghatta, north-west of Bengaluru. Slippery in rain, with a water crossing, and the way in near the viewpoint is easy to miss.",
+  "description": "A very beautiful entrance to the Hesaraghatta lake, close to the viewpoint but hard to find. There is no road: the ride is about 2 km of open, muddy ground and standing water, so it is slow going.\n\nHesaraghatta Lake is a reservoir on the Arkavathy river, created in the 1890s to supply Bengaluru with drinking water, and for decades the city's main source. It has mostly dried since the 1990s, and the grassland around it is among the last of its kind near Bengaluru and a good place for birds. The wider area has since been declared a conservation reserve, so check the current rules before you ride, keep to existing tracks and stay off the grass.",
+  "state": "karnataka",
+  "district": "Bengaluru Urban",
+  "nearestTown": "Hesaraghatta",
+  "startPoint": {
+    "lon": 77.483722,
+    "lat": 13.169694
+  },
+  "sensitivity": "standard",
+  "routeShape": "out_and_back",
+  "distanceKm": 2,
+  "estDurationMin": 20,
+  "difficulty": "hard",
+  "terrain": [
+    "mud",
+    "dirt"
+  ],
+  "suitableFor": [],
+  "bestMonths": [],
+  "seasonNotes": "Summer may be better, when the ground is drier. The photos were taken in October after rain, with standing water. Best months are not known yet.",
+  "hazards": [
+    "slippery_after_rain",
+    "river_crossing"
+  ],
+  "safetyNotes": "There is no road and the way in is not obvious. Record a GPX track on the way in so you can follow it back. Expect deep mud and water crossings after rain, and ride with a friend.",
+  "surfaceNotes": "Soft mud and standing water after rain, with no marked track.",
+  "contributorCredit": "Annuai",
+  "access": {
+    "accessClass": "unknown",
+    "restrictions": [
+      "protected_area"
+    ],
+    "basis": "rider_observed",
+    "level": "community_reported",
+    "evidence": [
+      {
+        "kind": "other",
+        "description": "Ridden by the contributor on 18 October 2026, who reports it is open to everyone and not a road. Not checked by a moderator. The area is reported to be a conservation reserve."
+      }
+    ]
+  },
+  "condition": {
+    "status": "open",
+    "effectiveFrom": "2026-10-18"
+  },
+  "media": [
+    {
+      "role": "cover",
+      "position": 0,
+      "altText": "Flooded, muddy track across open grassland at Hesaraghatta on a grey morning, with bare thorn trees and pools of standing water",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/hesarghatta-wetlands/photo-1-400.webp",
+        "800": "/photos/hesarghatta-wetlands/photo-1-800.webp",
+        "1200": "/photos/hesarghatta-wetlands/photo-1-1200.webp",
+        "1800": "/photos/hesarghatta-wetlands/photo-1-1800.webp"
+      },
+      "width": 2400,
+      "height": 1800
+    },
+    {
+      "role": "gallery",
+      "position": 1,
+      "altText": "Shallow lake water among bare trees beside the muddy shore, with an upturned blue tub on the bank",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/hesarghatta-wetlands/photo-2-400.webp",
+        "800": "/photos/hesarghatta-wetlands/photo-2-800.webp",
+        "1200": "/photos/hesarghatta-wetlands/photo-2-1200.webp",
+        "1800": "/photos/hesarghatta-wetlands/photo-2-1800.webp"
+      },
+      "width": 2400,
+      "height": 1800
+    },
+    {
+      "role": "gallery",
+      "position": 2,
+      "altText": "A red-and-white adventure motorcycle parked on a narrow muddy track through green grass",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/hesarghatta-wetlands/photo-3-400.webp",
+        "800": "/photos/hesarghatta-wetlands/photo-3-800.webp",
+        "1200": "/photos/hesarghatta-wetlands/photo-3-1200.webp",
+        "1800": "/photos/hesarghatta-wetlands/photo-3-1800.webp"
+      },
+      "width": 1800,
+      "height": 2400
+    }
+  ],
+  "publish": true
+}
