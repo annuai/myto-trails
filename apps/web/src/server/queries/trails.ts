@@ -3,8 +3,8 @@ import { cacheLife, cacheTag } from "next/cache";
 import { connection } from "next/server";
 import { getSql, withPublicRole } from "../db/client";
 import { applyNow } from "./effective";
-import { queryTrailBySlug, queryTrailMedia, queryTrailsInRegion, querySitemapEntries } from "./trails.sql";
-import type { MediaDto, TrailDetailDto, TrailSummaryDto } from "./types";
+import { queryTrailBySlug, queryTrailMedia, queryTrailRoute, queryTrailsInRegion, querySitemapEntries } from "./trails.sql";
+import type { MediaDto, RouteDto, TrailDetailDto, TrailSummaryDto } from "./types";
 
 // Cached wrappers used by pages. Slugs are validated before any cache entry or tag is created, so hostile
 // URLs never reach the cache or the database. Invalidate with revalidateTag("trails") or ("trail:<slug>").
@@ -35,6 +35,17 @@ async function loadTrailMedia(slug: string): Promise<MediaDto[]> {
 
 export async function getTrailMedia(slug: string): Promise<MediaDto[]> {
   return isValidSlug(slug) ? loadTrailMedia(slug) : [];
+}
+
+async function loadTrailRoute(slug: string): Promise<RouteDto | null> {
+  "use cache";
+  cacheTag("trails", `trail:${slug}`);
+  cacheLife("hours");
+  return withPublicRole(getSql(), (tx) => queryTrailRoute(tx, slug));
+}
+
+export async function getTrailRoute(slug: string): Promise<RouteDto | null> {
+  return isValidSlug(slug) ? loadTrailRoute(slug) : null;
 }
 
 async function loadTrailsInRegion(stateSlug: string, districtSlug: string | undefined): Promise<TrailSummaryDto[]> {

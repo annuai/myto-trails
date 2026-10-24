@@ -56,6 +56,21 @@ export type TrailDetailDto = TrailSummaryDto & {
   firstPublishedAt: string | null;
   /** Recent closure reports that moderators have not resolved yet (no reporter details). */
   openClosureReports: number;
+  /** A ready GPX is attached to the published revision (whether it may be downloaded is decided by canDownloadGpx). */
+  hasGpx: boolean;
+};
+
+export type RouteDto = {
+  distanceKm: number;
+  elevGainM: number | null;
+  elevLossM: number | null;
+  minElevM: number | null;
+  maxElevM: number | null;
+  pointCount: number;
+  /** Elevation profile samples: distance from the start in km and elevation in metres. */
+  profile: { d: number; e: number }[] | null;
+  /** Simplified line as [lon, lat] pairs, for the map only. */
+  line: [number, number][];
 };
 
 export type RegionDto = {

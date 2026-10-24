@@ -3,7 +3,9 @@ import type { Sql } from "postgres";
 import { seedRegions } from "../db/seed-regions";
 import { insertTrailFixture } from "../testing/fixtures";
 import { asAnon, createTestDatabase } from "../testing/db";
-import { querySitemapEntries, queryTrailBySlug, queryTrailMedia, queryTrailsInRegion } from "./trails.sql";
+import { ingestGpx, insertRoute } from "../gpx/ingest";
+import { line, makeGpx } from "../gpx/fixtures";
+import { querySitemapEntries, queryTrailBySlug, queryTrailMedia, queryTrailRoute, queryTrailsInRegion } from "./trails.sql";
 import { queryDistricts, queryRegionBySlugs, queryRegionsForHub, queryStates } from "./regions.sql";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
@@ -181,5 +183,34 @@ describe("querySitemapEntries", () => {
     const withSamples = await asAnon(db.sql, (tx) => querySitemapEntries(tx, { excludeSample: false }));
     expect(without.trails.map((x) => x.slug)).not.toContain(t.slug);
     expect(withSamples.trails.map((x) => x.slug)).toContain(t.slug);
+  });
+});
+
+describe("queryTrailRoute", () => {
+  async function withRoute(overrides: Parameters<typeof insertTrailFixture>[1]) {
+    const t = await insertTrailFixture(db.sql, overrides);
+    const ingested = ingestGpx(new TextEncoder().encode(makeGpx(line(150, { lat: 10.1, lon: 77.0 }, { ele: (i) => 500 + i }))));
+    if (!ingested.ok) throw new Error("fixture gpx");
+    await db.sql.begin((tx) => insertRoute(tx, { ingested, revisionId: t.revisionId, userId: null, originalKey: `gpx/o/${t.slug}.gpx`, cleanKey: `gpx/o/${t.slug}-c.gpx`, sha256: "a".repeat(64), sizeBytes: 100 }));
+    return t;
+  }
+
+  it("returns the simplified line, statistics and profile of a published standard trail, and marks hasGpx", async () => {
+    const t = await withRoute({ ...loc("r1") });
+    const route = await asAnon(db.sql, (tx) => queryTrailRoute(tx, t.slug));
+    expect(route!.distanceKm).toBeGreaterThan(16);
+    expect(route!.pointCount).toBe(150);
+    expect(route!.line.length).toBeGreaterThanOrEqual(2);
+    expect(route!.line[0]).toEqual([77, 10.1]);
+    expect(route!.profile!.length).toBeGreaterThan(1);
+    expect((await asAnon(db.sql, (tx) => queryTrailBySlug(tx, t.slug, now)))!.hasGpx).toBe(true);
+  });
+
+  it("returns null for sensitive and unpublished trails, trails without a route, and bad slugs", async () => {
+    const sensitive = await withRoute({ ...loc("r2"), sensitivity: "sensitive", publicPoint: { lon: 77, lat: 10 } });
+    const draft = await withRoute({ ...loc("r3"), lifecycle: "draft" });
+    const none = await insertTrailFixture(db.sql, loc("r4"));
+    for (const slug of [sensitive.slug, draft.slug, none.slug]) expect(await asAnon(db.sql, (tx) => queryTrailRoute(tx, slug))).toBeNull();
+    expect(await queryTrailRoute(neverCalled, "BAD SLUG")).toBeNull();
   });
 });

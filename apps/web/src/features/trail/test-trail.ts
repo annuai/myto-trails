@@ -45,6 +45,7 @@ export function makeTrail(overrides: Partial<TrailDetailDto> = {}): TrailDetailD
     location: { lon: 76.1, lat: 11.62 },
     firstPublishedAt: "2026-01-15T00:00:00.000Z",
     openClosureReports: 0,
+    hasGpx: false,
     ...overrides,
   };
 }

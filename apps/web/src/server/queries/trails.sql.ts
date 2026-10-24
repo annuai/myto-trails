@@ -1,6 +1,6 @@
 import { effectiveCondition, effectiveVerificationLevel, isRegionIndexable, isValidSlug, type OperationalStatus, type VerificationLevel } from "@moto-trails/domain";
 import type { Sql } from "postgres";
-import type { MediaDto, TrailDetailDto, TrailSummaryDto } from "./types";
+import type { MediaDto, RouteDto, TrailDetailDto, TrailSummaryDto } from "./types";
 
 // Uncached query functions. Callers pass a connection that is already running as the anonymous role
 // (see withPublicRole). Slugs are validated first and always sent as query parameters.
@@ -64,6 +64,23 @@ export async function queryTrailBySlug(sql: Sql, slug: string, now: Date): Promi
     location: r.lon === null || r.lat === null ? null : { lon: Number(r.lon), lat: Number(r.lat) },
     firstPublishedAt: r.first_published_at ? iso(r.first_published_at) : null,
     openClosureReports: Number(r.open_closure_reports ?? 0),
+    hasGpx: Boolean(r.has_gpx),
+  };
+}
+
+export async function queryTrailRoute(sql: Sql, slug: string): Promise<RouteDto | null> {
+  if (!isValidSlug(slug)) return null;
+  const [r] = (await sql`select * from public_trail_route where slug = ${slug}`) as Row[];
+  if (!r) return null;
+  return {
+    distanceKm: Number(r.distance_km),
+    elevGainM: num(r.elev_gain_m),
+    elevLossM: num(r.elev_loss_m),
+    minElevM: num(r.min_elev_m),
+    maxElevM: num(r.max_elev_m),
+    pointCount: r.point_count,
+    profile: r.profile ?? null,
+    line: (JSON.parse(r.simplified_geojson) as { coordinates: [number, number][] }).coordinates,
   };
 }
 
