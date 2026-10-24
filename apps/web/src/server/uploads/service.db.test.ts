@@ -4,6 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { GPX_MAX_BYTES, IMAGE_MAX_BYTES } from "@moto-trails/domain";
 import { line, makeGpx } from "../gpx/fixtures";
 import { parseGpx } from "../gpx/parse";
+import { insertTrailFixture } from "../testing/fixtures";
+import { ingestGpx, insertRoute } from "../gpx/ingest";
 import { createTestDatabase } from "../testing/db";
 import { MemoryStorageProvider } from "../storage/memory-provider";
 import { completeUpload, getUploadStatus, requestUpload } from "./service";
@@ -121,15 +123,39 @@ describe("completeUpload: GPX", () => {
     expect(c!.n).toBe(1);
   });
 
-  it("flags a duplicate route but still accepts it", async () => {
+  it("flags a duplicate of a published trail but still accepts it, and never reveals other uploads", async () => {
     fresh();
     const u = await user();
     const track = enc(makeGpx(line(100, { lat: 10.5, lon: 77.3 })));
-    const first = await completeUpload(db.sql, storage, { userId: u, uploadId: (await upload(u, "gpx", track, "application/gpx+xml")).id });
-    const second = await completeUpload(db.sql, storage, { userId: u, uploadId: (await upload(u, "gpx", track, "application/gpx+xml")).id });
-    expect(second.status).toBe("ready");
-    expect(second.similar?.[0]).toMatchObject({ routeId: first.routeId });
-    expect(second.similar![0]!.similarity).toBeGreaterThan(0.9);
+    const pub = await insertTrailFixture(db.sql, { state: { slug: "up-dup", name: "Up Dup" }, district: null });
+    const ing = ingestGpx(track);
+    if (!ing.ok) throw new Error("fixture");
+    await db.sql.begin((tx) => insertRoute(tx, { ingested: ing, revisionId: pub.revisionId, userId: null, originalKey: "gpx/p/a.gpx", cleanKey: "gpx/p/a-c.gpx", sha256: "e".repeat(64), sizeBytes: 10 }));
+    // Another rider's earlier upload of the same line is private and must not show up.
+    await completeUpload(db.sql, storage, { userId: await user(), uploadId: (await upload(await user(), "gpx", track, "application/gpx+xml")).id }).catch(() => null);
+
+    const r = await completeUpload(db.sql, storage, { userId: u, uploadId: (await upload(u, "gpx", track, "application/gpx+xml")).id });
+    expect(r.status).toBe("ready");
+    expect(r.similar).toEqual([expect.objectContaining({ slug: pub.slug })]);
+    expect(r.similar![0]!.similarity).toBeGreaterThan(0.9);
+    expect(JSON.stringify(r.similar)).not.toMatch(/routeId/);
+  });
+
+  it("leaves no stored objects behind when the database write fails", async () => {
+    fresh();
+    const u = await user();
+    await db.sql`create or replace function mt_test_fail() returns trigger language plpgsql as $$ begin raise exception 'boom'; end $$`;
+    await db.sql`create trigger mt_test_fail before insert on gpx_file for each row execute function mt_test_fail()`;
+    try {
+      const up = await upload(u, "gpx", enc(makeGpx(line(80))), "application/gpx+xml");
+      const r = await completeUpload(db.sql, storage, { userId: u, uploadId: up.id });
+      expect(r).toMatchObject({ status: "rejected", rejectCode: "processing_failed" });
+      expect(await storage.head("quarantine", up.key)).toBeNull();
+      expect(await storage.head("originals", up.key)).toBeNull();
+      expect(await storage.head("originals", up.key.replace(/\.gpx$/, "-clean.gpx"))).toBeNull();
+    } finally {
+      await db.sql`drop trigger mt_test_fail on gpx_file`;
+    }
   });
 
   it.each([
@@ -192,6 +218,7 @@ describe("completeUpload: images", () => {
     expect(Object.keys(m!.variants_avif).sort()).toEqual(["1200", "400", "800"]);
     const url800 = m!.variants["800"] as string;
     expect(url800).toMatch(/^memory:\/\/public\/image\//);
+    expect(url800).not.toContain(u); // public URLs must not reveal the uploader's account id
     const key800 = url800.replace("memory://public/", "");
     expect((await storage.head("public", key800))!.contentType).toBe("image/webp");
     expect(await storage.head("quarantine", up.key)).toBeNull();

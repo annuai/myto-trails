@@ -121,38 +121,48 @@ describe("has_gpx on the public detail view", () => {
 });
 
 describe("find_similar_routes", () => {
+  const addPublished = async (line: string) => addRoute((await insertTrailFixture(db.sql, { ...place })).revisionId, line);
   const similar = async (line: string, exclude: string | null = null) =>
     db.sql`select route_id, similarity from find_similar_routes(ST_GeomFromText(${line}, 4326), ${exclude})`;
 
   it("finds an identical route with similarity about 1", async () => {
     const line = wkt(77.0, 10.0, 60);
-    const id = await addRoute(null, line);
+    const id = await addPublished(line);
     const rows = await similar(line);
     expect(rows.find((r) => r.route_id === id)!.similarity).toBeGreaterThan(0.95);
   });
 
   it("still matches a route shifted by about 10 m", async () => {
-    const id = await addRoute(null, wkt(77.2, 10.0, 60));
+    const id = await addPublished(wkt(77.2, 10.0, 60));
     const rows = await similar(wkt(77.2001, 10.0, 60)); // 0.0001 degrees of longitude is about 11 m
     expect(rows.find((r) => r.route_id === id)!.similarity).toBeGreaterThan(0.9);
   });
 
   it("does not match a parallel route 500 m away or an unrelated route", async () => {
-    const id = await addRoute(null, wkt(77.4, 10.0, 60));
+    const id = await addPublished(wkt(77.4, 10.0, 60));
     expect((await similar(wkt(77.4045, 10.0, 60))).map((r) => r.route_id)).not.toContain(id); // about 490 m east
     expect((await similar(wkt(78.5, 15.0, 60))).map((r) => r.route_id)).not.toContain(id);
   });
 
   it("excludes the route being checked", async () => {
     const line = wkt(77.6, 10.0, 60);
-    const id = await addRoute(null, line);
+    const id = await addPublished(line);
     expect((await similar(line, id)).map((r) => r.route_id)).not.toContain(id);
   });
 
   it("judges overlap against the shorter route, so a short copy of part of a long trail matches", async () => {
-    const id = await addRoute(null, wkt(77.8, 10.0, 200));
+    const id = await addPublished(wkt(77.8, 10.0, 200));
     const rows = await similar(wkt(77.8, 10.05, 40)); // the middle 40 points of the long route
     expect(rows.find((r) => r.route_id === id)!.similarity).toBeGreaterThan(0.9);
+  });
+
+  it("never reports uploads, drafts or sensitive trails: only published standard trails", async () => {
+    const line = wkt(78.0, 10.0, 60);
+    const upload = await addRoute(null, line);
+    const draft = await addRoute((await insertTrailFixture(db.sql, { ...place, lifecycle: "draft" })).revisionId, line);
+    const sensitive = await addRoute((await insertTrailFixture(db.sql, { ...place, sensitivity: "sensitive", publicPoint: { lon: 78, lat: 10 } })).revisionId, line);
+    const ids = (await similar(line)).map((r) => r.route_id);
+    for (const hidden of [upload, draft, sensitive]) expect(ids).not.toContain(hidden);
   });
 
   it("anon cannot call it", async () => {

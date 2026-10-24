@@ -49,7 +49,7 @@ export type UploadOutcome = {
   routeId?: string;
   mediaId?: string;
   /** Existing routes that overlap a new GPX; the uploader is warned, never blocked. */
-  similar?: { routeId: string; similarity: number }[];
+  similar?: { slug: string; name: string; similarity: number }[];
   rejectCode?: string;
   rejectMessage?: string;
 };
@@ -112,6 +112,12 @@ export async function completeUpload(sql: Sql, storage: StorageProvider, i: { us
   const [claimed] = await sql`update upload set status = 'processing' where id = ${existing.id} and status = 'pending' returning id`;
   if (!claimed) return outcomeOf((await load(sql, i.userId, i.uploadId)) ?? existing);
 
+  // Objects written before the database commit; removed again if anything fails, so nothing is orphaned.
+  const written: { bucket: "originals" | "public"; key: string }[] = [];
+  const put = async (bucket: "originals" | "public", key: string, bytes: Uint8Array, type: string) => {
+    await storage.put(bucket, key, bytes, type);
+    written.push({ bucket, key });
+  };
   try {
     const verified = await verifyUpload(storage, {
       bucket: existing.bucket,
@@ -123,46 +129,56 @@ export async function completeUpload(sql: Sql, storage: StorageProvider, i: { us
     if (!verified.ok) return await reject(sql, storage, existing, verified.reason, VERIFY_MESSAGES[verified.reason]);
     const bytes = await storage.get(existing.bucket, existing.storage_key);
     if (!bytes) return await reject(sql, storage, existing, "missing", VERIFY_MESSAGES.missing);
-    return existing.kind === "gpx" ? await processGpx(sql, storage, existing, i.userId, bytes) : await processImageUpload(sql, storage, existing, i.userId, bytes);
+    return existing.kind === "gpx" ? await processGpx(sql, storage, put, existing, i.userId, bytes) : await processImageUpload(sql, storage, put, existing, i.userId, bytes);
   } catch (err) {
     // Never log file content; the error text alone is enough to diagnose.
+    await Promise.allSettled(written.map((w) => storage.remove(w.bucket, w.key)));
     console.error("Upload processing failed", existing.id, err instanceof Error ? err.message : "unknown");
     return reject(sql, storage, existing, "processing_failed", "We couldn't process this file. Please try again.");
   }
 }
 
-async function processGpx(sql: Sql, storage: StorageProvider, u: UploadRow, userId: string, bytes: Uint8Array): Promise<UploadOutcome> {
+type PutFn = (bucket: "originals" | "public", key: string, bytes: Uint8Array, type: string) => Promise<void>;
+
+async function processGpx(sql: Sql, storage: StorageProvider, put: PutFn, u: UploadRow, userId: string, bytes: Uint8Array): Promise<UploadOutcome> {
   const ingested = ingestGpx(bytes);
   if (!ingested.ok) return reject(sql, storage, u, ingested.code, ingested.message);
 
   const originalKey = u.storage_key;
   const cleanKey = originalKey.replace(/\.gpx$/, "-clean.gpx");
-  await storage.put("originals", originalKey, bytes, GPX_CANONICAL);
-  await storage.put("originals", cleanKey, new TextEncoder().encode(ingested.cleanGpx), GPX_CANONICAL);
+  await put("originals", originalKey, bytes, GPX_CANONICAL);
+  await put("originals", cleanKey, new TextEncoder().encode(ingested.cleanGpx), GPX_CANONICAL);
   await storage.remove(u.bucket, u.storage_key);
 
   const result = await sql.begin(async (tx) => {
     const { routeId, simplifiedWkt } = await insertRoute(tx, { ingested, revisionId: null, userId, originalKey, cleanKey, sha256: sha256Hex(bytes), sizeBytes: bytes.byteLength });
     await tx`update upload set status = 'ready', bucket = 'originals', route_id = ${routeId}, processed_at = now() where id = ${u.id}`;
-    const similar = await tx`select route_id, similarity from find_similar_routes(ST_GeomFromText(${simplifiedWkt}, 4326), ${routeId}) limit 5`;
-    return { routeId, similar: similar.map((s) => ({ routeId: s.route_id as string, similarity: Number(s.similarity) })) };
+    const similar = await tx`
+      select t.slug, rev.name, s.similarity
+      from find_similar_routes(ST_GeomFromText(${simplifiedWkt}, 4326), ${routeId}) s
+      join route r2 on r2.id = s.route_id
+      join trail t on t.published_revision_id = r2.revision_id
+      join trail_revision rev on rev.id = t.published_revision_id
+      order by s.similarity desc limit 5`;
+    return { routeId, similar: similar.map((s) => ({ slug: s.slug as string, name: s.name as string, similarity: Number(s.similarity) })) };
   });
   return { status: "ready", kind: "gpx", routeId: result.routeId, similar: result.similar };
 }
 
-async function processImageUpload(sql: Sql, storage: StorageProvider, u: UploadRow, userId: string, bytes: Uint8Array): Promise<UploadOutcome> {
+async function processImageUpload(sql: Sql, storage: StorageProvider, put: PutFn, u: UploadRow, userId: string, bytes: Uint8Array): Promise<UploadOutcome> {
   const img = await processImage(bytes);
   if (!img.ok) return reject(sql, storage, u, img.error, img.message);
 
-  const stem = u.storage_key.replace(/^image\//, "").replace(/\.[a-z]+$/, "");
+  // Public keys carry the upload id only, never the uploader's account id.
+  const stem = u.id;
   const webp: Record<string, string> = {};
   const avif: Record<string, string> = {};
   for (const v of img.variants) {
     const key = `image/${stem}-${v.width}.${v.format}`;
-    await storage.put("public", key, v.bytes, `image/${v.format}`);
+    await put("public", key, v.bytes, `image/${v.format}`);
     (v.format === "webp" ? webp : avif)[String(v.width)] = storage.publicUrl(key);
   }
-  await storage.put("originals", u.storage_key, bytes, u.content_type);
+  await put("originals", u.storage_key, bytes, u.content_type);
   await storage.remove(u.bucket, u.storage_key);
 
   const mediaId = await sql.begin(async (tx) => {

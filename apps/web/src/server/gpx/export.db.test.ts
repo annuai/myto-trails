@@ -83,4 +83,11 @@ describe("buildGpxExport", () => {
     await storage.remove("originals", f!.k);
     expect(await exp(t.slug)).toEqual({ ok: false, reason: "unavailable" });
   });
+
+  it("limits downloads to 30 an hour per address", async () => {
+    const t = await trailWithGpx();
+    for (let k = 0; k < 30; k++) expect((await buildGpxExport({ sql: db.sql, storage, slug: t.slug, now, siteUrl, ipHash: "h1" })).ok).toBe(true);
+    expect(await buildGpxExport({ sql: db.sql, storage, slug: t.slug, now, siteUrl, ipHash: "h1" })).toEqual({ ok: false, reason: "rate_limited" });
+    expect((await buildGpxExport({ sql: db.sql, storage, slug: t.slug, now, siteUrl, ipHash: "h2" })).ok).toBe(true);
+  });
 });

@@ -17,7 +17,7 @@ export type TrackAnalysis = {
   fingerprint: string;
 };
 
-export type AnalyzeError = "no_track_points" | "too_few_points" | "outside_india" | "teleport" | "too_long";
+export type AnalyzeError = "no_track_points" | "too_many_points" | "too_few_points" | "outside_india" | "teleport" | "too_long";
 export type AnalyzeResult = { ok: true; analysis: TrackAnalysis } | { ok: false; error: AnalyzeError; message: string };
 
 const INDIA = { minLat: 6, maxLat: 37, minLon: 68, maxLon: 98 };
@@ -30,6 +30,11 @@ const ELEVATION_THRESHOLD_M = 3;
 const SMOOTH_WINDOW = 5;
 const SIMPLIFY_TOLERANCE_M = 5;
 const PROFILE_POINTS = 300;
+const MAX_POINTS = 100_000;
+/** Simplification is quadratic in the worst case, so it runs on an evenly thinned copy of long tracks. */
+const SIMPLIFY_INPUT_CAP = 4000;
+const MIN_DISTANCE_KM = 0.05;
+const ELEVATION_RANGE_M = { min: -500, max: 9000 };
 
 const fail = (error: AnalyzeError, message: string): AnalyzeResult => ({ ok: false, error, message });
 
@@ -106,7 +111,11 @@ export function analyzeTrack(segments: TrackPoint[][]): AnalyzeResult {
   for (const seg of segments) {
     for (const p of seg) {
       const last = points.at(-1);
-      if (!last || last.lat !== p.lat || last.lon !== p.lon) points.push(p);
+      if (!last || last.lat !== p.lat || last.lon !== p.lon) {
+        const ok = p.ele !== undefined && p.ele >= ELEVATION_RANGE_M.min && p.ele <= ELEVATION_RANGE_M.max;
+        points.push(ok || p.ele === undefined ? p : { ...p, ele: undefined });
+      }
+      if (points.length > MAX_POINTS) return fail("too_many_points", "This track has more than 100,000 points. Export a simplified track or split the ride.");
     }
   }
   if (points.length === 0) return fail("no_track_points", "The file has no usable track points.");
@@ -128,6 +137,7 @@ export function analyzeTrack(segments: TrackPoint[][]): AnalyzeResult {
   if (points.length < MIN_POINTS && distanceKm < MIN_LENGTH_KM) {
     return fail("too_few_points", `Only ${points.length} track point${points.length === 1 ? "" : "s"} found; a trail needs at least 50 points or 500 m.`);
   }
+  if (distanceKm < MIN_DISTANCE_KM) return fail("too_few_points", "The track barely moves (under 50 m), so there is no route to show.");
   if (points.some((p) => p.lat < INDIA.minLat || p.lat > INDIA.maxLat || p.lon < INDIA.minLon || p.lon > INDIA.maxLon)) {
     return fail("outside_india", "This track is outside India. Moto Trails only lists trails in India for now.");
   }
@@ -146,7 +156,7 @@ export function analyzeTrack(segments: TrackPoint[][]): AnalyzeResult {
     let prev = points.find((p) => p.ele !== undefined)!.ele!;
     eles = points.map((p) => (prev = p.ele ?? prev));
     const { gainM, lossM } = gainLoss(smooth(eles));
-    elevation = { gainM: Math.round(gainM), lossM: Math.round(lossM), minM: Math.round(Math.min(...eles)), maxM: Math.round(Math.max(...eles)) };
+    elevation = { gainM: Math.round(gainM), lossM: Math.round(lossM), minM: Math.round(eles.reduce((a, b) => Math.min(a, b))), maxM: Math.round(eles.reduce((a, b) => Math.max(a, b))) };
   }
 
   // Timing (only when most points carry a time).
@@ -163,7 +173,9 @@ export function analyzeTrack(segments: TrackPoint[][]): AnalyzeResult {
     timing = { movingSeconds: Math.round(moving), stoppedSeconds: Math.round(stopped), avgMovingSpeedKmh: moving > 0 ? Math.round((movingKm / (moving / 3600)) * 10) / 10 : 0 };
   }
 
-  const simplified = simplify(points, SIMPLIFY_TOLERANCE_M);
+  const stride = Math.ceil(points.length / SIMPLIFY_INPUT_CAP);
+  const thinned = stride > 1 ? points.filter((_, i) => i % stride === 0 || i === points.length - 1) : points;
+  const simplified = simplify(thinned, SIMPLIFY_TOLERANCE_M);
 
   // Elevation profile: at most 300 samples spread evenly along the distance.
   let profile: TrackAnalysis["profile"] = null;

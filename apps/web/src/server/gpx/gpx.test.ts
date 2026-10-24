@@ -249,3 +249,31 @@ describe("writeGpx", () => {
     expect(xml).toContain('<link href="https://moto-trails.com/trails/x"');
   });
 });
+
+describe("analyzeTrack: hostile and degenerate input (M4 review)", () => {
+  it("finishes a worst-case zigzag quickly instead of blocking on simplification", () => {
+    const pts = Array.from({ length: 35_000 }, (_, i) => ({ lat: 11 + i * 0.00001, lon: 76 + (i % 2 === 0 ? 0 : 0.00006) }));
+    const t0 = performance.now();
+    const r = analyzeTrack([pts]);
+    expect(performance.now() - t0).toBeLessThan(2000);
+    expect(r.ok).toBe(true);
+  });
+
+  it("rejects more than 100,000 points with a clear message instead of throwing", () => {
+    const pts = Array.from({ length: 150_000 }, (_, i) => ({ lat: 11 + i * 0.000001, lon: 76, ele: 100 }));
+    const r = analyzeTrack([pts]);
+    expect(r).toMatchObject({ ok: false, error: "too_many_points" });
+  });
+
+  it("rejects 50 points that are all within a few metres (a stationary recording)", () => {
+    const pts = Array.from({ length: 60 }, (_, i) => ({ lat: 11 + i * 0.0000001, lon: 76 }));
+    expect(analyzeTrack([pts])).toMatchObject({ ok: false, error: "too_few_points" });
+  });
+
+  it("ignores impossible elevations instead of overflowing", () => {
+    const pts = line(120, undefined, { ele: (i) => (i === 10 ? 1e12 : 500 + i) });
+    const r = analyzeTrack([pts]);
+    expect(r.ok && r.analysis.elevation!.maxM).toBeLessThanOrEqual(9000);
+    expect(r.ok && r.analysis.elevation!.gainM).toBeLessThan(1000);
+  });
+});

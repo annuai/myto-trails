@@ -8,7 +8,9 @@ import { writeGpx } from "./write";
 
 export type GpxExportResult =
   | { ok: true; filename: string; xml: string }
-  | { ok: false; reason: "not_found" | "no_gpx" | "sensitive_area" | "access_not_allowed" | "permanently_closed" | "not_published" | "unavailable" };
+  | { ok: false; reason: "rate_limited" | "not_found" | "no_gpx" | "sensitive_area" | "access_not_allowed" | "permanently_closed" | "not_published" | "unavailable" };
+
+const DOWNLOADS_PER_HOUR = 30;
 
 const sentence = (v: string) => {
   const s = v.replaceAll("_", " ");
@@ -21,9 +23,13 @@ const dateOf = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day:
  * own writer from the stored sanitised copy. The original upload is never served. Callers pass the privileged
  * connection; the public decision runs under the anonymous role.
  */
-export async function buildGpxExport(i: { sql?: Sql; storage: StorageProvider; slug: string; now: Date; siteUrl: string }): Promise<GpxExportResult> {
+export async function buildGpxExport(i: { sql?: Sql; storage: StorageProvider; slug: string; now: Date; siteUrl: string; /** Hashed client address; downloads are limited per address. */ ipHash?: string }): Promise<GpxExportResult> {
   const sql = i.sql ?? getSql();
   if (!isValidSlug(i.slug)) return { ok: false, reason: "not_found" };
+  if (i.ipHash) {
+    const [hit] = await sql`select rate_limit_hit(${`gpx:${i.ipHash}`}, ${DOWNLOADS_PER_HOUR}, 3600) as ok`;
+    if (!hit!.ok) return { ok: false, reason: "rate_limited" };
+  }
   const trail = await withPublicRole(sql, (tx) => queryTrailBySlug(tx, i.slug, i.now));
   if (!trail) return { ok: false, reason: "not_found" };
 
