@@ -45,3 +45,32 @@
   --color-status-unknown: var(--color-status-unknown-dark);
   --color-status-info: var(--color-status-info-dark);
 }
+
+/* Generated trail-photo stand-ins (PlaceholderArt): four tones per palette, plus the white used for sun and path. */
+:root {
+  --color-on-art: #ffffff;
+  --art-1-sky: #c9d6c2;
+  --art-1-far: #8fae8a;
+  --art-1-mid: #5b7f63;
+  --art-1-near: #2f4f45;
+  --art-2-sky: #e6d5bd;
+  --art-2-far: #c9a574;
+  --art-2-mid: #9b7348;
+  --art-2-near: #5d4630;
+  --art-3-sky: #cfd9e3;
+  --art-3-far: #97adc4;
+  --art-3-mid: #5f7f9f;
+  --art-3-near: #34506b;
+  --art-4-sky: #e8d2c8;
+  --art-4-far: #cf9d8a;
+  --art-4-mid: #a56a58;
+  --art-4-near: #6a3f35;
+  --art-5-sky: #d9dcc0;
+  --art-5-far: #b4b97d;
+  --art-5-mid: #858f4a;
+  --art-5-near: #4d5a2c;
+  --art-6-sky: #d6d1e0;
+  --art-6-far: #a59cc0;
+  --art-6-mid: #756a98;
+  --art-6-near: #463d63;
+}

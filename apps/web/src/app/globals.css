@@ -30,4 +30,4 @@
 /* Page width: the original 72rem (6xl) with 1rem side padding, deliberately narrower than myto-moto's 1400px. */
 .container-wide { max-width: 72rem; margin-inline: auto; padding-inline: 1rem; }
 body { line-height: 1.65; }
-::selection { background: var(--color-accent); color: #fff; }
+::selection { background: var(--color-accent); color: var(--color-on-art); }
