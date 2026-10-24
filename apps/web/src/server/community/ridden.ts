@@ -59,24 +59,25 @@ export async function unmarkRidden(sql: Sql, i: { userId: string; slug: string }
 /** The count, the latest ride, the riders who chose to be listed, and the viewer's own record. */
 export async function getRiddenSummary(sql: Sql, slug: string, viewerId: string | null): Promise<RiddenSummary> {
   if (!isValidSlug(slug)) return { count: 0, lastRidden: null, riders: [], unlisted: 0, mine: null };
-  const [counts, riders] = await withPublicRole(sql, async (tx) => [
-    (await tx`select riders, last_ridden::text as last from public_trail_rider_counts where trail_slug = ${slug}`)[0],
-    await tx`select rider_id, display_name, ridden_month::text as month, bike, note from public_trail_riders where trail_slug = ${slug} order by created_at desc limit 24`,
-  ] as const);
-  let mine: RiddenSummary["mine"] = null;
-  if (viewerId) {
-    const [row] = await sql`
-      select r.ridden_month::text as month, r.bike, r.note from trail_ridden r join trail t on t.id = r.trail_id
-      where t.slug = ${slug} and r.user_id = ${viewerId}`;
-    if (row) mine = { riddenMonth: row.month, bike: row.bike, note: row.note };
-  }
+  const [[counts, riders], mineRow, listedTotal] = await Promise.all([
+    withPublicRole(sql, async (tx) => [
+      (await tx`select riders, last_ridden::text as last from public_trail_rider_counts where trail_slug = ${slug}`)[0],
+      await tx`select rider_id, display_name, ridden_month::text as month, bike, note from public_trail_riders where trail_slug = ${slug} order by created_at desc limit 24`,
+    ] as const),
+    viewerId
+      ? sql`select r.ridden_month::text as month, r.bike, r.note from trail_ridden r join trail t on t.id = r.trail_id where t.slug = ${slug} and r.user_id = ${viewerId}`
+      : Promise.resolve([]),
+    withPublicRole(sql, (tx) => tx`select count(*)::int as n from public_trail_riders where trail_slug = ${slug}`),
+  ]);
+  const row = mineRow[0];
+  const mine: RiddenSummary["mine"] = row ? { riddenMonth: row.month, bike: row.bike, note: row.note } : null;
   const count = (counts?.riders as number | undefined) ?? 0;
-  const [listedTotal] = await withPublicRole(sql, (tx) => tx`select count(*)::int as n from public_trail_riders where trail_slug = ${slug}`);
+  const [listedRow] = listedTotal;
   return {
     count,
     lastRidden: (counts?.last as string | undefined) ?? null,
     riders: riders.map((r) => ({ riderId: r.rider_id, displayName: r.display_name, riddenMonth: r.month, bike: r.bike, note: r.note })),
-    unlisted: Math.max(0, count - ((listedTotal?.n as number | undefined) ?? 0)),
+    unlisted: Math.max(0, count - ((listedRow?.n as number | undefined) ?? 0)),
     mine,
   };
 }

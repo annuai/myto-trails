@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { getSql } from "../db/client";
 import { loadServerEnv } from "../env";
@@ -12,11 +13,11 @@ export function getEmailSender(): EmailSender {
   return sender;
 }
 
-/** The signed-in user for this request, or null. */
-export async function getCurrentUser(): Promise<SessionUser | null> {
+/** The signed-in user for this request, or null. Looked up once per request, however many parts of the page ask. */
+export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   return token ? getSessionUser(getSql(), token) : null;
-}
+});
 
 /** For pages and actions that need an account: sends visitors to sign in and back again. */
 export async function requireUser(returnTo: string, opts: { allowUnconfirmed?: boolean } = {}): Promise<SessionUser> {
