@@ -1,5 +1,6 @@
 import { isValidSlug } from "@moto-trails/domain";
 import { cacheLife, cacheTag } from "next/cache";
+import { connection } from "next/server";
 import { getSql, withPublicRole } from "../db/client";
 import { applyNow } from "./effective";
 import { queryTrailBySlug, queryTrailMedia, queryTrailsInRegion, querySitemapEntries } from "./trails.sql";
@@ -20,6 +21,8 @@ async function loadTrail(slug: string): Promise<TrailDetailDto | null> {
 export async function getTrail(slug: string): Promise<TrailDetailDto | null> {
   if (!isValidSlug(slug)) return null;
   const trail = await loadTrail(slug);
+  // The current time is request-specific; opt into request-time rendering before reading it.
+  await connection();
   return trail ? applyNow(trail, new Date()) : null;
 }
 
@@ -43,8 +46,10 @@ async function loadTrailsInRegion(stateSlug: string, districtSlug: string | unde
 
 export async function getTrailsInRegion(stateSlug: string, districtSlug?: string): Promise<TrailSummaryDto[]> {
   if (!isValidSlug(stateSlug) || (districtSlug !== undefined && !isValidSlug(districtSlug))) return [];
+  const trails = await loadTrailsInRegion(stateSlug, districtSlug);
+  await connection();
   const now = new Date();
-  return (await loadTrailsInRegion(stateSlug, districtSlug)).map((t) => applyNow(t, now));
+  return trails.map((t) => applyNow(t, now));
 }
 
 export async function getSitemapEntries(): Promise<{ trails: { slug: string; updatedAt: string }[]; regions: { path: string }[] }> {

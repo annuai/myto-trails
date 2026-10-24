@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Breadcrumbs, type Crumb } from "@/ui/Breadcrumbs/Breadcrumbs";
 import { formatDate } from "@/lib/format";
 import type { MediaDto, TrailDetailDto } from "@/server/queries/types";
@@ -10,7 +11,7 @@ import { TrailNotices } from "./TrailNotices";
 import { routeShapeLabel, suitabilityLabel, terrainLabel } from "./labels";
 
 /** Composition of the public trail page, in the order a rider needs it (docs/07 §4). */
-export function TrailDetail({ trail, media }: { trail: TrailDetailDto; media: MediaDto[] }) {
+export function TrailDetail({ trail, media, actions }: { trail: TrailDetailDto; media: MediaDto[]; actions?: ReactNode }) {
   const crumbs: Crumb[] = [
     { label: "Home", href: "/" },
     { label: "Regions", href: "/regions" },
@@ -26,6 +27,7 @@ export function TrailDetail({ trail, media }: { trail: TrailDetailDto; media: Me
         <Breadcrumbs items={crumbs} />
         <h1 className="text-3xl font-semibold leading-tight">{trail.name}</h1>
         <p className="text-muted">Near {trail.nearestTown} · {place}</p>
+        {actions ? <div className="flex flex-wrap items-center gap-4">{actions}</div> : null}
       </header>
 
       <div className="flex flex-col gap-6">
