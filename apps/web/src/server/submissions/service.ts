@@ -1,6 +1,6 @@
 import { slugify } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
-import { STEP_KEYS, validateAll, validateStep, type Step, type SubmissionData } from "./schema";
+import { STEPS, STEP_KEYS, validateAll, validateStep, type Step, type SubmissionData } from "./schema";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_OPEN_DRAFTS = 10;
@@ -272,12 +272,18 @@ async function submitTx(tx: TransactionSql, i: { userId: string; id: string }): 
   if (!row) return { ok: false, reason: "not_found" };
   if (row.status === "submitted" || row.status === "approved") {
     const [t] = await tx`select slug from trail where id = ${row.trail_id}`;
-    return { ok: true, slug: t!.slug as string };
+    return t ? { ok: true, slug: t.slug as string } : { ok: false, reason: "not_found" };
   }
   if (!EDITABLE.includes(row.status)) return { ok: false, reason: "locked" };
 
-  const { validated, drafts: _ } = splitData(row.data);
-  void _;
+  const { validated, drafts } = splitData(row.data);
+  // Input typed but never saved with "continue" must not be silently left out of the submission.
+  const unsaved = (Object.keys(drafts) as string[]).flatMap((k) => (STEPS.filter((s) => STEP_KEYS[s] === k)));
+  if (unsaved.length > 0) return { ok: false, reason: "invalid", steps: [...new Set(unsaved)].sort() as Step[] };
+  if (row.trail_id && row.revision_id) {
+    const [live] = await tx`select 1 from trail where id = ${row.trail_id} and published_revision_id = ${row.revision_id}`;
+    if (live) return { ok: false, reason: "locked" };
+  }
   const all = validateAll(validated);
   if (!all.ok) return { ok: false, reason: "invalid", steps: all.steps };
   const d = all.value;

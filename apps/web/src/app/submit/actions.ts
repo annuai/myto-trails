@@ -43,21 +43,22 @@ export async function saveStepAction(_prev: WizardState, formData: FormData): Pr
   const user = await userOrSignIn(`/submit/${id}/${step}`);
 
   const input = parseStepForm(step, formData);
+  const values = Array.isArray(input) ? undefined : input;
   const saved = await saveStep(getSql(), { userId: user.id, id, step, input });
   if (!saved.ok) {
-    if ("errors" in saved) return { errors: saved.errors, values: Array.isArray(input) ? undefined : input, message: "Some answers need attention." };
-    return { message: SAVE_ERROR[saved.reason] ?? "We couldn't save this step." };
+    if ("errors" in saved) return { errors: saved.errors, values, message: "Some answers need attention." };
+    return { message: SAVE_ERROR[saved.reason] ?? "We couldn't save this step.", values };
   }
 
   if (intent === "submit" && step === 6) {
     const r = await submit(getSql(), { userId: user.id, id, now: new Date() });
     if (r.ok) redirect(`/account/contributions/${id}?sent=1`);
-    if (r.reason === "invalid") return { message: `These steps still need attention: ${r.steps.join(", ")}.`, steps: r.steps };
-    if (r.reason === "rate_limited") return { message: "You've sent several trails today. Please try again tomorrow." };
-    if (r.reason === "photo_unavailable") return { message: "One of your photos or your route is no longer available. Check steps 2 and 5." };
-    return { message: SAVE_ERROR[r.reason] ?? "We couldn't submit this trail." };
+    if (r.reason === "invalid") return { message: `These steps still need attention: ${r.steps.join(", ")}.`, steps: r.steps, values };
+    if (r.reason === "rate_limited") return { message: "You've sent several trails today. Please try again tomorrow.", values };
+    if (r.reason === "photo_unavailable") return { message: "One of your photos or your route is no longer available. Check steps 2 and 5.", values };
+    return { message: SAVE_ERROR[r.reason] ?? "We couldn't submit this trail.", values };
   }
-  if (intent === "save") return { saved: true };
+  if (intent === "save") return { saved: true, values };
   redirect(`/submit/${id}/${Math.min(6, step + 1)}`);
 }
 

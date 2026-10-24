@@ -1,14 +1,17 @@
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 
 export const inputClass = "min-h-12 w-full rounded-sm border border-foreground/40 bg-background px-3";
 
 /** A labelled field with an optional hint and error, wired together for screen readers. */
 export function Field({ label, name, hint, error, children }: { label: string; name: string; hint?: string; error?: string; children: ReactNode }) {
   const describedBy = [hint ? `${name}-hint` : null, error ? `${name}-error` : null].filter(Boolean).join(" ") || undefined;
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, { "aria-describedby": describedBy, "aria-invalid": error ? true : undefined })
+    : children;
   return (
-    <div className="flex flex-col gap-1" data-describedby={describedBy}>
+    <div className="flex flex-col gap-1">
       <label htmlFor={name} className="text-sm font-medium">{label}</label>
-      {children}
+      {control}
       {hint ? <p id={`${name}-hint`} className="text-sm text-muted">{hint}</p> : null}
       {error ? <p id={`${name}-error`} role="alert" className="text-sm font-medium text-status-stop">{error}</p> : null}
     </div>

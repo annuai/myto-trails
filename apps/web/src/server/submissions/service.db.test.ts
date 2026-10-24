@@ -283,6 +283,30 @@ describe("submit", () => {
   });
 });
 
+describe("M5 review fixes", () => {
+  it("does not silently drop autosaved edits: submit asks for the steps that still hold unsaved input", async () => {
+    const userId = await user();
+    const id = await completeDraft(userId);
+    await saveStep(db.sql, { userId, id, step: 1, input: { ...basics, name: "Renamed while typing" }, autosave: true });
+    expect(await submit(db.sql, { userId, id, now })).toEqual({ ok: false, reason: "invalid", steps: [1] });
+    await saveStep(db.sql, { userId, id, step: 1, input: { ...basics, name: "Renamed while typing" } });
+    const r = await submit(db.sql, { userId, id, now });
+    expect(r.ok).toBe(true);
+    expect((await db.sql`select name from trail_revision where id = (select revision_id from submission where id = ${id})`)[0]!.name).toBe("Renamed while typing");
+  });
+
+  it("refuses to resubmit over a revision that is the trail's live published revision", async () => {
+    const userId = await user();
+    const id = await completeDraft(userId, { gpx: true });
+    const first = await submit(db.sql, { userId, id, now });
+    if (!first.ok) throw new Error();
+    await db.sql`update trail set published_revision_id = (select revision_id from submission where id = ${id}), lifecycle = 'published' where slug = ${first.slug}`;
+    await db.sql`update submission set status = 'changes_requested' where id = ${id}`;
+    expect(await submit(db.sql, { userId, id, now })).toEqual({ ok: false, reason: "locked" });
+    expect((await db.sql`select state from trail_revision where id = (select revision_id from submission where id = ${id})`)[0]!.state).toBe("submitted");
+  });
+});
+
 describe("resubmit after changes requested", () => {
   it("creates revision 2 for the same trail, supersedes the old one, and moves the route and photos", async () => {
     const userId = await user();
