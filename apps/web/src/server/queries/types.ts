@@ -86,6 +86,19 @@ export type RegionDto = {
   publishedTrailCount: number;
 };
 
+export type VideoDto = {
+  position: number;
+  /** A text equivalent of the video, shown under it. */
+  description: string;
+  caption: string | null;
+  credit: string | null;
+  mp4Url: string;
+  posterUrl: string;
+  width: number;
+  height: number;
+  durationS: number;
+};
+
 export type MediaDto = {
   role: "cover" | "gallery";
   position: number;

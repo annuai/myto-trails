@@ -144,3 +144,15 @@ describe("importTrail with a GPX file", () => {
     await expect(importTrail(db.sql, { ...structuredClone(sensitive), slug: "sample-sens-gpx", gpxFile: "x.gpx" }, { ...production, gpx: { read: () => gpx, storage } })).rejects.toThrow(/sensitive/i);
   });
 });
+
+describe("importTrail with videos", () => {
+  const clip = { position: 0, description: "A slow pan across the lake shore", credit: "Annuai", mp4: "/videos/x/v.mp4", poster: "/videos/x/v.webp", width: 1280, height: 720, durationS: 20 };
+  it("stores videos with the revision and shows them publicly", async () => {
+    const { slug } = await importTrail(db.sql, record({ videos: [clip] } as Partial<TrailImport>), production);
+    const rows = await asAnon(db.sql, (tx) => tx`select description, mp4_url, duration_s from public_trail_video where trail_slug = ${slug}`);
+    expect(rows).toEqual([{ description: "A slow pan across the lake shore", mp4_url: "/videos/x/v.mp4", duration_s: 20 }]);
+  });
+  it("rejects a video without a real description", async () => {
+    await expect(importTrail(db.sql, record({ videos: [{ ...clip, description: "ok" }] } as Partial<TrailImport>), production)).rejects.toThrow(/description/);
+  });
+});

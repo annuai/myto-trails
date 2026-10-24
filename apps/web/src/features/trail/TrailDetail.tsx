@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Breadcrumbs, type Crumb } from "@/ui/Breadcrumbs/Breadcrumbs";
 import { formatDate } from "@/lib/format";
-import type { MediaDto, RouteDto, TrailDetailDto } from "@/server/queries/types";
+import type { MediaDto, RouteDto, TrailDetailDto, VideoDto } from "@/server/queries/types";
 import { PlaceholderArt } from "@/ui/PlaceholderArt/PlaceholderArt";
 import { AccessDetails } from "./AccessDetails";
 import { GoNoGoStrip } from "./GoNoGoStrip";
@@ -10,11 +10,12 @@ import { RouteSection } from "./RouteSection";
 import { SafetyInformation } from "./SafetyInformation";
 import { SeasonStrip } from "./SeasonStrip";
 import { TrailGallery } from "./TrailGallery";
+import { TrailVideos } from "./TrailVideos";
 import { TrailNotices } from "./TrailNotices";
 import { routeShapeLabel, suitabilityLabel, terrainLabel } from "./labels";
 
 /** Composition of the public trail page, in the order a rider needs it (docs/07 §4). */
-export function TrailDetail({ trail, media, route = null, actions }: { trail: TrailDetailDto; media: MediaDto[]; route?: RouteDto | null; actions?: ReactNode }) {
+export function TrailDetail({ trail, media, videos = [], route = null, actions }: { trail: TrailDetailDto; media: MediaDto[]; videos?: VideoDto[]; route?: RouteDto | null; actions?: ReactNode }) {
   const crumbs: Crumb[] = [
     { label: "Home", href: "/" },
     { label: "Regions", href: "/regions" },
@@ -103,6 +104,7 @@ export function TrailDetail({ trail, media, route = null, actions }: { trail: Tr
       <SeasonStrip bestMonths={trail.bestMonths} />
       <SafetyInformation hazards={trail.hazards} safetyNotes={trail.safetyNotes} />
       <TrailGallery media={media.filter((m) => m !== cover)} />
+      <TrailVideos videos={videos} />
       <AccessDetails trail={trail} />
 
       <footer className="border-t border-border pt-4 text-sm text-muted">

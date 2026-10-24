@@ -5,8 +5,8 @@ import { getSql, withPublicRole } from "../db/client";
 import { applyNow } from "./effective";
 import { parseSearchParams } from "@/features/discovery/search-params";
 import { searchTrails, type SearchItem } from "./search.sql";
-import { queryTrailBySlug, queryTrailMedia, queryTrailRoute, queryTrailsInRegion, querySitemapEntries } from "./trails.sql";
-import type { MediaDto, RouteDto, TrailDetailDto, TrailSummaryDto } from "./types";
+import { queryTrailBySlug, queryTrailMedia, queryTrailRoute, queryTrailVideos, queryTrailsInRegion, querySitemapEntries } from "./trails.sql";
+import type { MediaDto, RouteDto, VideoDto, TrailDetailDto, TrailSummaryDto } from "./types";
 
 // Cached wrappers used by pages. Slugs are validated before any cache entry or tag is created, so hostile
 // URLs never reach the cache or the database. Invalidate with revalidateTag("trails") or ("trail:<slug>").
@@ -37,6 +37,17 @@ async function loadTrailMedia(slug: string): Promise<MediaDto[]> {
 
 export async function getTrailMedia(slug: string): Promise<MediaDto[]> {
   return isValidSlug(slug) ? loadTrailMedia(slug) : [];
+}
+
+async function loadTrailVideos(slug: string): Promise<VideoDto[]> {
+  "use cache";
+  cacheTag("trails", `trail:${slug}`);
+  cacheLife("hours");
+  return withPublicRole(getSql(), (tx) => queryTrailVideos(tx, slug));
+}
+
+export async function getTrailVideos(slug: string): Promise<VideoDto[]> {
+  return isValidSlug(slug) ? loadTrailVideos(slug) : [];
 }
 
 async function loadTrailRoute(slug: string): Promise<RouteDto | null> {

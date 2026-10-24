@@ -100,6 +100,12 @@ export async function importTrail(
           ${tx.json(m.variants)}, ${m.width ?? null}, ${m.height ?? null})`;
     }
 
+    for (const v of t.videos) {
+      await tx`
+        insert into trail_video (revision_id, position, description, caption, credit, mp4_url, poster_url, width, height, duration_s)
+        values (${revisionId}, ${v.position}, ${v.description}, ${v.caption ?? null}, ${v.credit ?? null}, ${v.mp4}, ${v.poster}, ${v.width}, ${v.height}, ${v.durationS})`;
+    }
+
     if (route && opts.gpx) {
       const objectId = randomUUID();
       const originalKey = `gpx/${trailId}/${objectId}.gpx`;

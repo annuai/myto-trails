@@ -9,7 +9,7 @@ import { getCurrentUser } from "@/server/auth/session";
 import { getSql } from "@/server/db/client";
 import { isSaved, markSavedSeen } from "@/server/queries/saved";
 import { saveTrailAction, unsaveTrailAction } from "@/app/saved/actions";
-import { getTrail, getTrailMedia, getTrailRoute } from "@/server/queries/trails";
+import { getTrail, getTrailMedia, getTrailRoute, getTrailVideos } from "@/server/queries/trails";
 
 // Trail data is cached with "use cache"; awaiting params here makes the route render on demand (and a real 404 for unknown slugs).
 export const instant = false;
@@ -24,7 +24,7 @@ export default async function TrailPage({ params }: PageProps<"/trails/[slug]">)
   const { slug } = await params;
   const trail = await getTrail(slug);
   if (!trail) notFound();
-  const [media, route] = await Promise.all([getTrailMedia(slug), getTrailRoute(slug)]);
+  const [media, route, videos] = await Promise.all([getTrailMedia(slug), getTrailRoute(slug), getTrailVideos(slug)]);
   // Viewing a saved trail counts as having seen its current state.
   let user = null;
   try {
@@ -40,6 +40,7 @@ export default async function TrailPage({ params }: PageProps<"/trails/[slug]">)
       <TrailDetail
         trail={trail}
         media={media}
+        videos={videos}
         route={route}
         actions={
           <>

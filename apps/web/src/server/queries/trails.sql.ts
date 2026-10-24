@@ -1,6 +1,6 @@
 import { effectiveCondition, effectiveVerificationLevel, isRegionIndexable, isValidSlug, type OperationalStatus, type VerificationLevel } from "@moto-trails/domain";
 import type { Sql } from "postgres";
-import type { CoverDto, MediaDto, RouteDto, TrailDetailDto, TrailSummaryDto } from "./types";
+import type { CoverDto, MediaDto, RouteDto, VideoDto, TrailDetailDto, TrailSummaryDto } from "./types";
 
 // Uncached query functions. Callers pass a connection that is already running as the anonymous role
 // (see withPublicRole). Slugs are validated first and always sent as query parameters.
@@ -98,6 +98,17 @@ export async function queryTrailMedia(sql: Sql, slug: string): Promise<MediaDto[
     variants: m.variants as Record<string, string>,
     width: m.width,
     height: m.height,
+  }));
+}
+
+export async function queryTrailVideos(sql: Sql, slug: string): Promise<VideoDto[]> {
+  if (!isValidSlug(slug)) return [];
+  const rows = (await sql`
+    select position, description, caption, credit, mp4_url, poster_url, width, height, duration_s
+    from public_trail_video where trail_slug = ${slug} order by position`) as Row[];
+  return rows.map((v) => ({
+    position: v.position, description: v.description, caption: v.caption, credit: v.credit,
+    mp4Url: v.mp4_url, posterUrl: v.poster_url, width: v.width, height: v.height, durationS: v.duration_s,
   }));
 }
 

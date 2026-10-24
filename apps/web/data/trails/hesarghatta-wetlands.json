@@ -106,5 +106,17 @@
       "height": 2400
     }
   ],
-  "publish": true
+  "publish": true,
+  "videos": [
+    {
+      "position": 0,
+      "description": "A 20-second pan across the open, wet grassland at Hesaraghatta on a grey morning, with bare thorn trees and puddles on the ground.",
+      "credit": "Annuai",
+      "mp4": "/videos/hesarghatta-wetlands/video-1.mp4",
+      "poster": "/videos/hesarghatta-wetlands/video-1-poster.webp",
+      "width": 1280,
+      "height": 720,
+      "durationS": 20
+    }
+  ]
 }

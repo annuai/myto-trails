@@ -7,7 +7,7 @@ import { ingestGpx, insertRoute } from "../gpx/ingest";
 import { line, makeGpx } from "../gpx/fixtures";
 import { searchTrails } from "./search.sql";
 import { parseSearchParams } from "@/features/discovery/search-params";
-import { querySitemapEntries, queryTrailBySlug, queryTrailMedia, queryTrailRoute, queryTrailsInRegion } from "./trails.sql";
+import { querySitemapEntries, queryTrailBySlug, queryTrailMedia, queryTrailRoute, queryTrailVideos, queryTrailsInRegion } from "./trails.sql";
 import { queryDistricts, queryRegionBySlugs, queryRegionsForHub, queryStates } from "./regions.sql";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
@@ -230,5 +230,18 @@ describe("cover photos on list queries", () => {
   it("makes no query for an empty list", async () => {
     const { attachCovers } = await import("./trails.sql");
     expect(await attachCovers(neverCalled, [])).toEqual([]);
+  });
+});
+
+describe("queryTrailVideos", () => {
+  it("returns a published trail's videos in order, and nothing for a bad slug", async () => {
+    const t = await insertTrailFixture(db.sql, { ...loc("vid1") });
+    for (const [position, description] of [[1, "Second clip of the shore"], [0, "First clip of the shore"]] as const) {
+      await db.sql`insert into trail_video (revision_id, position, description, mp4_url, poster_url, width, height, duration_s) values (${t.revisionId}, ${position}, ${description}, '/a.mp4', '/a.webp', 720, 1280, 9)`;
+    }
+    const videos = await asAnon(db.sql, (tx) => queryTrailVideos(tx, t.slug));
+    expect(videos.map((v) => v.description)).toEqual(["First clip of the shore", "Second clip of the shore"]);
+    expect(videos[0]).toMatchObject({ mp4Url: "/a.mp4", posterUrl: "/a.webp", width: 720, height: 1280, durationS: 9 });
+    expect(await queryTrailVideos(neverCalled, "BAD SLUG")).toEqual([]);
   });
 });

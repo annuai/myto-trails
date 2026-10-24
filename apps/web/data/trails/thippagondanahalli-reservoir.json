@@ -86,5 +86,27 @@
       "height": 2400
     }
   ],
-  "publish": true
+  "publish": true,
+  "videos": [
+    {
+      "position": 0,
+      "description": "A 13-second pan along the reservoir shore at dusk: grass and white rocks in the foreground, calm water and low hills beyond.",
+      "credit": "Annuai",
+      "mp4": "/videos/thippagondanahalli-reservoir/video-1.mp4",
+      "poster": "/videos/thippagondanahalli-reservoir/video-1-poster.webp",
+      "width": 720,
+      "height": 1280,
+      "durationS": 13
+    },
+    {
+      "position": 1,
+      "description": "A 9-second pan across the water and the grassy bank at dusk, with white boulders and a patch of water plants.",
+      "credit": "Annuai",
+      "mp4": "/videos/thippagondanahalli-reservoir/video-2.mp4",
+      "poster": "/videos/thippagondanahalli-reservoir/video-2-poster.webp",
+      "width": 720,
+      "height": 1280,
+      "durationS": 9
+    }
+  ]
 }

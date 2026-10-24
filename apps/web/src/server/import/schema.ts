@@ -44,6 +44,18 @@ const media = z.object({
   height: z.number().int().positive().optional(),
 });
 
+const video = z.object({
+  position: z.number().int().min(0),
+  description: z.string().min(5).max(300),
+  caption: z.string().max(160).optional(),
+  credit: z.string().max(120).optional(),
+  mp4: z.string().refine((u) => u.startsWith("/") || URL.canParse(u), "must be a URL or a site path starting with /"),
+  poster: z.string().refine((u) => u.startsWith("/") || URL.canParse(u), "must be a URL or a site path starting with /"),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  durationS: z.number().int().min(1).max(600),
+});
+
 export const TrailImportSchema = z
   .object({
     slug: z.string().refine(isValidSlug, "must be a lowercase kebab-case slug up to 80 characters").optional(),
@@ -73,6 +85,7 @@ export const TrailImportSchema = z
     access,
     condition,
     media: z.array(media).default([]),
+    videos: z.array(video).default([]),
     /** Path (relative to the import file) of a GPX to attach as the trail's route. */
     gpxFile: z.string().min(1).max(200).optional(),
     publish: z.boolean(),
