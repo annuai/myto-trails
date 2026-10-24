@@ -11,7 +11,10 @@ export function SiteFooter() {
           </a>
           .
         </p>
-        <nav aria-label="Footer">
+        <nav aria-label="Footer" className="flex gap-6">
+          <Link href="/regions" className="inline-flex min-h-11 items-center text-foreground underline underline-offset-4">
+            Regions
+          </Link>
           <Link href="/donate" className="inline-flex min-h-11 items-center text-foreground underline underline-offset-4">
             Donate
           </Link>

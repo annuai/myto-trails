@@ -12,4 +12,8 @@ describe("SiteFooter", () => {
     render(<SiteFooter />);
     expect(screen.getByRole("link", { name: "Donate" })).toHaveAttribute("href", "/donate");
   });
+  it("links to the regions hub", () => {
+    render(<SiteFooter />);
+    expect(screen.getByRole("link", { name: "Regions" })).toHaveAttribute("href", "/regions");
+  });
 });
