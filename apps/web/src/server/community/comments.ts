@@ -8,7 +8,7 @@ export type CommentTag = (typeof COMMENT_TAGS)[number];
 const EDIT_WINDOW_MS = 10 * 60_000;
 const PENDING_FIRST = 2;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const LINK = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|in|org|net|co|io|app|dev|me|ly)\b\/?)/i;
+export const LINK = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|in|org|net|co|io|app|dev|me|ly)\b\/?)/i;
 
 /** Control characters are removed, line breaks are kept but limited to two in a row. */
 export function cleanBody(raw: unknown): string {

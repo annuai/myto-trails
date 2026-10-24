@@ -1,6 +1,7 @@
 import type { Sql } from "postgres";
 import { isValidSlug } from "@moto-trails/domain";
 import { withPublicRole } from "../db/client";
+import { LINK } from "./comments";
 import { isMember } from "./members";
 
 const MONTH = /^(\d{4})-(0[1-9]|1[0-2])$/;
@@ -30,6 +31,7 @@ export async function markRidden(sql: Sql, i: RiddenInput): Promise<{ ok: true }
   const bike = clean(i.bike, 60);
   const note = clean(i.note, 200);
   if (bike === "too_long" || note === "too_long") return { ok: false, reason: "invalid" };
+  if ((bike && LINK.test(bike)) || (note && LINK.test(note))) return { ok: false, reason: "invalid" };
   let month: string | null = null;
   if (i.month) {
     const m = MONTH.exec(i.month);

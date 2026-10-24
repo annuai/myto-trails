@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { insertTrailFixture } from "../testing/fixtures";
 import { createTestDatabase } from "../testing/db";
 import { makeUser } from "../testing/submission-fixture";
-import { completeWelcome } from "./members";
+import { completeWelcome, updateMemberPrivacy } from "./members";
 import { getRiddenSummary, markRidden, unmarkRidden } from "./ridden";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
@@ -81,5 +81,23 @@ describe("getRiddenSummary and unmarkRidden", () => {
     expect((await getRiddenSummary(db.sql, t.slug, u)).count).toBe(0);
     expect(await unmarkRidden(db.sql, { userId: u, slug: "nope" })).toEqual({ ok: true });
     expect(await getRiddenSummary(db.sql, "BAD SLUG", null)).toMatchObject({ count: 0, riders: [] });
+  });
+
+  it("refuses web addresses in the bike and note", async () => {
+    const t = await insertTrailFixture(db.sql, {});
+    const u = await member();
+    expect(await markRidden(db.sql, { userId: u, slug: t.slug, note: "buy at www.example.com", now })).toEqual({ ok: false, reason: "invalid" });
+    expect(await markRidden(db.sql, { userId: u, slug: t.slug, bike: "https://spam.example", now })).toEqual({ ok: false, reason: "invalid" });
+  });
+
+  it("drops a rider from the public list when they switch to private", async () => {
+    const t = await insertTrailFixture(db.sql, {});
+    const u = await member({ pub: true });
+    await markRidden(db.sql, { userId: u, slug: t.slug, now });
+    expect((await getRiddenSummary(db.sql, t.slug, null)).riders).toHaveLength(1);
+    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: false, isWoman: false, bio: null })).toEqual({ ok: true });
+    const s = await getRiddenSummary(db.sql, t.slug, null);
+    expect(s.riders).toHaveLength(0);
+    expect(s.unlisted).toBe(1);
   });
 });

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/server/auth/session";
-import { signOutAction, signOutEverywhereAction, updateNameAction } from "./actions";
+import { getMemberState } from "@/server/community/members";
+import { getSql } from "@/server/db/client";
+import { signOutAction, signOutEverywhereAction, updateNameAction, updatePrivacyAction } from "./actions";
 
 export const instant = false;
 export const metadata: Metadata = { title: "Account", robots: { index: false, follow: false } };
@@ -9,6 +11,7 @@ export const metadata: Metadata = { title: "Account", robots: { index: false, fo
 export default async function AccountPage({ searchParams }: PageProps<"/account">) {
   const user = await requireUser("/account");
   const sp = await searchParams;
+  const member = await getMemberState(getSql(), user.id);
   return (
     <section className="flex flex-col gap-10 py-(--space-section)">
       <h1 className="font-display text-3xl leading-tight">Account</h1>
@@ -23,6 +26,18 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         {sp.saved ? <p role="status" className="text-sm font-medium text-status-good">Saved.</p> : null}
         {sp.error ? <p role="status" className="text-sm font-medium text-status-stop">Use 2 to 40 characters.</p> : null}
         <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save name</button>
+      </form>
+      <form action={updatePrivacyAction} className="flex max-w-md flex-col gap-3">
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-sm font-medium">Rider list</legend>
+          <label className="flex items-start gap-2 text-sm"><input type="radio" name="visibility" value="public" defaultChecked={member?.profilePublic === true} className="mt-1" /> Show me on trails I have ridden, and let riders ask me questions</label>
+          <label className="flex items-start gap-2 text-sm"><input type="radio" name="visibility" value="private" defaultChecked={member?.profilePublic !== true} className="mt-1" /> Keep me private (I still count in the total)</label>
+        </fieldset>
+        <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="isWoman" defaultChecked={member?.isWoman === true} className="mt-1" /> I ride as a woman (only used to join women-only clubs; never shown)</label>
+        <p className="text-sm text-muted">Comments always show your display name, whatever you choose here.</p>
+        {sp.privacy === "saved" ? <p role="status" className="text-sm font-medium text-status-good">Saved.</p> : null}
+        {sp.privacy === "error" ? <p role="status" className="text-sm font-medium text-status-stop">We could not save that.</p> : null}
+        <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save privacy</button>
       </form>
       <p><Link href="/account/contributions" className="underline underline-offset-4">Your contributions</Link></p>
       <p><Link href="/account/questions" className="underline underline-offset-4">Your questions</Link></p>

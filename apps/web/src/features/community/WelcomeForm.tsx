@@ -33,7 +33,7 @@ export function WelcomeForm({ action, next, displayName }: { action: (prev: Welc
         </label>
         <label className="flex min-h-11 items-start gap-3">
           <input type="radio" name="visibility" value="public" defaultChecked={v?.profilePublic === "public"} className="mt-1 size-5" />
-          <span><span className="font-medium">Show me to other riders</span><span className="block text-sm text-muted">Your name is listed on trails you have ridden, and riders can ask you questions. You choose whether to share a phone number, case by case. You can change this any time.</span></span>
+          <span><span className="font-medium">Show me to other riders</span><span className="block text-sm text-muted">Your name is listed on trails you have ridden, and riders can ask you questions. You choose whether to share a phone number, case by case. You can change this any time in Account.</span></span>
         </label>
       </fieldset>
 
