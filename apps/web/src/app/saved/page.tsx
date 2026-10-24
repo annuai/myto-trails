@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { SavedItemCard } from "@/features/saved/SavedItemCard";
 import { requireUser } from "@/server/auth/session";
 import { getSql } from "@/server/db/client";
@@ -11,6 +12,7 @@ export const metadata: Metadata = { title: "Saved trails", robots: { index: fals
 
 export default async function SavedPage() {
   const user = await requireUser("/saved");
+  await connection();
   const items = await listSaved(getSql(), user.id, new Date());
   return (
     <div className="flex flex-col gap-6 py-8">

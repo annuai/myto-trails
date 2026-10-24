@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
+import { connection } from "next/server";
 import { ActiveFilterList } from "@/features/discovery/ActiveFilterList";
 import { FilterPanel } from "@/features/discovery/FilterPanel";
 import { NearMeButton } from "@/features/discovery/NearMeButton";
@@ -34,6 +35,7 @@ export async function generateMetadata({ searchParams }: PageProps<"/trails">): 
 export default async function TrailsPage({ searchParams }: PageProps<"/trails">) {
   const params = parseSearchParams(await searchParams);
   const point = parseNearCookie((await cookies()).get(NEAR_COOKIE)?.value);
+  await connection(); // the clock is request-specific: opt into request time before reading it
   const result = await withPublicRole(getSql(), (tx) => searchTrails(tx, params, new Date(), { point }));
   const mapPoints = params.view === "map" ? await withPublicRole(getSql(), (tx) => searchMapPoints(tx, params, { point })) : [];
   const placeName = result.origin?.kind === "place" ? result.origin.name : undefined;
