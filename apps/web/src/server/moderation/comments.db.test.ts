@@ -5,7 +5,8 @@ import { createTestDatabase } from "../testing/db";
 import { makeUser } from "../testing/submission-fixture";
 import { listComments, postComment, reportContent } from "../community/comments";
 import { completeWelcome } from "../community/members";
-import { listCommentQueue, moderateComment } from "./comments";
+import { askRider, reportQuestion } from "../community/questions";
+import { dismissQuestionReport, listCommentQueue, listQuestionReports, moderateComment } from "./comments";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
 beforeAll(async () => {
@@ -86,5 +87,27 @@ describe("comment moderation", () => {
     expect(await moderateComment(db.sql, { actorId: m, commentId: crypto.randomUUID(), action: "approve" })).toEqual({ ok: false, reason: "not_found" });
     expect(await moderateComment(db.sql, { actorId: m, commentId: p.id, action: "explode" as never })).toEqual({ ok: false, reason: "invalid" });
     expect(await audits(p.id)).toHaveLength(0);
+  });
+});
+
+describe("reported questions", () => {
+  it("shows a moderator the reported question and reason, and lets them close the report, audited", async () => {
+    const m = await mod();
+    const asker = await member("Pushy Asker");
+    const rider = await member("Target Rider");
+    await db.sql`update app_user set profile_public = true where id = ${rider}`;
+    const [{ public_id }] = await db.sql`select public_id from app_user where id = ${rider}`;
+    const q = await askRider(db.sql, { userId: asker, riderId: public_id, question: "Give me your number right now", now: new Date() });
+    if (!q.ok) throw new Error();
+    await reportQuestion(db.sql, { userId: rider, questionId: q.id, reason: "Pushy and inappropriate" });
+    const list = await listQuestionReports(db.sql, m);
+    if (!list.ok) throw new Error();
+    const item = list.items.find((i) => i.questionId === q.id)!;
+    expect(item).toMatchObject({ askerName: "Pushy Asker", question: "Give me your number right now", reason: "Pushy and inappropriate" });
+    expect(JSON.stringify(item)).not.toContain(rider);
+    expect(await listQuestionReports(db.sql, rider)).toEqual({ ok: false, reason: "forbidden" });
+    expect(await dismissQuestionReport(db.sql, { actorId: m, reportId: item.reportId })).toEqual({ ok: true });
+    expect(await dismissQuestionReport(db.sql, { actorId: m, reportId: item.reportId })).toEqual({ ok: false, reason: "not_found" });
+    expect(await audits(q.id)).toEqual([{ action: "question_report_resolved", actor_role: "moderator" }]);
   });
 });

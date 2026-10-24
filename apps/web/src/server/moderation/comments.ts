@@ -67,3 +67,27 @@ export async function moderateComment(
     return { ok: true, trailSlug: c.slug as string } as const;
   });
 }
+
+export type QuestionReportItem = { reportId: string; questionId: string; askerName: string; question: string; reason: string; createdAt: string };
+
+/** Reported questions between riders. A moderator sees the question the reporter chose to report, nothing else of the exchange. */
+export async function listQuestionReports(sql: Sql, actorId: string): Promise<{ ok: true; items: QuestionReportItem[] } | typeof FORBIDDEN> {
+  if (!(await getActor(sql, actorId))) return FORBIDDEN;
+  const rows = await sql`
+    select r.id as report_id, q.id as question_id, u.display_name, q.question, r.reason, r.created_at
+    from content_report r join rider_question q on q.id = r.subject_id join app_user u on u.id = q.asker_id
+    where r.subject_type = 'question' and r.status = 'open' order by r.created_at asc limit 100`;
+  return { ok: true, items: rows.map((r) => ({ reportId: r.report_id, questionId: r.question_id, askerName: r.display_name, question: r.question, reason: r.reason, createdAt: (r.created_at as Date).toISOString() })) };
+}
+
+export async function dismissQuestionReport(sql: Sql, i: { actorId: string; reportId: string }): Promise<{ ok: true } | { ok: false; reason: "forbidden" | "not_found" }> {
+  return sql.begin(async (tx) => {
+    const actor = await getActor(tx, i.actorId);
+    if (!actor) return FORBIDDEN;
+    if (!UUID.test(i.reportId)) return { ok: false, reason: "not_found" } as const;
+    const rows = await tx`update content_report set status = 'resolved', resolved_by = ${actor.id}, resolved_at = now() where id = ${i.reportId} and subject_type = 'question' and status = 'open' returning subject_id`;
+    if (!rows.length) return { ok: false, reason: "not_found" } as const;
+    await audit(tx, actor, { action: "question_report_resolved", entityType: "question", entityId: rows[0]!.subject_id as string });
+    return { ok: true } as const;
+  });
+}

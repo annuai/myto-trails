@@ -12,6 +12,8 @@ import { saveTrailAction, unsaveTrailAction } from "@/app/saved/actions";
 import { CommentsSection } from "@/features/community/CommentsSection";
 import { RiddenPanel } from "@/features/community/RiddenPanel";
 import { deleteCommentAction, editCommentAction, markRiddenAction, postCommentAction, reportCommentAction, unmarkRiddenAction } from "@/features/community/actions";
+import { askRiderAction } from "@/features/community/question-actions";
+import { getMemberState } from "@/server/community/members";
 import { listComments } from "@/server/community/comments";
 import { getRiddenSummary } from "@/server/community/ridden";
 import { getTrail, getTrailMedia, getTrailRoute, getTrailVideos } from "@/server/queries/trails";
@@ -42,6 +44,7 @@ export default async function TrailPage({ params, searchParams }: PageProps<"/tr
   const saved = user ? await isSaved(getSql(), user.id, slug) : false;
   if (user && saved) await markSavedSeen(getSql(), user.id, slug, new Date());
   const [riddenSummary, comments] = await Promise.all([getRiddenSummary(getSql(), slug, user?.id ?? null), listComments(getSql(), slug, user?.id ?? null)]);
+  const ownRiderId = user ? (await getMemberState(getSql(), user.id))?.publicId ?? null : null;
   const maxMonth = new Date().toISOString().slice(0, 7);
   return (
     <>
@@ -53,7 +56,7 @@ export default async function TrailPage({ params, searchParams }: PageProps<"/tr
         route={route}
         community={
           <>
-            <RiddenPanel slug={slug} summary={riddenSummary} signedIn={Boolean(user)} code={code} maxMonth={maxMonth} actions={{ mark: markRiddenAction, unmark: unmarkRiddenAction }} />
+            <RiddenPanel slug={slug} summary={riddenSummary} signedIn={Boolean(user)} code={code} maxMonth={maxMonth} ownRiderId={ownRiderId} actions={{ mark: markRiddenAction, unmark: unmarkRiddenAction, ask: askRiderAction }} />
             <CommentsSection slug={slug} comments={comments} signedIn={Boolean(user)} code={code} actions={{ post: postCommentAction, edit: editCommentAction, remove: deleteCommentAction, report: reportCommentAction }} />
           </>
         }

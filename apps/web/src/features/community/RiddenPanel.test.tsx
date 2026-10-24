@@ -43,4 +43,14 @@ describe("RiddenPanel", () => {
     render(<RiddenPanel {...base} signedIn summary={summary()} code="ridden_invalid" />);
     expect(screen.getByRole("status")).toHaveTextContent(/check the month/i);
   });
+
+  it("offers a question form on public riders to signed-in members, but not on yourself or to signed-out visitors", () => {
+    const riders = [{ riderId: "r-other", displayName: "Priya", riddenMonth: null, bike: null, note: null }, { riderId: "r-me", displayName: "Me", riddenMonth: null, bike: null, note: null }];
+    const { container, rerender } = render(<RiddenPanel {...base} signedIn ownRiderId="r-me" summary={summary({ count: 2, riders })} actions={{ ...actions, ask: vi.fn() }} />);
+    expect(screen.getByText("Ask Priya a question")).toBeInTheDocument();
+    expect(screen.queryByText("Ask Me a question")).toBeNull();
+    expect(container.querySelector("input[name=riderId]")).toHaveAttribute("value", "r-other");
+    rerender(<RiddenPanel {...base} signedIn={false} summary={summary({ count: 2, riders })} actions={{ ...actions, ask: vi.fn() }} />);
+    expect(screen.queryByText("Ask Priya a question")).toBeNull();
+  });
 });

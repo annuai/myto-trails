@@ -25,6 +25,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save name</button>
       </form>
       <p><Link href="/account/contributions" className="underline underline-offset-4">Your contributions</Link></p>
+      <p><Link href="/account/questions" className="underline underline-offset-4">Your questions</Link></p>
       <p><Link href="/account/devices" className="underline underline-offset-4">Connected devices</Link></p>
       <div className="flex flex-wrap gap-4">
         <form action={signOutAction}>

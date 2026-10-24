@@ -10,7 +10,7 @@ const monthLabel = (m: string) => `${MONTHS[Number(m.slice(5, 7)) - 1]} ${m.slic
 
 /** Who says they have ridden this trail: a count, the riders who chose to be listed, and the button to add yourself. */
 export function RiddenPanel({
-  slug, summary, signedIn, code, maxMonth, actions,
+  slug, summary, signedIn, code, maxMonth, actions, ownRiderId = null,
 }: {
   slug: string;
   summary: RiddenSummary;
@@ -19,7 +19,9 @@ export function RiddenPanel({
   code?: string;
   /** The current month as YYYY-MM, the latest month a ride can be dated. */
   maxMonth: string;
-  actions: { mark: Action; unmark: Action };
+  actions: { mark: Action; unmark: Action; ask?: Action };
+  /** The viewer's own rider handle, so they are not offered a form to ask themselves. */
+  ownRiderId?: string | null;
 }) {
   const msg = resultMessage(code);
   const { count, riders, unlisted, mine, lastRidden } = summary;
@@ -30,7 +32,7 @@ export function RiddenPanel({
         {count === 0 ? "Nobody has said they have ridden here yet." : <><span className="font-medium">{count} {count === 1 ? "rider says" : "riders say"}</span> they have ridden here</>}
         {lastRidden ? <span className="text-muted"> · latest {monthLabel(lastRidden)}</span> : null}
       </p>
-      {msg && (code?.startsWith("ridden") || code === "unridden") ? <p role="status" className={`border-l-4 py-1 pl-4 ${msg.tone === "stop" ? "border-status-stop" : msg.tone === "caution" ? "border-status-caution" : "border-status-good"}`}>{msg.text}</p> : null}
+      {msg && (code?.startsWith("ridden") || code === "unridden" || code?.startsWith("ask_")) ? <p role="status" className={`border-l-4 py-1 pl-4 ${msg.tone === "stop" ? "border-status-stop" : msg.tone === "caution" ? "border-status-caution" : "border-status-good"}`}>{msg.text}</p> : null}
 
       {mine ? (
         <div className="flex flex-wrap items-center gap-4 rounded-3xl bg-card-cream p-5">
@@ -65,6 +67,19 @@ export function RiddenPanel({
               <p className="font-medium">{r.displayName}</p>
               <p className="text-sm text-muted">{[r.bike, r.riddenMonth ? monthLabel(r.riddenMonth) : null].filter(Boolean).join(" · ") || "Rider"}</p>
               {r.note ? <p className="mt-1 text-sm">{r.note}</p> : null}
+              {signedIn && actions.ask && r.riderId !== ownRiderId ? (
+                <details className="mt-2">
+                  <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm underline underline-offset-4">Ask {r.displayName} a question</summary>
+                  <form action={actions.ask} className="mb-1 flex flex-col gap-2">
+                    <input type="hidden" name="slug" value={slug} />
+                    <input type="hidden" name="riderId" value={r.riderId} />
+                    <label htmlFor={`ask-${r.riderId}`} className="text-sm">Your question about this trail</label>
+                    <textarea id={`ask-${r.riderId}`} name="question" rows={3} minLength={5} maxLength={500} required className="w-full rounded-lg border border-foreground/40 bg-background px-3 py-2" />
+                    <p className="text-xs text-muted">{r.displayName} gets an email and can answer, decline, or block you. No web addresses, please.</p>
+                    <button type="submit" className="min-h-11 self-start rounded-lg bg-accent px-4 text-sm font-medium text-white">Send question</button>
+                  </form>
+                </details>
+              ) : null}
             </li>
           ))}
         </ul>

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSql } from "@/server/db/client";
-import { listCommentQueue } from "@/server/moderation/comments";
+import { listCommentQueue, listQuestionReports } from "@/server/moderation/comments";
 import { requireModerator } from "@/server/moderation/session";
-import { commentModerationAction } from "../actions";
+import { commentModerationAction, dismissQuestionReportAction } from "../actions";
 
 export const instant = false;
 export const metadata: Metadata = { title: "Comments", robots: { index: false, follow: false } };
@@ -14,6 +14,8 @@ export default async function CommentsModerationPage({ searchParams }: PageProps
   const q = await listCommentQueue(getSql(), actor.id);
   const sp = await searchParams;
   const items = q.ok ? q.items : [];
+  const qr = await listQuestionReports(getSql(), actor.id);
+  const reportedQuestions = qr.ok ? qr.items : [];
   return (
     <section className="flex max-w-3xl flex-col gap-6 py-8">
       <Link href="/moderate" className="text-sm underline underline-offset-4">Back to the queue</Link>
@@ -34,6 +36,22 @@ export default async function CommentsModerationPage({ searchParams }: PageProps
                   {i.status === "pending" ? <button type="submit" name="action" value="approve" className="min-h-12 rounded-lg bg-accent px-5 text-sm font-medium text-white">Approve</button> : <button type="submit" name="action" value="dismiss" className="min-h-12 rounded-lg border border-foreground px-5 text-sm font-medium">Dismiss reports</button>}
                   <button type="submit" name="action" value="hide" className="min-h-12 rounded-lg border border-status-stop px-5 text-sm font-medium text-status-stop">Hide</button>
                 </div>
+              </form>
+            </li>
+          ))}
+        </ul>
+      )}
+      <h2 className="text-xl font-semibold">Reported questions ({reportedQuestions.length})</h2>
+      {reportedQuestions.length === 0 ? <p className="text-muted">No reported questions.</p> : (
+        <ul className="flex flex-col gap-4">
+          {reportedQuestions.map((r) => (
+            <li key={r.reportId} className="flex flex-col gap-2 rounded-3xl bg-card-cream p-5">
+              <p className="text-sm text-muted">From {r.askerName}. Reported because: {r.reason}</p>
+              <p className="whitespace-pre-line break-words">{r.question}</p>
+              <form action={dismissQuestionReportAction} className="flex flex-wrap items-center gap-4">
+                <input type="hidden" name="reportId" value={r.reportId} />
+                <button type="submit" className="min-h-11 rounded-lg border border-foreground px-4 text-sm font-medium">Close report</button>
+                <Link href="/moderate/users" className="text-sm underline underline-offset-4">Suspend the rider (admins)</Link>
               </form>
             </li>
           ))}

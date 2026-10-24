@@ -9,7 +9,7 @@ import { release, verifyAccess, setCondition, unpublish } from "@/server/moderat
 import { approve, rejectSubmission, requestChanges, REASON_CODES, type ReasonCode } from "@/server/moderation/decisions";
 import { decisionEmail, reportOutcomeEmail, sendToUser } from "@/server/moderation/notify";
 import { resolveReport, type ReportOutcome } from "@/server/moderation/reports";
-import { moderateComment, type CommentAction } from "@/server/moderation/comments";
+import { dismissQuestionReport, moderateComment, type CommentAction } from "@/server/moderation/comments";
 import { grantRole, revokeRole, setSuspended } from "@/server/moderation/users";
 
 const text = (f: FormData, k: string) => String(f.get(k) ?? "");
@@ -133,4 +133,10 @@ export async function commentModerationAction(formData: FormData): Promise<void>
   if (!r.ok) back("/moderate/comments", r.reason);
   updateTag(`trail:${r.trailSlug}`);
   back("/moderate/comments", "saved");
+}
+
+export async function dismissQuestionReportAction(formData: FormData): Promise<void> {
+  const actor = await actorId("/moderate/comments");
+  const r = await dismissQuestionReport(getSql(), { actorId: actor, reportId: text(formData, "reportId") });
+  back("/moderate/comments", r.ok ? "saved" : r.reason);
 }
