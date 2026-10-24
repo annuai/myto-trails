@@ -1,0 +1,26 @@
+/* Shared Myto foundation tokens. Values are taken verbatim from myto-moto.com (checked 2026-10-24).
+   Myto's own `--color-accent` (#be3a23) is exposed here as `--color-brand-red`; Trails defines its own accent in trails.css. */
+@theme {
+  --color-background: #f2ede8;
+  --color-surface: #f2f0ec;
+  --color-foreground: #1a1a1a;
+  --color-muted: #6b6560;
+  --color-border: #00000014;
+  --color-brand-red: #be3a23;
+  --color-dark: #1c1c1a;
+  --color-clay: #ddd4c8;
+  --color-olive: #d8dbc9;
+  --color-sand: #ddd7ca;
+  --color-stone: #e3ddd4;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-michroma), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --spacing: 0.25rem;
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 280ms;
+}

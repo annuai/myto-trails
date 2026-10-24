@@ -1,0 +1,40 @@
+/* Myto Trails layer: accent, status colours, radii, spacing. Components use these semantic tokens only. */
+@theme {
+  --color-accent: #1f4a6b;
+  --color-accent-hover: #173a55;
+  --color-accent-subtle: #e3ebf1;
+
+  --color-status-good: #2d6a3e;
+  --color-status-caution: #8a5a00;
+  --color-status-stop: #a32d1c;
+  --color-status-unknown: #6b6560;
+  --color-status-info: #2a5f8a;
+
+  --color-status-good-dark: #6fbf83;
+  --color-status-caution-dark: #e0a43a;
+  --color-status-stop-dark: #ec8272;
+  --color-status-unknown-dark: #a8a29b;
+  --color-status-info-dark: #7fb2d6;
+
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+}
+
+:root {
+  --space-section: 3rem;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --space-section: 4rem;
+  }
+}
+
+[data-theme="dark"] {
+  --color-status-good: var(--color-status-good-dark);
+  --color-status-caution: var(--color-status-caution-dark);
+  --color-status-stop: var(--color-status-stop-dark);
+  --color-status-unknown: var(--color-status-unknown-dark);
+  --color-status-info: var(--color-status-info-dark);
+}
