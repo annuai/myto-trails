@@ -38,7 +38,7 @@ export function NearMeButton({ href = "/trails?near=me", variant = "default" }: 
         disabled={state.kind === "locating"}
         className={
           inline
-            ? "inline-flex min-h-12 items-center gap-2 whitespace-nowrap rounded-lg border border-foreground/40 bg-white px-4 text-sm font-medium hover:bg-background disabled:opacity-60"
+            ? "inline-flex min-h-12 items-center gap-2 whitespace-nowrap rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
             : "inline-flex min-h-11 items-center rounded-lg border border-foreground px-4 text-sm font-medium disabled:opacity-60"
         }
       >

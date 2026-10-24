@@ -23,7 +23,7 @@ function toOptions(s: Suggestions, base: string): Option[] {
 }
 
 /** Search for a trail, a place (Bangalore, Bengaluru) or a region, using the ARIA combobox pattern. */
-export function SearchCombobox({ initialQuery = "", extra }: { initialQuery?: string; /** Rendered next to the Search button, for example a "near me" button. */ extra?: ReactNode }) {
+export function SearchCombobox({ initialQuery = "", extra, secondary = false }: { initialQuery?: string; /** Draw the Search button as the secondary action (outlined), when another button is the main one. */ secondary?: boolean; /** Rendered next to the Search button, for example a "near me" button. */ extra?: ReactNode }) {
   const router = useRouter();
   const base = useId();
   const [text, setText] = useState(initialQuery);
@@ -108,7 +108,7 @@ export function SearchCombobox({ initialQuery = "", extra }: { initialQuery?: st
           placeholder="Search a place, region or trail name"
           className="min-h-12 w-full min-w-0 basis-full rounded-lg border border-foreground/40 bg-background px-3 sm:basis-0 sm:flex-1"
         />
-        <button type="button" onClick={searchText} className="min-h-12 rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
+        <button type="button" onClick={searchText} className={`min-h-12 rounded-lg px-5 text-sm font-medium ${secondary ? "border border-foreground/40 bg-white hover:bg-background" : "bg-accent text-white hover:bg-accent-hover"}`}>
           Search
         </button>
         {extra}
