@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NearMeButton } from "@/features/discovery/NearMeButton";
 import { SearchCombobox } from "@/features/discovery/SearchCombobox";
 
 const QUICK = [
@@ -23,7 +24,7 @@ export function Hero({ imageSrc }: { imageSrc: string }) {
         <h1 id="hero-title" className="display-lg max-w-2xl">Find a trail you can actually ride.</h1>
         <p className="max-w-xl text-lg text-muted">Every trail shows who is allowed to ride it, how we know, and when it was last checked.</p>
         <div className="max-w-xl rounded-lg border border-border bg-white/90 p-3 shadow-lg backdrop-blur">
-          <SearchCombobox />
+          <SearchCombobox extra={<NearMeButton variant="inline" />} />
         </div>
         <ul className="flex flex-wrap gap-2" aria-label="Quick searches">
           {QUICK.map((q) => (

@@ -52,4 +52,8 @@ describe("NearMeButton", () => {
     fireEvent.click(screen.getByRole("button", { name: /use my location/i }));
     expect(screen.getByRole("status")).toHaveTextContent(/isn.t available/i);
   });
+  it("has a compact inline variant for the hero search row", () => {
+    render(<NearMeButton variant="inline" />);
+    expect(screen.getByRole("button", { name: "Trails near me" })).toBeInTheDocument();
+  });
 });

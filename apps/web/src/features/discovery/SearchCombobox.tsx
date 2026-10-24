@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -22,7 +23,7 @@ function toOptions(s: Suggestions, base: string): Option[] {
 }
 
 /** Search for a trail, a place (Bangalore, Bengaluru) or a region, using the ARIA combobox pattern. */
-export function SearchCombobox({ initialQuery = "" }: { initialQuery?: string }) {
+export function SearchCombobox({ initialQuery = "", extra }: { initialQuery?: string; /** Rendered next to the Search button, for example a "near me" button. */ extra?: ReactNode }) {
   const router = useRouter();
   const base = useId();
   const [text, setText] = useState(initialQuery);
@@ -92,7 +93,7 @@ export function SearchCombobox({ initialQuery = "" }: { initialQuery?: string })
   return (
     <div className="relative">
       <label htmlFor={`${base}-input`} className="sr-only">Search a place, region or trail name</label>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 sm:flex-nowrap">
         <input
           id={`${base}-input`}
           role="combobox"
@@ -105,11 +106,12 @@ export function SearchCombobox({ initialQuery = "" }: { initialQuery?: string })
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="Search a place, region or trail name"
-          className="min-h-12 w-full rounded-lg border border-foreground/40 bg-background px-3"
+          className="min-h-12 w-full min-w-0 basis-full rounded-lg border border-foreground/40 bg-background px-3 sm:basis-0 sm:flex-1"
         />
         <button type="button" onClick={searchText} className="min-h-12 rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">
           Search
         </button>
+        {extra}
       </div>
       <div id={listId} role="listbox" aria-label="Suggestions" hidden={!visible} className="absolute left-0 right-0 z-10 mt-1 max-h-96 overflow-auto border border-border bg-surface shadow-[0_4px_16px_#0000001f]">
         {groups.map((g) => (
