@@ -96,9 +96,45 @@ describe("loadServerEnv", () => {
       SITE_URL: "https://moto-trails.com",
       STORAGE_PROVIDER: "r2",
       DATABASE_URL: "postgres://u:p@h/db",
+      EMAIL_PROVIDER: "resend",
+      RESEND_API_KEY: "re_key",
+      EMAIL_FROM: "Moto Trails <no-reply@moto-trails.com>",
       ...r2,
     });
     expect(env.databaseUrl).toBe("postgres://u:p@h/db");
+  });
+
+  it("defaults to the console email sender in development", () => {
+    expect(loadServerEnv({ NODE_ENV: "development" }).email).toEqual({ provider: "console" });
+  });
+
+  it("reads a resend email configuration and names missing variables", () => {
+    expect(loadServerEnv({ NODE_ENV: "development", EMAIL_PROVIDER: "resend", RESEND_API_KEY: "re_key", EMAIL_FROM: "a@b.c" }).email).toEqual({
+      provider: "resend", apiKey: "re_key", from: "a@b.c",
+    });
+    try {
+      loadServerEnv({ NODE_ENV: "development", EMAIL_PROVIDER: "resend", RESEND_API_KEY: "re_key" });
+      expect.unreachable();
+    } catch (e) {
+      expect((e as EnvError).missing).toEqual(["EMAIL_FROM"]);
+      expect((e as Error).message).not.toContain("re_key");
+    }
+  });
+
+  it("rejects an unknown email provider without echoing it", () => {
+    try {
+      loadServerEnv({ NODE_ENV: "development", EMAIL_PROVIDER: "carrier-pigeon-xyz" });
+      expect.unreachable();
+    } catch (e) {
+      expect((e as Error).message).toMatch(/console, resend/);
+      expect((e as Error).message).not.toContain("carrier-pigeon-xyz");
+    }
+  });
+
+  it("rejects the console email sender in production", () => {
+    expect(() =>
+      loadServerEnv({ NODE_ENV: "production", SITE_URL: "https://moto-trails.com", STORAGE_PROVIDER: "r2", DATABASE_URL: "postgres://u:p@h/db", ...r2 }),
+    ).toThrow(/EMAIL_PROVIDER/);
   });
 
   it("requires a provider in production", () => {
