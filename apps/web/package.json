@@ -19,7 +19,10 @@
     "test:db": "vitest run --config vitest.db.config.ts",
     "db:seed:regions": "tsx --env-file-if-exists=.env.local scripts/db-seed-regions.mts",
     "db:import": "tsx --env-file-if-exists=.env.local scripts/import-trails.mts",
-    "db:seed:places": "tsx --env-file-if-exists=.env.local scripts/db-seed-places.mts"
+    "db:seed:places": "tsx --env-file-if-exists=.env.local scripts/db-seed-places.mts",
+    "assets:maplibre": "node scripts/copy-maplibre-worker.mjs",
+    "predev": "npm run assets:maplibre",
+    "prebuild": "npm run assets:maplibre"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",
@@ -27,6 +30,7 @@
     "@moto-trails/domain": "*",
     "@moto-trails/tokens": "*",
     "@supabase/supabase-js": "^2.118.0",
+    "maplibre-gl": "^6.15.0",
     "next": "16.4.3",
     "postgres": "^3.4.9",
     "react": "19.3.0",

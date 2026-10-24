@@ -6,7 +6,7 @@ import { seedPlaces, type PlaceSeed } from "../db/seed-places";
 import { seedRegions } from "../db/seed-regions";
 import { insertTrailFixture, type TrailFixture } from "../testing/fixtures";
 import { asAnon, createTestDatabase } from "../testing/db";
-import { findPlace, searchTrails, suggest } from "./search.sql";
+import { findPlace, searchMapPoints, searchTrails, suggest } from "./search.sql";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
 const now = new Date("2026-06-01T12:00:00Z");
@@ -193,5 +193,31 @@ describe("suggest", () => {
   });
   it("returns empty groups for an empty query", async () => {
     expect(await suggest(new Proxy({}, { get() { throw new Error("no sql"); } }) as never, "  ")).toEqual({ trails: [], places: [], regions: [] });
+  });
+});
+
+describe("searchMapPoints", () => {
+  it("returns public points for every match without paging, honouring filters and a cap", async () => {
+    for (let i = 0; i < 5; i++) await mk("mp", { name: `Map point ${i}` });
+    await mk("mp", { lifecycle: "draft", name: "Map hidden" });
+    const all = await asAnon(db.sql, (tx) => searchMapPoints(tx, parseSearchParams({ state: "ss-mp" }), {}));
+    expect(all).toHaveLength(5);
+    expect(all[0]).toMatchObject({ slug: expect.any(String), name: expect.any(String), accessClass: "public" });
+    const capped = await asAnon(db.sql, (tx) => searchMapPoints(tx, parseSearchParams({ state: "ss-mp" }), { limit: 3 }));
+    expect(capped).toHaveLength(3);
+  });
+  it("never includes the exact start of a sensitive trail or trails with no public point", async () => {
+    const withPoint = await mk("mq", { sensitivity: "sensitive", startPoint: { lon: 75.123456, lat: 13.654321 }, publicPoint: { lon: 75, lat: 13.5 } });
+    await mk("mq", { sensitivity: "restricted_geometry" });
+    const points = await asAnon(db.sql, (tx) => searchMapPoints(tx, parseSearchParams({ state: "ss-mq" }), {}));
+    expect(points.map((p) => p.slug)).toEqual([withPoint.slug]);
+    expect(points[0]).toMatchObject({ lon: 75, lat: 13.5 });
+    expect(JSON.stringify(points)).not.toContain("75.123456");
+  });
+  it("limits to a place radius", async () => {
+    await mk("mr", { startPoint: { lon: 77.5946, lat: 13.1516 } });
+    await mk("mr", { startPoint: { lon: 76.6394, lat: 12.2958 } });
+    const near = await asAnon(db.sql, (tx) => searchMapPoints(tx, parseSearchParams({ state: "ss-mr", near: "bengaluru", radius: "50" }), {}));
+    expect(near).toHaveLength(1);
   });
 });

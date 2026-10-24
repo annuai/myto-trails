@@ -1,6 +1,8 @@
 import { estimateTravel, isValidSlug } from "@moto-trails/domain";
+import type postgres from "postgres";
 import type { Sql } from "postgres";
 import { PAGE_SIZE, type SearchParams } from "@/features/discovery/search-params";
+import type { MapPoint } from "@/features/map/geojson";
 import { mapSummary } from "./trails.sql";
 import type { TrailSummaryDto } from "./types";
 
@@ -44,18 +46,17 @@ export async function findPlace(sql: Sql, slug: string): Promise<PlaceDto | null
 const validPoint = (p: { lat: number; lon: number } | undefined) =>
   p !== undefined && Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180;
 
-export async function searchTrails(
-  sql: Sql,
-  p: SearchParams,
-  now: Date,
-  opts: { point?: { lat: number; lon: number } } = {},
-): Promise<SearchResult> {
+type Frag = postgres.PendingQuery<postgres.Row[]>;
+type Filter = { unknownPlace: true } | { unknownPlace?: false; origin: SearchOrigin | null; originGeog: Frag | null; where: Frag; q: string };
+
+/** Resolves the origin (place or point) and builds the WHERE clause shared by list and map queries. */
+async function buildFilter(sql: Sql, p: SearchParams, opts: { point?: { lat: number; lon: number } }): Promise<Filter> {
   let originPoint: { lat: number; lon: number } | null = null;
   let origin: SearchOrigin | null = null;
 
   if (p.near && p.near !== "me") {
     const place = await findPlace(sql, p.near);
-    if (!place) return { items: [], total: 0, page: p.page, pageSize: PAGE_SIZE, origin: null, unknownPlace: true };
+    if (!place) return { unknownPlace: true };
     originPoint = { lat: place.lat, lon: place.lon };
     origin = { kind: "place", slug: place.slug, name: place.name };
   } else if (p.near === "me" && validPoint(opts.point)) {
@@ -64,7 +65,7 @@ export async function searchTrails(
   }
 
   const originGeog = originPoint ? sql`ST_SetSRID(ST_MakePoint(${originPoint.lon}, ${originPoint.lat}), 4326)::geography` : null;
-  const conds: ReturnType<Sql>[] = [];
+  const conds: Frag[] = [];
   const q = clean(p.q);
   const like = `%${escapeLike(q)}%`;
 
@@ -85,6 +86,19 @@ export async function searchTrails(
   if (originGeog) conds.push(sql`geog is not null and st_dwithin(geog, ${originGeog}, ${p.radius * 1000})`);
 
   const where = conds.length ? conds.reduce((a, c) => sql`${a} and ${c}`) : sql`true`;
+  return { origin, originGeog, where, q };
+}
+
+export async function searchTrails(
+  sql: Sql,
+  p: SearchParams,
+  now: Date,
+  opts: { point?: { lat: number; lon: number } } = {},
+): Promise<SearchResult> {
+  const f = await buildFilter(sql, p, opts);
+  if (f.unknownPlace) return { items: [], total: 0, page: p.page, pageSize: PAGE_SIZE, origin: null, unknownPlace: true };
+  const { origin, originGeog, where, q } = f;
+
   const rank = q ? sql`(ts_rank(search_tsv, websearch_to_tsquery('simple', ${q})) + similarity(name, ${q}))` : sql`0`;
   const distance = originGeog ? sql`(st_distance(geog, ${originGeog}) / 1000.0)` : sql`null::float8`;
 
@@ -150,4 +164,31 @@ export async function suggest(sql: Sql, rawQuery: string): Promise<Suggestions> 
     places: (places as Row[]).map((r) => ({ slug: r.slug, name: r.name, state: r.state_name })),
     regions: (regions as Row[]).map((r) => ({ slug: r.slug, name: r.name })),
   };
+}
+
+export const MAP_POINT_CAP = 500;
+
+/** Public points for every match (no paging), for the map. Sensitive trails contribute only their public point. */
+export async function searchMapPoints(
+  sql: Sql,
+  p: SearchParams,
+  opts: { point?: { lat: number; lon: number }; limit?: number },
+): Promise<MapPoint[]> {
+  const f = await buildFilter(sql, p, opts);
+  if (f.unknownPlace) return [];
+  const limit = Math.min(Math.max(Math.floor(opts.limit ?? MAP_POINT_CAP), 1), MAP_POINT_CAP);
+  const rows = (await sql`
+    select slug, name, district_name, state_name, lon, lat, access_class
+    from public_trail_search s
+    where ${f.where} and geog is not null
+    order by name asc
+    limit ${limit}`) as Row[];
+  return rows.map((r) => ({
+    slug: r.slug,
+    name: r.name,
+    place: [r.district_name, r.state_name].filter(Boolean).join(", "),
+    lon: Number(r.lon),
+    lat: Number(r.lat),
+    accessClass: r.access_class,
+  }));
 }

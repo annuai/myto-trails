@@ -13,7 +13,8 @@ import { ViewToggle } from "@/features/discovery/ViewToggle";
 import { parseSearchParams, toSearchString } from "@/features/discovery/search-params";
 import { NEAR_COOKIE, parseNearCookie } from "@/lib/near-cookie";
 import { getSql, withPublicRole } from "@/server/db/client";
-import { searchTrails } from "@/server/queries/search.sql";
+import { TrailMapLoader } from "@/features/map/TrailMapLoader";
+import { searchMapPoints, searchTrails } from "@/server/queries/search.sql";
 
 // Search is uncached and depends on the URL (and, for "near me", a cookie), so this route renders on demand.
 export const instant = false;
@@ -34,6 +35,7 @@ export default async function TrailsPage({ searchParams }: PageProps<"/trails">)
   const params = parseSearchParams(await searchParams);
   const point = parseNearCookie((await cookies()).get(NEAR_COOKIE)?.value);
   const result = await withPublicRole(getSql(), (tx) => searchTrails(tx, params, new Date(), { point }));
+  const mapPoints = params.view === "map" ? await withPublicRole(getSql(), (tx) => searchMapPoints(tx, params, { point })) : [];
   const placeName = result.origin?.kind === "place" ? result.origin.name : undefined;
   const needsLocation = params.near === "me" && result.origin === null;
 
@@ -63,6 +65,7 @@ export default async function TrailsPage({ searchParams }: PageProps<"/trails">)
             <ViewToggle params={params} />
           </div>
           <SortLinks params={params} />
+          {params.view === "map" ? <TrailMapLoader points={mapPoints} /> : null}
 
           {result.items.length === 0 ? (
             <div className="max-w-prose py-6">
@@ -70,10 +73,8 @@ export default async function TrailsPage({ searchParams }: PageProps<"/trails">)
               <p className="mt-2 text-muted">Try removing a filter above, widening the radius, or including closed trails.</p>
               <Link href="/regions" className="mt-4 inline-flex min-h-11 items-center underline underline-offset-4">Browse by region</Link>
             </div>
-          ) : params.view === "map" ? (
-            <p className="py-6 text-muted">Map view is loading…</p>
           ) : (
-            <div>
+            <div id="results">
               {result.items.map((t) => (
                 <SearchResultRow key={t.slug} trail={t} />
               ))}
