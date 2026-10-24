@@ -1,7 +1,8 @@
 import type { AccessClass, OperationalStatus, VerificationLevel } from "@moto-trails/domain";
+import { formatDate } from "@/lib/format";
 import { statusFor, type Glyph, type Tone } from "./status-map";
 
-type Props = { date?: string } & (
+type Props = { date?: string; size?: "md" | "lg" } & (
   | { kind: "access"; value: AccessClass }
   | { kind: "condition"; value: OperationalStatus }
   | { kind: "verification"; value: VerificationLevel }
@@ -32,14 +33,10 @@ function GlyphIcon({ glyph }: { glyph: Glyph }) {
   }
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-}
-
 export function StatusBadge(props: Props) {
   const { label, tone, glyph } = statusFor(props.kind as "access", props.value as AccessClass);
   return (
-    <span className={`inline-flex items-center gap-2 text-sm font-medium ${toneClass[tone]}`}>
+    <span className={`inline-flex items-center gap-2 font-medium ${props.size === "lg" ? "text-base" : "text-sm"} ${toneClass[tone]}`}>
       <GlyphIcon glyph={glyph} />
       <span>{label}</span>
       {props.date ? <span className="font-mono text-muted">{formatDate(props.date)}</span> : null}
