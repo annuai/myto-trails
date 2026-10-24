@@ -5,10 +5,10 @@ describe("haversineKm", () => {
   it("is zero for the same point", () => {
     expect(haversineKm({ lat: 12.97, lon: 77.59 }, { lat: 12.97, lon: 77.59 })).toBe(0);
   });
-  it("measures Bengaluru to Mysuru at roughly 125 km", () => {
+  it("measures Bengaluru to Mysuru at roughly 128 km (great circle)", () => {
     const km = haversineKm({ lat: 12.9716, lon: 77.5946 }, { lat: 12.2958, lon: 76.6394 });
-    expect(km).toBeGreaterThan(123);
-    expect(km).toBeLessThan(128);
+    expect(km).toBeGreaterThan(127);
+    expect(km).toBeLessThan(129);
   });
   it("is symmetric", () => {
     const a = { lat: 9.93, lon: 76.27 };
