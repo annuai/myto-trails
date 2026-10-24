@@ -5,7 +5,7 @@ import { ingestGpx, insertRoute } from "../gpx/ingest";
 import { seedRegions } from "../db/seed-regions";
 import { insertTrailFixture } from "../testing/fixtures";
 import { createTestDatabase } from "../testing/db";
-import { attachRoute, createDraft, discardDraft, getMine, listMine, saveStep, submit } from "./service";
+import { attachRoute, createDraft, discardDraft, getMine, listMine, listStates, photoPreviews, saveStep, submit } from "./service";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
 let n = 0;
@@ -327,5 +327,20 @@ describe("listMine and discardDraft", () => {
     if (!d.ok) throw new Error();
     expect(await discardDraft(db.sql, { userId, id: d.id })).toEqual({ ok: true });
     expect(await getMine(db.sql, userId, d.id)).toBeNull();
+  });
+});
+
+describe("photoPreviews and listStates", () => {
+  it("returns previews only for the user's own photos", async () => {
+    const userId = await user();
+    const mine = await readyPhoto(userId);
+    const theirs = await readyPhoto(await user());
+    expect(await photoPreviews(db.sql, userId, [mine, theirs, "junk"])).toEqual({ [mine]: "https://example.test/p.webp" });
+    expect(await photoPreviews(db.sql, userId, [])).toEqual({});
+  });
+  it("lists the seeded states", async () => {
+    const states = await listStates(db.sql);
+    expect(states.length).toBeGreaterThanOrEqual(36);
+    expect(states).toContainEqual({ slug: "kerala", name: "Kerala" });
   });
 });

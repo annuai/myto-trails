@@ -224,6 +224,19 @@ export async function attachRoute(
   });
 }
 
+/** Small preview URLs for the user's own photos, so the form can show what was attached. */
+export async function photoPreviews(sql: Sql, userId: string, ids: string[]): Promise<Record<string, string>> {
+  const valid = ids.filter((x) => UUID.test(x)).slice(0, 20);
+  if (valid.length === 0) return {};
+  const rows = await sql`select id, variants from media where id in ${sql(valid)} and uploaded_by = ${userId}`;
+  return Object.fromEntries(rows.map((r) => [r.id as string, (r.variants as Record<string, string>)["400"] ?? Object.values(r.variants as Record<string, string>)[0] ?? ""]));
+}
+
+export async function listStates(sql: Sql): Promise<{ slug: string; name: string }[]> {
+  const rows = await sql`select slug, name from region where kind = 'state' order by name`;
+  return rows.map((r) => ({ slug: r.slug as string, name: r.name as string }));
+}
+
 export async function discardDraft(sql: Sql, i: { userId: string; id: string }): Promise<{ ok: true } | { ok: false; reason: "not_found" | "locked" }> {
   const row = await loadRow(sql, i.userId, i.id);
   if (!row) return { ok: false, reason: "not_found" };
