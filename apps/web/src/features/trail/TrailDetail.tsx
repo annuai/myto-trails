@@ -14,7 +14,7 @@ import { TrailNotices } from "./TrailNotices";
 import { routeShapeLabel, suitabilityLabel, terrainLabel } from "./labels";
 
 /** Composition of the public trail page, in the order a rider needs it (docs/07 §4). */
-export function TrailDetail({ trail, media, videos = [], route = null, actions }: { trail: TrailDetailDto; media: MediaDto[]; videos?: VideoDto[]; route?: RouteDto | null; actions?: ReactNode }) {
+export function TrailDetail({ trail, media, videos = [], route = null, actions, community }: { trail: TrailDetailDto; media: MediaDto[]; videos?: VideoDto[]; route?: RouteDto | null; actions?: ReactNode; community?: ReactNode }) {
   const crumbs: Crumb[] = [
     { label: "Home", href: "/" },
     { label: "Regions", href: "/regions" },
@@ -104,6 +104,7 @@ export function TrailDetail({ trail, media, videos = [], route = null, actions }
       <SafetyInformation hazards={trail.hazards} safetyNotes={trail.safetyNotes} />
       <TrailMedia photos={media.filter((m) => m !== cover)} videos={videos} />
       <AccessDetails trail={trail} />
+      {community}
 
       <footer className="border-t border-border pt-4 text-sm text-muted">
         <p>

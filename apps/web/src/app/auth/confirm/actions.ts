@@ -13,5 +13,5 @@ export async function confirmAction(formData: FormData): Promise<void> {
   const result = await confirmSignIn(getSql(), { token });
   if (!result.ok) redirect("/sign-in?expired=1");
   (await cookies()).set(SESSION_COOKIE, result.sessionToken, sessionCookieOptions(process.env.NODE_ENV === "production"));
-  redirect(next);
+  redirect(result.user.confirmed ? next : `/welcome?next=${encodeURIComponent(next)}`);
 }

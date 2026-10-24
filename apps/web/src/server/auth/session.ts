@@ -19,8 +19,10 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 }
 
 /** For pages and actions that need an account: sends visitors to sign in and back again. */
-export async function requireUser(returnTo: string): Promise<SessionUser> {
+export async function requireUser(returnTo: string, opts: { allowUnconfirmed?: boolean } = {}): Promise<SessionUser> {
   const user = await getCurrentUser();
   if (!user) redirect(`/sign-in?next=${encodeURIComponent(returnTo)}`);
+  // The first sign-in ends with the 18+ and driving-licence declaration; nothing else is available before it.
+  if (!user.confirmed && !opts.allowUnconfirmed) redirect(`/welcome?next=${encodeURIComponent(returnTo)}`);
   return user;
 }

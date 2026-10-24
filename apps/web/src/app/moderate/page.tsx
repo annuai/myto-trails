@@ -17,6 +17,7 @@ export default async function ModeratePage({ searchParams }: PageProps<"/moderat
       <h1 className="text-3xl font-semibold leading-tight">Moderation</h1>
       <nav aria-label="Moderation sections" className="flex flex-wrap gap-4">
         <Link href="/moderate/reports" className="inline-flex min-h-11 items-center underline underline-offset-4">Reports</Link>
+        <Link href="/moderate/comments" className="inline-flex min-h-11 items-center underline underline-offset-4">Comments</Link>
         <Link href="/moderate/due" className="inline-flex min-h-11 items-center underline underline-offset-4">Access checks due</Link>
         {actor.role === "admin" ? <Link href="/moderate/users" className="inline-flex min-h-11 items-center underline underline-offset-4">People</Link> : null}
       </nav>
