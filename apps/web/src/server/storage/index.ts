@@ -1,6 +1,7 @@
 import { loadServerEnv, type StorageConfig } from "../env";
 import { MemoryStorageProvider } from "./memory-provider";
 import { createR2Provider } from "./r2-provider";
+import { createSupabaseProvider } from "./supabase-provider";
 import type { StorageProvider } from "./types";
 
 export * from "./types";
@@ -14,7 +15,7 @@ export function createStorage(config: StorageConfig): StorageProvider {
     case "r2":
       return createR2Provider(config);
     case "supabase":
-      throw new Error('Storage provider "supabase" is not implemented yet');
+      return createSupabaseProvider(config);
   }
 }
 

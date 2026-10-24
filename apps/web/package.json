@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "next typegen && tsc --noEmit",
-    "test:live": "STORAGE_TEST_LIVE=1 node --env-file-if-exists=.env.local ../../node_modules/vitest/vitest.mjs run live"
+    "test:live": "STORAGE_TEST_LIVE=1 node --env-file-if-exists=.env.local ../../node_modules/vitest/vitest.mjs run live",
+    "storage:setup": "tsx --env-file-if-exists=.env.local scripts/storage-setup.mts",
+    "storage:smoke": "tsx --env-file-if-exists=.env.local scripts/storage-smoke.mts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",
@@ -35,6 +37,7 @@
     "eslint-config-next": "16.4.3",
     "jsdom": "^26.0.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^3.2.0"
   }
