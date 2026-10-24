@@ -1,6 +1,9 @@
+import { createHash, randomUUID } from "node:crypto";
 import { slugify } from "@moto-trails/domain";
 import type { Sql } from "postgres";
 import { ensureDistrict } from "../db/regions";
+import { ingestGpx, insertRoute } from "../gpx/ingest";
+import type { StorageProvider } from "../storage";
 import { TrailImportSchema } from "./schema";
 
 export class ImportError extends Error {
@@ -22,7 +25,7 @@ const point = (p: { lon: number; lat: number }) => `SRID=4326;POINT(${p.lon} ${p
 export async function importTrail(
   sql: Sql,
   record: unknown,
-  opts: { production: boolean; allowSamples?: boolean },
+  opts: { production: boolean; allowSamples?: boolean; gpx?: { read(path: string): Uint8Array | null; storage: StorageProvider } },
 ): Promise<{ slug: string; trailId: string }> {
   const parsed = TrailImportSchema.safeParse(record);
   if (!parsed.success) {
@@ -39,6 +42,17 @@ export async function importTrail(
 
   const slug = t.slug ?? slugify(t.name);
   if (!slug) throw new ImportError("Invalid record: name cannot form a slug", "invalid");
+
+  // Read and validate the GPX before opening the transaction, so a bad file leaves nothing behind.
+  let route: { ingested: Extract<ReturnType<typeof ingestGpx>, { ok: true }>; bytes: Uint8Array } | undefined;
+  if (t.gpxFile) {
+    if (!opts.gpx) throw new ImportError(`${t.gpxFile}: a GPX file was named but no GPX source is configured`, "invalid");
+    const bytes = opts.gpx.read(t.gpxFile);
+    if (!bytes) throw new ImportError(`${t.gpxFile}: GPX file not found`, "invalid");
+    const ingested = ingestGpx(bytes);
+    if (!ingested.ok) throw new ImportError(`${t.gpxFile}: invalid GPX: ${ingested.message}`, "invalid");
+    route = { ingested, bytes };
+  }
 
   return sql.begin(async (tx) => {
     const [state] = await tx`select id from region where kind = 'state' and slug = ${t.state}`;
@@ -84,6 +98,23 @@ export async function importTrail(
         insert into media (revision_id, role, position, caption, alt_text, credit, variants, width, height)
         values (${revisionId}, ${m.role}, ${m.position}, ${m.caption ?? null}, ${m.altText}, ${m.credit ?? null},
           ${tx.json(m.variants)}, ${m.width ?? null}, ${m.height ?? null})`;
+    }
+
+    if (route && opts.gpx) {
+      const objectId = randomUUID();
+      const originalKey = `gpx/${trailId}/${objectId}.gpx`;
+      const cleanKey = `gpx/${trailId}/${objectId}-clean.gpx`;
+      await opts.gpx.storage.put("originals", originalKey, route.bytes, "application/gpx+xml");
+      await opts.gpx.storage.put("originals", cleanKey, new TextEncoder().encode(route.ingested.cleanGpx), "application/gpx+xml");
+      await insertRoute(tx, {
+        ingested: route.ingested,
+        revisionId,
+        userId: null,
+        originalKey,
+        cleanKey,
+        sha256: createHash("sha256").update(route.bytes).digest("hex"),
+        sizeBytes: route.bytes.byteLength,
+      });
     }
 
     if (t.publish) {

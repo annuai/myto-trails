@@ -73,11 +73,16 @@ export const TrailImportSchema = z
     access,
     condition,
     media: z.array(media).default([]),
+    /** Path (relative to the import file) of a GPX to attach as the trail's route. */
+    gpxFile: z.string().min(1).max(200).optional(),
     publish: z.boolean(),
   })
   .superRefine((t, ctx) => {
     if (t.sensitivity !== "standard" && !t.publicPoint) {
       ctx.addIssue({ code: "custom", path: ["publicPoint"], message: "is required when sensitivity is not standard" });
+    }
+    if (t.gpxFile && t.sensitivity !== "standard") {
+      ctx.addIssue({ code: "custom", path: ["gpxFile"], message: "is not allowed for a sensitive trail" });
     }
     const verified = t.access.level === "officially_verified" || t.access.level === "moderator_verified";
     if (verified) {

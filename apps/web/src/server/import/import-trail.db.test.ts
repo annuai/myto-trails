@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { seedRegions } from "../db/seed-regions";
+import { line, makeGpx } from "../gpx/fixtures";
+import { MemoryStorageProvider } from "../storage/memory-provider";
 import { asAnon, createTestDatabase } from "../testing/db";
 import { ImportError, importTrail } from "./import-trail";
 import type { TrailImport } from "./schema";
@@ -11,7 +13,7 @@ const samples = JSON.parse(readFileSync(fileURLToPath(new URL("../../../data/sam
 let counter = 0;
 const record = (overrides: Partial<TrailImport> = {}): TrailImport => {
   const n = ++counter;
-  return { ...structuredClone(samples[0]!), name: `Sample import trail ${n}`, slug: `sample-import-trail-${n}`, publish: true, ...overrides };
+  return { ...structuredClone({ ...samples[0]!, gpxFile: undefined }), name: `Sample import trail ${n}`, slug: `sample-import-trail-${n}`, publish: true, ...overrides };
 };
 const production = { production: false, allowSamples: true };
 
@@ -40,7 +42,8 @@ describe("importTrail", () => {
 
   it("imports every sample record", async () => {
     for (const s of samples) {
-      await expect(importTrail(db.sql, { ...s, slug: `${s.slug}-all`, publish: true }, production)).resolves.toBeDefined();
+      const gpx = { storage: new MemoryStorageProvider(), read: (path: string) => new Uint8Array(readFileSync(fileURLToPath(new URL(`../../../data/${path}`, import.meta.url)))) };
+      await expect(importTrail(db.sql, { ...s, slug: `${s.slug}-all`, publish: true }, { ...production, gpx })).resolves.toBeDefined();
     }
   });
 
@@ -109,5 +112,35 @@ describe("importTrail", () => {
     } catch (e) {
       expect((e as Error).message).not.toContain("private-person@example.test");
     }
+  });
+});
+
+describe("importTrail with a GPX file", () => {
+  const gpx = new TextEncoder().encode(makeGpx(line(120, { lat: 11.6, lon: 76.1 }, { ele: (i) => 900 + i })));
+
+  it("stores the route against the published revision and makes the GPX available", async () => {
+    const storage = new MemoryStorageProvider();
+    const { slug } = await importTrail(db.sql, record({ gpxFile: "x.gpx" }), { ...production, gpx: { read: () => gpx, storage } });
+    const [d] = await asAnon(db.sql, (tx) => tx`select has_gpx from public_trail_detail where slug = ${slug}`);
+    expect(d!.has_gpx).toBe(true);
+    const [r] = await asAnon(db.sql, (tx) => tx`select distance_km, point_count from public_trail_route where slug = ${slug}`);
+    expect(Number(r!.distance_km)).toBeGreaterThan(13);
+    const [f] = await db.sql`select g.storage_key_sanitised from gpx_file g join route r on r.id = g.route_id join trail t on t.published_revision_id = r.revision_id where t.slug = ${slug}`;
+    expect(await storage.head("originals", f!.storage_key_sanitised)).not.toBeNull();
+  });
+
+  it("fails the import, leaving no trail behind, when the GPX is invalid or unreadable", async () => {
+    const storage = new MemoryStorageProvider();
+    const bad = record({ gpxFile: "bad.gpx" });
+    await expect(importTrail(db.sql, bad, { ...production, gpx: { read: () => new TextEncoder().encode("nope"), storage } })).rejects.toThrow(/GPX/);
+    expect(await db.sql`select 1 from trail where slug = ${bad.slug!}`).toHaveLength(0);
+    await expect(importTrail(db.sql, record({ gpxFile: "missing.gpx" }), { ...production, gpx: { read: () => null, storage } })).rejects.toThrow(/missing\.gpx/);
+    await expect(importTrail(db.sql, record({ gpxFile: "x.gpx" }), production)).rejects.toThrow(/GPX/);
+  });
+
+  it("refuses a GPX for a sensitive trail", async () => {
+    const storage = new MemoryStorageProvider();
+    const sensitive = samples.find((s) => s.sensitivity === "sensitive")!;
+    await expect(importTrail(db.sql, { ...structuredClone(sensitive), slug: "sample-sens-gpx", gpxFile: "x.gpx" }, { ...production, gpx: { read: () => gpx, storage } })).rejects.toThrow(/sensitive/i);
   });
 });

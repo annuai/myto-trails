@@ -1,9 +1,7 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { Sql } from "postgres";
 import { GPX_MAX_BYTES, IMAGE_MAX_BYTES } from "@moto-trails/domain";
-import { analyzeTrack } from "../gpx/analyze";
-import { parseGpx, type ParseError } from "../gpx/parse";
-import { writeGpx } from "../gpx/write";
+import { ingestGpx, insertRoute } from "../gpx/ingest";
 import { processImage } from "../media/image";
 import { buildObjectKey, verifyUpload, type StorageProvider, type UploadTarget } from "../storage";
 
@@ -92,13 +90,6 @@ export async function getUploadStatus(sql: Sql, userId: string, uploadId: string
   return u ? outcomeOf(u) : { status: "not_found" };
 }
 
-const PARSE_MESSAGES: Record<ParseError, string> = {
-  doctype_not_allowed: "This file contains declarations that are not allowed in a GPX file, so it was refused for safety.",
-  not_gpx: "This does not look like a GPX file.",
-  no_track_points: "No track points were found. Export the recorded track (not just waypoints or a planned route).",
-  too_complex: "This file is too large or too deeply nested to process.",
-};
-
 async function reject(sql: Sql, storage: StorageProvider, u: UploadRow, code: string, message: string): Promise<UploadOutcome> {
   await storage.remove(u.bucket, u.storage_key);
   await sql`update upload set status = 'rejected', reject_code = ${code}, reject_message = ${message}, processed_at = now() where id = ${u.id}`;
@@ -140,48 +131,20 @@ export async function completeUpload(sql: Sql, storage: StorageProvider, i: { us
   }
 }
 
-const wkt = (points: { lat: number; lon: number }[]) => `LINESTRING(${points.map((p) => `${p.lon.toFixed(6)} ${p.lat.toFixed(6)}`).join(",")})`;
-const int = (n: number | null | undefined) => (n == null ? null : Math.round(n));
-
 async function processGpx(sql: Sql, storage: StorageProvider, u: UploadRow, userId: string, bytes: Uint8Array): Promise<UploadOutcome> {
-  const parsed = parseGpx(new TextDecoder().decode(bytes));
-  if (!parsed.ok) return reject(sql, storage, u, parsed.error, PARSE_MESSAGES[parsed.error]);
-  const analyzed = analyzeTrack(parsed.tracks);
-  if (!analyzed.ok) return reject(sql, storage, u, analyzed.error, analyzed.message);
-  const a = analyzed.analysis;
+  const ingested = ingestGpx(bytes);
+  if (!ingested.ok) return reject(sql, storage, u, ingested.code, ingested.message);
 
-  // The full line, without consecutive repeats, kept for the sanitised copy and the stored geometry.
-  const points: { lat: number; lon: number; ele?: number }[] = [];
-  for (const p of parsed.tracks.flat()) {
-    const last = points[points.length - 1];
-    if (!last || last.lat !== p.lat || last.lon !== p.lon) points.push({ lat: p.lat, lon: p.lon, ele: p.ele });
-  }
-
-  const sha = await sha256Hex(bytes);
   const originalKey = u.storage_key;
   const cleanKey = originalKey.replace(/\.gpx$/, "-clean.gpx");
-  const clean = writeGpx({ name: parsed.name?.slice(0, 120) || "Track", points, waypoints: parsed.waypoints });
   await storage.put("originals", originalKey, bytes, GPX_CANONICAL);
-  await storage.put("originals", cleanKey, new TextEncoder().encode(clean), GPX_CANONICAL);
+  await storage.put("originals", cleanKey, new TextEncoder().encode(ingested.cleanGpx), GPX_CANONICAL);
   await storage.remove(u.bucket, u.storage_key);
 
-  const line = wkt(points);
-  const simplified = wkt(a.simplified);
   const result = await sql.begin(async (tx) => {
-    const [route] = await tx`
-      insert into route (geometry, simplified, distance_km, elev_gain_m, elev_loss_m, min_elev_m, max_elev_m, point_count,
-        has_timestamps, moving_time_s, stopped_time_s, avg_moving_speed_kmh, profile, waypoints, fingerprint, created_by)
-      values (ST_GeomFromText(${line}, 4326), ST_GeomFromText(${simplified}, 4326), ${a.distanceKm},
-        ${int(a.elevation?.gainM)}, ${int(a.elevation?.lossM)}, ${int(a.elevation?.minM)}, ${int(a.elevation?.maxM)}, ${a.pointCount},
-        ${a.timing !== null}, ${int(a.timing?.movingSeconds)}, ${int(a.timing?.stoppedSeconds)}, ${a.timing?.avgMovingSpeedKmh ?? null},
-        ${a.profile ? tx.json(a.profile) : null}, ${tx.json(parsed.waypoints)}, ${a.fingerprint}, ${userId})
-      returning id`;
-    const routeId = route!.id as string;
-    await tx`
-      insert into gpx_file (route_id, uploaded_by, storage_key_original, storage_key_sanitised, sha256, size_bytes)
-      values (${routeId}, ${userId}, ${originalKey}, ${cleanKey}, ${sha}, ${bytes.byteLength})`;
+    const { routeId, simplifiedWkt } = await insertRoute(tx, { ingested, revisionId: null, userId, originalKey, cleanKey, sha256: sha256Hex(bytes), sizeBytes: bytes.byteLength });
     await tx`update upload set status = 'ready', bucket = 'originals', route_id = ${routeId}, processed_at = now() where id = ${u.id}`;
-    const similar = await tx`select route_id, similarity from find_similar_routes(ST_GeomFromText(${simplified}, 4326), ${routeId}) limit 5`;
+    const similar = await tx`select route_id, similarity from find_similar_routes(ST_GeomFromText(${simplifiedWkt}, 4326), ${routeId}) limit 5`;
     return { routeId, similar: similar.map((s) => ({ routeId: s.route_id as string, similarity: Number(s.similarity) })) };
   });
   return { status: "ready", kind: "gpx", routeId: result.routeId, similar: result.similar };
@@ -213,7 +176,4 @@ async function processImageUpload(sql: Sql, storage: StorageProvider, u: UploadR
   return { status: "ready", kind: "image", mediaId };
 }
 
-async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const { createHash } = await import("node:crypto");
-  return createHash("sha256").update(bytes).digest("hex");
-}
+export const sha256Hex = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");

@@ -59,7 +59,8 @@
     "condition": {
       "status": "open",
       "effectiveFrom": "2026-01-15"
-    }
+    },
+    "gpxFile": "gpx/sample-wayanad-ridge-track.gpx"
   },
   {
     "sample": true,
@@ -114,7 +115,8 @@
       "reason": "weather",
       "effectiveFrom": "2026-06-01",
       "note": "Closed June to September (sample)."
-    }
+    },
+    "gpxFile": "gpx/sample-idukki-estate-loop.gpx"
   },
   {
     "sample": true,
@@ -180,7 +182,8 @@
       "effectiveFrom": "2026-01-20",
       "expectedUntil": "2026-03-01",
       "note": "Sample landslide closure."
-    }
+    },
+    "gpxFile": "gpx/sample-munnar-cloud-climb.gpx"
   },
   {
     "sample": true,
@@ -239,7 +242,8 @@
       "reason": "landslide",
       "effectiveFrom": "2026-02-01",
       "note": "Closed for good after a landslide (sample)."
-    }
+    },
+    "gpxFile": "gpx/sample-chikkamagaluru-old-road.gpx"
   },
   {
     "sample": true,
@@ -288,7 +292,8 @@
     "condition": {
       "status": "unknown",
       "effectiveFrom": "2026-03-01"
-    }
+    },
+    "gpxFile": "gpx/sample-cherrapunji-river-track.gpx"
   },
   {
     "sample": true,
