@@ -30,12 +30,13 @@ export async function resolveReport(
     if (!actor) return FORBIDDEN;
     if (!UUID.test(i.reportId)) return { ok: false, reason: "not_found" } as const;
     if (!(i.outcome in OUTCOMES)) return { ok: false, reason: "invalid" } as const;
-    const [r] = await tx`select r.id, r.status, r.trail_id, r.reporter_id, t.slug, coalesce(rev.name, t.slug) as name
+    const [r] = await tx`select r.id, r.status, r.type, r.trail_id, r.reporter_id, t.slug, coalesce(rev.name, t.slug) as name
       from trail_report r join trail t on t.id = r.trail_id
       left join trail_revision rev on rev.id = t.published_revision_id where r.id = ${i.reportId} for update of r`;
     if (!r) return { ok: false, reason: "not_found" } as const;
     if (!["open", "triaged", "needs_info"].includes(r.status)) return { ok: false, reason: "wrong_state" } as const;
 
+    if (i.condition && (i.outcome !== "accepted" || r.type !== "closure")) return { ok: false, reason: "invalid" } as const;
     const note = String(i.note ?? "").trim().slice(0, 2000);
     const final = i.outcome !== "needs_info";
     await tx`update trail_report set status = ${OUTCOMES[i.outcome]}, resolution_note = ${note || null},

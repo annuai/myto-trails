@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getEmailSender, getCurrentUser } from "@/server/auth/session";
 import { getSql } from "@/server/db/client";
 import { getSiteUrl } from "@/lib/site";
-import { verifyAccess, setCondition, unpublish } from "@/server/moderation/access";
+import { release, verifyAccess, setCondition, unpublish } from "@/server/moderation/access";
 import { approve, rejectSubmission, requestChanges, REASON_CODES, type ReasonCode } from "@/server/moderation/decisions";
 import { decisionEmail, reportOutcomeEmail, sendToUser } from "@/server/moderation/notify";
 import { resolveReport, type ReportOutcome } from "@/server/moderation/reports";
@@ -49,12 +49,13 @@ export async function decideAction(formData: FormData): Promise<void> {
     const lat = num(formData, "lat");
     const lon = num(formData, "lon");
     const sensitivity = text(formData, "sensitivity") as "standard" | "sensitive" | "restricted_geometry";
-    result = await approve(sql, { actorId: actor, submissionId: id, sensitivity, publicPoint: lat !== undefined && lon !== undefined ? { lat, lon } : undefined, publishGpx: formData.get("publishGpx") === "on" });
+    result = await approve(sql, { actorId: actor, submissionId: id, sensitivity, publicPoint: lat !== undefined && lon !== undefined ? { lat, lon } : undefined, publishGpx: text(formData, "publishGpx") === "yes" });
   } else {
     back(path, "invalid");
   }
   if (!result.ok) back(path, result.reason);
-  await sendToUser(sql, getEmailSender(), result.notify.contributorId, decisionEmail(result.notify, getSiteUrl(process.env)));
+  // A first approval of two is not news for the contributor: only a published trail or a real decision is.
+  if (result.published !== false) await sendToUser(sql, getEmailSender(), result.notify.contributorId, decisionEmail(result.notify, getSiteUrl(process.env)));
   if (result.notify.slug) refresh(result.notify.slug);
   redirect(`/moderate?done=${intent}`);
 }
@@ -69,6 +70,7 @@ export async function trailActionAction(formData: FormData): Promise<void> {
   const now = new Date();
   let ok = false;
   let reason = "invalid";
+  let actedSlug = slug;
   if (intent === "verify") {
     const kind = text(formData, "evidenceKind") as "official_document";
     const r = await verifyAccess(sql, {
@@ -81,14 +83,21 @@ export async function trailActionAction(formData: FormData): Promise<void> {
   } else if (intent === "condition") {
     const r = await setCondition(sql, { actorId: actor, trailId, now, status: text(formData, "status") as "open", reason: (text(formData, "reason") || undefined) as undefined, expectedUntil: text(formData, "expectedUntil") || undefined, note: text(formData, "note") || undefined });
     ok = r.ok;
+    if (r.ok) actedSlug = r.slug;
     if (!r.ok) reason = r.reason;
   } else if (intent === "unpublish") {
     const r = await unpublish(sql, { actorId: actor, trailId, reason: text(formData, "reason") });
     ok = r.ok;
+    if (r.ok) actedSlug = r.slug;
+    if (!r.ok) reason = r.reason;
+  } else if (intent === "release") {
+    const r = await release(sql, { actorId: actor, trailId, reason: text(formData, "reason") });
+    ok = r.ok;
+    if (r.ok) actedSlug = r.slug;
     if (!r.ok) reason = r.reason;
   }
   if (!ok) back(path, reason);
-  refresh(slug);
+  refresh(actedSlug);
   back(path, "saved");
 }
 

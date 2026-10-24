@@ -113,7 +113,7 @@ export async function requestChanges(sql: Sql, i: { actorId: string; submissionI
     const fields = Object.entries(i.fieldComments ?? {}).filter(([k, v]) => stepKeys.includes(k) && typeof v === "string" && v.trim()).slice(0, 10).map(([k, v]) => [k, v.trim().slice(0, 500)] as const);
     if (comment.length < 10 || comment.length > 4000) return { ok: false, reason: "invalid" };
 
-    await tx`update submission set status = 'changes_requested', moderator_feedback = ${comment}, decided_by = ${l.actor.id}, decided_at = now(), updated_at = now() where id = ${l.sub.id}`;
+    await tx`update submission set status = 'changes_requested', first_approver = null, first_approved_at = null, moderator_feedback = ${comment}, decided_by = ${l.actor.id}, decided_at = now(), updated_at = now() where id = ${l.sub.id}`;
     await tx`update trail_revision set state = 'changes_requested' where id = ${l.sub.revision_id}`;
     await record(tx, { subjectType: "revision", subjectId: l.sub.revision_id, moderatorId: l.actor.id, action: "request_changes", comment, fieldComments: Object.fromEntries(fields), visibleToAuthor: true });
     await audit(tx, l.actor, { action: "request_changes", entityType: "revision", entityId: l.sub.revision_id, before: { status: "submitted" }, after: { status: "changes_requested" } });
@@ -128,7 +128,7 @@ export async function rejectSubmission(sql: Sql, i: { actorId: string; submissio
     if (!(REASON_CODES as readonly string[]).includes(i.reasonCode)) return { ok: false, reason: "invalid" };
     const comment = String(i.comment ?? "").trim().slice(0, 4000);
 
-    await tx`update submission set status = 'rejected', moderator_feedback = ${comment || i.reasonCode.replaceAll("_", " ")}, decided_by = ${l.actor.id}, decided_at = now(), updated_at = now() where id = ${l.sub.id}`;
+    await tx`update submission set status = 'rejected', first_approver = null, first_approved_at = null, moderator_feedback = ${comment || i.reasonCode.replaceAll("_", " ")}, decided_by = ${l.actor.id}, decided_at = now(), updated_at = now() where id = ${l.sub.id}`;
     await tx`update trail_revision set state = 'rejected', decided_at = now() where id = ${l.sub.revision_id}`;
     await tx`update trail set lifecycle = 'archived', updated_at = now() where id = ${l.sub.trail_id} and lifecycle <> 'published'`;
     await record(tx, { subjectType: "revision", subjectId: l.sub.revision_id, moderatorId: l.actor.id, action: "reject", reasonCode: i.reasonCode, comment, visibleToAuthor: true });
@@ -160,6 +160,13 @@ export async function approve(sql: Sql, i: ApproveInput): Promise<DecisionResult
         return { ok: true, published: false, awaitingSecond: true, notify: { contributorId: l.sub.user_id, outcome: "approved", title: l.title } };
       }
       if (l.sub.first_approver === l.actor.id) return { ok: false, reason: "same_approver" };
+      if (!(await getActor(tx, l.sub.first_approver))) {
+        // The first approver has lost their role since: their approval no longer counts.
+        await tx`update submission set first_approver = ${l.actor.id}, first_approved_at = now(), updated_at = now() where id = ${l.sub.id}`;
+        await record(tx, { subjectType: "revision", subjectId: l.sub.revision_id, moderatorId: l.actor.id, action: "approve", comment: "First approval (the earlier approver is no longer a moderator)." });
+        await audit(tx, l.actor, { action: "approve", entityType: "revision", entityId: l.sub.revision_id, before: { status: "submitted" }, after: { status: "submitted", firstApproval: true } });
+        return { ok: true, published: false, awaitingSecond: true, notify: { contributorId: l.sub.user_id, outcome: "approved", title: l.title } };
+      }
     }
 
     const basics = l.sub.data.basics;

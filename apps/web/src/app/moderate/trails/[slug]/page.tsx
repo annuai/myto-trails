@@ -63,6 +63,17 @@ export default async function TrailControls({ params, searchParams }: PageProps<
         <button type="submit" name="intent" value="condition" className={btn}>Save condition</button>
       </form>
 
+      {t.lifecycle === "unpublished" ? (
+        <form action={trailActionAction} className={box}>
+          {hidden}
+          <h2 className="text-xl font-semibold">Release</h2>
+          <p className="text-sm text-muted">Put this trail back on the site, for example when a removal request was withdrawn.</p>
+          <label className="text-sm font-medium" htmlFor="release-reason">Reason</label>
+          <input id="release-reason" name="reason" maxLength={1000} required className={input} />
+          <button type="submit" name="intent" value="release" className={btn}>Release this trail</button>
+        </form>
+      ) : null}
+
       {t.lifecycle === "published" ? (
         <form action={trailActionAction} className={box}>
           {hidden}

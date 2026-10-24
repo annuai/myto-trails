@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { seedRegions } from "../db/seed-regions";
 import { asAnon, createTestDatabase } from "../testing/db";
 import { makeUser, submittedSubmission } from "../testing/submission-fixture";
+import { submit } from "../submissions/service";
 import { approve, getReview, listQueue, rejectSubmission, requestChanges } from "./decisions";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
@@ -192,5 +193,30 @@ describe("approve", () => {
     }
     expect(await audits(s.revisionId)).toHaveLength(0);
     expect((await db.sql`select status from submission where id = ${s.submissionId}`)[0]!.status).toBe("submitted");
+  });
+});
+
+describe("two-person rule survives changes and resubmission (M6 review)", () => {
+  it("voids a first approval when changes are requested, so the resubmitted version needs two fresh approvals", async () => {
+    const m1 = await mod();
+    const m2 = await mod();
+    const s = await submitted({ accessClass: "restricted" });
+    expect(await approve(db.sql, { actorId: m1, submissionId: s.submissionId, ...publish })).toMatchObject({ ok: true, published: false });
+    await requestChanges(db.sql, { actorId: m2, submissionId: s.submissionId, comment: "Please rewrite the whole description." });
+    expect((await db.sql`select first_approver from submission where id = ${s.submissionId}`)[0]!.first_approver).toBeNull();
+    expect(await submit(db.sql, { userId: s.rider, id: s.submissionId, now: new Date() })).toMatchObject({ ok: true });
+    // m2 alone can no longer publish: this is a first approval again.
+    expect(await approve(db.sql, { actorId: m2, submissionId: s.submissionId, ...publish })).toMatchObject({ ok: true, published: false });
+    expect(await asAnon(db.sql, (tx) => tx`select 1 from public_trails where slug = ${s.slug}`)).toHaveLength(0);
+    expect(await approve(db.sql, { actorId: m1, submissionId: s.submissionId, ...publish })).toMatchObject({ ok: true, published: true });
+  });
+
+  it("ignores a first approval from someone who is no longer a moderator", async () => {
+    const m1 = await mod();
+    const m2 = await mod();
+    const s = await submitted({ accessClass: "restricted" });
+    await approve(db.sql, { actorId: m1, submissionId: s.submissionId, ...publish });
+    await db.sql`delete from user_role where user_id = ${m1}`;
+    expect(await approve(db.sql, { actorId: m2, submissionId: s.submissionId, ...publish })).toMatchObject({ ok: true, published: false });
   });
 });

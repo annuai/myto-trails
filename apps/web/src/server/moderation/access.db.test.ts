@@ -4,7 +4,7 @@ import { seedRegions } from "../db/seed-regions";
 import { asAnon, createTestDatabase } from "../testing/db";
 import { insertTrailFixture } from "../testing/fixtures";
 import { makeUser } from "../testing/submission-fixture";
-import { getTrailForModeration, listDueForRecheck, setCondition, unpublish, verifyAccess } from "./access";
+import { getTrailForModeration, listDueForRecheck, release, setCondition, unpublish, verifyAccess } from "./access";
 import { listReports, resolveReport } from "./reports";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
@@ -154,5 +154,41 @@ describe("getTrailForModeration", () => {
     expect(r).toMatchObject({ ok: true, trail: { trailId: t.trailId, lifecycle: "unpublished", accessClass: "permission_required", permissionContact: "ranger@example.test" } });
     expect(await getTrailForModeration(db.sql, m, "nope")).toEqual({ ok: false, reason: "not_found" });
     expect(await getTrailForModeration(db.sql, await makeUser(db.sql), t.slug)).toEqual({ ok: false, reason: "forbidden" });
+  });
+});
+
+describe("release and input validation (M6 review)", () => {
+  it("puts an unpublished trail back on the site, audited, and refuses other states", async () => {
+    const m = await mod();
+    const t = await trail();
+    expect(await release(db.sql, { actorId: m, trailId: t.trailId, reason: "Removal request withdrawn." })).toEqual({ ok: false, reason: "wrong_state" });
+    await unpublish(db.sql, { actorId: m, trailId: t.trailId, reason: "Owner asked for removal." });
+    expect(await asAnon(db.sql, (tx) => tx`select 1 from public_trails where slug = ${t.slug}`)).toHaveLength(0);
+    expect(await release(db.sql, { actorId: m, trailId: t.trailId, reason: "Removal request withdrawn." })).toEqual({ ok: true, slug: t.slug });
+    expect(await asAnon(db.sql, (tx) => tx`select 1 from public_trails where slug = ${t.slug}`)).toHaveLength(1);
+    expect((await audits(t.revisionId)).map((a) => a.action)).toEqual(["unpublish", "release"]);
+    expect(await release(db.sql, { actorId: await makeUser(db.sql), trailId: t.trailId, reason: "x" })).toEqual({ ok: false, reason: "forbidden" });
+  });
+
+  it("refuses to release a trail that was never published", async () => {
+    const m = await mod();
+    const t = await trail({ lifecycle: "draft", linkPublishedRevision: false });
+    expect(await release(db.sql, { actorId: m, trailId: t.trailId, reason: "Trying." })).toEqual({ ok: false, reason: "wrong_state" });
+  });
+
+  it("rejects an unknown evidence kind or a non-http link instead of failing in the database", async () => {
+    const m = await mod();
+    const t = await trail();
+    expect(await verifyAccess(db.sql, { actorId: m, trailId: t.trailId, level: "moderator_verified", evidence: [{ kind: "nonsense" as never, description: "x" }], now })).toEqual({ ok: false, reason: "invalid" });
+    expect(await verifyAccess(db.sql, { actorId: m, trailId: t.trailId, level: "moderator_verified", evidence: [{ kind: "url", description: "x", url: "javascript:alert(1)" }], now })).toEqual({ ok: false, reason: "invalid" });
+  });
+
+  it("only lets condition changes ride along with accepted closure reports", async () => {
+    const m = await mod();
+    const t = await trail();
+    const rider = await makeUser(db.sql);
+    const [r] = await db.sql`insert into trail_report (trail_id, reporter_id, type, details) values (${t.trailId}, ${rider}, 'other', 'Something else is wrong with the signage here.') returning id`;
+    expect(await resolveReport(db.sql, { actorId: m, reportId: r!.id, outcome: "accepted", note: "", condition: { status: "temporarily_closed" }, now })).toEqual({ ok: false, reason: "invalid" });
+    expect((await db.sql`select status from trail_report where id = ${r!.id}`)[0]!.status).toBe("open");
   });
 });

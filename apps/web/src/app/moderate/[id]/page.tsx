@@ -104,7 +104,10 @@ export default async function ReviewPage({ params, searchParams }: PageProps<"/m
               <div><label className="text-sm font-medium" htmlFor="lat">Public latitude</label><input id="lat" name="lat" inputMode="decimal" className={input} /></div>
               <div><label className="text-sm font-medium" htmlFor="lon">Public longitude</label><input id="lon" name="lon" inputMode="decimal" className={input} /></div>
             </div>
-            <label className="flex min-h-11 items-center gap-2"><input type="checkbox" name="publishGpx" defaultChecked className="size-5" /> Offer the GPX download</label>
+            <label className="text-sm font-medium" htmlFor="publishGpx">GPX download</label>
+            <select id="publishGpx" name="publishGpx" defaultValue={v.needsSecondApproval ? "no" : "yes"} className={input}>
+              <option value="yes">Offer the GPX download</option><option value="no">Do not offer the GPX</option>
+            </select>
             <button type="submit" name="intent" value="approve" className={`${btn} self-start bg-accent text-white hover:bg-accent-hover`}>{v.needsSecondApproval ? "Approve (counts as one of two)" : "Approve and publish"}</button>
           </form>
 

@@ -354,7 +354,7 @@ async function submitTx(tx: TransactionSql, i: { userId: string; id: string }): 
 
   await tx`update trail set updated_at = now() where id = ${trailId}`;
   await tx`
-    update submission set status = 'submitted', trail_id = ${trailId}, revision_id = ${revisionId}, submitted_at = now(),
+    update submission set status = 'submitted', trail_id = ${trailId}, revision_id = ${revisionId}, submitted_at = now(), first_approver = null, first_approved_at = null,
       contributor_note = ${d.review.contributorNote ?? null}, updated_at = now() where id = ${row.id}`;
   return { ok: true, slug };
 }

@@ -1,4 +1,4 @@
-import { CONDITION_REASONS, OPERATIONAL_STATUSES, type EvidenceKind } from "@moto-trails/domain";
+import { CONDITION_REASONS, EVIDENCE_KINDS, OPERATIONAL_STATUSES, type EvidenceKind } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
 import { FORBIDDEN, getActor, type Actor } from "./actor";
 import { audit, record } from "./audit";
@@ -37,7 +37,10 @@ export async function verifyAccess(
     const [a] = await tx`select id, access_class, restrictions, permission_instructions, permission_contact, basis from access_assessment where trail_id = ${i.trailId} order by created_at desc, id desc limit 1`;
     if (!a) return { ok: false, reason: "invalid" } as const;
 
-    const newEvidence = (i.evidence ?? []).filter((e) => e.description?.trim()).slice(0, 10).map((e) => ({ kind: e.kind, description: e.description.trim().slice(0, 500), url: e.url?.trim() || null }));
+    const rawEvidence = (i.evidence ?? []).filter((e) => e.description?.trim());
+    const badEvidence = rawEvidence.some((e) => !(EVIDENCE_KINDS as readonly string[]).includes(e.kind) || (e.url?.trim() && !(/^https?:\/\//i.test(e.url.trim()) && URL.canParse(e.url.trim()))));
+    if (badEvidence) return { ok: false, reason: "invalid" } as const;
+    const newEvidence = rawEvidence.slice(0, 10).map((e) => ({ kind: e.kind, description: e.description.trim().slice(0, 500), url: e.url?.trim() || null }));
     const existing = await tx`select kind, description, url from evidence where assessment_id = ${a.id}`;
     const all = [...existing.map((e) => ({ kind: e.kind as EvidenceKind, description: e.description as string, url: (e.url as string | null) ?? null })), ...newEvidence];
     if (all.length === 0) return { ok: false, reason: "evidence_required" } as const;
@@ -86,6 +89,24 @@ export async function unpublish(sql: Sql, i: { actorId: string; trailId: string;
       await record(tx, { subjectType: "revision", subjectId: rev, moderatorId: actor.id, action: "unpublish", comment: reason });
       await audit(tx, actor, { action: "unpublish", entityType: "revision", entityId: rev, before: { lifecycle: "published" }, after: { lifecycle: "unpublished", reason } });
     }
+    return { ok: true, slug: t.slug as string } as const;
+  });
+}
+
+/** Puts an unpublished trail back on the site (a takedown made in error, or a hold that has been resolved). */
+export async function release(sql: Sql, i: { actorId: string; trailId: string; reason: string }): Promise<{ ok: true; slug: string } | Fail> {
+  return sql.begin(async (tx) => {
+    const actor = await getActor(tx, i.actorId);
+    if (!actor) return FORBIDDEN;
+    if (!UUID.test(i.trailId)) return { ok: false, reason: "not_found" } as const;
+    const reason = String(i.reason ?? "").trim().slice(0, 1000);
+    if (!reason) return { ok: false, reason: "invalid" } as const;
+    const [t] = await tx`select id, slug, lifecycle, published_revision_id from trail where id = ${i.trailId} for update`;
+    if (!t) return { ok: false, reason: "not_found" } as const;
+    if (t.lifecycle !== "unpublished" || !t.published_revision_id) return { ok: false, reason: "wrong_state" } as const;
+    await tx`update trail set lifecycle = 'published', updated_at = now() where id = ${t.id}`;
+    await record(tx, { subjectType: "revision", subjectId: t.published_revision_id, moderatorId: actor.id, action: "release", comment: reason });
+    await audit(tx, actor, { action: "release", entityType: "revision", entityId: t.published_revision_id, before: { lifecycle: "unpublished" }, after: { lifecycle: "published", reason } });
     return { ok: true, slug: t.slug as string } as const;
   });
 }
