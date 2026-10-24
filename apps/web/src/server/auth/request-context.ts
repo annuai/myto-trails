@@ -9,9 +9,18 @@ export function getRequestOrigin(i: { production: boolean; siteUrl: string; host
   return `${i.proto === "https" ? "https" : "http"}://${i.host}`;
 }
 
+/**
+ * The caller's address, from the most trustworthy source available: a header set by the hosting platform, then
+ * x-real-ip, then the LAST x-forwarded-for entry (the nearest proxy appends the real client there; earlier entries
+ * can be forged by the caller). "unknown" means no usable address.
+ */
 export function clientIp(headers: { get(name: string): string | null }): string {
-  const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || headers.get("x-real-ip")?.trim() || "unknown";
+  const platform = headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim();
+  if (platform) return platform;
+  const real = headers.get("x-real-ip")?.trim();
+  if (real) return real;
+  const forwarded = headers.get("x-forwarded-for")?.split(",").map((p) => p.trim()).filter(Boolean).at(-1);
+  return forwarded || "unknown";
 }
 
 /** Network addresses are stored only as a hash. */

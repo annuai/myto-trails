@@ -88,6 +88,25 @@ describe("requestSignIn", () => {
     expect(sender.sent).toHaveLength(5);
   });
 
+  it("does not require an IP bucket when the network address is unknown", async () => {
+    const sender = new Recorder();
+    let last = "";
+    for (let i = 0; i < 25; i++) last = (await requestSignIn(db.sql, { email: email(), ipHash: null, sender, baseUrl })).status;
+    expect(last).toBe("sent");
+    expect(sender.sent).toHaveLength(25);
+  });
+
+  it("checks the network limit first, so a flood from one network cannot use up a victim's address limit", async () => {
+    const sender = new Recorder();
+    for (let i = 0; i < 20; i++) await requestSignIn(db.sql, { email: email(), ipHash: "ip-flood", sender, baseUrl });
+    for (let i = 0; i < 6; i++) {
+      expect((await requestSignIn(db.sql, { email: "victim@example.test", ipHash: "ip-flood", sender, baseUrl })).status).toBe("rate_limited");
+    }
+    const results: string[] = [];
+    for (let i = 0; i < 5; i++) results.push((await requestSignIn(db.sql, { email: "victim@example.test", ipHash: `ip-calm-${i}`, sender, baseUrl })).status);
+    expect(results).toEqual(["sent", "sent", "sent", "sent", "sent"]);
+  });
+
   it("limits requests to 20 per hour per network", async () => {
     const sender = new Recorder();
     let last = "";

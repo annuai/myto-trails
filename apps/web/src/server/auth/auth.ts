@@ -39,12 +39,14 @@ async function allowed(sql: Sql, key: string, limit: number, windowSeconds: numb
  */
 export async function requestSignIn(
   sql: Sql,
-  i: { email: string; ipHash: string; sender: EmailSender; baseUrl: string; next?: string },
+  i: { email: string; ipHash: string | null; sender: EmailSender; baseUrl: string; next?: string },
 ): Promise<{ status: "sent" | "rate_limited" }> {
   const email = normalizeEmail(i.email);
   if (!email) return { status: "sent" };
-  if (!(await allowed(sql, `signin:email:${rateKey(email)}`, 5, 3600))) return { status: "rate_limited" };
-  if (!(await allowed(sql, `signin:ip:${i.ipHash}`, 20, 3600))) return { status: "rate_limited" };
+  // The network limit is checked first, so a flood from one place cannot use up someone else's address limit
+  // (which would lock them out of signing in). Without a usable address only the per-address limit applies.
+  if (i.ipHash !== null && !(await allowed(sql, `signin:ip:${i.ipHash}`, 20, 3600))) return { status: "rate_limited" };
+  if (!(await allowed(sql, `signin:email:${rateKey(email)}`, 5, 900))) return { status: "rate_limited" };
 
   const token = generateToken();
   await sql`

@@ -19,6 +19,7 @@ export async function signInAction(formData: FormData): Promise<void> {
     host: h.get("host"),
     proto: h.get("x-forwarded-proto"),
   });
-  const { status } = await requestSignIn(getSql(), { email, ipHash: hashIp(clientIp(h)), sender: getEmailSender(), baseUrl, next });
+  const ip = clientIp(h);
+  const { status } = await requestSignIn(getSql(), { email, ipHash: ip === "unknown" ? null : hashIp(ip), sender: getEmailSender(), baseUrl, next });
   redirect(status === "rate_limited" ? `/sign-in?limited=1&next=${encodeURIComponent(next)}` : "/sign-in/check-email");
 }

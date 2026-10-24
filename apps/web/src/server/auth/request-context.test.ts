@@ -18,10 +18,14 @@ describe("getRequestOrigin", () => {
 });
 
 describe("clientIp and hashIp", () => {
-  it("takes the first forwarded address, then x-real-ip, then unknown", () => {
-    expect(clientIp(headers({ "x-forwarded-for": "203.0.113.5, 10.0.0.1" }))).toBe("203.0.113.5");
-    expect(clientIp(headers({ "x-real-ip": "198.51.100.7" }))).toBe("198.51.100.7");
+  it("prefers the platform-set header, then x-real-ip, then the last forwarded hop, then unknown", () => {
+    expect(clientIp(headers({ "x-vercel-forwarded-for": "203.0.113.9", "x-forwarded-for": "6.6.6.6" }))).toBe("203.0.113.9");
+    expect(clientIp(headers({ "x-real-ip": "198.51.100.7", "x-forwarded-for": "6.6.6.6" }))).toBe("198.51.100.7");
+    expect(clientIp(headers({ "x-forwarded-for": "203.0.113.5" }))).toBe("203.0.113.5");
     expect(clientIp(headers({}))).toBe("unknown");
+  });
+  it("ignores spoofed leading entries in x-forwarded-for: the nearest proxy appends the real client last", () => {
+    expect(clientIp(headers({ "x-forwarded-for": "1.2.3.4, 5.6.7.8, 203.0.113.5" }))).toBe("203.0.113.5");
   });
   it("hashes addresses so the raw IP is never stored", () => {
     expect(hashIp("203.0.113.5")).toMatch(/^[0-9a-f]{64}$/);

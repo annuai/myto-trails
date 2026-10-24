@@ -76,8 +76,16 @@ describe("loadServerEnv", () => {
   });
 
   it("allows the memory provider in a Vercel preview deployment", () => {
-    const env = loadServerEnv({ NODE_ENV: "production", VERCEL_ENV: "preview", VERCEL_URL: "x.vercel.app" });
+    const env = loadServerEnv({
+      NODE_ENV: "production", VERCEL_ENV: "preview", VERCEL_URL: "x.vercel.app",
+      EMAIL_PROVIDER: "resend", RESEND_API_KEY: "re_key", EMAIL_FROM: "a@b.c",
+    });
     expect(env.storage).toEqual({ provider: "memory" });
+  });
+
+  it("never allows the console email sender on a Vercel preview: it would print live sign-in links into shared logs", () => {
+    expect(() => loadServerEnv({ NODE_ENV: "production", VERCEL_ENV: "preview", VERCEL_URL: "x.vercel.app" })).toThrow(/EMAIL_PROVIDER/);
+    expect(() => loadServerEnv({ NODE_ENV: "production", VERCEL_ENV: "preview", VERCEL_URL: "x.vercel.app", EMAIL_PROVIDER: "console" })).toThrow(/not allowed/);
   });
 
   it("requires DATABASE_URL in production", () => {

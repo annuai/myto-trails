@@ -87,7 +87,9 @@ function loadStorage(source: Source): StorageConfig {
 }
 
 function loadEmail(source: Source): EmailConfig {
-  const production = isProduction(source);
+  // Stricter than isProduction: a Vercel preview also runs with NODE_ENV=production and may share a real database,
+  // so the console sender (which prints live sign-in links into logs) is never allowed there.
+  const production = source.NODE_ENV === "production";
   const raw = source.EMAIL_PROVIDER?.trim() || (production ? undefined : "console");
   if (!raw) throw new EnvError("Missing environment variables: EMAIL_PROVIDER", ["EMAIL_PROVIDER"]);
   const parsed = emailProviderSchema.safeParse(raw);

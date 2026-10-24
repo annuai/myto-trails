@@ -27,7 +27,7 @@ Sample trails are clearly labelled and never indexed; the importer refuses them 
 
 **Production builds query the database** (cached pages such as `/regions` and `/sitemap.xml` are prerendered), so a build needs a reachable, migrated `DATABASE_URL`; the same applies to Vercel builds. Run `npm run db:migrate` against Supabase only when you decide to (it is not run automatically).
 
-Accounts: sign-in is by emailed link. In development `EMAIL_PROVIDER=console` prints the link in the `next dev` log (look for `[email]`). Production needs `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` and `EMAIL_FROM` (the server refuses to start without them). See ADR 0005.
+Accounts: sign-in is by emailed link. In development `EMAIL_PROVIDER=console` prints the link in the `next dev` log (look for `[email]`). Production **and Vercel previews** need `EMAIL_PROVIDER=resend` (the console sender is refused whenever `NODE_ENV=production`, because it would print live sign-in links into shared logs), `RESEND_API_KEY` and `EMAIL_FROM` (the server refuses to start without them). See ADR 0005.
 
 Map: the default style is MapLibre's free demo style, for development only. Set `NEXT_PUBLIC_MAP_STYLE_URL` and `NEXT_PUBLIC_MAP_ATTRIBUTION` for production (see `.env.example`). The MapLibre worker is copied to `public/vendor` by `npm run assets:maplibre` (runs before `dev` and `build`).
 
