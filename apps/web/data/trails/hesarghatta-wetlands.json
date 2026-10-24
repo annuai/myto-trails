@@ -90,6 +90,20 @@
       },
       "width": 1800,
       "height": 2400
+    },
+    {
+      "role": "gallery",
+      "position": 3,
+      "altText": "A motorcycle lying on its side at a muddy water crossing beside a fence, with the licence plate blurred",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/hesarghatta-wetlands/photo-4-400.webp",
+        "800": "/photos/hesarghatta-wetlands/photo-4-800.webp",
+        "1200": "/photos/hesarghatta-wetlands/photo-4-1200.webp",
+        "1800": "/photos/hesarghatta-wetlands/photo-4-1800.webp"
+      },
+      "width": 1800,
+      "height": 2400
     }
   ],
   "publish": true
