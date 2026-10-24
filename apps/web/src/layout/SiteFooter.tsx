@@ -2,8 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { FooterClock } from "./FooterClock";
 
-const link = "inline-flex min-h-11 items-center text-muted underline-offset-4 transition-colors hover:text-foreground hover:underline";
-const heading = "font-mono text-xs font-semibold uppercase tracking-widest";
+// Sizes follow myto-moto's footer: small type, compact columns.
+const link = "inline-block py-1 text-sm text-muted transition-opacity hover:opacity-50";
+const heading = "mb-4 text-[10px] font-bold uppercase tracking-[0.12em]";
 
 const columns = [
   {
@@ -34,41 +35,47 @@ const columns = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-(--space-section) border-t border-border">
-      <div className="container-wide">
-        <div className="flex flex-col justify-between gap-10 py-14 sm:flex-row sm:items-start">
-          <div className="max-w-sm">
-            <Image src="/brand/logo.png" alt="Moto Trails" width={120} height={39} />
-            <p className="mt-5 text-lg text-muted">A moderated directory of motorcycle trails in India. Every trail shows who may ride it, how we know, and when it was last checked.</p>
-          </div>
-          <FooterClock />
-        </div>
-
-        <nav aria-label="Footer" className="grid grid-cols-2 gap-x-6 gap-y-10 border-t border-border py-12 sm:grid-cols-3">
-          {columns.map((c) => (
-            <div key={c.title} className="flex flex-col">
-              <p className={`${heading} mb-3`}>{c.title}</p>
-              {c.links.map((l) => (
-                <Link key={l.href} href={l.href} className={link}>{l.label}</Link>
-              ))}
+    <footer className="mt-24 bg-background">
+      <div className="border-t border-black/[0.08]">
+        <div className="container-wide pb-12 pt-16">
+          <div className="mb-14 flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <Image src="/brand/logo.png" alt="Moto Trails" width={112} height={36} className="mb-5 h-8 w-auto" />
+              <p className="max-w-[260px] text-sm leading-relaxed text-muted">A moderated directory of motorcycle trails in India: who may ride, how we know, and when it was last checked.</p>
             </div>
-          ))}
-        </nav>
+            <FooterClock />
+          </div>
 
-        <div className="flex flex-col gap-3 border-t border-border py-6 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            Moto Trails is a project by{" "}
-            <a href="https://myto-moto.com" className="text-foreground underline underline-offset-4">
-              myto-moto
-            </a>
-            .
-          </p>
-          <p className="flex items-center gap-3 font-mono text-xs">
-            <span>© Moto Trails</span>
-            <span aria-hidden="true">·</span>
-            <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
-            <Link href="/terms" className="hover:text-foreground">Terms</Link>
-          </p>
+          <nav aria-label="Footer" className="mb-14 grid grid-cols-2 gap-x-8 gap-y-10 border-t border-black/[0.07] pt-12 md:grid-cols-3">
+            {columns.map((c) => (
+              <div key={c.title}>
+                <p className={heading}>{c.title}</p>
+                <ul className="space-y-1.5">
+                  {c.links.map((l) => (
+                    <li key={l.href}>
+                      <Link href={l.href} className={link}>{l.label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
+
+          <div className="flex flex-col gap-4 border-t border-black/[0.07] pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted">
+              Moto Trails is a project by{" "}
+              <a href="https://myto-moto.com" className="text-foreground underline underline-offset-4">
+                myto-moto
+              </a>
+              .
+            </p>
+            <p className="flex items-center gap-4 text-xs text-muted">
+              <span>© Moto Trails</span>
+              <span aria-hidden="true" className="text-black/20">·</span>
+              <Link href="/privacy" className="transition-opacity hover:opacity-50">Privacy</Link>
+              <Link href="/terms" className="transition-opacity hover:opacity-50">Terms</Link>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
