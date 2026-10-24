@@ -64,7 +64,7 @@ export function RiddenPanel({
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {riders.map((r) => (
             <li key={r.riderId} className="rounded-3xl bg-card-cream p-4">
-              <p className="font-medium">{r.displayName}</p>
+              <p className="font-medium"><Link href={`/riders/${r.riderId}`} className="underline-offset-4 hover:underline">{r.displayName}</Link></p>
               <p className="text-sm text-muted">{[r.bike, r.riddenMonth ? monthLabel(r.riddenMonth) : null].filter(Boolean).join(" · ") || "Rider"}</p>
               {r.note ? <p className="mt-1 text-sm">{r.note}</p> : null}
               {signedIn && actions.ask && r.riderId !== ownRiderId ? (

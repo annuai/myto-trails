@@ -6,7 +6,7 @@ import { signOut, signOutEverywhere, updateDisplayName } from "@/server/auth/aut
 import { SESSION_COOKIE } from "@/server/auth/session-cookie";
 import { getCurrentUser } from "@/server/auth/session";
 import { getSql } from "@/server/db/client";
-import { getMemberState, updateMemberPrivacy } from "@/server/community/members";
+import { updateMemberPrivacy } from "@/server/community/members";
 
 export async function signOutAction(): Promise<void> {
   const jar = await cookies();
@@ -38,12 +38,11 @@ export async function updatePrivacyAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in?next=%2Faccount");
   const sql = getSql();
-  const state = await getMemberState(sql, user.id);
   const r = await updateMemberPrivacy(sql, {
     userId: user.id,
     profilePublic: formData.get("visibility") === "public",
     isWoman: formData.get("isWoman") === "on",
-    bio: state?.bio ?? null,
+    bio: String(formData.get("bio") ?? "").trim() || null,
   });
   redirect(r.ok ? "/account?privacy=saved" : "/account?privacy=error");
 }

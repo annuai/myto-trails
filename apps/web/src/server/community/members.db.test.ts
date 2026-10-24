@@ -2,7 +2,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDatabase } from "../testing/db";
 import { makeUser } from "../testing/submission-fixture";
-import { completeWelcome, getMemberState, isMember, updateMemberPrivacy } from "./members";
+import { insertTrailFixture } from "../testing/fixtures";
+import { completeWelcome, getMemberState, getRiderProfile, isMember, updateMemberPrivacy } from "./members";
+import { markRidden } from "./ridden";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
 beforeAll(async () => {
@@ -62,5 +64,35 @@ describe("updateMemberPrivacy", () => {
     expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, isWoman: true, bio: " Weekend rider " })).toEqual({ ok: true });
     expect(await getMemberState(db.sql, u)).toMatchObject({ profilePublic: true, isWoman: true, bio: "Weekend rider" });
     expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, isWoman: true, bio: "x".repeat(301) })).toEqual({ ok: false, reason: "invalid" });
+    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, isWoman: true, bio: "see www.spam.example" })).toEqual({ ok: false, reason: "invalid" });
+  });
+});
+
+describe("getRiderProfile", () => {
+  const member = async (name: string, pub: boolean) => {
+    const id = await makeUser(db.sql, { name });
+    await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: name, profilePublic: pub, isWoman: false });
+    const [{ public_id }] = await db.sql`select public_id from app_user where id = ${id}`;
+    return { id, handle: public_id as string };
+  };
+
+  it("shows a public rider's name, bio and trails to declared members only", async () => {
+    const trail = await insertTrailFixture(db.sql, {});
+    const rider = await member("Public Pia", true);
+    await updateMemberPrivacy(db.sql, { userId: rider.id, profilePublic: true, isWoman: false, bio: "Gravel and rain" });
+    await markRidden(db.sql, { userId: rider.id, slug: trail.slug, month: "2026-09", now: new Date("2026-10-24T00:00:00Z") });
+    const viewer = await member("Viewer", false);
+    expect(await getRiderProfile(db.sql, { viewerId: viewer.id, handle: rider.handle })).toMatchObject({ name: "Public Pia", bio: "Gravel and rain", trails: [{ slug: trail.slug }] });
+    expect(await getRiderProfile(db.sql, { viewerId: await makeUser(db.sql), handle: rider.handle })).toBeNull();
+  });
+
+  it("looks the same for private riders and unknown handles, and never shows ids or email", async () => {
+    const priv = await member("Private Pat", false);
+    const viewer = await member("Viewer2", false);
+    expect(await getRiderProfile(db.sql, { viewerId: viewer.id, handle: priv.handle })).toBeNull();
+    expect(await getRiderProfile(db.sql, { viewerId: viewer.id, handle: "00000000-0000-4000-8000-000000000000" })).toBeNull();
+    expect(await getRiderProfile(db.sql, { viewerId: viewer.id, handle: "not-a-uuid" })).toBeNull();
+    const pub = await member("Public Pam", true);
+    expect(JSON.stringify(await getRiderProfile(db.sql, { viewerId: viewer.id, handle: pub.handle }))).not.toMatch(/example\.test|@/);
   });
 });

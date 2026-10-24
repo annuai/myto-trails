@@ -33,6 +33,8 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <label className="flex items-start gap-2 text-sm"><input type="radio" name="visibility" value="public" defaultChecked={member?.profilePublic === true} className="mt-1" /> Show me on trails I have ridden, and let riders ask me questions</label>
           <label className="flex items-start gap-2 text-sm"><input type="radio" name="visibility" value="private" defaultChecked={member?.profilePublic !== true} className="mt-1" /> Keep me private (I still count in the total)</label>
         </fieldset>
+        <label htmlFor="bio" className="text-sm font-medium">About you <span className="text-muted">(shown on your rider page if you are public)</span></label>
+        <textarea id="bio" name="bio" rows={3} maxLength={300} defaultValue={member?.bio ?? ""} className="w-full rounded-lg border border-foreground/40 bg-background px-3 py-2" />
         <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="isWoman" defaultChecked={member?.isWoman === true} className="mt-1" /> I ride as a woman (only used to join women-only clubs; never shown)</label>
         <p className="text-sm text-muted">Comments always show your display name, whatever you choose here.</p>
         {sp.privacy === "saved" ? <p role="status" className="text-sm font-medium text-status-good">Saved.</p> : null}
