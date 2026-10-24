@@ -1,13 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { makeTrail } from "../trail/test-trail";
-import { SavedItemRow } from "./SavedItemRow";
+import { SavedItemCard } from "./SavedItemCard";
 
 const remove = vi.fn();
 
-describe("SavedItemRow", () => {
+describe("SavedItemCard", () => {
   it("shows the trail and a remove button", () => {
-    render(<SavedItemRow item={{ trail: makeTrail({ name: "Ridge" }), addedAt: "2026-05-01T00:00:00.000Z", changes: [] }} remove={remove} />);
+    render(<SavedItemCard item={{ trail: makeTrail({ name: "Ridge" }), addedAt: "2026-05-01T00:00:00.000Z", changes: [] }} remove={remove} />);
     expect(screen.getByRole("link", { name: "Ridge" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove Ridge from saved" })).toBeInTheDocument();
     expect(screen.queryByText("Changed")).toBeNull();
@@ -15,7 +15,7 @@ describe("SavedItemRow", () => {
 
   it("explains what changed in words", () => {
     render(
-      <SavedItemRow
+      <SavedItemCard
         item={{
           trail: makeTrail(),
           addedAt: "2026-05-01T00:00:00.000Z",
@@ -35,7 +35,7 @@ describe("SavedItemRow", () => {
   });
 
   it("shows an unavailable trail without any details and lets it be removed", () => {
-    render(<SavedItemRow item={{ trail: null, addedAt: "2026-05-01T00:00:00.000Z", changes: [], unavailableId: "11111111-1111-4111-8111-111111111111" }} remove={remove} />);
+    render(<SavedItemCard item={{ trail: null, addedAt: "2026-05-01T00:00:00.000Z", changes: [], unavailableId: "11111111-1111-4111-8111-111111111111" }} remove={remove} />);
     expect(screen.getByText("This trail is no longer published.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove from saved" })).toBeInTheDocument();
   });

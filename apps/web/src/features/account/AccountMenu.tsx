@@ -12,9 +12,6 @@ export function AccountMenu({ user }: { user: { displayName: string; email: stri
   }
   return (
     <>
-      <Link href="/submit" className={link}>
-        Submit a trail
-      </Link>
       <Link href="/saved" className={link}>
         Saved
       </Link>

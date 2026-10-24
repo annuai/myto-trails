@@ -51,6 +51,7 @@ function drawMarker(shape: MarkerShape, color: string): ImageData {
 export function TrailMap({ points, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_URL }: { points: MapPoint[]; styleUrl?: string }) {
   const container = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<Status>("loading");
+  const [problem, setProblem] = useState<string | null>(null);
   const [selected, setSelected] = useState<Selected | null>(null);
   const collection = toFeatureCollection(points);
   const empty = collection.features.length === 0;
@@ -71,6 +72,7 @@ export function TrailMap({ points, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_
         m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
         m.on("error", (e) => {
           // A style or tile failure before the map is usable means we fall back to the list.
+          setProblem(e.error?.message?.slice(0, 160) ?? "The map reported an error.");
           if (!m.isStyleLoaded()) setStatus("failed");
           console.warn("Map error", e.error?.message);
         });
@@ -156,6 +158,7 @@ export function TrailMap({ points, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_
       {!empty && status !== "failed" ? (
         <p className="text-xs text-muted">{process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ?? OSM_ATTRIBUTION}</p>
       ) : null}
+      {problem ? <p role="status" className="text-xs text-status-caution">Map note: {problem}</p> : null}
       {selected ? (
         <div role="status" className="border-l-4 border-accent py-1 pl-4">
           <p className="font-medium">{selected.name}</p>

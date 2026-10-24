@@ -2,7 +2,7 @@ import type { AccessClass, OperationalStatus, VerificationLevel } from "@moto-tr
 import { formatDate } from "@/lib/format";
 import { statusFor, type Glyph, type Tone } from "./status-map";
 
-type Props = { date?: string; size?: "md" | "lg" } & (
+type Props = { date?: string; size?: "md" | "lg"; chip?: boolean } & (
   | { kind: "access"; value: AccessClass }
   | { kind: "condition"; value: OperationalStatus }
   | { kind: "verification"; value: VerificationLevel }
@@ -36,7 +36,9 @@ function GlyphIcon({ glyph }: { glyph: Glyph }) {
 export function StatusBadge(props: Props) {
   const { label, tone, glyph } = statusFor(props.kind as "access", props.value as AccessClass);
   return (
-    <span className={`inline-flex items-center gap-2 font-medium ${props.size === "lg" ? "text-base" : "text-sm"} ${toneClass[tone]}`}>
+    <span
+      className={`inline-flex items-center font-medium ${props.chip ? "gap-1.5 rounded-full border border-current/25 bg-current/[0.07] px-2.5 py-1 text-xs" : `gap-2 ${props.size === "lg" ? "text-base" : "text-sm"}`} ${toneClass[tone]}`}
+    >
       <GlyphIcon glyph={glyph} />
       <span>{label}</span>
       {props.date ? <span className="font-mono text-muted">{formatDate(props.date)}</span> : null}

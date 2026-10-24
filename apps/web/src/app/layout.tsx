@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${michroma.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full flex-col overflow-x-clip">
         <SiteHeader
           account={
             <Suspense fallback={null}>
@@ -28,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </Suspense>
           }
         />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4">{children}</main>
         <SiteFooter />
       </body>
     </html>

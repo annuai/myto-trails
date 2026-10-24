@@ -60,7 +60,22 @@
       "status": "open",
       "effectiveFrom": "2026-01-15"
     },
-    "gpxFile": "gpx/sample-wayanad-ridge-track.gpx"
+    "gpxFile": "gpx/sample-wayanad-ridge-track.gpx",
+    "media": [
+      {
+        "role": "cover",
+        "position": 0,
+        "altText": "Illustrated placeholder landscape for Wayanad ridge track (real photo coming)",
+        "credit": "Placeholder artwork",
+        "variants": {
+          "400": "/placeholders/sample-wayanad-ridge-track-400.webp",
+          "800": "/placeholders/sample-wayanad-ridge-track-800.webp",
+          "1600": "/placeholders/sample-wayanad-ridge-track-1600.webp"
+        },
+        "width": 1600,
+        "height": 1000
+      }
+    ]
   },
   {
     "sample": true,
@@ -116,7 +131,22 @@
       "effectiveFrom": "2026-06-01",
       "note": "Closed June to September (sample)."
     },
-    "gpxFile": "gpx/sample-idukki-estate-loop.gpx"
+    "gpxFile": "gpx/sample-idukki-estate-loop.gpx",
+    "media": [
+      {
+        "role": "cover",
+        "position": 0,
+        "altText": "Illustrated placeholder landscape for Idukki estate loop (real photo coming)",
+        "credit": "Placeholder artwork",
+        "variants": {
+          "400": "/placeholders/sample-idukki-estate-loop-400.webp",
+          "800": "/placeholders/sample-idukki-estate-loop-800.webp",
+          "1600": "/placeholders/sample-idukki-estate-loop-1600.webp"
+        },
+        "width": 1600,
+        "height": 1000
+      }
+    ]
   },
   {
     "sample": true,
@@ -183,7 +213,22 @@
       "expectedUntil": "2026-03-01",
       "note": "Sample landslide closure."
     },
-    "gpxFile": "gpx/sample-munnar-cloud-climb.gpx"
+    "gpxFile": "gpx/sample-munnar-cloud-climb.gpx",
+    "media": [
+      {
+        "role": "cover",
+        "position": 0,
+        "altText": "Illustrated placeholder landscape for Munnar cloud climb (real photo coming)",
+        "credit": "Placeholder artwork",
+        "variants": {
+          "400": "/placeholders/sample-munnar-cloud-climb-400.webp",
+          "800": "/placeholders/sample-munnar-cloud-climb-800.webp",
+          "1600": "/placeholders/sample-munnar-cloud-climb-1600.webp"
+        },
+        "width": 1600,
+        "height": 1000
+      }
+    ]
   },
   {
     "sample": true,
@@ -243,7 +288,22 @@
       "effectiveFrom": "2026-02-01",
       "note": "Closed for good after a landslide (sample)."
     },
-    "gpxFile": "gpx/sample-chikkamagaluru-old-road.gpx"
+    "gpxFile": "gpx/sample-chikkamagaluru-old-road.gpx",
+    "media": [
+      {
+        "role": "cover",
+        "position": 0,
+        "altText": "Illustrated placeholder landscape for Chikkamagaluru old road (real photo coming)",
+        "credit": "Placeholder artwork",
+        "variants": {
+          "400": "/placeholders/sample-chikkamagaluru-old-road-400.webp",
+          "800": "/placeholders/sample-chikkamagaluru-old-road-800.webp",
+          "1600": "/placeholders/sample-chikkamagaluru-old-road-1600.webp"
+        },
+        "width": 1600,
+        "height": 1000
+      }
+    ]
   },
   {
     "sample": true,
@@ -293,7 +353,22 @@
       "status": "unknown",
       "effectiveFrom": "2026-03-01"
     },
-    "gpxFile": "gpx/sample-cherrapunji-river-track.gpx"
+    "gpxFile": "gpx/sample-cherrapunji-river-track.gpx",
+    "media": [
+      {
+        "role": "cover",
+        "position": 0,
+        "altText": "Illustrated placeholder landscape for Cherrapunji river track (real photo coming)",
+        "credit": "Placeholder artwork",
+        "variants": {
+          "400": "/placeholders/sample-cherrapunji-river-track-400.webp",
+          "800": "/placeholders/sample-cherrapunji-river-track-800.webp",
+          "1600": "/placeholders/sample-cherrapunji-river-track-1600.webp"
+        },
+        "width": 1600,
+        "height": 1000
+      }
+    ]
   },
   {
     "sample": true,
@@ -348,6 +423,21 @@
     "condition": {
       "status": "open",
       "effectiveFrom": "2026-04-01"
-    }
+    },
+    "media": [
+      {
+        "role": "cover",
+        "position": 0,
+        "altText": "Illustrated placeholder landscape for Shillong sensitive ridge (real photo coming)",
+        "credit": "Placeholder artwork",
+        "variants": {
+          "400": "/placeholders/sample-shillong-sensitive-ridge-400.webp",
+          "800": "/placeholders/sample-shillong-sensitive-ridge-800.webp",
+          "1600": "/placeholders/sample-shillong-sensitive-ridge-1600.webp"
+        },
+        "width": 1600,
+        "height": 1000
+      }
+    ]
   }
 ]

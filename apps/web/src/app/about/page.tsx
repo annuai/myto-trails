@@ -7,7 +7,7 @@ export default function AboutPage() {
   return (
     <LegalPage title="About Moto Trails">
       <p>Moto Trails is a community-powered directory of motorcycle trails in India. Riders share trails; moderators check them, with special care for one question: <em>are riders allowed here?</em></p>
-      <p>Moto Trails is a subsidiary of <a href="https://www.myto-moto.com" className="underline underline-offset-4">myto-moto</a>.</p>
+      <p>Moto Trails is a project by <a href="https://myto-moto.com" className="underline underline-offset-4">myto-moto</a>.</p>
       <h2>How we handle access</h2>
       <ul>
         <li>Every trail shows who can ride it, how we know, and when that was last checked.</li>

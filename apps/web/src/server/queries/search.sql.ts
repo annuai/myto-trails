@@ -3,7 +3,7 @@ import type postgres from "postgres";
 import type { Sql } from "postgres";
 import { PAGE_SIZE, type SearchParams } from "@/features/discovery/search-params";
 import type { MapPoint } from "@/features/map/geojson";
-import { mapSummary } from "./trails.sql";
+import { attachCovers, mapSummary } from "./trails.sql";
 import type { TrailSummaryDto } from "./types";
 
 // Uncached search queries. Run them on a connection that is already the anonymous role (withPublicRole).
@@ -134,7 +134,7 @@ export async function searchTrails(
     const [c] = (await sql`select count(*)::int as n from public_trail_search s where ${where}`) as Row[];
     total = c?.n ?? 0;
   }
-  return { items, total, page: p.page, pageSize: PAGE_SIZE, origin };
+  return { items: await attachCovers(sql, items), total, page: p.page, pageSize: PAGE_SIZE, origin };
 }
 
 export type Suggestions = {

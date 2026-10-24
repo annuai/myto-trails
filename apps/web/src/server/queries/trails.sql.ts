@@ -1,6 +1,6 @@
 import { effectiveCondition, effectiveVerificationLevel, isRegionIndexable, isValidSlug, type OperationalStatus, type VerificationLevel } from "@moto-trails/domain";
 import type { Sql } from "postgres";
-import type { MediaDto, RouteDto, TrailDetailDto, TrailSummaryDto } from "./types";
+import type { CoverDto, MediaDto, RouteDto, TrailDetailDto, TrailSummaryDto } from "./types";
 
 // Uncached query functions. Callers pass a connection that is already running as the anonymous role
 // (see withPublicRole). Slugs are validated first and always sent as query parameters.
@@ -101,6 +101,20 @@ export async function queryTrailMedia(sql: Sql, slug: string): Promise<MediaDto[
   }));
 }
 
+/** Adds each trail's cover photo (one query for the whole list). Trails without a photo get `cover: null`. */
+export async function attachCovers<T extends { slug: string }>(sql: Sql, items: T[]): Promise<(T & { cover: CoverDto | null })[]> {
+  const slugs = [...new Set(items.map((i) => i.slug))].filter(isValidSlug);
+  const byslug = new Map<string, CoverDto>();
+  if (slugs.length > 0) {
+    const rows = (await sql`
+      select distinct on (trail_slug) trail_slug, variants, alt_text, width, height
+      from public_trail_media where trail_slug = any(${slugs}::text[]) and role = 'cover'
+      order by trail_slug, position`) as Row[];
+    for (const r of rows) byslug.set(r.trail_slug, { variants: r.variants as Record<string, string>, altText: r.alt_text, width: r.width, height: r.height });
+  }
+  return items.map((i) => ({ ...i, cover: byslug.get(i.slug) ?? null }));
+}
+
 export async function queryTrailsInRegion(
   sql: Sql,
   region: { stateSlug: string; districtSlug?: string },
@@ -112,7 +126,7 @@ export async function queryTrailsInRegion(
     select * from public_trails
     where state_slug = ${region.stateSlug} and (${district}::text is null or district_slug = ${district})
     order by name`) as Row[];
-  return rows.map((r) => mapSummary(r, now));
+  return attachCovers(sql, rows.map((r) => mapSummary(r, now)));
 }
 
 export async function querySitemapEntries(

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { TrailRow } from "@/features/discovery/TrailRow";
+import { TrailCard } from "@/features/discovery/TrailCard";
 import { Breadcrumbs } from "@/ui/Breadcrumbs/Breadcrumbs";
 import { getRegion } from "@/server/queries/regions";
 import { getTrailsInRegion } from "@/server/queries/trails";
@@ -39,9 +39,9 @@ export default async function DistrictPage({ params }: PageProps<"/regions/[stat
         {trails.length === 0 ? (
           <p className="mt-4 max-w-prose text-muted">No trails have been published in {region.name} yet.</p>
         ) : (
-          <div className="mt-2 border-t border-border">
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {trails.map((t) => (
-              <TrailRow key={t.slug} trail={t} />
+              <TrailCard key={t.slug} trail={t} />
             ))}
           </div>
         )}

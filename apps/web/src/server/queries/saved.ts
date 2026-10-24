@@ -1,7 +1,7 @@
 import { isValidSlug } from "@moto-trails/domain";
 import type { Sql } from "postgres";
 import { diffSnapshot, snapshotOf, type SavedChange, type SavedSnapshot } from "./saved-changes";
-import { mapSummary, queryTrailBySlug } from "./trails.sql";
+import { attachCovers, mapSummary, queryTrailBySlug } from "./trails.sql";
 import type { TrailSummaryDto } from "./types";
 
 // Saved trails (the default collection). Every function takes the user id from a verified session and
@@ -65,7 +65,7 @@ export async function listSaved(sql: Sql, userId: string, now: Date): Promise<Sa
     order by ci.added_at desc`) as Row[];
   if (items.length === 0) return [];
   const rows = (await sql`select * from public_trails where id = any(${items.map((i) => i.trail_id)}::uuid[])`) as Row[];
-  const byId = new Map(rows.map((r) => [r.id as string, mapSummary(r, now)]));
+  const byId = new Map((await attachCovers(sql, rows.map((r) => mapSummary(r, now)))).map((t) => [t.id, t]));
 
   const result: SavedItem[] = items.map((i) => {
     const trail = byId.get(i.trail_id) ?? null;

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Breadcrumbs, type Crumb } from "@/ui/Breadcrumbs/Breadcrumbs";
 import { formatDate } from "@/lib/format";
 import type { MediaDto, RouteDto, TrailDetailDto } from "@/server/queries/types";
+import { PlaceholderArt } from "@/ui/PlaceholderArt/PlaceholderArt";
 import { AccessDetails } from "./AccessDetails";
 import { GoNoGoStrip } from "./GoNoGoStrip";
 import { RouteSection } from "./RouteSection";
@@ -21,6 +22,8 @@ export function TrailDetail({ trail, media, route = null, actions }: { trail: Tr
     { label: trail.name },
   ];
   const place = [trail.district?.name, trail.state.name].filter(Boolean).join(", ");
+  const cover = media.find((m) => m.role === "cover") ?? media[0];
+  const widths = cover ? Object.keys(cover.variants).map(Number).sort((a, b) => a - b) : [];
 
   return (
     <article className="flex flex-col gap-12 py-8">
@@ -30,6 +33,22 @@ export function TrailDetail({ trail, media, route = null, actions }: { trail: Tr
         <p className="text-muted">Near {trail.nearestTown} · {place}</p>
         {actions ? <div className="flex flex-wrap items-center gap-4">{actions}</div> : null}
       </header>
+
+      <div className="aspect-[21/9] w-full overflow-hidden rounded-lg bg-stone">
+        {cover && widths.length > 0 ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cover.variants[String(widths.find((w) => w >= 1200) ?? widths[widths.length - 1])]}
+            srcSet={widths.map((w) => `${cover.variants[String(w)]} ${w}w`).join(", ")}
+            sizes="(min-width: 1152px) 1120px, 100vw"
+            alt={cover.altText}
+            className="h-full w-full object-cover"
+            fetchPriority="high"
+          />
+        ) : (
+          <PlaceholderArt slug={trail.slug} className="h-full w-full" />
+        )}
+      </div>
 
       <div className="flex flex-col gap-6">
         <GoNoGoStrip trail={trail} />
@@ -81,7 +100,7 @@ export function TrailDetail({ trail, media, route = null, actions }: { trail: Tr
       <RouteSection trail={trail} route={route} />
       <SeasonStrip bestMonths={trail.bestMonths} />
       <SafetyInformation hazards={trail.hazards} safetyNotes={trail.safetyNotes} />
-      <TrailGallery media={media} />
+      <TrailGallery media={media.filter((m) => m !== cover)} />
       <AccessDetails trail={trail} />
 
       <footer className="border-t border-border pt-4 text-sm text-muted">

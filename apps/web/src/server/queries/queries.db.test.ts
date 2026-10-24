@@ -5,6 +5,8 @@ import { insertTrailFixture } from "../testing/fixtures";
 import { asAnon, createTestDatabase } from "../testing/db";
 import { ingestGpx, insertRoute } from "../gpx/ingest";
 import { line, makeGpx } from "../gpx/fixtures";
+import { searchTrails } from "./search.sql";
+import { parseSearchParams } from "@/features/discovery/search-params";
 import { querySitemapEntries, queryTrailBySlug, queryTrailMedia, queryTrailRoute, queryTrailsInRegion } from "./trails.sql";
 import { queryDistricts, queryRegionBySlugs, queryRegionsForHub, queryStates } from "./regions.sql";
 
@@ -212,5 +214,21 @@ describe("queryTrailRoute", () => {
     const none = await insertTrailFixture(db.sql, loc("r4"));
     for (const slug of [sensitive.slug, draft.slug, none.slug]) expect(await asAnon(db.sql, (tx) => queryTrailRoute(tx, slug))).toBeNull();
     expect(await queryTrailRoute(neverCalled, "BAD SLUG")).toBeNull();
+  });
+});
+
+describe("cover photos on list queries", () => {
+  it("attaches the cover to region and search results, and null when a trail has no photo", async () => {
+    const withPhoto = await insertTrailFixture(db.sql, { ...loc("cv1"), name: "Cover photo trail", mediaCount: 2 });
+    const without = await insertTrailFixture(db.sql, { ...loc("cv1"), name: "Cover less trail" });
+    const region = await asAnon(db.sql, (tx) => queryTrailsInRegion(tx, { stateSlug: "qs-cv1" }, now));
+    expect(region.find((t) => t.slug === withPhoto.slug)!.cover).toMatchObject({ altText: "Alt text 0", variants: { "800": expect.stringContaining("https://example.test/") } });
+    expect(region.find((t) => t.slug === without.slug)!.cover).toBeNull();
+    const found = await asAnon(db.sql, (tx) => searchTrails(tx, parseSearchParams({ q: "Cover photo" }), now));
+    expect(found.items[0]!.cover).not.toBeNull();
+  });
+  it("makes no query for an empty list", async () => {
+    const { attachCovers } = await import("./trails.sql");
+    expect(await attachCovers(neverCalled, [])).toEqual([]);
   });
 });

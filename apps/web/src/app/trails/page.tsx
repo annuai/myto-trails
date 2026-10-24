@@ -7,7 +7,7 @@ import { NearMeButton } from "@/features/discovery/NearMeButton";
 import { Pagination } from "@/features/discovery/Pagination";
 import { RadiusChips } from "@/features/discovery/RadiusChips";
 import { SearchCombobox } from "@/features/discovery/SearchCombobox";
-import { SearchResultRow } from "@/features/discovery/SearchResultRow";
+import { SearchResultCard } from "@/features/discovery/SearchResultCard";
 import { SortLinks } from "@/features/discovery/SortLinks";
 import { ViewToggle } from "@/features/discovery/ViewToggle";
 import { parseSearchParams, toSearchString } from "@/features/discovery/search-params";
@@ -74,9 +74,9 @@ export default async function TrailsPage({ searchParams }: PageProps<"/trails">)
               <Link href="/regions" className="mt-4 inline-flex min-h-11 items-center underline underline-offset-4">Browse by region</Link>
             </div>
           ) : (
-            <div id="results">
+            <div id="results" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {result.items.map((t) => (
-                <SearchResultRow key={t.slug} trail={t} />
+                <SearchResultCard key={t.slug} trail={t} />
               ))}
             </div>
           )}

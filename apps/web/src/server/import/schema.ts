@@ -39,7 +39,7 @@ const media = z.object({
   caption: z.string().max(160).optional(),
   altText: z.string().min(1).max(300),
   credit: z.string().max(120).optional(),
-  variants: z.record(z.string(), z.string().url()),
+  variants: z.record(z.string(), z.string().refine((u) => u.startsWith("/") || URL.canParse(u), "must be a URL or a site path starting with /")),
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
 });

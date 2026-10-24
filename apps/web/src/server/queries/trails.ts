@@ -3,6 +3,8 @@ import { cacheLife, cacheTag } from "next/cache";
 import { connection } from "next/server";
 import { getSql, withPublicRole } from "../db/client";
 import { applyNow } from "./effective";
+import { parseSearchParams } from "@/features/discovery/search-params";
+import { searchTrails, type SearchItem } from "./search.sql";
 import { queryTrailBySlug, queryTrailMedia, queryTrailRoute, queryTrailsInRegion, querySitemapEntries } from "./trails.sql";
 import type { MediaDto, RouteDto, TrailDetailDto, TrailSummaryDto } from "./types";
 
@@ -68,4 +70,20 @@ export async function getSitemapEntries(): Promise<{ trails: { slug: string; upd
   cacheTag("trails");
   cacheLife("hours");
   return withPublicRole(getSql(), (tx) => querySitemapEntries(tx, { excludeSample: process.env.NODE_ENV === "production" }));
+}
+
+async function loadFeatured(): Promise<SearchItem[]> {
+  "use cache";
+  cacheTag("trails");
+  cacheLife("hours");
+  const r = await withPublicRole(getSql(), (tx) => searchTrails(tx, parseSearchParams({ sort: "recent" }), new Date()));
+  return r.items.slice(0, 6);
+}
+
+/** The newest open trails for the home page; effective status is recomputed on every request. */
+export async function getFeaturedTrails(): Promise<SearchItem[]> {
+  const items = await loadFeatured();
+  await connection();
+  const now = new Date();
+  return items.map((t) => applyNow(t, now));
 }

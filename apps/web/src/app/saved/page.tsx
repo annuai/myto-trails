@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SavedItemRow } from "@/features/saved/SavedItemRow";
+import { SavedItemCard } from "@/features/saved/SavedItemCard";
 import { requireUser } from "@/server/auth/session";
 import { getSql } from "@/server/db/client";
 import { listSaved } from "@/server/queries/saved";
@@ -22,9 +22,9 @@ export default async function SavedPage() {
           <Link href="/trails" className="mt-4 inline-flex min-h-11 items-center underline underline-offset-4">Explore trails</Link>
         </div>
       ) : (
-        <div className="border-t border-border">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <SavedItemRow key={item.trail?.slug ?? item.unavailableId} item={item} remove={removeSavedAction} />
+            <SavedItemCard key={item.trail?.slug ?? item.unavailableId} item={item} remove={removeSavedAction} />
           ))}
         </div>
       )}

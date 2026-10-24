@@ -4,7 +4,12 @@ import type {
 
 export type PlaceDto = { slug: string; name: string };
 
+/** The cover photo of a trail, in the widths that exist. */
+export type CoverDto = { variants: Record<string, string>; altText: string; width: number | null; height: number | null };
+
 export type TrailSummaryDto = {
+  /** Filled in by list queries (search, regions, saved); absent on single-trail reads. */
+  cover?: CoverDto | null;
   id: string;
   slug: string;
   name: string;
