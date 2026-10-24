@@ -1,19 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { formatClock, rideMessage } from "./ride-message";
+
+function subscribe(onChange: () => void) {
+  const id = setInterval(onChange, 1000);
+  return () => clearInterval(id);
+}
 
 /**
  * India Standard Time as a large clock with a badge underneath. It renders after mount, so the server and the
  * browser never disagree about the time. The badge uses a moon or sun as well as words, so it never relies on colour.
  */
 export function FooterClock() {
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => {
-    setNow(new Date());
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
+  // A once-a-second tick from the browser clock; the server (and first hydration) sees no time at all.
+  const second = useSyncExternalStore(subscribe, () => Math.floor(Date.now() / 1000), () => null);
+  const now = second === null ? null : new Date(second * 1000);
 
   const msg = now ? rideMessage(now) : null;
   return (
