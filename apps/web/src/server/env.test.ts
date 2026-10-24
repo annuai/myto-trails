@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EnvError, getPublicEnv, loadServerEnv } from "./env";
+import { EnvError, getDatabaseUrl, getPublicEnv, loadServerEnv } from "./env";
 
 const r2 = {
   R2_ACCOUNT_ID: "acc",
@@ -129,5 +129,21 @@ describe("getPublicEnv", () => {
     expect(pub).toEqual({ siteUrl: "http://localhost:3000", supabaseUrl: "https://p.supabase.co", supabaseAnonKey: "anon" });
     expect(json).not.toContain("service-key");
     expect(json).not.toContain("s3cr3t-value");
+  });
+});
+
+describe("getDatabaseUrl", () => {
+  it("returns DATABASE_URL without validating unrelated settings", () => {
+    expect(getDatabaseUrl({ NODE_ENV: "production", STORAGE_PROVIDER: "memory", DATABASE_URL: "postgres://u:p@h/db" })).toBe("postgres://u:p@h/db");
+  });
+  it("names DATABASE_URL when it is missing and never echoes other values", () => {
+    try {
+      getDatabaseUrl({ R2_SECRET_ACCESS_KEY: "s3cr3t-value" });
+      expect.unreachable();
+    } catch (e) {
+      expect(e).toBeInstanceOf(EnvError);
+      expect((e as EnvError).missing).toEqual(["DATABASE_URL"]);
+      expect((e as Error).message).not.toContain("s3cr3t-value");
+    }
   });
 });

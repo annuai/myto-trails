@@ -97,6 +97,13 @@ export function loadServerEnv(source: Source): ServerEnv {
   };
 }
 
+/** Just the database URL, for code that only needs the database (so unrelated settings are not validated). */
+export function getDatabaseUrl(source: Source): string {
+  const url = source.DATABASE_URL?.trim();
+  if (!url) throw new EnvError("Missing environment variables: DATABASE_URL", ["DATABASE_URL"]);
+  return url;
+}
+
 export function getPublicEnv(source: Source): { siteUrl: string; supabaseUrl?: string; supabaseAnonKey?: string } {
   return {
     siteUrl: getSiteUrl(source),

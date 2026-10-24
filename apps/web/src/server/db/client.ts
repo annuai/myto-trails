@@ -1,5 +1,5 @@
 import postgres, { type Sql } from "postgres";
-import { EnvError, loadServerEnv } from "../env";
+import { getDatabaseUrl } from "../env";
 
 export type { Sql };
 
@@ -12,11 +12,7 @@ let cached: Sql | undefined;
 
 /** Lazy singleton connection configured from DATABASE_URL. */
 export function getSql(): Sql {
-  if (!cached) {
-    const url = loadServerEnv(process.env).databaseUrl;
-    if (!url) throw new EnvError("Missing environment variables: DATABASE_URL", ["DATABASE_URL"]);
-    cached = createSql(url);
-  }
+  cached ??= createSql(getDatabaseUrl(process.env));
   return cached;
 }
 
