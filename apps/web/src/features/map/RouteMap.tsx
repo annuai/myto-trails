@@ -58,7 +58,7 @@ export function RouteMap({ line, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_UR
   return (
     <div className="flex flex-col gap-2">
       <div role="region" aria-label="Map of the route" className="relative h-80 w-full border border-border">
-        <div ref={container} className="absolute inset-0" />
+        <div ref={container} className="h-full w-full" />
         {status === "loading" ? <p className="absolute left-3 top-3 bg-surface px-2 py-1 text-sm">Loading map…</p> : null}
       </div>
       <p className="text-xs text-muted">{process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ?? OSM_ATTRIBUTION}</p>

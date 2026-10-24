@@ -151,7 +151,7 @@ export function TrailMap({ points, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_
         <p className="border border-border p-6 text-muted">The map couldn&apos;t load. The list below has the same trails.</p>
       ) : (
         <div className="relative h-[60vh] min-h-80 w-full border border-border">
-          <div ref={container} className="absolute inset-0" />
+          <div ref={container} className="h-full w-full" />
           {status === "loading" ? <p className="absolute left-3 top-3 bg-surface px-2 py-1 text-sm">Loading map…</p> : null}
         </div>
       )}
