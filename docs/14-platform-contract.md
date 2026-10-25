@@ -22,7 +22,7 @@ Trails is the system of record for trail data. Navi and the app are clients of i
 ## 3. API
 
 - **Base:** `https://moto-trails.com/api/v1`, JSON, described by an OpenAPI document; typed client in `packages/api-client`.
-- **Auth:** OAuth 2.0 authorisation code + PKCE for the app; revocable **device tokens** (hashed, scoped, listed on the user's profile page) for Navi; short-lived access tokens with refresh. Device identity never relies on the SIM.
+- **Auth:** the app uses the website's email-link sign-in followed by an authorisation-code exchange with PKCE for a device token ([ADR 0007](adr/0007-app-sign-in-through-the-website.md)); original plan: OAuth 2.0 authorisation code + PKCE for the app; revocable **device tokens** (hashed, scoped, listed on the user's profile page) for Navi; short-lived access tokens with refresh. Device identity never relies on the SIM.
 - **Scopes (examples):** `read:trails`, `read:saved`, `write:saved`, `write:submission`, `write:report`.
 - **Resources (initial):**
   - `GET /trails?near=…&radius=…&filters…`, `GET /trails/{public_id}` — only what the public site shows.

@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Myto app prototype (throwaway, sample data)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Michroma&display=swap" rel="stylesheet">
+<style>
+/* Tokens: Myto palette from packages/tokens; dark + radii per docs/16 */
+:root{
+  --paper:#f2ede8; --card:#fbf9f6; --ink:#1a1a1a; --muted:#6b6560; --line:#0000001f;
+  --accent:#1f4a6b; --accent-subtle:#e3ebf1;
+  --good:#2d6a3e; --caution:#8a5a00; --stop:#a32d1c;
+  --tint-sand:#e8dccb; --tint-sage:#cfe0c8; --tint-clay:#efcfc2; --tint-sky:#cfdde8;
+  --r-card:24px; --r-ctl:16px; --r-chip:999px;
+  --sans:'Geist',system-ui,-apple-system,sans-serif; --mono:'Geist Mono',ui-monospace,monospace; --display:'Michroma','Geist',sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--sans);background:#d9d4ce;color:var(--ink);display:flex;gap:32px;justify-content:center;align-items:flex-start;padding:24px;min-height:100vh}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.side{width:200px;font-size:14px;line-height:1.5;padding-top:8px}
+.side h1{font-size:15px;margin-bottom:4px}.side p{color:#4a4540;font-size:13px;margin-bottom:16px}
+.side button{display:block;padding:6px 0;color:var(--accent);font-size:14px}
+.phone{width:390px;height:844px;background:var(--paper);border-radius:44px;box-shadow:0 20px 60px #0003;overflow:hidden;position:relative;display:flex;flex-direction:column;flex:none}
+.phone.dark{background:#121211;color:#f2ede8;--card:#1c1c1a;--muted:#a8a29b;--line:#ffffff24}
+.status{height:44px;flex:none}
+.screen{display:none;flex:1;overflow-y:auto;padding:8px 20px 24px;scrollbar-width:none}
+.screen.on{display:block}.screen::-webkit-scrollbar{display:none}
+.hdr{display:flex;align-items:center;justify-content:space-between;height:48px;margin-bottom:8px}
+.wordmark{font-family:var(--display);font-size:15px;letter-spacing:.14em}
+.ico{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--card)}
+.title{font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:1.15;margin:8px 0 20px}
+.label{font-size:15px;color:var(--muted)}
+.section{font-size:21px;font-weight:600;margin:32px 0 12px}
+.card{background:var(--card);border-radius:var(--r-card);padding:20px}
+.dark .card{background:#1c1c1a}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.hero{padding:24px}
+.hero .big{font-size:34px;font-weight:600;letter-spacing:-.02em;line-height:1.15;margin:4px 0 14px}
+.bar{height:8px;border-radius:8px;background:#0000001a;overflow:hidden;margin:16px 0 8px}
+.bar i{display:block;height:100%;background:var(--ink);border-radius:8px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;font-size:16px}
+.row+.row{border-top:1px solid var(--line)}
+.btn{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:56px;padding:0 20px;border-radius:var(--r-ctl);background:var(--ink);color:#fff;font-size:17px;font-weight:500}
+.btn.soft{background:var(--card);color:inherit}.dark .btn.soft{background:#242422;color:#f2ede8}
+.btn.center{justify-content:center}
+.btn+.btn,.card+.btn,.btn+.card,.card+.card{margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:var(--r-chip);font-size:15px;font-weight:500;background:#0000000d;white-space:nowrap}
+.chip.good{color:var(--good)}.chip.caution{color:var(--caution)}.chip.stop{color:var(--stop)}.chip.unk{color:var(--muted)}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:0 -20px 16px;padding:0 20px;scrollbar-width:none}
+.chips .chip{min-height:40px;background:var(--card);flex:none}.chips .chip.on{background:var(--ink);color:#fff}
+.banner{background:#1a1a1a;color:#f2ede8;border-radius:var(--r-card);padding:20px;margin-top:12px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.banner small{display:block;color:#a8a29b;font-size:14px;margin-bottom:4px}.banner b{font-weight:500;font-size:17px;line-height:1.35}
+.banner .ico{background:#2c2c2a;width:44px;height:44px;border-radius:14px;flex:none}
+.hscroll{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:0 20px;scrollbar-width:none}
+.tile{flex:none;width:168px;border-radius:var(--r-card);background:var(--card);overflow:hidden;text-align:left}
+.tile .art{height:120px}.tile .body{padding:14px 16px 16px}
+.tile .num{font-size:24px;font-weight:500;letter-spacing:-.01em}
+.art{display:block;width:100%}
+.art svg{width:100%;height:100%;display:block}
+.trow{display:flex;gap:16px;align-items:center;padding:12px;border-radius:var(--r-card);background:var(--card);width:100%}
+.trow+.trow{margin-top:12px}
+.trow .art{width:72px;height:72px;border-radius:18px;overflow:hidden;flex:none}
+.trow b{display:block;font-size:17px;font-weight:500;margin-bottom:2px}
+.trow .meta{font-size:14px;color:var(--muted);margin-bottom:6px}
+.search{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 18px;border-radius:var(--r-ctl);background:var(--card);color:var(--muted);font-size:17px;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats .n{font-size:24px;font-weight:500}.stats .l{font-size:14px;color:var(--muted)}
+.map{border-radius:var(--r-card);height:200px;background:#e6e1da;position:relative;overflow:hidden}
+.dark .map{background:#232321}
+.tabbar{flex:none;height:92px;background:var(--card);display:flex;justify-content:space-around;align-items:flex-start;padding:8px 8px 0;position:relative;border-top:1px solid var(--line)}
+.tab{width:68px;height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:13px;font-weight:500;color:var(--muted);border-radius:16px}
+.tab[aria-current=page]{color:var(--ink)}.tab[aria-current=page] svg{fill:var(--ink);stroke:var(--ink)}
+.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.rec{width:76px;height:76px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;margin-top:-34px;border:6px solid var(--paper);font-size:12px;font-weight:600;flex-direction:column;gap:2px;box-shadow:0 4px 16px #0003}
+.rec svg{width:26px;height:26px;fill:#fff}
+.ridebar{display:none;position:absolute;left:12px;right:12px;bottom:100px;height:56px;background:var(--ink);color:#fff;border-radius:18px;align-items:center;justify-content:space-between;padding:0 18px;box-shadow:0 -4px 16px #0000001f}
+.dot{width:10px;height:10px;border-radius:50%;background:#ec8272;display:inline-block;margin-right:8px}
+.hold{position:relative;overflow:hidden}
+.hold i{position:absolute;left:0;top:0;bottom:0;width:0;background:#ffffff40}
+.live .num{font-size:88px;font-weight:500;letter-spacing:-.03em;line-height:1}
+.live .sec{font-size:44px;font-weight:500}
+.big3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.big3 button{min-height:88px;border-radius:20px;background:#242422;color:#f2ede8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:16px;font-weight:500}
+.big3 .stopb{background:#a32d1c}
+.sos{background:#121211;min-height:56px;border-radius:16px;border:1.5px solid #ec8272;color:#ec8272;display:flex;align-items:center;justify-content:center;margin-top:12px;font-weight:500;font-size:16px;width:100%}
+.hl{background:#8fbbdc;color:#121211;border-radius:var(--r-card);padding:24px}
+.hl .big{font-size:48px;font-weight:500;letter-spacing:-.02em}
+.tabs2{display:flex;border-bottom:1px solid var(--line);margin-bottom:24px}
+.tabs2 button{flex:1;text-align:center;padding:14px 0;color:var(--muted);font-size:17px;position:relative}
+.tabs2 .on{color:inherit}.tabs2 .on::after{content:"";position:absolute;left:12%;right:12%;bottom:-1px;height:3px;border-radius:3px;background:currentColor}
+.dots{display:flex;gap:6px;margin-top:16px}.dots i{flex:1;height:8px;border-radius:8px;background:#ffffff26}.dots i.on{background:#ff8a1f}
+.back{display:flex;align-items:center;gap:12px;margin:0 0 4px;min-height:48px;font-size:17px}
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:"";position:absolute;left:5px;top:10px;bottom:20px;border-left:2px dotted var(--muted)}
+.timeline div{position:relative;margin-bottom:12px}.timeline div::before{content:"";position:absolute;left:-28px;top:6px;width:12px;height:12px;border-radius:50%;background:currentColor}
+.timeline div+div::before{border-radius:2px}
+.note{font-size:13px;color:var(--muted);margin-top:24px;text-align:center}
+</style>
+</head>
+<body>
+<aside class="side">
+  <h1>Myto app prototype</h1>
+  <p>Throwaway, sample data. Spec: docs/16. Jump to a screen:</p>
+  <button data-go="home">Home</button><button data-go="trails">Trails</button><button data-go="trail">Trail detail</button>
+  <button data-go="record">Record (ready)</button><button data-go="live">Record (live)</button><button data-go="story">Ride story</button>
+  <button data-go="clubs">Clubs</button><button data-go="you">You</button>
+</aside>
+
+<div class="phone" id="phone">
+  <div class="status"></div>
+
+  <!-- HOME -->
+  <section class="screen on" id="home" aria-label="Home">
+    <div class="hdr"><span class="wordmark">MYTO</span><button class="ico" aria-label="Notifications"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4"/></svg></button></div>
+    <div class="card hero">
+      <div class="label">Next ride · Sat 1 Nov</div>
+      <div class="big">Granite Ridge Loop</div>
+      <span class="chip good">✓ Open</span> <span class="chip unk">Verified 12 Oct</span>
+      <div class="bar" role="progressbar" aria-valuenow="7" aria-valuemax="12" aria-label="Packed"><i style="width:58%"></i></div>
+      <div style="display:flex;justify-content:space-between" class="label"><span>7 of 12 packed</span><span>Offline pack ready</span></div>
+    </div>
+    <button class="btn" data-go="record">Start ride <span aria-hidden="true">→</span></button>
+    <div class="banner"><div><small>Offline pack</small><b>Teak Hollow Track is out of date.<br>Tap to update</b></div><span class="ico" aria-hidden="true">⚠</span></div>
+
+    <h2 class="section">Due soon</h2>
+    <div class="card" style="padding:4px 20px">
+      <div class="row"><span>Charge action camera</span><span class="label mono">Tonight</span></div>
+      <div class="row"><span>Chain lube due</span><span class="label mono">in 120 km</span></div>
+      <div class="row"><span>PUC expires</span><span class="label mono">14 Nov</span></div>
+    </div>
+
+    <h2 class="section">Near you</h2>
+    <div class="hscroll">
+      <button class="tile" data-go="trail"><span class="art" data-art="0" data-tint="sand" style="height:120px"></span><div class="body"><div class="num mono">42 km</div><div class="label">Granite Ridge Loop</div></div></button>
+      <button class="tile" data-go="trail"><span class="art" data-art="1" data-tint="sage" style="height:120px"></span><div class="body"><div class="num mono">18 km</div><div class="label">Teak Hollow Track</div></div></button>
+      <button class="tile" data-go="trail"><span class="art" data-art="2" data-tint="clay" style="height:120px"></span><div class="body"><div class="num mono">67 km</div><div class="label">Mist Valley Road</div></div></button>
+    </div>
+
+    <h2 class="section">Your latest ride</h2>
+    <div class="card" style="padding:0;overflow:hidden">
+      <span class="art" data-art="3" data-tint="sky" style="height:150px"></span>
+      <div style="padding:20px">
+        <div class="stats"><div><div class="n mono">2h 14m</div><div class="l">Duration</div></div><div><div class="n mono">58 km</div><div class="l">Distance</div></div><div><div class="n mono">640 m</div><div class="l">Climb</div></div></div>
+      </div>
+    </div>
+    <button class="btn soft" data-go="story">View ride story <span aria-hidden="true">→</span></button>
+    <button class="btn soft" data-go="you">View all rides <span aria-hidden="true">→</span></button>
+    <p class="note">Sample data</p>
+  </section>
+
+  <!-- TRAILS -->
+  <section class="screen" id="trails" aria-label="Trails">
+    <h1 class="title">Trails</h1>
+    <div class="search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Find trails, places, regions</div>
+    <div class="chips"><button class="chip on">Near me</button><button class="chip">Open now</button><button class="chip">Saved</button><button class="chip">Offline</button><button class="chip">Filters</button></div>
+    <button class="trow" data-go="trail"><span class="art" data-art="0" data-tint="sand"></span><span><b>Granite Ridge Loop</b><span class="meta mono">42 km · 3h · Moderate</span><span class="chip good">✓ Open</span></span></button>
+    <button class="trow" data-go="trail"><span class="art" data-art="1" data-tint="sage"></span><span><b>Teak Hollow Track</b><span class="meta mono">18 km · 1h 20m · Easy</span><span class="chip caution">▲ Permit needed</span></span></button>
+    <button class="trow" data-go="trail"><span class="art" data-art="2" data-tint="clay"></span><span><b>Mist Valley Road</b><span class="meta mono">67 km · 4h 30m · Hard</span><span class="chip unk">? Not verified</span></span></button>
+    <button class="trow" data-go="trail"><span class="art" data-art="4" data-tint="sky"></span><span><b>Quarry Lake Circuit</b><span class="meta mono">26 km · 2h · Easy</span><span class="chip stop">✕ Closed</span></span></button>
+    <p class="note">Sample data. Status always shows a symbol and a word.</p>
+  </section>
+
+  <!-- TRAIL DETAIL -->
+  <section class="screen" id="trail" aria-label="Trail detail">
+    <button class="back" data-go="trails"><span aria-hidden="true">←</span> Trails</button>
+    <div class="card" style="padding:0;overflow:hidden"><span class="art" data-art="0" data-tint="sand" style="height:170px"></span></div>
+    <h1 class="title" style="margin-bottom:8px;margin-top:20px">Granite Ridge Loop</h1>
+    <p class="label mono" style="margin-bottom:20px">42 km · 3h · Moderate · 640 m climb</p>
+    <div class="card" style="padding:4px 20px">
+      <div class="row"><span class="label">Access</span><span class="chip good">✓ Open to riders</span></div>
+      <div class="row"><span class="label">Condition</span><span class="chip caution">▲ Muddy after rain</span></div>
+      <div class="row"><span class="label">Verified</span><span class="mono">12 Oct 2026</span></div>
+    </div>
+    <button class="btn soft" style="margin-top:12px">Download for offline <span class="mono label">86 MB</span></button>
+    <button class="btn soft">Send to Google Maps <span aria-hidden="true">→</span></button>
+    <button class="btn center" style="margin-top:12px" data-go="record">Ride this trail</button>
+  </section>
+
+  <!-- RECORD (ready) -->
+  <section class="screen" id="record" aria-label="Record">
+    <h1 class="title">Ready to ride?</h1>
+    <div class="card" style="padding:4px 20px">
+      <div class="row"><span>GPS lock</span><span class="chip good">✓ Good</span></div>
+      <div class="row"><span>Battery</span><span class="chip good">✓ 82%</span></div>
+      <div class="row"><span>Offline pack</span><span class="chip good">✓ Ready</span></div>
+      <div class="row"><span>Background recording</span><span class="chip caution">▲ Fix in settings</span></div>
+    </div>
+    <h2 class="section">Route</h2>
+    <button class="trow" style="margin:0"><span class="art" data-art="0" data-tint="sand"></span><span><b>Granite Ridge Loop</b><span class="meta mono">42 km · from Home</span></span></button>
+    <p class="label" style="margin:16px 4px">Hydration reminder every 25 min · Check-in by 5:00 pm</p>
+    <button class="btn center" style="min-height:72px;font-size:20px;background:var(--accent);margin-top:8px" data-go="live">Start ride</button>
+  </section>
+
+  <!-- RECORD (live) -->
+  <section class="screen live" id="live" aria-label="Recording">
+    <div class="hdr"><span class="label"><span class="dot"></span>Recording</span><span class="label mono">Battery 81%</span></div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="label">Distance</div>
+      <div class="num mono"><span id="dist">12.4</span><span class="label" style="font-size:24px"> km</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px"><div><div class="label">Moving time</div><div class="sec mono" id="clock">0:38</div></div><div><div class="label">Speed</div><div class="sec mono">46</div></div></div>
+    </div>
+    <div class="map" style="height:150px;margin-bottom:12px"><span class="art" data-art="3" data-tint="dark" style="height:150px"></span></div>
+    <div class="label" style="text-align:center;margin-bottom:12px">On route · next turn in 1.2 km</div>
+    <div class="big3">
+      <button><span aria-hidden="true" style="font-size:24px">🎙</span>Note</button>
+      <button><span aria-hidden="true" style="font-size:24px">⚑</span>Waypoint</button>
+      <button class="stopb hold" id="stop"><i></i><span aria-hidden="true" style="font-size:24px;position:relative">■</span><span style="position:relative">Hold to stop</span></button>
+    </div>
+    <button class="sos">Hold for SOS</button>
+    <p class="note">Hydration cue at 0:50 · plays through headset when connected</p>
+  </section>
+
+  <!-- RIDE STORY -->
+  <section class="screen" id="story" aria-label="Ride story">
+    <button class="back" data-go="home"><span aria-hidden="true">←</span> Ride story</button>
+    <h1 class="title">Sat morning loop</h1>
+    <div class="hl"><div style="font-size:16px">You rode</div><div class="big mono">58.2 km</div><div style="font-size:16px;margin-top:4px">in 2h 14m, 640 m of climb</div></div>
+    <div class="card" style="padding:0;overflow:hidden;margin-top:12px"><span class="art" data-art="3" data-tint="dark" style="height:170px"></span></div>
+    <h2 class="section">Highlights</h2>
+    <div class="hscroll">
+      <div class="tile"><span class="art" data-art="1" data-tint="sage" style="height:110px"></span><div class="body"><div class="num mono">18 min</div><div class="label">Longest stop</div></div></div>
+      <div class="tile"><span class="art" data-art="2" data-tint="sand" style="height:110px"></span><div class="body"><div class="num mono">11.2 km</div><div class="label">Best stretch</div></div></div>
+      <div class="tile"><span class="art" data-art="4" data-tint="clay" style="height:110px"></span><div class="body"><div class="num mono">3</div><div class="label">Waypoints</div></div></div>
+    </div>
+    <div class="card" style="margin-top:20px"><div class="timeline"><div><b style="font-weight:500">Start</b><div class="label" style="margin:0">Hebbal gate · 7:12 am</div></div><div><b style="font-weight:500">End</b><div class="label" style="margin:0">Hebbal gate · 9:26 am</div></div></div></div>
+    <button class="btn soft" style="margin-top:12px">Trim start and end <span aria-hidden="true">→</span></button>
+    <button class="btn" data-go="home" style="margin-top:12px">Save ride</button>
+    <button class="btn soft center" data-go="home" style="color:#ec8272;background:#242422">Discard</button>
+  </section>
+
+  <!-- CLUBS -->
+  <section class="screen" id="clubs" aria-label="Clubs">
+    <h1 class="title">Clubs</h1>
+    <div class="card hero"><div class="label">Sunday ride · 2 Nov</div><div class="big" style="font-size:28px">Ridge sunrise run</div><p class="label" style="margin-bottom:16px">Dawn Riders · 9 going · 3 maybe</p>
+      <div style="display:flex;gap:8px"><button class="btn center" style="flex:1">Going</button><button class="btn soft center" style="flex:1;background:#0000000d">Maybe</button></div></div>
+    <h2 class="section">Your clubs</h2>
+    <div class="card" style="padding:4px 20px">
+      <button class="row" style="width:100%"><span>Dawn Riders</span><span class="label mono">24 members →</span></button>
+      <button class="row" style="width:100%"><span>Weekend Gravel</span><span class="label mono">11 members →</span></button>
+    </div>
+    <button class="btn soft" style="margin-top:12px">Find a club <span aria-hidden="true">→</span></button>
+    <p class="note">Sample data. Live location and chat are not in v1.</p>
+  </section>
+
+  <!-- YOU -->
+  <section class="screen" id="you" aria-label="You">
+    <h1 class="title">You</h1>
+    <div class="card hero" style="display:flex;justify-content:space-between;align-items:flex-end">
+      <div><div class="label">Ridden with Myto</div><div class="mono" style="font-size:40px;font-weight:500;letter-spacing:-.02em;margin-top:4px">1 284 km</div></div><span class="label mono">23 rides</span>
+    </div>
+    <div class="card" style="padding:4px 20px;margin-top:12px">
+      <button class="row" style="width:100%" data-go="story"><span>Ride log</span><span aria-hidden="true">→</span></button>
+      <button class="row" style="width:100%"><span>Notes and recordings</span><span aria-hidden="true">→</span></button>
+      <button class="row" style="width:100%"><span>Garage</span><span class="label">1 bike</span></button>
+      <button class="row" style="width:100%"><span>Safety contact</span><span class="chip good">✓ Set</span></button>
+      <button class="row" style="width:100%"><span>Offline packs</span><span class="label mono">212 MB</span></button>
+      <button class="row" style="width:100%"><span>Settings and privacy</span><span aria-hidden="true">→</span></button>
+    </div>
+    <button class="btn soft center" style="margin-top:12px;color:var(--stop)">Erase all my data</button>
+    <p class="note">The app does not replace emergency services.</p>
+  </section>
+
+  <div class="ridebar" id="ridebar"><span><span class="dot"></span><span class="mono" id="rb">Riding 0:38 · 12.4 km</span></span><button data-go="live" style="font-weight:500">Open</button></div>
+
+  <nav class="tabbar" id="tabbar" aria-label="Main">
+    <button class="tab" data-go="home" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/></svg>Home</button>
+    <button class="tab" data-go="trails"><svg viewBox="0 0 24 24"><path d="M4 19c4-1 3-6 7-6s3-6 9-8M4 5v0"/><circle cx="5" cy="19" r="1.5"/><circle cx="19" cy="5" r="1.5"/></svg>Trails</button>
+    <button class="rec" data-go="record" aria-label="Record a ride"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg>Record</button>
+    <button class="tab" data-go="clubs"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5M15 15c3-.5 6 1 6 4"/></svg>Clubs</button>
+    <button class="tab" data-go="you"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>You</button>
+  </nav>
+</div>
+
+<script>
+const paths=[
+ "M10 90 C40 90 40 50 70 50 S110 90 140 70 S160 20 190 30",
+ "M10 30 C50 10 60 60 90 50 S120 90 150 60 S180 40 190 80",
+ "M10 80 L50 30 L80 70 L120 20 L150 60 L190 40",
+ "M15 85 C30 40 70 95 100 55 S150 20 185 45",
+ "M20 60 C20 20 70 20 70 60 S120 100 120 60 S170 20 180 50"];
+const tints={sand:'#e8dccb',sage:'#cfe0c8',clay:'#efcfc2',sky:'#cfdde8',dark:'#232321'};
+document.querySelectorAll('[data-art]').forEach(el=>{
+  const d=paths[+el.dataset.art%paths.length],bg=tints[el.dataset.tint],dk=el.dataset.tint==='dark';
+  el.innerHTML=`<svg viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Route shape"><rect width="200" height="110" fill="${bg}"/><path d="${d}" fill="none" stroke="${dk?'#8fbbdc':'#1a1a1a'}" stroke-opacity="${dk?1:.55}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+});
+const phone=document.getElementById('phone'),tabbar=document.getElementById('tabbar'),ridebar=document.getElementById('ridebar');
+let riding=false;
+const dark=new Set(['live','story']), noBar=new Set(['live']);
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
+  phone.classList.toggle('dark',dark.has(id));
+  tabbar.style.display=noBar.has(id)?'none':'flex';
+  ridebar.style.display=(riding&&!noBar.has(id))?'flex':'none';
+  const map={home:'home',trails:'trails',trail:'trails',record:null,live:null,story:'home',clubs:'clubs',you:'you'};
+  tabbar.querySelectorAll('.tab').forEach(t=>t.toggleAttribute('aria-current',t.dataset.go===map[id]));
+  tabbar.querySelectorAll('.tab[aria-current]').forEach(t=>t.setAttribute('aria-current','page'));
+  if(id==='live')riding=true;
+  if(id==='story')riding=false;
+  document.getElementById(id).scrollTop=0;
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go)});
+// hold to stop (1 s), as the live screen requires
+const stop=document.getElementById('stop'),fill=stop.querySelector('i');let t0=0,raf;
+function tick(){const p=Math.min((performance.now()-t0)/1000,1);fill.style.width=p*100+'%';if(p>=1){riding=false;fill.style.width=0;go('story')}else raf=requestAnimationFrame(tick)}
+stop.addEventListener('pointerdown',()=>{t0=performance.now();raf=requestAnimationFrame(tick)});
+['pointerup','pointerleave'].forEach(ev=>stop.addEventListener(ev,()=>{cancelAnimationFrame(raf);fill.style.width=0}));
+function fit(){phone.style.zoom=Math.min(1,(innerHeight-48)/844)}
+addEventListener('resize',fit);fit();
+go('home');
+</script>
+</body>
+</html>
