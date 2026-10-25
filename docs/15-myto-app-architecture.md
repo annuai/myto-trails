@@ -2,6 +2,8 @@
 
 One phone app, **Myto**, that holds everything a rider does around a ride: find a trail, plan the trip, ride it, record it, keep notes, and ride with a club. Moto Trails stays the website and the system of record for trail data; the app is its most important client. This document extends [14 — Platform contract](14-platform-contract.md) (which covers the API, GPX export, recording and Navi) from "a recording companion" to the full app. Planning only; nothing here is built. Items marked **(open)** need a decision or a fact we do not have. Prices, quotas and store rules are not verified here.
 
+> **Update (25 Oct 2026):** the navigation in §1 and §4.2 (five tabs) and the framework detail in §4.1 are superseded by [16 — The Myto app: UI, navigation and tech stack](16-myto-app-ui.md): four tabs (Home, Trails, Clubs, You) plus a raised Record button. The rest of this document still stands.
+
 ## 1. What the app is for
 
 A rider's day has five phases. The app has one tab for each, so nothing needs a second app.
