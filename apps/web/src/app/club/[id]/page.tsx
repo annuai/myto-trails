@@ -3,12 +3,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import {
-  decideJoinAction, hidePostAction, leaveClubAction, postAction, removeMemberAction, requestJoinAction, respondAction, setRoleAction, withdrawJoinAction,
+  decideJoinAction, hidePostAction, leaveClubAction, postAction, removeMemberAction, requestJoinAction, respondAction, setCoverAction, setRoleAction, withdrawJoinAction,
 } from "@/features/club/actions";
 import { CLUB_NOTES } from "@/features/club/messages";
 import { requireUser } from "@/server/auth/session";
 import { getClub, listFeed, listJoinRequests, listMembers, type FeedPost } from "@/server/community/clubs";
 import { getSql } from "@/server/db/client";
+import { ImagePicker } from "@/features/media/ImagePicker";
+import { Avatar } from "@/ui/Avatar/Avatar";
+import { ClubCover } from "@/ui/ClubCover/ClubCover";
 import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 export const instant = false;
@@ -40,6 +43,20 @@ export default async function ClubDetailPage({ params, searchParams }: PageProps
   return (
     <section className="flex max-w-3xl flex-col gap-8 py-(--space-section)">
       <Link href="/club" className="text-sm underline underline-offset-4">All clubs</Link>
+      <ClubCover name={club.name} url={club.coverUrl} />
+      {isAdmin ? (
+        <details className="-mt-4">
+          <summary className="cursor-pointer text-sm font-medium underline underline-offset-4">Change cover image</summary>
+          <form action={setCoverAction} className="mt-3 flex max-w-md flex-col gap-3 rounded-3xl bg-card-cream p-5">
+            <input type="hidden" name="clubId" value={id} />
+            <ImagePicker name="mediaId" label="Cover image" hint="A wide photo works best. JPEG, PNG, WebP or AVIF, up to 10 MB." />
+            <div className="flex flex-wrap gap-3">
+              <SubmitButton className={primary}>Save cover</SubmitButton>
+              {club.coverUrl ? <SubmitButton name="remove" value="1" className={outline}>Remove cover</SubmitButton> : null}
+            </div>
+          </form>
+        </details>
+      ) : null}
       <div className="flex flex-col gap-2">
         <h1 className="display-md break-words">{club.name}</h1>
         <p className="text-sm text-muted">{club.memberCount} {club.memberCount === 1 ? "member" : "members"}{club.womenOnly ? " · Women only" : ""}</p>
@@ -122,7 +139,17 @@ export default async function ClubDetailPage({ params, searchParams }: PageProps
           <ul className="flex flex-col gap-2">
             {members.map((m) => (
               <li key={m.handle} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-card-cream px-4 py-3">
-                <span>{m.name}{m.role === "admin" ? <span className="ml-2 text-sm text-muted">Admin</span> : null}</span>
+                <span className="flex items-center gap-3">
+                  <Avatar name={m.name} url={m.avatarUrl} size={44} />
+                  <span className="flex flex-col">
+                    <span>{m.name}{m.role === "admin" ? <span className="ml-2 text-sm text-muted">Admin</span> : null}</span>
+                    {m.bike ? <span className="text-sm text-muted">{m.bike.name}{m.bike.modelYear ? ` · ${m.bike.modelYear}` : ""}</span> : null}
+                  </span>
+                  {m.bike?.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={m.bike.photoUrl} alt={`${m.name}'s ${m.bike.name}`} className="h-12 w-16 rounded-lg object-cover" />
+                  ) : null}
+                </span>
                 {isAdmin && m.handle !== club.myHandle ? (
                   <span className="flex gap-2">
                     <form action={setRoleAction}>

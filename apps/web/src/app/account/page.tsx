@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/server/auth/session";
 import { getMemberState } from "@/server/community/members";
+import { getAvatarUrl, getBike } from "@/server/community/profile";
 import { getSql } from "@/server/db/client";
-import { signOutAction, signOutEverywhereAction, updateNameAction, updatePrivacyAction } from "./actions";
+import { ImagePicker } from "@/features/media/ImagePicker";
+import { Avatar } from "@/ui/Avatar/Avatar";
+import { saveBikeAction, setAvatarAction, signOutAction, signOutEverywhereAction, updateNameAction, updatePrivacyAction } from "./actions";
 import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 export const instant = false;
@@ -12,7 +15,8 @@ export const metadata: Metadata = { title: "Account", robots: { index: false, fo
 export default async function AccountPage({ searchParams }: PageProps<"/account">) {
   const user = await requireUser("/account");
   const sp = await searchParams;
-  const member = await getMemberState(getSql(), user.id);
+  const sql = getSql();
+  const [member, avatarUrl, bike] = await Promise.all([getMemberState(sql, user.id), getAvatarUrl(sql, user.id), getBike(sql, user.id)]);
   return (
     <section className="flex flex-col gap-10 py-(--space-section)">
       <h1 className="font-display text-3xl leading-tight">Account</h1>
@@ -27,6 +31,41 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         {sp.saved ? <p role="status" className="text-sm font-medium text-status-good">Saved.</p> : null}
         {sp.error ? <p role="status" className="text-sm font-medium text-status-stop">Use 2 to 40 characters.</p> : null}
         <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save name</SubmitButton>
+      </form>
+      <form action={setAvatarAction} className="flex max-w-md flex-col gap-3">
+        <div className="flex items-center gap-4">
+          <Avatar name={user.displayName} url={avatarUrl} size={72} />
+          <h2 className="text-xl font-semibold">Profile picture</h2>
+        </div>
+        <ImagePicker name="mediaId" label="Choose a picture" hint="Shown next to your name in your clubs. JPEG, PNG, WebP or AVIF, up to 10 MB." />
+        {sp.avatar === "saved" ? <p role="status" className="text-sm font-medium text-status-good">Saved.</p> : null}
+        {sp.avatar === "error" ? <p role="status" className="text-sm font-medium text-status-stop">Choose a picture and wait for it to finish uploading.</p> : null}
+        <div className="flex flex-wrap gap-3">
+          <SubmitButton className="min-h-12 rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save picture</SubmitButton>
+          {avatarUrl ? <SubmitButton name="remove" value="1" className="min-h-12 rounded-lg border border-foreground px-5 text-sm font-medium">Remove picture</SubmitButton> : null}
+        </div>
+      </form>
+      <form action={saveBikeAction} className="flex max-w-md flex-col gap-3">
+        <h2 className="text-xl font-semibold">Your bike</h2>
+        <p className="text-sm text-muted">Shown to the members of your clubs, and no one else.</p>
+        <label htmlFor="bike-name" className="text-sm font-medium">Bike name</label>
+        <input id="bike-name" name="name" defaultValue={bike?.name ?? ""} minLength={2} maxLength={60} required className="min-h-12 rounded-lg border border-foreground/40 bg-background px-3" />
+        <label htmlFor="bike-year" className="text-sm font-medium">Model year <span className="text-muted">(optional)</span></label>
+        <input id="bike-year" name="modelYear" type="number" inputMode="numeric" min={1900} max={2100} defaultValue={bike?.modelYear ?? ""} className="min-h-12 rounded-lg border border-foreground/40 bg-background px-3" />
+        {bike?.photoUrl ? (
+          <div className="flex flex-col gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={bike.photoUrl} alt="Your bike" className="h-28 w-auto max-w-full self-start rounded-2xl object-cover" />
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="removePhoto" /> Remove this photo</label>
+          </div>
+        ) : null}
+        <ImagePicker name="photoMediaId" label={bike?.photoUrl ? "Replace the photo" : "Bike photo"} />
+        {sp.bike === "saved" ? <p role="status" className="text-sm font-medium text-status-good">Saved.</p> : null}
+        {sp.bike === "error" ? <p role="status" className="text-sm font-medium text-status-stop">Give the bike a name of 2 to 60 characters and a year between 1900 and 2100, or leave the year blank.</p> : null}
+        <div className="flex flex-wrap gap-3">
+          <SubmitButton className="min-h-12 rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save bike</SubmitButton>
+          {bike ? <SubmitButton name="remove" value="1" className="min-h-12 rounded-lg border border-foreground px-5 text-sm font-medium">Remove bike</SubmitButton> : null}
+        </div>
       </form>
       <form action={updatePrivacyAction} className="flex max-w-md flex-col gap-3">
         <fieldset className="flex flex-col gap-2">

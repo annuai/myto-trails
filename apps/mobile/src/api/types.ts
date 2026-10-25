@@ -21,3 +21,12 @@ export type SavedItem = { addedAt: string; trail: TrailSummary | null; unavailab
 
 /** The API sends [longitude, latitude]; the app uses {lat, lng}. */
 export const toLatLng = (line: [number, number][]): LatLng[] => line.map(([lng, lat]) => ({ lat, lng }));
+
+export type Bike = { name: string; modelYear: number | null; photoUrl: string | null };
+export type Me = { displayName: string; email: string; avatarUrl: string | null; bike: Bike | null };
+export type ClubSummary = {
+  clubId: string; name: string; description: string; womenOnly: boolean; memberCount: number;
+  role: 'admin' | 'member' | null; requested: boolean; coverUrl: string | null;
+};
+export type ClubMember = { handle: string; name: string; role: 'admin' | 'member'; avatarUrl: string | null; bike: Bike | null };
+export type ClubDetail = { club: ClubSummary; members: ClubMember[] | null };

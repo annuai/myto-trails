@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { getSiteUrl } from "@/lib/site";
 import { getCurrentUser, getEmailSender } from "@/server/auth/session";
-import { clubAdminIds, createClub, decideJoinRequest, hidePost, leaveClub, postToClub, removeMember, requestJoin, respondToRide, setMemberRole, withdrawJoinRequest } from "@/server/community/clubs";
+import { clubAdminIds, createClub, decideJoinRequest, hidePost, leaveClub, postToClub, removeMember, requestJoin, respondToRide, setClubCover, setMemberRole, withdrawJoinRequest } from "@/server/community/clubs";
 import { joinDecisionEmail, joinRequestEmail } from "@/server/community/emails";
 import { getSql } from "@/server/db/client";
 import { sendToUser } from "@/server/moderation/notify";
@@ -108,4 +108,14 @@ export async function hidePostAction(formData: FormData): Promise<void> {
   const user = await member(clubPath(id));
   const r = await hidePost(getSql(), { userId: user.id, postId: text(formData, "postId") });
   to(id, r.ok ? "hidden" : `err_${r.reason}`, "#feed");
+}
+
+export async function setCoverAction(formData: FormData): Promise<void> {
+  const id = text(formData, "clubId");
+  const user = await member(clubPath(id));
+  const mediaId = text(formData, "mediaId");
+  const remove = formData.get("remove") === "1";
+  if (!remove && !mediaId) to(id, "cover_invalid");
+  const r = await setClubCover(getSql(), { userId: user.id, clubId: id, mediaId: remove ? null : mediaId });
+  to(id, r.ok ? "cover_saved" : r.reason === "not_admin" ? "err_not_admin" : "cover_invalid");
 }

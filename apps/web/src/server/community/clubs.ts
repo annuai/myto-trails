@@ -3,6 +3,7 @@ import { CLUB_CREATES_PER_DAY, CLUB_POSTS_PER_HOUR, JOIN_PHONE_RETENTION_DAYS, J
 import { cleanBody, LINK } from "./comments";
 import { decryptSecret, encryptSecret } from "./crypto-box";
 import { isMember } from "./members";
+import { ownsMedia, pickVariant, type Bike } from "./profile";
 import { normalizePhone } from "./questions";
 
 type Db = Sql | TransactionSql;
@@ -25,6 +26,16 @@ async function roleIn(sql: Db, clubId: string, userId: string): Promise<"admin" 
 async function isWoman(sql: Db, userId: string): Promise<boolean> {
   const [u] = await sql`select is_woman from app_user where id = ${userId}`;
   return u?.is_woman === true;
+}
+
+/** Only a club admin can change the cover. Pass null to go back to the placeholder. */
+export async function setClubCover(sql: Sql, i: { userId: string; clubId: string; mediaId: string | null }): Promise<{ ok: true } | { ok: false; reason: "not_found" | "not_admin" | "invalid" }> {
+  const club = await findClub(sql, i.clubId);
+  if (!club) return { ok: false, reason: "not_found" };
+  if ((await roleIn(sql, club.id, i.userId)) !== "admin") return { ok: false, reason: "not_admin" };
+  if (i.mediaId !== null && !(await ownsMedia(sql, i.userId, i.mediaId))) return { ok: false, reason: "invalid" };
+  await sql`update club set cover_media_id = ${i.mediaId} where id = ${club.id}`;
+  return { ok: true };
 }
 
 // ---- creating and browsing ---------------------------------------------------------------------------------
@@ -54,18 +65,19 @@ export async function createClub(
   }
 }
 
-export type ClubSummary = { clubId: string; name: string; description: string; womenOnly: boolean; memberCount: number; role: "admin" | "member" | null; requested: boolean };
+export type ClubSummary = { clubId: string; name: string; description: string; womenOnly: boolean; memberCount: number; role: "admin" | "member" | null; requested: boolean; coverUrl: string | null };
 
 /** Every club, for declared members only; anyone else gets nothing. */
 export async function listClubs(sql: Sql, userId: string): Promise<ClubSummary[]> {
   if (!(await isMember(sql, userId))) return [];
   const rows = await sql`
     select c.public_id, c.name, c.description, c.women_only,
+      (select cm.variants from media cm where cm.id = c.cover_media_id) as cover,
       (select count(*)::int from club_member m where m.club_id = c.id) as members,
       (select m.role from club_member m where m.club_id = c.id and m.user_id = ${userId}) as role,
       exists (select 1 from club_join_request r where r.club_id = c.id and r.user_id = ${userId} and r.status = 'pending') as requested
     from club c where c.archived_at is null order by c.created_at desc limit 100`;
-  return rows.map((r) => ({ clubId: r.public_id, name: r.name, description: r.description, womenOnly: r.women_only, memberCount: r.members, role: r.role, requested: r.requested }));
+  return rows.map((r) => ({ clubId: r.public_id, name: r.name, description: r.description, womenOnly: r.women_only, memberCount: r.members, role: r.role, requested: r.requested, coverUrl: pickVariant(r.cover, 800) }));
 }
 
 export type ClubView = ClubSummary & { myHandle: string };
@@ -74,19 +86,30 @@ export async function getClub(sql: Sql, i: { userId: string; clubId: string }): 
   if (!(await isMember(sql, i.userId)) || !UUID.test(i.clubId)) return null;
   const [r] = await sql`
     select c.public_id, c.name, c.description, c.women_only, u.public_id as my_handle,
+      (select cm.variants from media cm where cm.id = c.cover_media_id) as cover,
       (select count(*)::int from club_member m where m.club_id = c.id) as members,
       (select m.role from club_member m where m.club_id = c.id and m.user_id = ${i.userId}) as role,
       exists (select 1 from club_join_request r where r.club_id = c.id and r.user_id = ${i.userId} and r.status = 'pending') as requested
     from club c, app_user u where c.public_id = ${i.clubId} and c.archived_at is null and u.id = ${i.userId}`;
-  return r ? { clubId: r.public_id, name: r.name, description: r.description, womenOnly: r.women_only, memberCount: r.members, role: r.role, requested: r.requested, myHandle: r.my_handle } : null;
+  return r ? { clubId: r.public_id, name: r.name, description: r.description, womenOnly: r.women_only, memberCount: r.members, role: r.role, requested: r.requested, coverUrl: pickVariant(r.cover, 1200), myHandle: r.my_handle } : null;
 }
 
-export type ClubMember = { handle: string; name: string; role: "admin" | "member" };
+export type ClubMember = { handle: string; name: string; role: "admin" | "member"; avatarUrl: string | null; bike: Bike | null };
 export async function listMembers(sql: Sql, i: { userId: string; clubId: string }): Promise<ClubMember[] | null> {
   const club = await findClub(sql, i.clubId);
   if (!club || !(await roleIn(sql, club.id, i.userId))) return null;
-  const rows = await sql`select u.public_id, u.display_name, m.role from club_member m join app_user u on u.id = m.user_id where m.club_id = ${club.id} and u.status = 'active' order by m.role, m.joined_at`;
-  return rows.map((r) => ({ handle: r.public_id, name: r.display_name, role: r.role }));
+  // Bikes are shown to members of this club only: this function has already checked that the caller is one.
+  const rows = await sql`
+    select u.public_id, u.display_name, m.role, av.variants as avatar, b.name as bike_name, b.model_year, bp.variants as bike_photo
+    from club_member m join app_user u on u.id = m.user_id
+    left join media av on av.id = u.avatar_media_id
+    left join rider_bike b on b.user_id = u.id
+    left join media bp on bp.id = b.photo_media_id
+    where m.club_id = ${club.id} and u.status = 'active' order by m.role, m.joined_at`;
+  return rows.map((r) => ({
+    handle: r.public_id, name: r.display_name, role: r.role, avatarUrl: pickVariant(r.avatar, 200),
+    bike: r.bike_name ? { name: r.bike_name, modelYear: r.model_year, photoUrl: pickVariant(r.bike_photo, 400) } : null,
+  }));
 }
 
 // ---- join requests -------------------------------------------------------------------------------------------
