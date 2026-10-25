@@ -1,0 +1,104 @@
+import { ScrollView, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Bell, Camera, ClipboardList, Route as RouteIcon, UserRound } from 'lucide-react-native';
+import { toTrailLike } from '@/api/status';
+import { useTrailSearch } from '@/api/useApi';
+import { useTrailStore } from '@/store/trails';
+import { dueInfo, isDueSoon } from '@/lib/todos';
+import { duration, km } from '@/lib/format';
+import { useProfile } from '@/store/profile';
+import { totalKm, useRides } from '@/store/rides';
+import { useTodos } from '@/store/todos';
+import { Banner } from '@/ui/Banner';
+import { Button } from '@/ui/Button';
+import { Card } from '@/ui/Card';
+import { StatusChip } from '@/ui/Chip';
+import { EmptyState } from '@/ui/EmptyState';
+import { BrandHeader, SectionTitle } from '@/ui/Header';
+import { HeroCard, ProgressBar } from '@/ui/HeroCard';
+import { ListCard } from '@/ui/ListCard';
+import { Row } from '@/ui/ListCard';
+import { RouteArt } from '@/ui/RouteArt';
+import { Screen } from '@/ui/Screen';
+import { Stat } from '@/ui/Stat';
+import { Text } from '@/ui/Text';
+import { TrailTile } from '@/ui/TrailRow';
+
+export default function Home() {
+  const router = useRouter();
+  const rides = useRides((s) => s.rides);
+  const nextTrip = useTrailStore((s) => s.nextTrip);
+  const near = useTrailSearch('');
+  const km_ = totalKm(rides);
+  const todos = useTodos((s) => s.todos);
+  const contacts = useProfile((s) => s.contacts);
+  const trail = nextTrip;
+  const packs = todos.filter((t) => t.category === 'pack');
+  const dues = todos.map((t) => ({ t, d: dueInfo(t, km_) })).filter(({ d }) => d.state !== 'done').sort((a, b) => a.d.sortKey - b.d.sortKey);
+  const overdue = dues.filter(({ d }) => d.state === 'overdue');
+  const latest = rides[0];
+
+  return (
+    <Screen tabs>
+      <BrandHeader />
+      {trail ? (
+        <HeroCard eyebrow={trail.date ? `Next ride · ${trail.date}` : 'Next ride'} title={trail.name}>
+          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+            <StatusChip status={trail.status} label={trail.statusLabel} />
+          </View>
+          {packs.length ? (
+            <View style={{ gap: 8 }}>
+              <ProgressBar value={packs.filter((p) => p.done).length} max={packs.length} label="Packed" />
+              <Text variant="label" tone="muted">{packs.filter((p) => p.done).length} of {packs.length} packed</Text>
+            </View>
+          ) : null}
+        </HeroCard>
+      ) : (
+        <HeroCard eyebrow="Next ride" title="Plan your next ride">
+          <Text variant="label" tone="muted">Pick a trail, set a date, and it shows up here with your checklist.</Text>
+        </HeroCard>
+      )}
+      <View style={{ marginTop: 12, gap: 12 }}>
+        <Button label={trail ? 'Start ride' : 'Find a trail'} arrow onPress={() => router.push(trail ? '/ride' : '/trails')} />
+        {overdue.length ? (
+          <Banner eyebrow="Needs attention" title={overdue.length === 1 ? `${overdue[0].t.title}: ${overdue[0].d.text.toLowerCase()}` : `${overdue.length} things are overdue`} onPress={() => router.push('/todos')} />
+        ) : contacts.length === 0 ? (
+          <Banner eyebrow="Safety" title="Add an emergency contact so SOS can reach someone" onPress={() => router.push('/documents/contacts')} />
+        ) : null}
+      </View>
+
+      <SectionTitle action="See all" onAction={() => router.push('/todos')}>Due soon</SectionTitle>
+      {dues.length ? (
+        <ListCard>
+          {dues.slice(0, 3).map(({ t, d }) => (
+            <Row key={t.id} icon={t.category === 'pack' ? Camera : ClipboardList} label={t.title} value={d.text.replace('Due in ', 'in ').replace('Due ', '')} onPress={() => router.push('/todos')} chevron={false} />
+          ))}
+        </ListCard>
+      ) : <EmptyState icon={ClipboardList} title="Nothing due" body="Add your PUC, insurance or a chain lube reminder." />}
+
+      <SectionTitle>Near you</SectionTitle>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }} style={{ marginHorizontal: -20, paddingLeft: 20 }}>
+        {(near.data?.items ?? []).slice(0, 8).map((t) => <TrailTile key={t.slug} trail={toTrailLike(t)} onPress={() => router.push(`/trail/${t.slug}`)} />)}
+        {!near.data ? <Text variant="label" tone="muted">{near.error ?? 'Loading trails…'}</Text> : null}
+      </ScrollView>
+
+      <SectionTitle>Your latest ride</SectionTitle>
+      {latest ? (
+        <Card padded={false}>
+          <RouteArt points={latest.points} tint="sky" height={160} />
+          <View style={{ padding: 20, gap: 16 }}>
+            <Text variant="bodyMedium">{latest.name}{latest.sample ? ' (sample)' : ''}</Text>
+            <View style={{ flexDirection: 'row' }}>
+              <Stat value={duration(latest.durationSec)} label="Duration" /><Stat value={`${km(latest.distanceKm)} km`} label="Distance" /><Stat value={`${latest.maxKmh}`} label="Top km/h" />
+            </View>
+          </View>
+        </Card>
+      ) : <EmptyState icon={RouteIcon} title="No rides yet" body="Tap Record to log your first ride." />}
+      {latest ? <View style={{ marginTop: 12, gap: 12 }}>
+        <Button variant="soft" label="View ride story" arrow onPress={() => router.push(`/story/${latest.id}`)} />
+        <Button variant="soft" label="All rides" arrow onPress={() => router.push('/rides')} />
+      </View> : null}
+      <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: 24 }}>Clubs are sample data</Text>
+    </Screen>
+  );
+}

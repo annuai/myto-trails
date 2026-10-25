@@ -1,6 +1,6 @@
 # 16 — The Myto app: UI, navigation and tech stack
 
-Design for the phone app described in [15 — Myto app architecture](15-myto-app-architecture.md). **This document replaces doc 15's navigation (§1 five tabs, §4.2) and its framework choice detail (§4.1)**; everything else in doc 15 (sync, recording, privacy, backend, delivery) still stands. Planning only: nothing here is built except a throwaway click-through, [`prototype/myto-app.html`](prototype/myto-app.html) (sample data; open it in a browser). Choices marked **(my call)** were not decided by the owner. Items marked **(open)** need a decision or a real-device test.
+Design for the phone app described in [15 — Myto app architecture](15-myto-app-architecture.md). **This document replaces doc 15's navigation (§1 five tabs, §4.2) and its framework choice detail (§4.1)**; everything else in doc 15 (sync, recording, privacy, backend, delivery) still stands. The app is started in [`apps/mobile`](../apps/mobile/README.md) (Expo, runs on the web for testing; see its README for what is real and what is a stub). [`prototype/myto-app.html`](prototype/myto-app.html) is the earlier throwaway click-through. Choices marked **(my call)** were not decided by the owner. Items marked **(open)** need a decision or a real-device test.
 
 Sources: three design reviews run on 25 October 2026 (navigation and UX, tech stack, design system), the owner's six screenshots of the Ather app, and docs 03, 09, 14, 15. Library versions and prices were checked on the web on that date by the review; **recheck before the spike**.
 
@@ -16,11 +16,11 @@ One app for the whole of a ride: find a trail, get ready, ride and record, look 
 
 **Four tabs and one action:**
 
-`Home` · `Trails` · **Record** (raised centre button) · `Clubs` · `You`
+`Dash` · `Trails` · **Record** (raised centre button) · `Clubs` · `You`
 
 | Item | Job |
 |---|---|
-| **Home** | What is next. Next trip with packing progress and offline status, due-soon list, trails near you, latest ride |
+| **Dash** (motorcycle icon) | What is next. Next trip with packing progress and offline status, due-soon list, trails near you, latest ride |
 | **Trails** | Search, near me, filters, saved, offline packs; trail detail with access first |
 | **Record** | Get ready, start, ride. The most time-critical action, so the biggest target in the app |
 | **Clubs** | Clubs, ride plans, Going or Maybe. Plural, so it is not confused with the shop's "Club Myto" WhatsApp page (doc 15 §4.5) |
@@ -28,7 +28,7 @@ One app for the whole of a ride: find a trail, get ready, ride and record, look 
 
 **Why not the owner's four (Dashboard, GPX recorder, Trails, Club):** a combined Dashboard mixes history, planning and preparation, and is empty on day one; "GPX" is a file format, not a rider's job (label it Record); and settings, privacy, garage and safety would have no home. Doc 15 §10 needs a one-tap erase and a device list. **Decided by the owner, 25 October 2026: four tabs plus a raised Record button.**
 
-**Why not five tabs (doc 15):** a separate Plan tab is folded into Home (next trip and due-soon), which removes a tab without losing a feature.
+**Why not five tabs (doc 15):** a separate Plan tab is folded into Dash (next trip and due-soon), which removes a tab without losing a feature.
 
 **Rules**
 - While recording, the live screen is full screen with **no tab bar**. Elsewhere, a 56 px **ride bar** sits above the tab bar (recording dot, time, distance, Open). Reopening the app during a ride lands on the live screen.
@@ -154,3 +154,21 @@ Also in v1, not yet drawn: offline packs list, plan trip and checklist editor, s
 ## 10. Build order
 
 Per doc 15 §12, with Home as a stub in S1 (saved trails, near you) that gains cards as modules arrive: **S0** spike → **S1** shell, Home stub, Trails, offline pack → **S2** checklists and reminders on Home → **S3** Record, Ride story, notes, waypoints → **S4** Clubs and push → **S5** garage and fuller safety. The Expo app begins after the S0 gate; the prototype is for design review only and will be discarded.
+
+## 11. Added after the first build (26 October 2026)
+
+- **Documents and emergency** (You tab): driving licence, vehicle with registration, insurance and PUC, emergency contacts (one main contact, call button), blood group and allergies. Expiry dates create reminders in the to-do list. Stored on the device only for now; move to secure storage and an erase path (already in You) before release. Photos of documents are not built.
+- **To-do list:** add and remove, common items with a date picker (PUC, insurance, licence, camera, first-aid), or write your own. **Service items** (chain lube, chain clean, engine oil, full service, tyre pressure) are due "after N km or M months, whichever comes first". Myto only knows kilometres recorded in the app, so the text says "about", the date limit always holds, and the circular-arrow button restarts the count after the job is done. Suggested intervals are starting points and editable.
+- **Ride story to Trails:** Upload builds a GPX (with waypoints), lets the rider name it, set difficulty and access, and trim the first and last 0, 200 or 500 m. It is sent as a draft submission for moderation (doc 14 §5); until sign-in exists it is queued on the device and says so.
+- **Icons:** Lucide (ISC licence), through one `Icon` component. **Logo:** one `Logo` component, dark on light screens and white on dark ones; the supplied file is 91×42 px, so a vector (SVG) version is needed for large sizes and the store listing.
+- **Ready-to-ride checks** now use real data: licence, insurance, PUC, emergency contact, overdue to-dos, offline pack of the next trip.
+
+## 12. Connected to the website (26 October 2026)
+
+**No new database.** The app never connects to Supabase. It calls the website's `/api/v1`, which reads the existing trails database with row-level security and public DTOs; the service key and connection string stay on the server. The only database change is one table, `app_auth_code` (migration 0019), for one-time sign-in codes.
+
+- **Sign-in** is the website's email link plus a PKCE code exchange for a device token ([ADR 0007](adr/0007-app-sign-in-through-the-website.md)). Tokens are listed and revocable under Account, Connected devices.
+- **Trails** (list, search, detail, route line, photos, safety notes), **Saved** (`/me/saved`) and **ride upload** use the real endpoints. Upload runs the same steps as the website's submit form: draft, GPX upload, route, basics, route, details, access, review, submit. Moderators review it; it is never published automatically, and a recording never creates verified access.
+- **Offline copy** now saves the trail's details, access and route on the device. Map tiles still need a connection.
+- **Maps** are OpenStreetMap through MapLibre: `maplibre-gl` in the web build (tested), `@maplibre/maplibre-react-native` on phones (written, **not yet run on a device**; needs a development build). The live recording screen draws the GPX track on the map as the ride happens and follows the rider; the ride story and trail page show the track or the published route. OpenStreetMap's public tile servers allow light use only and forbid bulk downloading, so set `EXPO_PUBLIC_MAP_STYLE_URL` to a tile provider or our own tiles before launch, and offline map packs need that too.
+- **Open:** the production web build needs its own origin in `APP_REDIRECT_URIS` and `API_CORS_ORIGINS`; the R2 bucket needs a CORS rule if a web build uploads straight to it (phones do not); the shop sign-in from doc 15 §4.5 is not part of this.

@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Myto",
+    "slug": "myto",
+    "scheme": "myto",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Myto records your ride's route while you ride."
+        }
+      ],
+      "@maplibre/maplibre-react-native"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/myto-logo.png"
+    },
+    "android": {
+      "package": "com.myto.app"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "name": "@moto-trails/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "web": "npm run assets:maplibre && expo start --web",
+    "android": "expo start --android",
+    "export:web": "npm run assets:maplibre && expo export --platform web",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "assets:maplibre": "node scripts/copy-maplibre-worker.mjs"
+  },
+  "dependencies": {
+    "@expo-google-fonts/geist": "^0.4.2",
+    "@expo-google-fonts/geist-mono": "^0.4.3",
+    "@expo/metro-runtime": "~58.0.15",
+    "@maplibre/maplibre-react-native": "^11.5.0",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "58.0.19",
+    "expo-constants": "~58.0.13",
+    "expo-crypto": "~58.0.7",
+    "expo-font": "~58.0.10",
+    "expo-linking": "~58.0.14",
+    "expo-location": "~58.0.19",
+    "expo-router": "~58.0.26",
+    "expo-secure-store": "~58.0.2",
+    "expo-splash-screen": "~58.0.11",
+    "expo-status-bar": "~58.0.4",
+    "expo-web-browser": "~58.0.6",
+    "lucide-react-native": "^1.61.0",
+    "maplibre-gl": "^6.15.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.0",
+    "react-native-gesture-handler": "~3.3.0",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-screens": "~4.30.0",
+    "react-native-svg": "15.16.0",
+    "react-native-web": "^0.21.4",
+    "zustand": "^5.0.16",
+    "@moto-trails/domain": "*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}
