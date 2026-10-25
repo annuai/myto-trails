@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Trail photos and videos live in the media bucket; the first three trails were committed before that.
+/public/photos/
+/public/videos/

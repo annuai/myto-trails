@@ -1,0 +1,152 @@
+{
+  "sample": false,
+  "slug": "manchanabele-dam",
+  "name": "Manchanabele Dam",
+  "summary": "A moderate off-road ride of about 37 km from Bengaluru to the Manchanabele Dam viewpoint, then out along smaller trails past several small water bodies. Easy to find, already mapped on Google Maps, and best in winter.",
+  "description": "Start at the Manchanabele Dam viewpoint, a grassy hilltop above the reservoir, then ride out along the smaller dirt trails around it. The trails pass several small water bodies and open fields, and you can park the bike and hike a little around the viewpoint. The way in is easy to find and the whole area is already mapped on Google Maps; the trails themselves are easy to follow, while the ground is moderate off-road riding.\n\nThe dam is built across the Arkavathy river near Manchanabele village in Magadi taluk, Ramanagara district (now being renamed Bengaluru South), roughly 40 km west of Bengaluru by road. The reservoir supplies drinking water to Magadi town, and the hills around it hold a few small lakes and open grassland. From the viewpoint the water is framed by forested hills, and the rock of Savandurga can be seen from around the reservoir.\n\nThe dam itself is closed to outsiders, so this is a ride to the viewpoint and the trails around it, not to the dam. Seasonal: winter is likely to be better, with October, November and December suggested. The ride was done on a wet, grey morning in late October, when the dirt was soft in places.\n\nThe published route is a trimmed copy of the contributor's recorded track: the first and last 2 km are left out to protect the start location, so the line is shorter than the full 37 km ride.",
+  "state": "karnataka",
+  "district": "Bengaluru South",
+  "nearestTown": "Magadi",
+  "startPoint": {
+    "lon": 77.34427,
+    "lat": 12.878434
+  },
+  "sensitivity": "standard",
+  "routeShape": "out_and_back",
+  "distanceKm": 37,
+  "estDurationMin": 90,
+  "difficulty": "moderate",
+  "terrain": [
+    "dirt",
+    "gravel"
+  ],
+  "suitableFor": [],
+  "bestMonths": [
+    10,
+    11,
+    12
+  ],
+  "seasonNotes": "Seasonal. Winter is likely to be better, with October, November and December suggested. Ridden in late October after rain, when the dirt was soft in places.",
+  "hazards": [
+    "slippery_after_rain"
+  ],
+  "safetyNotes": "The dam itself is closed to outsiders: do not enter the dam premises or the working area at the water's edge. On the day, barricades and a drilling rig on the water were seen at the shore. Do not swim or wade in the reservoir: reports describe sudden drops, boulders and deep slush in the reservoir bed, and drownings in past years. Keep well back from the water's edge, and take care on the loose dirt after rain.",
+  "surfaceNotes": "Tarmac on the way out, then dirt, stony soil and grass on the viewpoint and the smaller trails. Soft in places after rain.",
+  "contributorCredit": "Annuai",
+  "access": {
+    "accessClass": "public",
+    "restrictions": [],
+    "permissionInstructions": "The viewpoint and the trails around it are open to everyone. The dam itself is closed to outsiders: do not enter the dam premises or the working area at the shore.",
+    "basis": "rider_observed",
+    "level": "community_reported",
+    "evidence": [
+      {
+        "kind": "other",
+        "description": "Ridden by the contributor on 25 October 2026, who reports the viewpoint and trails are open to everyone and that the dam itself is closed to outsiders. Not checked by a moderator."
+      }
+    ]
+  },
+  "condition": {
+    "status": "open",
+    "effectiveFrom": "2026-10-25",
+    "note": "The viewpoint and trails around it are open. The dam itself is closed to outsiders."
+  },
+  "media": [
+    {
+      "role": "cover",
+      "position": 0,
+      "altText": "Manchanabele reservoir seen from a grassy hillside, with forested hills and a hill rock in the distance under a grey sky",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/manchanabele-dam/photo-1-400.webp",
+        "800": "/photos/manchanabele-dam/photo-1-800.webp",
+        "1200": "/photos/manchanabele-dam/photo-1-1200.webp",
+        "1800": "/photos/manchanabele-dam/photo-1-1800.webp"
+      },
+      "width": 5712,
+      "height": 4284
+    },
+    {
+      "role": "gallery",
+      "position": 1,
+      "altText": "A motorcycle parked on a narrow wet road beside a field of green crops under a heavy grey sky",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/manchanabele-dam/photo-2-400.webp",
+        "800": "/photos/manchanabele-dam/photo-2-800.webp",
+        "1200": "/photos/manchanabele-dam/photo-2-1200.webp",
+        "1800": "/photos/manchanabele-dam/photo-2-1800.webp"
+      },
+      "width": 4284,
+      "height": 5712
+    },
+    {
+      "role": "gallery",
+      "position": 2,
+      "altText": "A motorcycle parked on a concrete road in front of a hedge of yellow flowers and coconut palms",
+      "credit": "Annuai",
+      "variants": {
+        "400": "/photos/manchanabele-dam/photo-3-400.webp",
+        "800": "/photos/manchanabele-dam/photo-3-800.webp",
+        "1200": "/photos/manchanabele-dam/photo-3-1200.webp",
+        "1800": "/photos/manchanabele-dam/photo-3-1800.webp"
+      },
+      "width": 4284,
+      "height": 5712
+    }
+  ],
+  "videos": [
+    {
+      "position": 0,
+      "description": "A 14-second pan from the grassy hilltop viewpoint across the reservoir and the forested hills beyond.",
+      "credit": "Annuai",
+      "mp4": "/videos/manchanabele-dam/video-1.mp4",
+      "poster": "/videos/manchanabele-dam/video-1-poster.webp",
+      "width": 720,
+      "height": 1280,
+      "durationS": 14
+    },
+    {
+      "position": 1,
+      "description": "An 18-second look around the dirt viewpoint area under a few trees, with the bike parked and the reservoir below the grass slope.",
+      "credit": "Annuai",
+      "mp4": "/videos/manchanabele-dam/video-2.mp4",
+      "poster": "/videos/manchanabele-dam/video-2-poster.webp",
+      "width": 720,
+      "height": 1280,
+      "durationS": 18
+    },
+    {
+      "position": 2,
+      "description": "A 10-second sweep across green crop fields and grassy hills on one of the small tracks around the dam.",
+      "credit": "Annuai",
+      "mp4": "/videos/manchanabele-dam/video-3.mp4",
+      "poster": "/videos/manchanabele-dam/video-3-poster.webp",
+      "width": 720,
+      "height": 1280,
+      "durationS": 10
+    },
+    {
+      "position": 3,
+      "description": "A 5-second pan along the lake shore near the dam, past a yellow tower, with barricades and work going on at the water's edge.",
+      "credit": "Annuai",
+      "mp4": "/videos/manchanabele-dam/video-4.mp4",
+      "poster": "/videos/manchanabele-dam/video-4-poster.webp",
+      "width": 720,
+      "height": 1280,
+      "durationS": 5
+    },
+    {
+      "position": 4,
+      "description": "A 4-second view across the water from the shore, with round blue boats (coracles) drawn up on the sand.",
+      "credit": "Annuai",
+      "mp4": "/videos/manchanabele-dam/video-5.mp4",
+      "poster": "/videos/manchanabele-dam/video-5-poster.webp",
+      "width": 720,
+      "height": 1280,
+      "durationS": 4
+    }
+  ],
+  "gpxFile": "gpx/manchanabele-dam.gpx",
+  "publish": true
+}

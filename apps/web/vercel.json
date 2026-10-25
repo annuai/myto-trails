@@ -1,4 +1,11 @@
 {
-  "regions": ["bom1"],
-  "crons": [{ "path": "/api/cron/purge-contact-shares", "schedule": "0 3 * * *" }]
+  "regions": [
+    "sin1"
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/purge-contact-shares",
+      "schedule": "0 3 * * *"
+    }
+  ]
 }

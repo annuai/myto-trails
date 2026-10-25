@@ -1,0 +1,83 @@
+{
+  "sample": false,
+  "slug": "replace-with-a-slug",
+  "name": "Replace with the trail name",
+  "summary": "One or two sentences, 40 to 400 characters: what it is, how far, how hard, and what makes it worth riding.",
+  "description": "Optional longer text (up to 5000 characters). Paragraphs separated by a blank line. Say where each fact comes from.",
+  "state": "karnataka",
+  "district": "District name",
+  "nearestTown": "Nearest town",
+  "startPoint": {
+    "lon": 77.0,
+    "lat": 12.0
+  },
+  "sensitivity": "standard",
+  "routeShape": "out_and_back",
+  "distanceKm": 10,
+  "estDurationMin": 60,
+  "difficulty": "moderate",
+  "terrain": [
+    "dirt"
+  ],
+  "suitableFor": [],
+  "bestMonths": [
+    10,
+    11,
+    12
+  ],
+  "seasonNotes": "When it is best, and when it is not.",
+  "hazards": [
+    "slippery_after_rain"
+  ],
+  "safetyNotes": "What can go wrong, and what to do about it.",
+  "surfaceNotes": "What the ground is like.",
+  "contributorCredit": "Contributor name",
+  "access": {
+    "accessClass": "public",
+    "restrictions": [],
+    "permissionInstructions": "Who may ride, and anything that is closed.",
+    "basis": "rider_observed",
+    "level": "community_reported",
+    "evidence": [
+      {
+        "kind": "other",
+        "description": "Ridden by the contributor on DATE, who reports ... Not checked by a moderator."
+      }
+    ]
+  },
+  "condition": {
+    "status": "open",
+    "effectiveFrom": "2026-01-01",
+    "note": "Anything riders should know right now."
+  },
+  "media": [
+    {
+      "role": "cover",
+      "position": 0,
+      "altText": "What the picture shows",
+      "credit": "Contributor name",
+      "variants": {
+        "400": "/photos/SLUG/photo-1-400.webp",
+        "800": "/photos/SLUG/photo-1-800.webp",
+        "1200": "/photos/SLUG/photo-1-1200.webp",
+        "1800": "/photos/SLUG/photo-1-1800.webp"
+      },
+      "width": 4000,
+      "height": 3000
+    }
+  ],
+  "videos": [
+    {
+      "position": 0,
+      "description": "What the clip shows, with its length.",
+      "credit": "Contributor name",
+      "mp4": "/videos/SLUG/video-1.mp4",
+      "poster": "/videos/SLUG/video-1-poster.webp",
+      "width": 720,
+      "height": 1280,
+      "durationS": 10
+    }
+  ],
+  "gpxFile": "gpx/SLUG.gpx",
+  "publish": true
+}
