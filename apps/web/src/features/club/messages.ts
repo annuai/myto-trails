@@ -10,6 +10,8 @@ export const CLUB_NOTES: Record<string, { tone: "good" | "stop"; text: string }>
   responded: { tone: "good", text: "Saved." },
   hidden: { tone: "good", text: "Post removed." },
   left: { tone: "good", text: "You left the club." },
+  cover_saved: { tone: "good", text: "Cover updated." },
+  cover_invalid: { tone: "stop", text: "Choose a photo and wait for it to finish uploading before you save." },
   create_invalid: { tone: "stop", text: "Use 3 to 60 characters for the name, and leave out web addresses." },
   create_name_taken: { tone: "stop", text: "A club with that name already exists." },
   create_women_only: { tone: "stop", text: "Women-only clubs can be created by riders who have said they ride as women, in Account." },

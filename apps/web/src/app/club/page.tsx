@@ -6,6 +6,7 @@ import { CLUB_NOTES } from "@/features/club/messages";
 import { requireUser } from "@/server/auth/session";
 import { listClubs } from "@/server/community/clubs";
 import { getSql } from "@/server/db/client";
+import { ClubCover } from "@/ui/ClubCover/ClubCover";
 import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 export const instant = false;
@@ -57,10 +58,13 @@ function ClubList({ clubs }: { clubs: Awaited<ReturnType<typeof listClubs>> }) {
   return (
     <ul className="grid gap-3 sm:grid-cols-2">
       {clubs.map((c) => (
-        <li key={c.clubId} className="rounded-3xl bg-card-cream p-5">
+        <li key={c.clubId} className="flex flex-col gap-3 rounded-3xl bg-card-cream p-3 pb-5">
+          <ClubCover name={c.name} url={c.coverUrl} className="h-28" />
+          <div className="px-2">
           <Link href={`/club/${c.clubId}`} className="text-lg font-semibold underline-offset-4 hover:underline">{c.name}</Link>
           <p className="mt-1 text-sm text-muted">{c.memberCount} {c.memberCount === 1 ? "member" : "members"}{c.womenOnly ? " · Women only" : ""}{c.role === "admin" ? " · You are admin" : ""}{c.requested ? " · Request sent" : ""}</p>
           {c.description ? <p className="mt-2 line-clamp-3 break-words">{c.description}</p> : null}
+          </div>
         </li>
       ))}
     </ul>

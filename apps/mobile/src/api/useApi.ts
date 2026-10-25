@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '@/lib/geo';
 import { ApiFailure, api } from './client';
-import { toLatLng, type RouteDto, type SavedItem, type SearchResult, type TrailDetail } from './types';
+import { toLatLng, type ClubDetail, type ClubSummary, type Me, type RouteDto, type SavedItem, type SearchResult, type TrailDetail } from './types';
 import { useAuth } from '@/store/auth';
 import { useTrailStore } from '@/store/trails';
 
@@ -59,4 +59,25 @@ export function useRouteLine(slug?: string): LatLng[] | undefined {
   const r = useFetch<RouteDto>(slug && !off ? `route:${slug}` : null, (signal) => api<RouteDto>(`/trails/${slug}/route`, { signal }));
   const dto = off ?? r.data;
   return useMemo(() => (dto ? toLatLng(dto.line) : undefined), [dto]);
+}
+
+/** The signed-in rider, with profile picture and bike. */
+export function useMe(): Async<Me> {
+  const token = useAuth((s) => s.token);
+  return useFetch(token ? 'me' : null, (signal) => api<Me>('/me', { token, signal }));
+}
+
+export function useClubs(): Async<ClubSummary[]> {
+  const token = useAuth((s) => s.token);
+  return useFetch(token ? 'clubs' : null, async (signal) => (await api<{ items: ClubSummary[] }>('/clubs', { token, signal })).items);
+}
+
+export function useClub(id: string): Async<ClubDetail> {
+  const token = useAuth((s) => s.token);
+  return useFetch(token ? `club:${id}` : null, (signal) => api<ClubDetail>(`/clubs/${id}`, { token, signal }));
+}
+
+/** Forget cached profile and club screens after an edit, so they reload. */
+export function forgetProfile() {
+  for (const k of [...cache.keys()]) if (k === 'me' || k === 'clubs' || k.startsWith('club:')) cache.delete(k);
 }

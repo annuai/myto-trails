@@ -10,6 +10,8 @@ import { STEPS, validateStep, type Step } from "../submissions/schema";
 import { attachRoute, createDraft, getMine, listMine, saveStep, submit } from "../submissions/service";
 import { completeUpload, getUploadStatus, requestUpload } from "../uploads/service";
 import { exchangeAppCode } from "../auth/app-auth";
+import { getClub, listClubs, listMembers, setClubCover } from "../community/clubs";
+import { getAvatarUrl, getBike, removeBike, saveBike, setAvatar } from "../community/profile";
 import { revokeToken } from "./tokens";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 import { clientIp, hashIp } from "../auth/request-context";
@@ -24,6 +26,11 @@ const asObject = async (c: Ctx): Promise<Record<string, unknown>> => {
   const b = await c.body();
   if (typeof b !== "object" || b === null || Array.isArray(b)) throw new ApiError(400, "invalid_request", "The body must be a JSON object.");
   return b as Record<string, unknown>;
+};
+const mediaIdOf = (v: unknown): string | null => {
+  if (v === null) return null;
+  if (typeof v !== "string") throw new ApiError(400, "invalid_request", "mediaId must be a string or null.");
+  return v;
 };
 const noContent = () => new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 
@@ -111,7 +118,7 @@ export const routes: RouteDef[] = [
     method: "GET", path: "/me", access: "token", summary: "Who the token belongs to",
     async handler(c) {
       const [u] = await c.sql`select display_name, email from app_user where id = ${c.userId}`;
-      return ok({ displayName: u?.display_name ?? "", email: u?.email ?? "", scopes: c.auth!.scopes });
+      return ok({ displayName: u?.display_name ?? "", email: u?.email ?? "", scopes: c.auth!.scopes, avatarUrl: await getAvatarUrl(c.sql, c.userId), bike: await getBike(c.sql, c.userId) });
     },
   },
 
@@ -225,6 +232,56 @@ export const routes: RouteDef[] = [
       if (r.ok) return ok({ slug: r.slug });
       if (r.reason === "invalid") return fail(422, "validation_failed", "Some steps are incomplete.", { steps: r.steps });
       const map = { not_found: [404, "No such submission."], locked: [409, "This submission cannot be submitted now."], rate_limited: [429, "Too many submissions today."], photo_unavailable: [409, "A photo or the route is no longer available."] } as const;
+      return fail(map[r.reason][0], r.reason, map[r.reason][1]);
+    },
+  },
+
+  {
+    method: "PUT", path: "/me/avatar", access: "write:submission", summary: "Set your profile picture (body: mediaId from a completed image upload, or null to remove it)",
+    async handler(c) {
+      const b = await asObject(c);
+      const r = await setAvatar(c.sql, { userId: c.userId, mediaId: mediaIdOf(b.mediaId) });
+      if (!r.ok) return fail(422, "invalid_media", "That photo is not one of your uploads.");
+      return ok({ avatarUrl: await getAvatarUrl(c.sql, c.userId) });
+    },
+  },
+  {
+    method: "PUT", path: "/me/bike", access: "write:submission", summary: "Set your bike, shown to your club members (body: name, modelYear, photoMediaId; leave photoMediaId out to keep the photo, null to remove it)",
+    async handler(c) {
+      const b = await asObject(c);
+      const r = await saveBike(c.sql, { userId: c.userId, name: b.name, modelYear: b.modelYear, photoMediaId: "photoMediaId" in b ? mediaIdOf(b.photoMediaId) : undefined });
+      if (!r.ok) return fail(422, "validation_failed", "Give the bike a name (2 to 60 characters), a model year between 1900 and 2100 or none, and a photo you uploaded.");
+      return ok(await getBike(c.sql, c.userId));
+    },
+  },
+  {
+    method: "DELETE", path: "/me/bike", access: "write:submission", summary: "Remove your bike",
+    async handler(c) {
+      await removeBike(c.sql, c.userId);
+      return noContent();
+    },
+  },
+  {
+    method: "GET", path: "/clubs", access: "token", summary: "Every club, with your role in each. Empty until you have finished the website's welcome step",
+    async handler(c) {
+      return ok({ items: await listClubs(c.sql, c.userId) });
+    },
+  },
+  {
+    method: "GET", path: "/clubs/{id}", access: "token", summary: "One club. Members also get the member list with avatars and bikes (club members only)",
+    async handler(c) {
+      const club = await getClub(c.sql, { userId: c.userId, clubId: c.params.id! });
+      if (!club) return fail(404, "not_found", "No such club.");
+      return ok({ club, members: club.role ? await listMembers(c.sql, { userId: c.userId, clubId: c.params.id! }) : null });
+    },
+  },
+  {
+    method: "PUT", path: "/clubs/{id}/cover", access: "write:submission", summary: "Set the club's cover image, club admins only (body: mediaId from a completed image upload, or null for the placeholder)",
+    async handler(c) {
+      const b = await asObject(c);
+      const r = await setClubCover(c.sql, { userId: c.userId, clubId: c.params.id!, mediaId: mediaIdOf(b.mediaId) });
+      if (r.ok) return ok({ coverUrl: (await getClub(c.sql, { userId: c.userId, clubId: c.params.id! }))?.coverUrl ?? null });
+      const map = { not_found: [404, "No such club."], not_admin: [403, "Only club admins can change the cover."], invalid: [422, "That photo is not one of your uploads."] } as const;
       return fail(map[r.reason][0], r.reason, map[r.reason][1]);
     },
   },

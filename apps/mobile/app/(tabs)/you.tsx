@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ClipboardList, IdCard, LogIn, LogOut, Route as RouteIcon, Trash2 } from 'lucide-react-native';
+import { Bike as BikeIcon, Camera, ClipboardList, IdCard, LogIn, LogOut, Route as RouteIcon, Trash2 } from 'lucide-react-native';
+import { ApiFailure, api } from '@/api/client';
+import { forgetProfile, useMe } from '@/api/useApi';
 import { signOut, startSignIn } from '@/lib/signIn';
+import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAuth } from '@/store/auth';
 import { useTrailStore } from '@/store/trails';
 import { km } from '@/lib/format';
 import { useProfile } from '@/store/profile';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
+import { Avatar } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { PageTitle, SectionTitle } from '@/ui/Header';
@@ -25,10 +29,22 @@ export default function You() {
   const openTodos = useTodos((s) => s.todos.filter((t) => !t.done).length);
   const [confirm, setConfirm] = useState(false);
   const user = useAuth((s) => s.user);
-  const signedIn = !!useAuth((s) => s.token);
+  const token = useAuth((s) => s.token);
+  const signedIn = !!token;
+  const me = useMe();
+  const [avatarBusy, setAvatarBusy] = useState(false);
   const [authError, setAuthError] = useState<string>();
   const real = rides.filter((r) => !r.sample).length;
   const docs = [licence && 'Licence', vehicle && 'Vehicle', contacts.length && `${contacts.length} contact${contacts.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ');
+
+  const changeAvatar = async () => {
+    if (!token) return;
+    setAvatarBusy(true); setAuthError(undefined);
+    try {
+      const r = await pickAndUploadImage(token, [1, 1]);
+      if (r) { await api('/me/avatar', { method: 'PUT', token, body: { mediaId: r.mediaId } }); forgetProfile(); me.reload(); }
+    } catch (e) { setAuthError(e instanceof ApiFailure ? e.message : 'Something went wrong.'); } finally { setAvatarBusy(false); }
+  };
 
   const erase = () => {
     useProfile.getState().wipe();
@@ -58,10 +74,15 @@ export default function You() {
       <Card style={{ gap: 14 }}>
         {signedIn ? (
           <>
-            <View style={{ gap: 4 }}>
-              <Text variant="bodyMedium">{user?.displayName || 'Signed in'}</Text>
-              <Text variant="label" tone="muted">{user?.email}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+              <Avatar name={user?.displayName || 'Rider'} url={me.data?.avatarUrl} size={64} />
+              <View style={{ flex: 1, gap: 4 }}>
+                <Text variant="bodyMedium">{user?.displayName || 'Signed in'}</Text>
+                <Text variant="label" tone="muted">{user?.email}</Text>
+              </View>
             </View>
+            <Button variant="soft" icon={Camera} label={avatarBusy ? 'Uploading…' : me.data?.avatarUrl ? 'Change picture' : 'Add a picture'} disabled={avatarBusy} onPress={() => void changeAvatar()} />
+            {authError ? <Text variant="label" tone="stop">{authError}</Text> : null}
             <Text variant="label" tone="muted">Your Saved trails and ride uploads use this account, the same one as moto-trails.com.</Text>
             <Button variant="soft" icon={LogOut} label="Sign out" onPress={() => void signOut()} />
           </>
@@ -76,6 +97,7 @@ export default function You() {
       </>} right={<>
       <SectionTitle>Keep track</SectionTitle>
       <ListCard>
+        {signedIn ? <Row icon={BikeIcon} label="Your bike" value={me.data?.bike ? me.data.bike.name : 'Add'} onPress={() => router.push('/bike')} /> : null}
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
         <Row icon={ClipboardList} label="To-do list" value={`${openTodos} open`} onPress={() => router.push('/todos')} />
         <Row icon={IdCard} label="Documents and emergency" sub={docs || 'Licence, vehicle, emergency contacts'} onPress={() => router.push('/documents')} />
