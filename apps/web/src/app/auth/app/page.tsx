@@ -35,7 +35,7 @@ export default async function ConnectAppPage({ searchParams }: PageProps<"/auth/
         <input type="hidden" name="state" value={state} />
         <p className="max-w-prose">Sign the Myto app in as <strong>{user.email}</strong>? It will be able to read your Saved trails and send ride drafts for review. You can remove it any time under Account, Connected devices.</p>
         <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Connect the app</button>
-        <p className="max-w-prose text-sm text-muted">Your phone will ask to open Myto. If nothing happens, open the Myto app yourself and tap Sign in again.</p>
+        <p className="max-w-prose text-sm text-muted">The next page opens the Myto app. If it does not, tap the button there, or open the app yourself and tap Sign in again.</p>
       </form>
     </section>
   );
