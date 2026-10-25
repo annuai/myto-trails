@@ -5,7 +5,7 @@ import { buildGpxExport } from "../gpx/export";
 import { listSaved, saveTrail, unsaveTrail } from "../queries/saved";
 import { createReport } from "../queries/reports";
 import { searchTrails } from "../queries/search.sql";
-import { queryTrailBySlug, queryTrailRoute } from "../queries/trails.sql";
+import { queryTrailBySlug, queryTrailMedia, queryTrailRoute } from "../queries/trails.sql";
 import { STEPS, validateStep, type Step } from "../submissions/schema";
 import { attachRoute, createDraft, getMine, listMine, saveStep, submit } from "../submissions/service";
 import { completeUpload, getUploadStatus, requestUpload } from "../uploads/service";
@@ -53,10 +53,13 @@ export const routes: RouteDef[] = [
     },
   },
   {
-    method: "GET", path: "/trails/{slug}", access: "public", summary: "One published trail",
+    method: "GET", path: "/trails/{slug}", access: "public", summary: "One published trail, with its photos (media: role, position, caption, altText, credit, variants by pixel width)",
     async handler(c) {
-      const t = await withPublicRole(c.sql, (tx) => queryTrailBySlug(tx, slugOf(c), c.now));
-      return t ? ok(t) : fail(404, "not_found", "No such trail.");
+      const slug = slugOf(c);
+      const t = await withPublicRole(c.sql, (tx) => queryTrailBySlug(tx, slug, c.now));
+      if (!t) return fail(404, "not_found", "No such trail.");
+      const media = await withPublicRole(c.sql, (tx) => queryTrailMedia(tx, slug));
+      return ok({ ...t, media });
     },
   },
   {

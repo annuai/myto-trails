@@ -4,6 +4,8 @@ import { securityHeaders } from "./src/lib/security-headers";
 const dev = process.env.NODE_ENV !== "production";
 
 const nextConfig: NextConfig = {
+  // Development only: other devices on the wifi (a phone testing the app) may load dev resources from this server.
+  allowedDevOrigins: (process.env.DEV_ALLOWED_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean),
   cacheComponents: true,
   partialPrefetching: true,
   transpilePackages: ["@moto-trails/domain"],

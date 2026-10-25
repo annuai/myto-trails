@@ -95,6 +95,7 @@ describe("public trails", () => {
     expect(list.body.items.map((i: { name: string }) => i.name)).not.toContain("Draft trail");
     const one = await call("GET", `/trails/${t.slug}`);
     expect(one).toMatchObject({ status: 200, body: { slug: t.slug, name: "Api ridge loop", condition: "open" } });
+    expect(Array.isArray(one.body.media)).toBe(true); // photos come with the trail, so a client needs no second call
     expect((await call("GET", "/trails/no-such-trail")).status).toBe(404);
     expect((await call("GET", "/trails/BAD SLUG!")).status).toBe(404);
   });
