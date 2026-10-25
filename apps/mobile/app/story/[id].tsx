@@ -12,6 +12,7 @@ import { Card } from '@/ui/Card';
 import { StatusChip } from '@/ui/Chip';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { OsmMap } from '@/ui/map/OsmMap';
+import { Columns } from '@/ui/Columns';
 import { Screen } from '@/ui/Screen';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
@@ -33,18 +34,22 @@ function StoryBody() {
     <Screen>
       <BackHeader title="Ride story" />
       <PageTitle sub={formatDate(new Date(ride.startedAt).toISOString().slice(0, 10)) + (ride.sample ? ' · sample' : '')}>{ride.name}</PageTitle>
+      <Columns
+        left={<>
       <View style={{ backgroundColor: '#8fbbdc', borderRadius: radius.card, padding: 24, gap: 4 }}>
         <Text variant="label" style={{ color: '#121211' }}>You rode</Text>
         <Text variant="live" style={{ color: '#121211', fontSize: 56, lineHeight: 62 }}>{km(ride.distanceKm)} km</Text>
         <Text variant="label" style={{ color: '#121211' }}>in {duration(ride.durationSec)}</Text>
       </View>
-      <View style={{ marginTop: 12 }}><OsmMap height={240} radius={radius.card} dark track={ride.points} waypoints={ride.waypoints} /></View>
       <SectionTitle>Highlights</SectionTitle>
       <Card style={{ flexDirection: 'row' }}>
         <Stat value={`${ride.maxKmh}`} label="Top km/h" />
         <Stat value={`${ride.waypoints.length}`} label="Waypoints" />
         <Stat value={`${ride.points.length}`} label="Points" />
       </Card>
+        </>}
+        right={<>
+      <View style={{ marginTop: 0 }}><OsmMap height={240} radius={radius.card} dark track={ride.points} waypoints={ride.waypoints} /></View>
       <SectionTitle>Share it</SectionTitle>
       {sub ? (
         <Card style={{ gap: 10 }}>
@@ -57,6 +62,8 @@ function StoryBody() {
         <Button variant="soft" icon={Download} label="Export GPX file" onPress={() => exportGpx(ride.name, buildGpx(ride.name, ride.points, ride.waypoints))} />
         <Button variant="danger" icon={Trash2} label="Delete this ride" onPress={() => { useRides.getState().removeRide(ride.id); router.replace('/rides'); }} />
       </View>
+        </>}
+      />
     </Screen>
   );
 }

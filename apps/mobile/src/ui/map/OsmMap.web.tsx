@@ -31,6 +31,9 @@ export function OsmMap({ height, line, track, position, waypoints, follow, dark,
           attributionControl: { compact: true }, cooperativeGestures: !follow,
         });
         map.current = m;
+        // The map handles its own touches. Keeping them from reaching React Native Web's responder system stops its
+        // "Cannot find single active touch" warning when two fingers pinch or pan the map.
+        for (const type of ['touchstart', 'touchmove', 'touchend', 'touchcancel'] as const) box.current.addEventListener(type, (e) => e.stopPropagation(), { passive: true });
         m.addControl(new ml.NavigationControl({ showCompass: false }), 'top-right');
         m.on('error', (e) => setProblem(e.error?.message?.slice(0, 120) ?? 'The map reported an error.'));
         m.on('load', () => {

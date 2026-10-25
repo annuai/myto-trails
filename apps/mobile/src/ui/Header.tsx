@@ -1,19 +1,8 @@
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, Plus } from 'lucide-react-native';
 import { IconButton } from './IconButton';
-import { Logo } from './Logo';
 import { Text } from './Text';
-
-/** Top of a tab root: logo and notifications. */
-export function BrandHeader() {
-  return (
-    <View style={{ height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-      <Logo height={30} />
-      <IconButton icon={Bell} label="Notifications" />
-    </View>
-  );
-}
 
 /** Top of a pushed screen: back and optional right action. */
 export function BackHeader({ title, right }: { title?: string; right?: React.ReactNode }) {
@@ -38,10 +27,11 @@ export function PageTitle({ children, sub }: { children: string; sub?: string })
   );
 }
 
-export function SectionTitle({ children, action, onAction }: { children: string; action?: string; onAction?: () => void }) {
+export function SectionTitle({ children, action, onAction, onAdd, addLabel = 'Add' }: { children: string; action?: string; onAction?: () => void; /** Shows a round + button at the end of the heading. */ onAdd?: () => void; addLabel?: string }) {
   return (
-    <View style={{ marginTop: 32, marginBottom: 12, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <View style={{ marginTop: 32, marginBottom: 12, flexDirection: 'row', alignItems: onAdd ? 'center' : 'baseline', justifyContent: 'space-between' }}>
       <Text variant="section">{children}</Text>
+      {onAdd ? <IconButton icon={Plus} label={addLabel} onPress={onAdd} size={44} /> : null}
       {action ? (
         <Text variant="labelMedium" tone="accent" onPress={onAction} accessibilityRole="button">{action}</Text>
       ) : null}

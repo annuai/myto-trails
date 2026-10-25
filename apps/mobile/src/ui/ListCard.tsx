@@ -1,10 +1,11 @@
 import { Children, Fragment, type ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { ChevronRight, type LucideIcon } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Card } from './Card';
 import { Icon } from './Icon';
 import { Text } from './Text';
+import { ScalePressable } from './motion';
 
 /** A card of rows with hairline dividers. */
 export function ListCard({ children }: { children: ReactNode }) {
@@ -42,6 +43,6 @@ export function Row({ label, sub, value, right, icon, onPress, mono, chevron, to
     </View>
   );
   return onPress ? (
-    <Pressable accessibilityRole="button" onPress={onPress}>{({ pressed }) => content(pressed)}</Pressable>
+    <ScalePressable scaleTo={0.985} accessibilityRole="button" onPress={onPress}>{({ pressed }) => content(pressed)}</ScalePressable>
   ) : content(false);
 }

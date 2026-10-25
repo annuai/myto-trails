@@ -1,9 +1,10 @@
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { ArrowRight, type LucideIcon } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius } from '@/theme/tokens';
 import { Icon } from './Icon';
 import { Text } from './Text';
+import { ScalePressable } from './motion';
 
 type Variant = 'primary' | 'accent' | 'soft' | 'danger';
 type Props = {
@@ -18,7 +19,7 @@ export function Button({ label, onPress, variant = 'primary', icon, arrow, big, 
   const fgColor = variant === 'accent' ? c.accentInk : undefined;
   const between = (align ?? (arrow || trailing ? 'between' : 'center')) === 'between';
   return (
-    <Pressable
+    <ScalePressable scaleTo={0.97}
       accessibilityRole="button"
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
@@ -35,6 +36,6 @@ export function Button({ label, onPress, variant = 'primary', icon, arrow, big, 
       </View>
       {trailing ? <Text variant="data" tone="muted">{trailing}</Text> : null}
       {arrow ? <Icon icon={ArrowRight} size={20} tone={fg} /> : null}
-    </Pressable>
+    </ScalePressable>
   );
 }

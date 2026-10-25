@@ -14,6 +14,7 @@ type State = {
   downloading: Record<string, true>;
   nextTrip?: NextTrip;
   planTrip: (detail: TrailDetail, date?: string) => void;
+  cancelPlan: () => void;
   download: (slug: string) => Promise<void>;
   removeDownload: (slug: string) => void;
   clear: () => void;
@@ -25,6 +26,7 @@ export const useTrailStore = create<State>()(
     (set, get) => ({
       offline: {}, downloading: {},
       planTrip: (d, date) => { const h = headline(d); set({ nextTrip: { slug: d.slug, name: d.name, status: h.status, statusLabel: h.label, date } }); },
+      cancelPlan: () => set({ nextTrip: undefined }),
       download: async (slug) => {
         if (get().downloading[slug]) return;
         set((s) => ({ downloading: { ...s.downloading, [slug]: true } }));

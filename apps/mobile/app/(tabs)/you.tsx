@@ -11,8 +11,9 @@ import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
-import { BrandHeader, PageTitle, SectionTitle } from '@/ui/Header';
+import { PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
+import { Columns } from '@/ui/Columns';
 import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
@@ -39,15 +40,15 @@ export default function You() {
   };
 
   return (
-    <Screen tabs overlay={
+    <Screen tabs brand overlay={
       <Sheet open={confirm} title="Erase all my data?" onClose={() => setConfirm(false)}>
         <Text variant="body" tone="muted">This removes your rides, to-dos, documents and contacts from this device. It cannot be undone.</Text>
         <Button label="Erase everything" variant="danger" icon={Trash2} onPress={erase} />
         <Button label="Keep my data" variant="soft" onPress={() => setConfirm(false)} />
       </Sheet>
     }>
-      <BrandHeader />
       <PageTitle>You</PageTitle>
+      <Columns rightStartsWithSection left={<>
       <Card style={{ padding: 24, gap: 6 }}>
         <Text variant="label" tone="muted">Ridden with Myto</Text>
         <Text variant="hero" style={{ fontFamily: 'GeistMono_500Medium', fontSize: 40, lineHeight: 46 }}>{km(totalKm(rides))} km</Text>
@@ -72,6 +73,7 @@ export default function You() {
           </>
         )}
       </Card>
+      </>} right={<>
       <SectionTitle>Keep track</SectionTitle>
       <ListCard>
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
@@ -82,6 +84,7 @@ export default function You() {
       <ListCard>
         <Row icon={Trash2} tone="stop" label="Erase all my data" onPress={() => setConfirm(true)} chevron={false} />
       </ListCard>
+      </>} />
       <View style={{ marginTop: 24 }}>
         <Text variant="caption" tone="muted" style={{ textAlign: 'center' }}>Everything is stored on this device only. Myto does not replace emergency services.</Text>
       </View>

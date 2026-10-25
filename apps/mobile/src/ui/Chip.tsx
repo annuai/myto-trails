@@ -1,8 +1,9 @@
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { AlertTriangle, Check, CircleHelp, X, type LucideIcon } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Icon } from './Icon';
 import { Text } from './Text';
+import { ScalePressable } from './motion';
 
 export type Status = 'good' | 'caution' | 'stop' | 'unknown';
 const glyph: Record<Status, LucideIcon> = { good: Check, caution: AlertTriangle, stop: X, unknown: CircleHelp };
@@ -22,7 +23,7 @@ export function StatusChip({ status, label }: { status: Status; label: string })
 export function ChoiceChip({ label, selected, onPress, icon, raised }: { label: string; selected?: boolean; onPress?: () => void; icon?: LucideIcon; raised?: boolean }) {
   const { c } = useTheme();
   return (
-    <Pressable
+    <ScalePressable scaleTo={0.95}
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
       onPress={onPress}
@@ -30,6 +31,6 @@ export function ChoiceChip({ label, selected, onPress, icon, raised }: { label: 
     >
       {icon ? <Icon icon={icon} size={18} tone={selected ? 'onInk' : 'ink'} /> : null}
       <Text variant="labelMedium" tone={selected ? 'onInk' : 'ink'}>{label}</Text>
-    </Pressable>
+    </ScalePressable>
   );
 }

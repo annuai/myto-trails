@@ -1,14 +1,14 @@
-import { Pressable } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Icon } from './Icon';
+import { ScalePressable } from './motion';
 
 type Props = { icon: LucideIcon; label: string; onPress?: () => void; plain?: boolean; size?: number; tone?: 'ink' | 'muted' | 'accent' | 'stop' };
 
 export function IconButton({ icon, label, onPress, plain, size = 48, tone = 'ink' }: Props) {
   const { c } = useTheme();
   return (
-    <Pressable
+    <ScalePressable scaleTo={0.9}
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
@@ -18,6 +18,6 @@ export function IconButton({ icon, label, onPress, plain, size = 48, tone = 'ink
       })}
     >
       <Icon icon={icon} size={22} tone={tone} />
-    </Pressable>
+    </ScalePressable>
   );
 }

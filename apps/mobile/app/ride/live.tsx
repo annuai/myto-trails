@@ -13,7 +13,9 @@ import { HoldButton } from '@/ui/HoldButton';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { useRouteLine } from '@/api/useApi';
 import { useTrailStore } from '@/store/trails';
+import { useLocation } from '@/store/location';
 import { Screen } from '@/ui/Screen';
+import { useLayout } from '@/ui/useLayout';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { Pressable } from 'react-native';
@@ -27,11 +29,16 @@ export default function Live() {
 
 function LiveBody() {
   const router = useRouter();
+  const { landscape, height } = useLayout();
   const r = useRecorder();
   const contacts = useProfile((s) => s.contacts);
   const planned = useTrailStore((s) => s.nextTrip);
   const routeLine = useRouteLine(planned?.slug);
-  const last = r.points[r.points.length - 1];
+  const fix = useLocation((s) => s.fix);
+  const gpsError = useLocation((s) => s.error);
+  const lastPoint = r.points[r.points.length - 1];
+  // The dot follows the live GPS fix straight away; on a simulated ride it follows the simulated track.
+  const last = r.source === 'sim' ? lastPoint : fix ? { lat: fix.lat, lng: fix.lng } : lastPoint;
   const [, tick] = useState(0);
   const [sos, setSos] = useState(false);
   const stopping = useRef(false);
@@ -39,6 +46,33 @@ function LiveBody() {
   useEffect(() => { if (r.status === 'idle' && !stopping.current) router.replace('/'); }, [r.status, router]);
 
   const stop = () => { stopping.current = true; const id = finishRide(); router.replace(id ? `/story/${id}` : '/'); };
+
+  const stats = (
+    <Card style={{ gap: landscape ? 12 : 20, paddingVertical: landscape ? 16 : 20 }}>
+      <View style={{ gap: 4 }}>
+        <Text variant="label" tone="muted">Distance</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+          <Text variant="live" style={landscape ? { fontSize: 56, lineHeight: 60 } : undefined}>{(r.meters / 1000).toFixed(1)}</Text><Text variant="bodyMedium" tone="muted">km</Text>
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row' }}>
+        <View style={{ flex: 1 }}><Text variant="label" tone="muted">Time</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{clock(Date.now() - r.startedAt)}</Text></View>
+        <View style={{ flex: 1 }}><Text variant="label" tone="muted">Speed</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{Math.round(r.speedKmh)}</Text></View>
+      </View>
+    </Card>
+  );
+  const status = r.source === 'gps' && !fix && gpsError ? <Text variant="label" tone="caution">{gpsError}</Text>
+    : <Text variant="label" tone="muted" style={{ textAlign: landscape ? 'left' : 'center' }}>{r.points.length ? `${r.points.length} points recorded${fix?.accuracy ? ` · GPS ±${Math.round(fix.accuracy)} m` : ''}` : 'Waiting for a GPS fix…'}</Text>;
+  const waypointBtn = (h: number) => (
+    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => useRecorder.getState().addWaypoint()} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? '#2c2c2a' : '#242422', alignItems: 'center', justifyContent: 'center', gap: 6 })}>
+      <Icon icon={Flag} size={h > 70 ? 26 : 22} /><Text variant="labelMedium">Waypoint{r.waypoints.length ? ` · ${r.waypoints.length}` : ''}</Text>
+    </Pressable>
+  );
+  const sosBtn = (h: number) => (
+    <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => setSos(true)} style={{ flex: 1, minHeight: h, borderRadius: radius.control, borderWidth: 1.5, borderColor: '#ec8272', flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
+      <Icon icon={Siren} tone="stop" size={22} /><Text variant="bodyMedium" tone="stop">SOS</Text>
+    </Pressable>
+  );
 
   return (
     <Screen scroll={false} overlay={
@@ -56,35 +90,27 @@ function LiveBody() {
         </View>
         <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
       </View>
-      <Card style={{ marginTop: 8, gap: 20 }}>
-        <View style={{ gap: 4 }}>
-          <Text variant="label" tone="muted">Distance</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-            <Text variant="live">{(r.meters / 1000).toFixed(1)}</Text><Text variant="bodyMedium" tone="muted">km</Text>
+      {landscape ? (
+        // Turned on its side (a handlebar mount): numbers on the left, map and big buttons on the right, no scrolling.
+        <View style={{ flex: 1, flexDirection: 'row', gap: 16 }}>
+          <View style={{ flex: 1, gap: 12 }}>{stats}{status}</View>
+          <View style={{ flex: 1.25, gap: 12 }}>
+            <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} dark follow line={routeLine} track={r.points} position={last} waypoints={r.waypoints} />
+            <View style={{ flexDirection: 'row', gap: 12 }}>{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color="#a32d1c" minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
           </View>
         </View>
-        <View style={{ flexDirection: 'row' }}>
-          <View style={{ flex: 1 }}><Text variant="label" tone="muted">Time</Text><Text variant="liveSecondary">{clock(Date.now() - r.startedAt)}</Text></View>
-          <View style={{ flex: 1 }}><Text variant="label" tone="muted">Speed</Text><Text variant="liveSecondary">{Math.round(r.speedKmh)}</Text></View>
-        </View>
-      </Card>
-      <View style={{ marginTop: 12 }}>
-        <OsmMap height={200} radius={radius.card} dark follow line={routeLine} track={r.points} position={last} waypoints={r.waypoints} />
-      </View>
-      {r.error ? <Text variant="label" tone="caution" style={{ marginTop: 12 }}>{r.error} Use “Simulated” on the ride screen to test.</Text>
-        : <Text variant="label" tone="muted" style={{ marginTop: 12, textAlign: 'center' }}>{r.points.length ? `${r.points.length} points recorded` : 'Waiting for a GPS fix…'}</Text>}
-      <View style={{ flex: 1 }} />
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => useRecorder.getState().addWaypoint()} style={({ pressed }) => ({ flex: 1, minHeight: 88, borderRadius: radius.control, backgroundColor: pressed ? '#2c2c2a' : '#242422', alignItems: 'center', justifyContent: 'center', gap: 6 })}>
-          <Icon icon={Flag} size={26} /><Text variant="labelMedium">Waypoint{r.waypoints.length ? ` · ${r.waypoints.length}` : ''}</Text>
-        </Pressable>
-        <HoldButton label="Hold to stop" icon={Square} color="#a32d1c" onComplete={stop} />
-      </View>
-      <View style={{ marginTop: 12, flexDirection: 'row' }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => setSos(true)} style={{ flex: 1, minHeight: 56, borderRadius: radius.control, borderWidth: 1.5, borderColor: '#ec8272', flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon icon={Siren} tone="stop" size={22} /><Text variant="bodyMedium" tone="stop">SOS</Text>
-        </Pressable>
-      </View>
+      ) : (
+        <>
+          <View style={{ marginTop: 8 }}>{stats}</View>
+          <View style={{ marginTop: 12 }}>
+            <OsmMap height={200} radius={radius.card} dark follow line={routeLine} track={r.points} position={last} waypoints={r.waypoints} />
+          </View>
+          <View style={{ marginTop: 12 }}>{status}</View>
+          <View style={{ flex: 1 }} />
+          <View style={{ flexDirection: 'row', gap: 12 }}>{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color="#a32d1c" onComplete={stop} /></View>
+          <View style={{ marginTop: 12, flexDirection: 'row' }}>{sosBtn(56)}</View>
+        </>
+      )}
     </Screen>
   );
 }

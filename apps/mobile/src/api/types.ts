@@ -8,7 +8,10 @@ export type TrailSummary = {
   accessClass: string; condition: string; verification: { level: string; needsRecheck: boolean }; verifiedAt: string | null;
   isSample: boolean; updatedAt: string; lon: number; lat: number; distanceFromKm: number | null; cover: Cover | null;
 };
+export type Media = { role: string; position: number; caption: string | null; altText: string; credit: string | null; variants: Record<string, string>; width: number; height: number };
 export type TrailDetail = TrailSummary & {
+  /** Photos, cover first. Missing on copies saved before the API sent them. */
+  media?: Media[];
   description: string | null; safetyNotes: string | null; hazards: string[]; bestMonths: number[]; elevationGainM: number | null;
   restrictions: string[]; permissionInstructions: string | null; conditionNote: string | null; hasGpx: boolean;
 };

@@ -1,4 +1,4 @@
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { Calendar } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius } from '@/theme/tokens';
@@ -8,6 +8,7 @@ import { DatePicker } from './DatePicker';
 import { Icon } from './Icon';
 import { Sheet } from './Sheet';
 import { Text } from './Text';
+import { ScalePressable } from './motion';
 
 /** A field that shows a date; tapping it asks the screen to open <DatePickSheet>. */
 export function DateField({ label, value, onPress, hint }: { label: string; value?: string; onPress: () => void; hint?: string }) {
@@ -15,11 +16,11 @@ export function DateField({ label, value, onPress, hint }: { label: string; valu
   return (
     <View style={{ gap: 8 }}>
       <Text variant="labelMedium">{label}</Text>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value ? formatDate(value) : 'not set'}`} onPress={onPress}
+      <ScalePressable scaleTo={0.99} accessibilityRole="button" accessibilityLabel={`${label}: ${value ? formatDate(value) : 'not set'}`} onPress={onPress}
         style={{ minHeight: 56, borderRadius: radius.control, paddingHorizontal: 18, backgroundColor: c.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text variant="body" tone={value ? 'ink' : 'muted'}>{value ? formatDate(value) : 'Pick a date'}</Text>
         <Icon icon={Calendar} size={20} tone="muted" />
-      </Pressable>
+      </ScalePressable>
       {hint ? <Text variant="caption" tone="muted">{hint}</Text> : null}
     </View>
   );

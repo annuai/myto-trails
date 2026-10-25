@@ -44,7 +44,7 @@ export default function NewTodo() {
       <Sheet open={!!draft} title={draft?.custom ? 'Your own to-do' : draft?.title ?? ''} onClose={() => { setDraft(null); setError(undefined); }} footer={<View style={{ gap: 8 }}>{error ? <Text variant="label" tone="stop">{error}</Text> : null}<Button label="Add to list" onPress={save} /></View>}>
         {draft ? (
           <View style={{ gap: 20 }}>
-            {draft.custom ? <Field label="Name" value={draft.title} onChangeText={(title) => set({ title })} placeholder="e.g. Book the next service" /> : null}
+            {draft.custom ? <Field label="Name" value={draft.title} onChangeText={(title) => set({ title })} placeholder="What needs doing? e.g. Replace brake pads" /> : null}
             {draft.custom ? (
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <ChoiceChip label="On a date" selected={draft.kind === 'date'} onPress={() => set({ kind: 'date' })} icon={CalendarClock} />
@@ -68,13 +68,12 @@ export default function NewTodo() {
       </Sheet>
     }>
       <BackHeader title="To-do list" />
-      <PageTitle sub="Pick a common one and set the date, or write your own.">Add a to-do</PageTitle>
-      <SectionTitle>Common</SectionTitle>
+      <PageTitle sub="Write your own, or pick a common one and set the date.">Add a to-do</PageTitle>
+      <ListCard><Row icon={PenLine} label="Write your own" onPress={() => setDraft(blank)} /></ListCard>
+      <SectionTitle>Or pick a common one</SectionTitle>
       <ListCard>
         {templates.map((t) => <Row key={t.key} icon={iconFor[t.category]} label={t.title} sub={t.hint} onPress={() => setDraft(fromTemplate(t))} />)}
       </ListCard>
-      <SectionTitle>Something else</SectionTitle>
-      <ListCard><Row icon={PenLine} label="Write your own" onPress={() => setDraft(blank)} /></ListCard>
     </Screen>
   );
 }

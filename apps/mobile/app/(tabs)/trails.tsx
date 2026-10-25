@@ -11,8 +11,10 @@ import { Button } from '@/ui/Button';
 import { ChoiceChip } from '@/ui/Chip';
 import { EmptyState } from '@/ui/EmptyState';
 import { Field } from '@/ui/Field';
-import { BrandHeader, PageTitle } from '@/ui/Header';
+import { PageTitle } from '@/ui/Header';
+import { Reveal } from '@/ui/motion';
 import { Screen } from '@/ui/Screen';
+import { useLayout } from '@/ui/useLayout';
 import { Text } from '@/ui/Text';
 import { TrailRow } from '@/ui/TrailRow';
 
@@ -20,6 +22,7 @@ const filters = ['All', 'Open', 'Saved', 'Offline'] as const;
 
 export default function Trails() {
   const router = useRouter();
+  const { landscape } = useLayout();
   const signedIn = !!useAuth((s) => s.token);
   const offline = useTrailStore((s) => s.offline);
   const [text, setText] = useState('');
@@ -38,8 +41,7 @@ export default function Trails() {
   const error = f === 'Offline' ? undefined : f === 'Saved' ? saved.error : search.error;
 
   return (
-    <Screen tabs>
-      <BrandHeader />
+    <Screen tabs brand>
       <PageTitle>Trails</PageTitle>
       <Field label="Search" placeholder="Trail, town or place" value={text} onChangeText={setText} returnKeyType="search" />
       <View style={{ flexDirection: 'row', gap: 8, marginVertical: 20, flexWrap: 'wrap' }}>
@@ -55,7 +57,9 @@ export default function Trails() {
             </View>
           ) : null}
           {!loading && !error && list.length === 0 ? <EmptyState icon={Search} title="No trails" body={f === 'Offline' ? 'Download a trail from its page to use it without a connection.' : 'Try another name or clear the filter.'} /> : null}
-          {list.map((t) => <TrailRow key={t.slug} trail={toTrailLike(t)} onPress={() => router.push(`/trail/${t.slug}`)} />)}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            {list.map((t, i) => <Reveal key={t.slug} delay={Math.min(i, 8) * 45} style={{ width: landscape ? '48.9%' : '100%' }}><TrailRow trail={toTrailLike(t)} onPress={() => router.push(`/trail/${t.slug}`)} /></Reveal>)}
+          </View>
         </View>
       )}
       {search.data && f === 'All' ? <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: 24 }}>{search.data.total} published trail{search.data.total === 1 ? '' : 's'}. Status shows access first, then condition.</Text> : null}

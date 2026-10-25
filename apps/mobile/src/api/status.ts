@@ -39,7 +39,7 @@ export function headline(t: Pick<TrailSummary, 'accessClass' | 'condition'>): { 
 
 const TINTS: Tint[] = ['sand', 'sage', 'clay', 'sky'];
 const hash = (s: string) => [...s].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) >>> 0, 7);
-const dur = (min: number | null) => (min == null ? '' : min >= 60 ? `${Math.floor(min / 60)}h${min % 60 ? ` ${min % 60}m` : ''}` : `${min} min`);
+export const dur = (min: number | null) => (min == null ? '' : min >= 60 ? `${Math.floor(min / 60)}h${min % 60 ? ` ${min % 60}m` : ''}` : `${min} min`);
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function toTrailLike(t: TrailSummary): TrailLike {

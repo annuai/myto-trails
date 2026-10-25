@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { Users } from 'lucide-react-native';
 import { Button } from '@/ui/Button';
-import { BrandHeader, PageTitle, SectionTitle } from '@/ui/Header';
+import { PageTitle, SectionTitle } from '@/ui/Header';
 import { HeroCard } from '@/ui/HeroCard';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
@@ -11,8 +11,7 @@ import { Text } from '@/ui/Text';
 export default function Clubs() {
   const [rsvp, setRsvp] = useState<'going' | 'maybe' | undefined>();
   return (
-    <Screen tabs>
-      <BrandHeader />
+    <Screen tabs brand>
       <PageTitle>Clubs</PageTitle>
       <HeroCard eyebrow="Sunday ride" title="Ridge sunrise run">
         <Text variant="label" tone="muted">Dawn Riders · {rsvp === 'going' ? 10 : 9} going · {rsvp === 'maybe' ? 4 : 3} maybe</Text>

@@ -1,18 +1,14 @@
-import { Image } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '@/theme/ThemeProvider';
+import { LOGO_PATHS, LOGO_RATIO, LOGO_VIEWBOX } from './logoPaths';
 
-const source = require('../../assets/myto-logo.png');
-const RATIO = 91 / 42;
-
-/** The Myto logo. The asset is white on transparent; tint it dark on light screens and white on dark ones. */
+/** The Myto logo as a vector: dark on light screens, white on dark ones, sharp at any size. */
 export function Logo({ height = 28 }: { height?: number }) {
   const { mode } = useTheme();
+  const fill = mode === 'dark' ? '#ffffff' : '#1a1a1a';
   return (
-    <Image
-      source={source}
-      accessibilityLabel="Myto"
-      style={{ height, width: height * RATIO, tintColor: mode === 'dark' ? '#ffffff' : '#1a1a1a' }}
-      resizeMode="contain"
-    />
+    <Svg width={height * LOGO_RATIO} height={height} viewBox={LOGO_VIEWBOX} role="img" aria-label="Myto">
+      {LOGO_PATHS.map((d, i) => <Path key={i} d={d} fill={fill} />)}
+    </Svg>
   );
 }

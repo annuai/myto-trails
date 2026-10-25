@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, Camera, ClipboardList, Route as RouteIcon, UserRound } from 'lucide-react-native';
+import { Camera, ClipboardList, MoreHorizontal, Route as RouteIcon, Trash2 } from 'lucide-react-native';
 import { toTrailLike } from '@/api/status';
 import { useTrailSearch } from '@/api/useApi';
 import { useTrailStore } from '@/store/trails';
+import { IconButton } from '@/ui/IconButton';
+import { Sheet } from '@/ui/Sheet';
 import { dueInfo, isDueSoon } from '@/lib/todos';
 import { duration, km } from '@/lib/format';
 import { useProfile } from '@/store/profile';
@@ -12,9 +15,11 @@ import { useTodos } from '@/store/todos';
 import { Banner } from '@/ui/Banner';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { Columns } from '@/ui/Columns';
+import { useLayout } from '@/ui/useLayout';
 import { StatusChip } from '@/ui/Chip';
 import { EmptyState } from '@/ui/EmptyState';
-import { BrandHeader, SectionTitle } from '@/ui/Header';
+import { SectionTitle } from '@/ui/Header';
 import { HeroCard, ProgressBar } from '@/ui/HeroCard';
 import { ListCard } from '@/ui/ListCard';
 import { Row } from '@/ui/ListCard';
@@ -26,8 +31,10 @@ import { TrailTile } from '@/ui/TrailRow';
 
 export default function Home() {
   const router = useRouter();
+  const { landscape } = useLayout();
   const rides = useRides((s) => s.rides);
   const nextTrip = useTrailStore((s) => s.nextTrip);
+  const [menu, setMenu] = useState(false);
   const near = useTrailSearch('');
   const km_ = totalKm(rides);
   const todos = useTodos((s) => s.todos);
@@ -39,10 +46,18 @@ export default function Home() {
   const latest = rides[0];
 
   return (
-    <Screen tabs>
-      <BrandHeader />
+    <Screen tabs brand overlay={
+      <Sheet open={menu} title="Next ride" onClose={() => setMenu(false)}>
+        <Text variant="label" tone="muted">{trail ? `${trail.name}${trail.date ? `, ${trail.date}` : ''}` : ''}</Text>
+        <Button variant="danger" icon={Trash2} label="Cancel this plan" onPress={() => { useTrailStore.getState().cancelPlan(); setMenu(false); }} />
+        <Button variant="soft" label="Keep it" onPress={() => setMenu(false)} />
+      </Sheet>
+    }>
+      <Columns
+        rightStartsWithSection
+        left={<>
       {trail ? (
-        <HeroCard eyebrow={trail.date ? `Next ride · ${trail.date}` : 'Next ride'} title={trail.name}>
+        <HeroCard eyebrow={trail.date ? `Next ride · ${trail.date}` : 'Next ride'} title={trail.name} action={<IconButton icon={MoreHorizontal} label="Next ride options" onPress={() => setMenu(true)} plain />}>
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
             <StatusChip status={trail.status} label={trail.statusLabel} />
           </View>
@@ -67,7 +82,7 @@ export default function Home() {
         ) : null}
       </View>
 
-      <SectionTitle action="See all" onAction={() => router.push('/todos')}>Due soon</SectionTitle>
+      <SectionTitle onAdd={() => router.push('/todos/new')} addLabel="Add a to-do">Due soon</SectionTitle>
       {dues.length ? (
         <ListCard>
           {dues.slice(0, 3).map(({ t, d }) => (
@@ -75,9 +90,12 @@ export default function Home() {
           ))}
         </ListCard>
       ) : <EmptyState icon={ClipboardList} title="Nothing due" body="Add your PUC, insurance or a chain lube reminder." />}
+      <View style={{ marginTop: 12 }}><Button variant="soft" label="See all" arrow onPress={() => router.push('/todos')} /></View>
 
+        </>}
+        right={<>
       <SectionTitle>Near you</SectionTitle>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }} style={{ marginHorizontal: -20, paddingLeft: 20 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }} style={landscape ? undefined : { marginHorizontal: -20, paddingLeft: 20 }}>
         {(near.data?.items ?? []).slice(0, 8).map((t) => <TrailTile key={t.slug} trail={toTrailLike(t)} onPress={() => router.push(`/trail/${t.slug}`)} />)}
         {!near.data ? <Text variant="label" tone="muted">{near.error ?? 'Loading trails…'}</Text> : null}
       </ScrollView>
@@ -98,6 +116,8 @@ export default function Home() {
         <Button variant="soft" label="View ride story" arrow onPress={() => router.push(`/story/${latest.id}`)} />
         <Button variant="soft" label="All rides" arrow onPress={() => router.push('/rides')} />
       </View> : null}
+        </>}
+      />
       <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: 24 }}>Clubs are sample data</Text>
     </Screen>
   );
