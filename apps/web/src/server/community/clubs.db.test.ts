@@ -283,11 +283,13 @@ describe("review fixes", () => {
     const id = await club(admin);
     const j = await rider("Patient");
     await requestJoin(db.sql, { userId: j, clubId: id, phone: "9812345678", now: t0 });
-    await purgeJoinPhones(db.sql, days(29));
+    // created_at is the database's real clock, so measure the 30 days from now rather than from the fixed t0.
+    const fromNow = (n: number) => new Date(Date.now() + n * 86_400_000);
+    await purgeJoinPhones(db.sql, fromNow(29));
     expect((await phoneInDb(id))[0]).not.toBeNull();
-    await purgeJoinPhones(db.sql, days(31));
+    await purgeJoinPhones(db.sql, fromNow(31));
     expect(await phoneInDb(id)).toEqual([null]);
-    expect((await listJoinRequests(db.sql, { userId: admin, clubId: id }, days(31)))!.filter((x) => x.status === "pending")).toEqual([]);
+    expect((await listJoinRequests(db.sql, { userId: admin, clubId: id }, fromNow(31)))!.filter((x) => x.status === "pending")).toEqual([]);
   });
 });
 });

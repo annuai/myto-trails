@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { allowedRedirects, isAllowedRedirect, isChallenge } from "@/server/auth/app-auth";
 import { requireUser } from "@/server/auth/session";
-import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
-import { authorizeAppAction } from "./actions";
 
 export const instant = false;
 export const metadata: Metadata = { title: "Connect the Myto app", robots: { index: false, follow: false } };
@@ -31,12 +29,13 @@ export default async function ConnectAppPage({ searchParams }: PageProps<"/auth/
   return (
     <section className="py-(--space-section)">
       <h1 className="font-display text-3xl leading-tight">Connect the Myto app</h1>
-      <form action={authorizeAppAction} className="mt-6 flex flex-col gap-4">
+      <form action="/auth/app/connect" method="post" className="mt-6 flex flex-col gap-4">
         <input type="hidden" name="challenge" value={challenge} />
         <input type="hidden" name="redirect_uri" value={redirectUri} />
         <input type="hidden" name="state" value={state} />
         <p className="max-w-prose">Sign the Myto app in as <strong>{user.email}</strong>? It will be able to read your Saved trails and send ride drafts for review. You can remove it any time under Account, Connected devices.</p>
-        <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Connect the app</SubmitButton>
+        <button type="submit" className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Connect the app</button>
+        <p className="max-w-prose text-sm text-muted">Your phone will ask to open Myto. If nothing happens, open the Myto app yourself and tap Sign in again.</p>
       </form>
     </section>
   );
