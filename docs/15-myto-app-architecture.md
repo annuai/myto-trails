@@ -171,7 +171,14 @@ So each request costs one signature check plus the database lookup it already ne
 2. **With the app's first stage (S1):** switch the app and the Trails API to Myto ID tokens; migrate existing Trails accounts by verified email.
 3. **After:** switch the Trails website sign-in to Myto ID; remove our own session code; add the order list to the app's Me tab.
 
-**Open questions:** (1) Are the shop and Trails on the **same Supabase project or different ones**? If the same, the sign-in is already one place and only the database separation matters; if different, Trails accepts tokens from the shop's project. (2) Is the Myto team content for the shop's Supabase to be the identity for everything? (3) Does the shop use any Supabase Auth settings we should know about (for example sign-ups open to anyone, email confirmation, password rules)?
+**Decided: the shop and Trails are on different Supabase projects.** That fits the plan (separate databases) and means Trails must **trust tokens issued by the shop's project**:
+- **How Trails verifies:** it fetches the shop project's public keys from its JWKS address (`https://<shop-project>.supabase.co/auth/v1/.well-known/jwks.json`), caches them, and checks every token's signature, expiry, issuer (that exact project URL) and audience (`authenticated`). A token from any other project or issuer is refused. One small library (`jose`) does this; no call to the shop per request.
+- **The condition (open, must be checked first):** local verification needs the shop project to sign tokens with an **asymmetric key** (Supabase calls them JWT signing keys: ES256 or RS256). Older Supabase projects sign with one shared secret (HS256); then Trails could only verify by holding that secret, which would let Trails mint shop tokens. That is not acceptable, so the shop project must be switched to asymmetric signing before any of this. Where to look: shop project dashboard, Project Settings, JWT Keys. I have not seen that project, so this is unverified.
+- **Claims Trails relies on:** `sub` (stable user id) and `email`. Supabase does not put a top-level "email is verified" claim in the token, so the shop adds one with a **custom access token hook** (a small database function): `email_verified = (auth.users.email_confirmed_at is not null)`. Trails refuses tokens without it, and refuses anonymous sign-ins (`is_anonymous`).
+- **No cross-project database access.** Trails never connects to the shop's database and the shop never connects to Trails'. The only things crossing are tokens (signed, checked locally) and the shop's order API, called by the app.
+- **Unlink path.** `app_user.auth_sub` can be cleared, and Trails keeps working with its own sign-in until the switch, so this can be rolled back at any stage.
+
+**Still open:** (1) Is the shop's Supabase happy to be the identity for everything, and who on the Myto side owns that project? (2) Which Supabase Auth settings does the shop use today: are sign-ups open to anyone, is email confirmation required, and what are the password rules?
 
 ## 5. Backend additions
 
@@ -260,7 +267,7 @@ Navi is a separate device with its own team (doc 14 §6). The app is the bridge:
 ## 13. Decisions needed
 
 1. **Platforms first:** Android only first (my recommendation, most riders), both together, or iOS first?
-2. **Accounts:** one sign-in ("Myto ID") for the app, the Trails website and the Myto shop, with the shop's Supabase as the identity and both products keeping separate databases (§4.5)? Are the shop and Trails on the same Supabase project?
+2. **Accounts:** one sign-in ("Myto ID") for the app, the Trails website and the Myto shop, with the shop's Supabase as the identity and both products keeping separate databases (§4.5)? The shop and Trails are on different Supabase projects (decided); is the shop's project switched to asymmetric signing keys?
 3. **First release scope:** the seven "Core" items, or fewer? (I would start with Trails, Plan and Ride, and add Club after.)
 4. **Voice notes:** on-device transcription only, or also a server option later?
 5. **Live location in a Club ride:** include in the first Club release, or leave out until the privacy review?
