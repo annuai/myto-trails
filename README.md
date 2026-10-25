@@ -11,6 +11,7 @@ Commands (run from the repo root): `npm test`, `npm run lint`, `npm run typechec
 
 - Setup, environment variables, storage switching and Vercel: [docs/runbooks/dev-setup.md](docs/runbooks/dev-setup.md)
 - Adding a trail by hand (photos, videos, GPX, upload, import): [docs/runbooks/add-a-trail.md](docs/runbooks/add-a-trail.md)
+- The Myto app (planned): [docs/15-myto-app-architecture.md](docs/15-myto-app-architecture.md)
 - Decisions: [docs/adr/](docs/adr/)
 
 Layout: `apps/web` (Next.js), `packages/tokens` (design tokens), `packages/domain` (shared rules), `tooling` (checks).
