@@ -74,7 +74,7 @@ export function SiteFooter() {
               .
             </p>
             <p className="flex items-center gap-4 text-xs text-muted">
-              <span>© Moto Trails</span>
+              <span>© myto-moto</span>
               <span aria-hidden="true" className="text-black/20">·</span>
               <Link href="/privacy" className="transition-opacity hover:opacity-50">Privacy</Link>
               <Link href="/terms" className="transition-opacity hover:opacity-50">Terms</Link>

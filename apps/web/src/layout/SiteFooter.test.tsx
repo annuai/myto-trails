@@ -8,6 +8,11 @@ describe("SiteFooter", () => {
     expect(container.textContent).toContain("Moto Trails is a project by myto-moto");
     expect(screen.getByRole("link", { name: "myto-moto" })).toHaveAttribute("href", "https://myto-moto.com");
   });
+  it("shows the copyright as myto-moto", () => {
+    const { container } = render(<SiteFooter />);
+    expect(container.textContent).toContain("© myto-moto");
+    expect(container.textContent).not.toContain("© Moto Trails");
+  });
   it("links to the donate page", () => {
     render(<SiteFooter />);
     expect(screen.getByRole("link", { name: "Donate" })).toHaveAttribute("href", "/donate");
