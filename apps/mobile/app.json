@@ -3,12 +3,25 @@
     "name": "Myto",
     "slug": "myto",
     "scheme": "myto",
+    "icon": "./assets/icon.png",
     "version": "0.0.0",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.myto-moto.myto"
+    },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#b0442e",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain"
+        }
+      ],
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
