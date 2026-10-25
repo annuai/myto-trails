@@ -42,7 +42,7 @@ export function SiteFooter() {
         <div className="container-wide pb-12 pt-16">
           <div className="mb-14 flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <Image src="/brand/moto-trails-logo.svg" alt="Moto Trails" width={142} height={25} className="mb-5 h-auto w-36" unoptimized />
+              <Image src="/brand/moto-trails-logo.svg" alt="Moto Trails" width={144} height={26} className="mb-5 h-auto w-36" unoptimized />
               <p className="max-w-[260px] text-sm leading-relaxed text-muted">A moderated directory of motorcycle trails in India: who may ride, how we know, and when it was last checked.</p>
             </div>
             <Suspense fallback={<FooterClock place={null} />}>
