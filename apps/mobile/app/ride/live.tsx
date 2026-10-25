@@ -20,7 +20,8 @@ import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { Pressable } from 'react-native';
 import { Icon } from '@/ui/Icon';
-import { radius } from '@/theme/tokens';
+import { fixed, radius } from '@/theme/tokens';
+import { useTheme } from '@/theme/ThemeProvider';
 
 /** Live riding: dark, no tab bar, big numbers, nothing that needs text input. */
 export default function Live() {
@@ -29,6 +30,7 @@ export default function Live() {
 
 function LiveBody() {
   const router = useRouter();
+  const { c } = useTheme();
   const { landscape, height } = useLayout();
   const r = useRecorder();
   const contacts = useProfile((s) => s.contacts);
@@ -64,12 +66,12 @@ function LiveBody() {
   const status = r.source === 'gps' && !fix && gpsError ? <Text variant="label" tone="caution">{gpsError}</Text>
     : <Text variant="label" tone="muted" style={{ textAlign: landscape ? 'left' : 'center' }}>{r.points.length ? `${r.points.length} points recorded${fix?.accuracy ? ` · GPS ±${Math.round(fix.accuracy)} m` : ''}` : 'Waiting for a GPS fix…'}</Text>;
   const waypointBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => useRecorder.getState().addWaypoint()} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? '#2c2c2a' : '#242422', alignItems: 'center', justifyContent: 'center', gap: 6 })}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => useRecorder.getState().addWaypoint()} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: 6 })}>
       <Icon icon={Flag} size={h > 70 ? 26 : 22} /><Text variant="labelMedium">Waypoint{r.waypoints.length ? ` · ${r.waypoints.length}` : ''}</Text>
     </Pressable>
   );
   const sosBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => setSos(true)} style={{ flex: 1, minHeight: h, borderRadius: radius.control, borderWidth: 1.5, borderColor: '#ec8272', flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
+    <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => setSos(true)} style={{ flex: 1, minHeight: h, borderRadius: radius.control, borderWidth: 1.5, borderColor: c.stop, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
       <Icon icon={Siren} tone="stop" size={22} /><Text variant="bodyMedium" tone="stop">SOS</Text>
     </Pressable>
   );
@@ -85,7 +87,7 @@ function LiveBody() {
     }>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 48 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#ec8272' }} />
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: c.stop }} />
           <Text variant="labelMedium" tone="muted">{r.source === 'sim' ? 'Recording (simulated)' : 'Recording'}</Text>
         </View>
         <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
@@ -96,7 +98,7 @@ function LiveBody() {
           <View style={{ flex: 1, gap: 12 }}>{stats}{status}</View>
           <View style={{ flex: 1.25, gap: 12 }}>
             <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} dark follow line={routeLine} track={r.points} position={last} waypoints={r.waypoints} />
-            <View style={{ flexDirection: 'row', gap: 12 }}>{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color="#a32d1c" minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
+            <View style={{ flexDirection: 'row', gap: 12 }}>{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
           </View>
         </View>
       ) : (
@@ -107,7 +109,7 @@ function LiveBody() {
           </View>
           <View style={{ marginTop: 12 }}>{status}</View>
           <View style={{ flex: 1 }} />
-          <View style={{ flexDirection: 'row', gap: 12 }}>{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color="#a32d1c" onComplete={stop} /></View>
+          <View style={{ flexDirection: 'row', gap: 12 }}>{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} onComplete={stop} /></View>
           <View style={{ marginTop: 12, flexDirection: 'row' }}>{sosBtn(56)}</View>
         </>
       )}

@@ -7,7 +7,8 @@
     "./tokens.css": "./src/tokens.css",
     "./trails.css": "./src/trails.css",
     "./contrast": "./src/contrast.ts",
-    "./parse": "./src/parse.ts"
+    "./parse": "./src/parse.ts",
+    "./mobile": "./src/mobile.ts"
   },
   "scripts": {
     "test": "vitest run",

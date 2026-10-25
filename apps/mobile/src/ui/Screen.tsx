@@ -1,5 +1,6 @@
 import { useRef, type ReactNode } from 'react';
 import { Animated, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme/ThemeProvider';
 import { size } from '@/theme/tokens';
@@ -38,7 +39,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
     <View style={{ flex: 1, paddingTop: top, paddingLeft: padL, paddingRight: padR, paddingBottom: insets.bottom + 16 }}>{frame(children, true)}</View>
   );
   return (
-    <View style={{ flex: 1, backgroundColor: c.paper }}>
+    <LinearGradient colors={c.gradient as unknown as [string, string, string]} locations={[0, 0.45, 1]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={{ flex: 1, backgroundColor: c.paper }}>
       {body}
       {brand ? <FloatingHeader scrollY={scrollY} /> : null}
       {footer ? (
@@ -47,6 +48,6 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
         </View>
       ) : null}
       {overlay}
-    </View>
+    </LinearGradient>
   );
 }

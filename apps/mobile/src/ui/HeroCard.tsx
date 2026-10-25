@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Animated, View } from 'react-native';
+import { useTheme } from '@/theme/ThemeProvider';
 import { Card } from './Card';
 import { EASE } from './motion';
 import { Text } from './Text';
@@ -19,12 +20,13 @@ export function HeroCard({ eyebrow, title, children, action }: { eyebrow: string
 }
 
 export function ProgressBar({ value, max, label }: { value: number; max: number; label: string }) {
+  const { c } = useTheme();
   const pct = max ? Math.min(1, value / max) : 0;
   const w = useRef(new Animated.Value(0)).current;
   useEffect(() => { Animated.timing(w, { toValue: pct, duration: 500, easing: EASE, useNativeDriver: false }).start(); }, [pct, w]);
   return (
     <View accessibilityRole="progressbar" accessibilityLabel={label} accessibilityValue={{ min: 0, max, now: value }} style={{ height: 8, borderRadius: 4, backgroundColor: 'rgba(128,128,128,0.25)', overflow: 'hidden' }}>
-      <Animated.View style={{ width: w.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), height: '100%', borderRadius: 4, backgroundColor: '#1a1a1a' }} />
+      <Animated.View style={{ width: w.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), height: '100%', borderRadius: 4, backgroundColor: c.ink }} />
     </View>
   );
 }

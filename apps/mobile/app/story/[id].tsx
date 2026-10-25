@@ -36,10 +36,10 @@ function StoryBody() {
       <PageTitle sub={formatDate(new Date(ride.startedAt).toISOString().slice(0, 10)) + (ride.sample ? ' · sample' : '')}>{ride.name}</PageTitle>
       <Columns
         left={<>
-      <View style={{ backgroundColor: '#8fbbdc', borderRadius: radius.card, padding: 24, gap: 4 }}>
-        <Text variant="label" style={{ color: '#121211' }}>You rode</Text>
-        <Text variant="live" style={{ color: '#121211', fontSize: 56, lineHeight: 62 }}>{km(ride.distanceKm)} km</Text>
-        <Text variant="label" style={{ color: '#121211' }}>in {duration(ride.durationSec)}</Text>
+      <View style={{ backgroundColor: c.accent, borderRadius: radius.card, padding: 24, gap: 4 }}>
+        <Text variant="label" style={{ color: c.accentInk }}>You rode</Text>
+        <Text variant="live" style={{ color: c.accentInk, fontSize: 56, lineHeight: 62 }}>{km(ride.distanceKm)} km</Text>
+        <Text variant="label" style={{ color: c.accentInk }}>in {duration(ride.durationSec)}</Text>
       </View>
       <SectionTitle>Highlights</SectionTitle>
       <Card style={{ flexDirection: 'row' }}>

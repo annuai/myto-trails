@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Animated, Easing, Pressable, View } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
-import { radius } from '@/theme/tokens';
+import { fixed, radius } from '@/theme/tokens';
 import { Icon } from './Icon';
 import { Text } from './Text';
 
@@ -22,7 +22,7 @@ export function HoldButton({ label, icon, color, borderOnly, ms = 1000, onComple
       <Animated.View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.28)', width: fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
       <View style={{ alignItems: 'center', gap: 6 }}>
         <Icon icon={icon} size={26} tone="onInk" />
-        <Text variant="labelMedium" style={{ color: '#fff' }}>{holding ? 'Keep holding' : label}</Text>
+        <Text variant="labelMedium" style={{ color: fixed.white }}>{holding ? 'Keep holding' : label}</Text>
       </View>
     </Pressable>
   );

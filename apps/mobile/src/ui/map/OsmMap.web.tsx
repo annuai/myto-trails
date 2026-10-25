@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import type { GeoJSONSource, Map as MlMap } from 'maplibre-gl';
 import type { LatLng } from '@/lib/geo';
+import { fixed } from '@/theme/tokens';
 import { Text } from '../Text';
 import { INDIA_CENTER, MAP_STYLE_URL, OSM_STYLE, ROUTE_COLOR, TRACK_COLOR } from './style';
 import type { OsmMapProps } from './types';
@@ -42,12 +43,12 @@ export function OsmMap({ height, line, track, position, waypoints, follow, dark,
           m.addSource('wpts', { type: 'geojson', data: pointsFeature() });
           m.addSource('pos', { type: 'geojson', data: pointsFeature() });
           const casing = { 'line-cap': 'round', 'line-join': 'round' } as const;
-          m.addLayer({ id: 'line-casing', type: 'line', source: 'line', layout: casing, paint: { 'line-color': '#fff', 'line-width': 7 } });
+          m.addLayer({ id: 'line-casing', type: 'line', source: 'line', layout: casing, paint: { 'line-color': fixed.white, 'line-width': 7 } });
           m.addLayer({ id: 'line', type: 'line', source: 'line', layout: casing, paint: { 'line-color': ROUTE_COLOR, 'line-width': 4 } });
-          m.addLayer({ id: 'track-casing', type: 'line', source: 'track', layout: casing, paint: { 'line-color': '#fff', 'line-width': 8 } });
+          m.addLayer({ id: 'track-casing', type: 'line', source: 'track', layout: casing, paint: { 'line-color': fixed.white, 'line-width': 8 } });
           m.addLayer({ id: 'track', type: 'line', source: 'track', layout: casing, paint: { 'line-color': TRACK_COLOR, 'line-width': 5 } });
-          m.addLayer({ id: 'wpts', type: 'circle', source: 'wpts', paint: { 'circle-radius': 7, 'circle-color': '#fff', 'circle-stroke-color': '#1a1a1a', 'circle-stroke-width': 3 } });
-          m.addLayer({ id: 'pos', type: 'circle', source: 'pos', paint: { 'circle-radius': 9, 'circle-color': '#1f6feb', 'circle-stroke-color': '#fff', 'circle-stroke-width': 3 } });
+          m.addLayer({ id: 'wpts', type: 'circle', source: 'wpts', paint: { 'circle-radius': 7, 'circle-color': fixed.white, 'circle-stroke-color': fixed.ink, 'circle-stroke-width': 3 } });
+          m.addLayer({ id: 'pos', type: 'circle', source: 'pos', paint: { 'circle-radius': 9, 'circle-color': fixed.position, 'circle-stroke-color': fixed.white, 'circle-stroke-width': 3 } });
           setReady(true);
         });
       } catch {
@@ -78,7 +79,7 @@ export function OsmMap({ height, line, track, position, waypoints, follow, dark,
   }, [ready, line, track, position, waypoints, follow, dark]);
 
   return (
-    <View style={{ height, borderRadius: radius, overflow: 'hidden', backgroundColor: dark ? '#232321' : '#e6e1da' }}>
+    <View style={{ height, borderRadius: radius, overflow: 'hidden', backgroundColor: dark ? fixed.mapNight : fixed.mapDay }}>
       <div ref={box} style={{ width: '100%', height: '100%' }} />
       {problem && !ready ? <View style={{ position: 'absolute', left: 12, right: 12, bottom: 12 }}><Text variant="caption" tone="muted">{problem}</Text></View> : null}
     </View>

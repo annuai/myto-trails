@@ -1,3 +1,5 @@
+import { fixed } from '@/theme/tokens';
+
 export const OSM_ATTRIBUTION = '© OpenStreetMap contributors';
 
 // OpenStreetMap's public tile servers allow light use only (https://operations.osmfoundation.org/policies/tiles/):
@@ -13,5 +15,5 @@ export const OSM_STYLE = {
 };
 
 export const INDIA_CENTER: [number, number] = [78.9, 21];
-export const ROUTE_COLOR = '#1f4a6b';
-export const TRACK_COLOR = '#d9480f';
+export const ROUTE_COLOR = fixed.route;
+export const TRACK_COLOR = fixed.track;

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Motorbike, Route, User, Users, type LucideIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChrome } from '@/store/chrome';
+import { fixed } from '@/theme/tokens';
 import { useLayout } from './useLayout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Icon } from './Icon';
@@ -27,18 +28,18 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   const order = ['index', 'trails', 'REC', 'clubs', 'you'];
   const active = state.routes[state.index]?.name;
   // Same shape as the website's top nav: a white, fully rounded bar floating clear of the edges with a soft shadow.
-  const bar = c.card === '#fbf9f6' ? '#ffffff' : c.card;
+  const bar = c.bar;
   if (sheetOpen) return null;
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingLeft: Math.max(16, insets.left), paddingRight: Math.max(16, insets.right), paddingBottom: Math.max(insets.bottom, landscape ? 6 : 12) + (landscape ? 2 : 4) }}>
-      <View style={{ height: h, width: '100%', maxWidth: landscape ? 560 : 520, borderRadius: h / 2, backgroundColor: bar, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 24, shadowOffset: { width: 0, height: 4 }, elevation: 8 }}>
+      <View style={{ height: h, width: '100%', maxWidth: landscape ? 560 : 520, borderRadius: h / 2, backgroundColor: bar, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, shadowColor: fixed.shadow, shadowOpacity: 0.1, shadowRadius: 24, shadowOffset: { width: 0, height: 4 }, elevation: 8 }}>
       {order.map((name) => {
         if (name === 'REC') {
           return (
             <View key={name} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
               <ScalePressable scaleTo={0.92} accessibilityRole="button" accessibilityLabel="Record a ride" onPress={() => router.push('/ride')}
-                style={({ pressed }) => ({ marginTop: landscape ? -22 : -30, width: landscape ? 60 : 72, height: landscape ? 60 : 72, borderRadius: 36, backgroundColor: c.record, alignItems: 'center', justifyContent: 'center', borderWidth: 6, borderColor: bar, opacity: pressed ? 0.9 : 1, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } })}>
-                <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#ffffff' }} />
+                style={({ pressed }) => ({ marginTop: landscape ? -22 : -30, width: landscape ? 60 : 72, height: landscape ? 60 : 72, borderRadius: 36, backgroundColor: c.record, alignItems: 'center', justifyContent: 'center', borderWidth: 6, borderColor: bar, opacity: pressed ? 0.9 : 1, shadowColor: fixed.shadow, shadowOpacity: 0.18, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } })}>
+                <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: fixed.white }} />
               </ScalePressable>
               <Text variant="caption" style={{ marginTop: 2, fontFamily: 'Geist_500Medium' }}>Record</Text>
             </View>

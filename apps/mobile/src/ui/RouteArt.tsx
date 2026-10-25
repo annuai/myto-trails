@@ -1,5 +1,5 @@
 import Svg, { Path, Rect } from 'react-native-svg';
-import { tints, type Tint } from '@/theme/tokens';
+import { dark, fixed, light, tints, type Tint } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { LatLng } from '@/lib/geo';
 
@@ -29,12 +29,12 @@ type Props = { seed?: number; points?: LatLng[]; tint?: Tint | 'night'; height: 
 export function RouteArt({ seed = 0, points, tint = 'sand', height, width = '100%', radius = 0 }: Props) {
   const { mode } = useTheme();
   const night = tint === 'night' || mode === 'dark';
-  const bg = tint === 'night' ? '#232321' : night ? '#2b2a27' : tints[tint];
+  const bg = tint === 'night' ? fixed.mapNight : night ? fixed.artNight : tints[tint];
   const d = points && points.length > 1 ? fromPoints(points) : SEEDS[seed % SEEDS.length];
   return (
     <Svg width={width as number} height={height as number} viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" style={{ borderRadius: radius }}>
       <Rect width="200" height="110" fill={bg} />
-      <Path d={d} fill="none" stroke={night ? '#8fbbdc' : '#1a1a1a'} strokeOpacity={night ? 1 : 0.55} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d={d} fill="none" stroke={night ? dark.accent : light.ink} strokeOpacity={night ? 1 : 0.55} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
