@@ -105,7 +105,73 @@ The app is a shell with **modules**, one per tab. A module owns its screens, its
 - The website signs in by email link. The app reuses it: the rider enters their email, the link opens the app (universal link), and the app exchanges it for a **device token** with scopes. The existing token system (hashed, scoped, revocable, listed at *Account → Connected devices*) already does the server side.
 - Tokens live in the phone's secure storage (Keychain / Keystore). Optional app lock with fingerprint or face.
 - The app shows the same 18+ and licence declaration as the website before any community feature.
-- **(open)** Shared sign-in with the Myto shop at `myto-moto.com`: a decision for the Myto team (§13).
+- Shared sign-in with the Myto shop at `myto-moto.com`: see §4.5 (recommended: one identity, each backend checks the token locally).
+
+### 4.5 One identity across Trails and the Myto shop
+
+The Myto shop repo (`myto-moto`, read on 25 October 2026) has its own accounts and orders, and the Trails site has its own. Facts that matter, from reading both:
+
+| | Myto shop | Trails |
+|---|---|---|
+| Sign-in | Supabase Auth: email and password, email confirmation, reset links | Own email-link sign-in, sessions in our own tables |
+| Accounts | `auth.users` plus `customer_profiles` (name, phone) | `app_user` (opaque public id, 18+ declaration, privacy choices) |
+| Orders | Guest checkout first; `orders.customer_email` is the only link to a person (no customer id); a logged-in user sees orders whose email equals theirs | none |
+| Payments | Razorpay, verified on the server | none (donations later) |
+| Admin | One shared password and a signed cookie (`ADMIN_PASSWORD`, `ADMIN_JWT_SECRET`) | Per-person roles with an audit log |
+| "Club" | "Club Myto" is a marketing page for a WhatsApp group | Club is clubs, join requests, ride plans (a different thing) |
+
+**What you want:** keep the two products and databases separate, and pull shop data by email only when needed. **The problem you spotted is real:** if each system re-checks who the person is, the app signs in twice, every request pays for two checks, and email becomes a fragile join key (aliases like `a.b@gmail.com`, plus-addresses, a changed email, a stranger who signs up with someone else's address).
+
+**The way out is to separate identity from data:**
+1. **Identity is decided once**, by one sign-in, and carried as a signed token (a JWT).
+2. **Each backend checks the token locally**, by verifying a signature against a public key it has cached. That is a few microseconds and needs no call to the other system.
+3. **Data stays where it lives.** Trails never reads shop data and the shop never reads Trails data. When a screen needs shop data (orders), the app asks the shop's own API with the same token.
+
+**Options compared**
+
+| Option | Sign-ins | Checks per request | Coupling | Verdict |
+|---|---|---|---|---|
+| A. Keep both logins, join by email | Two (or a hidden second one) | Token check on each side, plus an email match, plus a server-to-server call for orders | Low | What you feared; email is a weak key. Fine only as a stop-gap |
+| B. Link accounts once ("Connect your Myto account"), then server-to-server | Two, linked | One token check; orders via a service call per screen | Low | Workable, but the app still holds two sessions |
+| **C. One identity provider; both backends accept its token** | **One** | **One local signature check** | Medium (both depend on one login service) | **Recommended** |
+| D. Merge into one database | One | One | High | No: it ties two products together, and the data and privacy rules differ |
+
+**Recommendation: C, with the shop's Supabase Auth as the single identity ("Myto ID").** It already holds the customers, passwords and verified emails, and covers people who buy but never open Trails. Both products stay separate apps with separate databases.
+
+**What a request costs under C**
+
+| Check | How it is done once |
+|---|---|
+| Who is this? | The app signs in once (Supabase's PKCE flow, which works in React Native). Every call carries the token. Each backend verifies the signature locally against cached public keys. |
+| Is the email real? | The token says `email_verified`. A link between systems is only made for a verified email, and never re-checked per call. |
+| Which Trails account? | `app_user.auth_sub` stores the token's stable user id (not the email). It is found in the same query that already loads the user. |
+| Is this user allowed here? | Authorisation stays local: Trails checks `app_user.status`, roles and the 18+ declaration in its own database, as today. Suspending someone on Trails works at once and needs no call to the shop. |
+| Orders or shop data | The app calls the shop's API with the same token. Trails is not involved, so there is no server-to-server hop. |
+| Shop facts Trails needs (for example "owns a Myto Navi") | A custom claim added to the token at sign-in, so there is still no extra call. |
+
+So each request costs one signature check plus the database lookup it already needed. Cross-system calls only happen when a screen shows the other product's data, and then they are one hop, cached.
+
+**What changes in each repo**
+- **Shop (`myto-moto`):** switch Supabase to asymmetric token signing and publish its keys; add a small API for the app (`GET /api/me/orders`, `GET /api/me/orders/{id}`) that reads the bearer token and returns the same data the account page shows; add a sign-in hook for the claims; confirm that email confirmation is required (the sign-up screen says it is, but the setting must be verified); keep the order-by-email logic **inside the shop only**, and match on the verified email lowercased. Later, replace the shared admin password with named admin users.
+- **Trails:** accept Myto ID tokens in the API (the token check replaces our own session check, same shape as the device-token check we already have); add `app_user.auth_sub`; on a first sign-in with an existing email, link the old account once (matching on a verified email), then store the id; keep our own device tokens only for Myto Navi, which has no browser, minted after the rider approves the device.
+- **App:** one sign-in screen; one token; two base URLs (`moto-trails.com/api/v1` and `myto-moto.com/api`).
+- **Web sign-in:** Trails keeps its email-link login until the app ships, and then it is replaced by "Sign in with Myto" so the two products behave the same.
+
+**Edge cases and rules**
+- **Never trust an unverified email.** If someone can sign up with another person's address and see that person's orders, the join is an account takeover. Only a verified email can see orders; the shop's guest orders become visible only after the owner confirms the address.
+- **Email changes and aliases.** Link on the stable user id, not the email; email is a hint for the one-time link only.
+- **Deleting an account.** The shop deletes the identity; a webhook tells Trails to remove or anonymise the person's Trails data (clubs, comments, questions) according to the data-protection rules in §10. The reverse (deleting on Trails) removes only Trails data.
+- **Token lifetime.** Short access tokens (about an hour) with refresh; sign-out everywhere revokes the refresh tokens.
+- **If the shop's login is down,** a signed-in app keeps working until the token expires, and offline features never need it; new sign-ins wait. Both products are yours, so this is an operations risk, not a trust risk.
+- **Names.** Rename the app tab to "Clubs" (or keep "Club" and call the shop's page "Club Myto, the WhatsApp community") so riders do not confuse a ride club with the WhatsApp group; the app can link to Club Myto as one entry.
+- **Shop checkout in the app.** Open the shop's own checkout in the browser (Razorpay stays where it is). Physical goods are not subject to the store's in-app-purchase rule, but check the current store terms before launch.
+
+**Stages**
+1. **Now:** nothing changes for riders. Add `app_user.auth_sub` (empty) and write the shop's `/api/me/orders` behind a feature flag.
+2. **With the app's first stage (S1):** switch the app and the Trails API to Myto ID tokens; migrate existing Trails accounts by verified email.
+3. **After:** switch the Trails website sign-in to Myto ID; remove our own session code; add the order list to the app's Me tab.
+
+**Open questions:** (1) Are the shop and Trails on the **same Supabase project or different ones**? If the same, the sign-in is already one place and only the database separation matters; if different, Trails accepts tokens from the shop's project. (2) Is the Myto team content for the shop's Supabase to be the identity for everything? (3) Does the shop use any Supabase Auth settings we should know about (for example sign-ups open to anyone, email confirmation, password rules)?
 
 ## 5. Backend additions
 
@@ -194,7 +260,7 @@ Navi is a separate device with its own team (doc 14 §6). The app is the bridge:
 ## 13. Decisions needed
 
 1. **Platforms first:** Android only first (my recommendation, most riders), both together, or iOS first?
-2. **Accounts:** one sign-in for the app, the Trails website and the Myto shop, or Trails only for now?
+2. **Accounts:** one sign-in ("Myto ID") for the app, the Trails website and the Myto shop, with the shop's Supabase as the identity and both products keeping separate databases (§4.5)? Are the shop and Trails on the same Supabase project?
 3. **First release scope:** the seven "Core" items, or fewer? (I would start with Trails, Plan and Ride, and add Club after.)
 4. **Voice notes:** on-device transcription only, or also a server option later?
 5. **Live location in a Club ride:** include in the first Club release, or leave out until the privacy review?
