@@ -9,6 +9,8 @@ import { queryTrailBySlug, queryTrailRoute } from "../queries/trails.sql";
 import { STEPS, validateStep, type Step } from "../submissions/schema";
 import { attachRoute, createDraft, getMine, listMine, saveStep, submit } from "../submissions/service";
 import { completeUpload, getUploadStatus, requestUpload } from "../uploads/service";
+import { exchangeAppCode } from "../auth/app-auth";
+import { revokeToken } from "./tokens";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 import { clientIp, hashIp } from "../auth/request-context";
 
@@ -82,6 +84,31 @@ export const routes: RouteDef[] = [
       if (r.reason === "not_found") return fail(404, "not_found", "No such trail.");
       if (r.reason === "rate_limited") return fail(429, "rate_limited", "Too many reports today.");
       return fail(422, "validation_failed", "Check the type and describe the problem in at least 20 characters.");
+    },
+  },
+
+  {
+    method: "POST", path: "/auth/token", access: "public", summary: "Trade a one-time code from the website's app sign-in for a device token (body: code, verifier, kind app_android|app_ios; PKCE S256)",
+    async handler(c) {
+      const b = await asObject(c);
+      const r = await exchangeAppCode(c.sql, { code: String(b.code ?? ""), verifier: String(b.verifier ?? ""), kind: String(b.kind ?? "") });
+      if (r.ok) return ok({ token: r.token, scopes: ["saved", "write:submission"] }, 201);
+      if (r.reason === "too_many_tokens") return fail(409, "too_many_tokens", "This account has too many connected devices. Remove one under Account, Connected devices.");
+      return r.reason === "invalid_request" ? fail(400, "invalid_request", "Send code, verifier and kind.") : fail(400, "invalid_grant", "The code is invalid, expired or already used.");
+    },
+  },
+  {
+    method: "DELETE", path: "/auth/token", access: "token", summary: "Sign out: revoke the token used for this request",
+    async handler(c) {
+      await revokeToken(c.sql, { userId: c.userId, tokenId: c.auth!.tokenId });
+      return noContent();
+    },
+  },
+  {
+    method: "GET", path: "/me", access: "token", summary: "Who the token belongs to",
+    async handler(c) {
+      const [u] = await c.sql`select display_name, email from app_user where id = ${c.userId}`;
+      return ok({ displayName: u?.display_name ?? "", email: u?.email ?? "", scopes: c.auth!.scopes });
     },
   },
 

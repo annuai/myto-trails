@@ -7,7 +7,7 @@ export const MAX_BODY_BYTES = 64 * 1024;
 const PUBLIC_PER_MINUTE = 120;
 const TOKEN_PER_MINUTE = 600;
 
-export type Deps = { sql: Sql; storage: StorageProvider; now: Date; siteUrl: string };
+export type Deps = { sql: Sql; storage: StorageProvider; now: Date; siteUrl: string; /** Browser origins allowed to call the API (the app's web build). Native apps need no CORS. */ corsOrigins?: string[] };
 export type Ctx = Deps & {
   req: Request;
   url: URL;
@@ -87,8 +87,35 @@ async function readCapped(req: Request): Promise<string> {
   return new TextDecoder().decode(Buffer.concat(chunks));
 }
 
-/** The single entry point for /api/v1: authentication, scopes, rate limits, body limits and one error shape. */
+/**
+ * Cross-origin access for listed browser origins only. Authorization is a bearer token (no cookies are read),
+ * so this adds no ambient authority; unlisted origins get no CORS headers and the browser blocks them.
+ */
 export async function dispatch(req: Request, routes: RouteDef[], deps: Deps): Promise<Response> {
+  const origin = req.headers.get("origin");
+  const allow = origin !== null && deps.corsOrigins?.includes(origin) ? origin : null;
+  const cors = (h: Headers, preflight: boolean) => {
+    if (!allow) return;
+    h.set("Access-Control-Allow-Origin", allow);
+    h.append("Vary", "Origin");
+    if (preflight) {
+      h.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+      h.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+      h.set("Access-Control-Max-Age", "600");
+    }
+  };
+  if (req.method === "OPTIONS") {
+    const h = new Headers();
+    cors(h, true);
+    return new Response(null, { status: 204, headers: h });
+  }
+  const res = await handle(req, routes, deps);
+  cors(res.headers, false);
+  return res;
+}
+
+/** The single entry point for /api/v1: authentication, scopes, rate limits, body limits and one error shape. */
+async function handle(req: Request, routes: RouteDef[], deps: Deps): Promise<Response> {
   try {
     const url = new URL(req.url);
     const path = url.pathname.replace(/^\/api\/v1/, "") || "/";
