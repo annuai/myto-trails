@@ -35,7 +35,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Myto records your ride's route while you ride."
+          "locationWhenInUsePermission": "Myto records your ride's route while you ride.",
+          "locationAlwaysAndWhenInUsePermission": "Myto records your ride's route in the background, so it keeps recording when your screen is locked or another app is open.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       "@maplibre/maplibre-react-native",

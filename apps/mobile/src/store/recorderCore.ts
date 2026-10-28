@@ -24,6 +24,9 @@ type State = {
   notes: number;
   /** When the last fix arrived, drawn or not. The live screen warns when this gets old. */
   lastFixAt: number;
+  /** True while the phone's background task is the one recording (it keeps going with the screen locked). */
+  backgrounded: boolean;
+  setBackgrounded: (b: boolean) => void;
   /** A ride left unfinished by a crash or a kill, waiting for the rider to save or discard it. */
   recoverable: Recoverable | null;
   error?: string;
@@ -45,7 +48,8 @@ const blank = { status: 'idle' as const, startedAt: 0, points: [], waypoints: []
 export function createRecorder(journal: Journal) {
   let queue: Promise<unknown> = Promise.resolve();
   return create<State>((set, get) => ({
-    ...blank, source: 'gps', recoverable: null,
+    ...blank, source: 'gps', recoverable: null, backgrounded: false,
+    setBackgrounded: (backgrounded) => set({ backgrounded }),
     start: async (source) => {
       const existing = await journal.read();
       if (existing) { set({ recoverable: { startedAt: existing.meta.startedAt, points: existing.points.length } }); return false; }
