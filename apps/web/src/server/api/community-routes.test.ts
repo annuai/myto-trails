@@ -6,9 +6,11 @@ const clubs = vi.hoisted(() => ({
   postToClub: vi.fn(), removeMember: vi.fn(), requestJoin: vi.fn(), respondToRide: vi.fn(), setMemberRole: vi.fn(), withdrawJoinRequest: vi.fn(),
 }));
 const comments = vi.hoisted(() => ({ deleteComment: vi.fn(), editComment: vi.fn(), listComments: vi.fn(), postComment: vi.fn(), reportContent: vi.fn() }));
+const ridden = vi.hoisted(() => ({ listMyRidden: vi.fn(), markRidden: vi.fn(), unmarkRidden: vi.fn() }));
 const notify = vi.hoisted(() => ({ sendToUser: vi.fn() }));
 vi.mock("../community/clubs", () => clubs);
 vi.mock("../community/comments", () => comments);
+vi.mock("../community/ridden", () => ridden);
 vi.mock("../moderation/notify", () => notify);
 vi.mock("../auth/session", () => ({ getEmailSender: () => ({}) }));
 
@@ -26,6 +28,27 @@ async function call(method: string, path: string, body?: unknown, auth: Ctx["aut
 }
 
 beforeEach(() => { vi.clearAllMocks(); });
+
+describe("ridden routes", () => {
+  it("marks a trail as ridden with the optional details, and maps a refusal to the shared error shape", async () => {
+    ridden.markRidden.mockResolvedValueOnce({ ok: true });
+    expect((await call("PUT", "/trails/some-trail/ridden", { month: "2026-05", bike: "Himalayan", note: "" })).status).toBe(204);
+    expect(ridden.markRidden).toHaveBeenCalledWith(sql, expect.objectContaining({ userId: "u1", slug: "some-trail", month: "2026-05", bike: "Himalayan", note: null }));
+    ridden.markRidden.mockResolvedValueOnce({ ok: false, reason: "invalid" });
+    expect(await call("PUT", "/trails/some-trail/ridden", { month: "2999-01" })).toMatchObject({ status: 422, body: { error: { code: "invalid" } } });
+  });
+  it("takes it back and lists the caller's own trails", async () => {
+    expect((await call("DELETE", "/trails/some-trail/ridden")).status).toBe(204);
+    expect(ridden.unmarkRidden).toHaveBeenCalledWith(sql, { userId: "u1", slug: "some-trail" });
+    ridden.listMyRidden.mockResolvedValueOnce([{ slug: "a", name: "A", riddenMonth: null, bike: null, markedAt: "2026-06-01T00:00:00.000Z" }]);
+    expect(await call("GET", "/me/ridden")).toMatchObject({ status: 200, body: { items: [{ slug: "a" }] } });
+    expect(ridden.listMyRidden).toHaveBeenCalledWith(sql, "u1");
+  });
+  it("refuses a bad trail address", async () => {
+    expect(await call("PUT", "/trails/Not A Slug!/ridden", {})).toMatchObject({ status: 404 });
+    expect(ridden.markRidden).not.toHaveBeenCalled();
+  });
+});
 
 describe("club routes", () => {
   it("creates a club and maps failures to one error shape", async () => {
@@ -90,7 +113,7 @@ describe("comment routes", () => {
     expect(await call("GET", "/trails/Not A Slug!/comments", undefined, null)).toMatchObject({ status: 404 });
   });
 
-  it("tells the app when a first comment waits for a moderator", async () => {
+  it("passes the comment status through to the app", async () => {
     comments.postComment.mockResolvedValueOnce({ ok: true, id: "k1", status: "pending" });
     expect(await call("POST", "/trails/some-trail/comments", { body: "Gate is shut", tag: "gate_closed" })).toEqual({ status: 201, body: { id: "k1", status: "pending" } });
     comments.postComment.mockResolvedValueOnce({ ok: false, reason: "no_links" });

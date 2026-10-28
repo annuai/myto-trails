@@ -134,13 +134,16 @@ describe("the sweep", () => {
   it("emails each overdue contact once and counts the wipes, and survives a failing email", async () => {
     const send = vi.fn().mockRejectedValueOnce(new Error("down")).mockResolvedValueOnce(undefined);
     const sql = fakeSql(
-      [{ contact_email: "a@example.com", ride_name: null, expected_at: at(-H), display_name: "Asha", emergency: null }, { contact_email: "b@example.com", ride_name: "x", expected_at: at(-H), display_name: "Ravi", emergency: { riderName: "Ravi S" } }],
+      [{ id: "c1", contact_email: "a@example.com", ride_name: null, expected_at: at(-H), display_name: "Asha", emergency: null }, { id: "c2", contact_email: "b@example.com", ride_name: "x", expected_at: at(-H), display_name: "Ravi", emergency: { riderName: "Ravi S" } }],
+      [], // marking the second one as emailed
       [{ id: "1" }, { id: "2" }, { id: "3" }],
     );
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(await sweepCheckins(sql, { send }, now)).toEqual({ notified: 1, wiped: 3 });
     expect(send).toHaveBeenCalledTimes(2);
     expect(send.mock.calls[1]![0]).toMatchObject({ to: "b@example.com", subject: "Ravi S has not arrived" });
+    // The list, one mark for the email that went out (none for the one that failed, so it is tried again), and the wipe.
+    expect((sql as unknown as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(3);
     log.mockRestore();
   });
 });

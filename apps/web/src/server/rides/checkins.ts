@@ -192,20 +192,21 @@ export function overdueEmail(i: { riderName: string; rideName: string | null; ex
 
 /**
  * Scheduled sweep. Emails each contact once when a check-in turns overdue, then wipes positions, emergency details and
- * the contact's address 24 hours after a check-in ends. A failing email is logged and never stops the sweep.
+ * the contact's address 24 hours after a check-in ends. A failing email is logged, tried again on the next sweep, and never stops it.
  */
 export async function sweepCheckins(sql: Sql, sender: EmailSender, now: Date): Promise<{ notified: number; wiped: number }> {
   const due = await sql`
-    update ride_checkin c set overdue_notified_at = ${now}
-    from app_user u
-    where u.id = c.user_id and c.arrived_at is null and c.wiped_at is null and c.overdue_notified_at is null and c.expected_at <= ${now} and c.contact_email is not null
-      and c.expected_at > ${new Date(now.getTime() - WIPE_AFTER_MS)}
-    returning c.contact_email, c.ride_name, c.expected_at, u.display_name, c.emergency`;
+    select c.id, c.contact_email, c.ride_name, c.expected_at, u.display_name, c.emergency
+    from ride_checkin c join app_user u on u.id = c.user_id
+    where c.arrived_at is null and c.wiped_at is null and c.overdue_notified_at is null and c.expected_at <= ${now} and c.contact_email is not null
+      and c.expected_at > ${new Date(now.getTime() - WIPE_AFTER_MS)}`;
   let notified = 0;
   for (const d of due) {
     try {
       const rider = (d.emergency as Emergency | null)?.riderName ?? (d.display_name as string);
       await sender.send({ to: d.contact_email as string, ...overdueEmail({ riderName: rider, rideName: d.ride_name, expectedAt: d.expected_at }) });
+      // Marked only after it went out, so an email that failed is tried again on the next sweep.
+      await sql`update ride_checkin set overdue_notified_at = ${now} where id = ${d.id} and overdue_notified_at is null`;
       notified++;
     } catch (e) {
       console.error("Check-in email failed", e instanceof Error ? e.message : "unknown");

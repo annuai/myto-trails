@@ -81,3 +81,17 @@ export async function getRiddenSummary(sql: Sql, slug: string, viewerId: string 
     mine,
   };
 }
+
+export type MyRiddenTrail = { slug: string; name: string; riddenMonth: string | null; bike: string | null; markedAt: string };
+
+/** The trails a rider says they have ridden, newest mark first. Only trails that are still published. */
+export async function listMyRidden(sql: Sql, userId: string): Promise<MyRiddenTrail[]> {
+  const rows = await sql`
+    select t.slug, coalesce(rev.name, t.slug) as name, r.ridden_month::text as month, r.bike, r.created_at
+    from trail_ridden r
+    join trail t on t.id = r.trail_id and t.lifecycle = 'published'
+    left join trail_revision rev on rev.id = t.published_revision_id
+    where r.user_id = ${userId}
+    order by r.created_at desc limit 500`;
+  return rows.map((r) => ({ slug: r.slug, name: r.name, riddenMonth: r.month, bike: r.bike, markedAt: (r.created_at as Date).toISOString() }));
+}
