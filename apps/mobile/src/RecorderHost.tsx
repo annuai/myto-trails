@@ -5,6 +5,7 @@ import { startBackground, stopBackground } from '@/lib/backgroundLocation';
 import type { Fix } from '@/lib/location';
 import { simPoint } from '@/lib/sim';
 import { useLocation } from '@/store/location';
+import { useMotion } from '@/store/motion';
 import { useRecorder } from '@/store/recorder';
 
 const toPoint = (f: Fix) => ({ lat: f.lat, lng: f.lng, t: f.t, ele: f.ele, speed: f.speed, acc: f.accuracy });
@@ -23,19 +24,26 @@ export function RecorderHost() {
     if (status !== 'running') return;
     const { ingest, setBackgrounded } = useRecorder.getState();
     if (source === 'sim') {
-      if (paused) return;
       let i = 0;
-      const id = setInterval(() => void ingest({ ...simPoint(i++, undefined, 0.0045), t: Date.now() }), 1000);
-      return () => clearInterval(id);
+      const id = setInterval(() => {
+        const p = { ...simPoint(i++, undefined, 0.0045), t: Date.now() };
+        useMotion.getState().feed({ t: p.t, lat: p.lat, lng: p.lng });
+        if (!useRecorder.getState().paused) void ingest(p);
+      }, 1000);
+      return () => { clearInterval(id); useMotion.getState().reset(); };
     }
     // A browser tab that goes to the background stops recording; keeping the screen awake helps while it is on screen.
     if (Platform.OS === 'web') void activateKeepAwakeAsync(KEEP_AWAKE).catch(() => undefined);
     // The shared watch always runs: it moves the dot on the map. It records only when the background task cannot.
     const release = useLocation.getState().acquire();
+    // Stopped detection runs on every fix and on a clock tick, whether or not the ride is paused.
+    const unsubMotion = useLocation.subscribe((s, prev) => { const f = s.fix; if (f && f !== prev.fix) useMotion.getState().feed({ t: f.t, lat: f.lat, lng: f.lng, speed: f.speed, acc: f.accuracy }); });
+    const tick = setInterval(() => useMotion.getState().refresh(Date.now()), 1000);
+    const stopMotion = () => { unsubMotion(); clearInterval(tick); useMotion.getState().reset(); };
     let cancelled = false;
     let unsub: (() => void) | undefined;
     // Paused: the map dot keeps moving, but nothing is recorded and the background task is not running.
-    if (paused) return () => { release(); if (Platform.OS === 'web') void deactivateKeepAwake(KEEP_AWAKE); };
+    if (paused) return () => { stopMotion(); release(); if (Platform.OS === 'web') void deactivateKeepAwake(KEEP_AWAKE); };
     void startBackground().then((ok) => {
       if (cancelled) { if (ok) void stopBackground(); return; }
       setBackgrounded(ok);
@@ -49,6 +57,7 @@ export function RecorderHost() {
     return () => {
       cancelled = true;
       unsub?.();
+      stopMotion();
       release();
       setBackgrounded(false);
       void stopBackground();

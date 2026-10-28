@@ -1,14 +1,13 @@
 import { create } from 'zustand';
 import { haversine, type LatLng } from '@/lib/geo';
 import type { Journal } from '@/lib/journal';
-import { cleanTrack, splitSegments, trackStats } from '@/lib/track';
+import { cleanTrack, driftRadius, splitSegments, trackStats } from '@/lib/track';
 import type { Waypoint } from './rides';
 
 // The live track and distance leave out the same fixes the saved ride will (poor accuracy, impossible jumps, jitter);
 // the journal keeps all of them.
 const MAX_ACCURACY_M = 100;
 const MAX_KMH = 250;
-const JITTER_M = 3;
 
 type Recoverable = { startedAt: number; points: number };
 
@@ -100,7 +99,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       set({ lastFixAt: Date.now(), moving: kmh >= 3.6 });
       if (p.acc != null && p.acc > MAX_ACCURACY_M) return queue as Promise<void>;
       if (!last) { set({ points: [p] }); return queue as Promise<void>; }
-      if (derived > MAX_KMH || step < JITTER_M) return queue as Promise<void>;
+      if (derived > MAX_KMH || step < driftRadius(p.acc)) return queue as Promise<void>;
       set({ points: [...points, p], meters: meters + step, speedKmh: kmh, maxKmh: Math.max(maxKmh, kmh) });
       return queue as Promise<void>;
     },

@@ -4,12 +4,16 @@ import type { Pause } from './journal';
 const MAX_ACCURACY_M = 100;
 const MAX_KMH = 250;
 const JITTER_M = 3;
+const DRIFT_CAP_M = 15;
 const GAP_SEC = 60;
 const GAP_M = 150;
 const MOVING_KMH = 1;
 const RESYNC_AFTER = 3;
 
 const seconds = (a: LatLng, b: LatLng) => (a.t != null && b.t != null ? (b.t - a.t) / 1000 : 0);
+
+/** A fix that has not moved beyond its own accuracy radius (at most 15 m, at least 3 m) from the last kept point is GPS wander, not riding. */
+export const driftRadius = (acc?: number) => Math.max(JITTER_M, Math.min(acc ?? 0, DRIFT_CAP_M));
 
 /**
  * Turn raw fixes into a clean track. Runs when a ride is finished or drawn, never while recording, so the raw
@@ -31,7 +35,7 @@ export function cleanTrack(points: LatLng[]): LatLng[] {
       continue;
     }
     rejected = [];
-    if (step >= JITTER_M) out.push(p);
+    if (step >= driftRadius(p.acc)) out.push(p);
   }
   return out;
 }

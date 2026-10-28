@@ -30,6 +30,19 @@ describe('cleanTrack', () => {
   });
 });
 
+describe('stationary drift', () => {
+  it('a 20 minute stop with plus or minus 4 m of wander at 1 Hz adds almost no distance', () => {
+    const stop = Array.from({ length: 1200 }, (_, i) => pt(100 + (i % 2 ? 4 : -4), 100 + i, 10));
+    const clean = cleanTrack([pt(0, 0, 10), pt(100, 10, 10), ...stop]);
+    expect(trackStats(splitSegments(clean)).distanceM).toBeLessThan(150);
+  });
+  it('slow real movement is still recorded: 2 m per second with 5 m accuracy keeps a point every few seconds', () => {
+    const slow = Array.from({ length: 60 }, (_, i) => pt(i * 2, i, 5));
+    const clean = cleanTrack(slow);
+    expect(trackStats(splitSegments(clean)).distanceM).toBeGreaterThan(100);
+  });
+});
+
 describe('splitSegments', () => {
   it('a 20 minute stop with no movement is one segment, not a GPS gap', () => {
     expect(splitSegments([pt(0, 0), pt(1, 1200)])).toHaveLength(1);
