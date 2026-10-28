@@ -73,6 +73,26 @@ describe('trip reminders', () => {
   });
 });
 
+describe('a planned trip', () => {
+  const planned = { slug: 'trip1', name: 'Ladakh', iso: '2026-11-02', route: '/trips/trip1', tripId: 'trip1', days: [{ iso: '2026-11-02', title: 'Manali to Keylong' }, { iso: '2026-11-03', title: 'Keylong to Leh' }] };
+  const tripTodo = (id: string, done: boolean, tripId = 'trip1'): Todo => ({ id, title: id, category: 'pack', kind: 'date', due: '2026-11-02', done, tripId });
+  it('has an evening-before reminder with its own pack count, and a morning one for each day', () => {
+    const out = planReminders(input({ trip: planned, todos: [tripTodo('a', true), tripTodo('b', false), pack0('loose')] }));
+    expect(out.filter((r) => r.kind === 'trip').map((r) => r.fireAt)).toEqual([at('2026-11-01', 21), at('2026-11-02', 7, 30), at('2026-11-03', 7, 30)]);
+    expect(out[0].body).toBe('1 of 2 things still to pack');
+    expect(out[0].route).toBe('/trips/trip1');
+    expect(out[1].title).toBe('Day 1 of 2: Ladakh');
+    expect(out[1].body).toBe('Manali to Keylong');
+    expect(out[2].title).toBe('Day 2 of 2: Ladakh');
+  });
+  it('does not remind about each pack to-do on its own', () => {
+    const out = planReminders(input({ trip: undefined, todos: [tripTodo('a', false), tripTodo('b', false)] }));
+    expect(out).toEqual([]);
+  });
+});
+
+const pack0 = (id: string): Todo => ({ id, title: id, category: 'pack', kind: 'date', done: false });
+
 describe('ride paused', () => {
   it('reminds 30 minutes after the pause, when that is within the day', () => {
     const out = planReminders(input({ paused: { since: at('2026-10-28', 10, 15) } }));

@@ -8,18 +8,25 @@ import { useRecorder } from '@/store/recorder';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { useTrailStore } from '@/store/trails';
+import { useTrips } from '@/store/trips';
+import { dayDate, soonestTrip } from '@/lib/tripPlan';
 
 const syncer = createSyncer({
   now: Date.now,
   store: useNotifications,
   notifier,
   world: () => {
-    const trip = useTrailStore.getState().nextTrip;
+    // A planned trip (with its days and pack to-dos) is what the reminders follow; a trail planned the old way is the fallback.
+    const planned = soonestTrip(useTrips.getState().trips);
+    const plannedTrail = useTrailStore.getState().nextTrip;
+    const trip = planned?.startDate
+      ? { slug: planned.id, name: planned.name, iso: planned.startDate, route: `/trips/${planned.id}`, tripId: planned.id, days: (planned.days ?? []).map((d, i) => ({ iso: dayDate(planned.startDate!, i), title: d.route?.name ?? d.note ?? 'Have a safe one' })) }
+      : plannedTrail ? { slug: plannedTrail.slug, name: plannedTrail.name, iso: plannedTrail.iso } : undefined;
     const rec = useRecorder.getState();
     return {
       todos: useTodos.getState().todos,
       appKm: totalKm(useRides.getState().rides),
-      trip: trip ? { slug: trip.slug, name: trip.name, iso: trip.iso } : undefined,
+      trip,
       paused: rec.status !== 'idle' && rec.paused ? { since: rec.pausedAt } : undefined,
     };
   },
@@ -43,7 +50,7 @@ export function NotificationHost() {
     let prefs = useNotifications.getState().prefs;
     let pause = '';
     const off = [
-      useTodos.subscribe(soon), useRides.subscribe(soon), useTrailStore.subscribe(soon),
+      useTodos.subscribe(soon), useRides.subscribe(soon), useTrailStore.subscribe(soon), useTrips.subscribe(soon),
       useNotifications.subscribe((s) => { if (s.prefs !== prefs) { prefs = s.prefs; soon(); } }),
       useRecorder.subscribe((s) => { const k = `${s.status}:${s.paused}:${s.pausedAt}`; if (k !== pause) { pause = k; soon(); } }),
     ];

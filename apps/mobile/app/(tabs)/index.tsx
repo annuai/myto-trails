@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BookOpen, Camera, ClipboardList, MoreHorizontal, Route as RouteIcon, Trash2 } from 'lucide-react-native';
+import { BookOpen, Camera, ClipboardList, Luggage, MoreHorizontal, Route as RouteIcon, Trash2 } from 'lucide-react-native';
 import { groupByRide, summarise } from '@/lib/journalEntries';
 import { journalDate, journalTitle } from '@/lib/journalTitle';
 import { notifier } from '@/lib/notifier';
@@ -16,6 +16,13 @@ import { GroupSheet } from '@/features/GroupSheet';
 import { checkinStatus } from '@/lib/checkinCore';
 import { clockLabel } from '@/lib/community';
 import { useCompanion } from '@/store/companion';
+import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
+import { startTodaysRide, startTrip } from '@/features/trip/startTrip';
+import { TripCard } from '@/features/trip/TripCard';
+import { dayIndexOn, soonestTrip, tripStatus } from '@/lib/tripPlan';
+import { todayISO } from '@/lib/dates';
+import { useTrips } from '@/store/trips';
+import { space } from '@/theme/tokens';
 import { useTrailStore } from '@/store/trails';
 import { finishRide } from '@/lib/finishRide';
 import { useRecorder } from '@/store/recorder';
@@ -53,7 +60,7 @@ export default function Home() {
   const recoverable = useRecorder((s) => s.recoverable);
   // A ride left on disk by a crash or a kill is offered back, never dropped.
   useEffect(() => { void useRecorder.getState().checkRecoverable(); }, []);
-  const saveRecovered = async () => { const id = await finishRide().catch(() => undefined); await useRecorder.getState().checkRecoverable(); setRecoverOpen(false); if (id) router.push(`/story/${id}`); };
+  const saveRecovered = async () => { const id = await finishRide().catch(() => undefined); await useRecorder.getState().checkRecoverable(); setRecoverOpen(false); if (id) { useTrips.getState().attachToActive(id); router.push(`/story/${id}`); } };
   const continueRecovered = async () => { await useRecorder.getState().recover(); setRecoverOpen(false); router.push('/ride/live'); };
   const discardRecovered = async () => { await useRecorder.getState().discardRecovered(); setRecoverOpen(false); };
   const near = useTrailSearch('');
@@ -61,9 +68,22 @@ export default function Home() {
   const todos = useTodos((s) => s.todos);
   const contacts = useProfile((s) => s.contacts);
   const trail = nextTrip;
-  const packs = todos.filter((t) => t.category === 'pack');
+  const trips = useTrips((s) => s.trips);
+  const today = todayISO();
+  const nextTripPlan = soonestTrip(trips, today);
+  const planStatus = nextTripPlan ? tripStatus(nextTripPlan, today) : undefined;
+  const [planTripOpen, setPlanTripOpen] = useState(false);
+  const packs = todos.filter((t) => t.category === 'pack' && !t.tripId);
   const dues = todos.map((t) => ({ t, d: dueInfo(t, km_) })).filter(({ d }) => d.state !== 'done').sort((a, b) => a.d.sortKey - b.d.sortKey);
-  const overdue = dues.filter(({ d }) => d.state === 'overdue');
+  const overdue = dues.filter(({ t, d }) => d.state === 'overdue' && !t.tripId);
+  // A trip's pack to-dos all fall due on its start date: they are one line under Due soon, not a dozen.
+  const dueRows = [
+    ...dues.filter(({ t }) => !t.tripId).map(({ t, d }) => ({ key: t.id, sort: d.sortKey, icon: t.category === 'pack' ? Camera : ClipboardList, label: t.title, sub: undefined as string | undefined, value: d.text.replace('Due in ', 'in ').replace('Due ', ''), go: '/todos' })),
+    ...trips.flatMap((tr) => {
+      const mine = dues.filter(({ t }) => t.tripId === tr.id);
+      return mine.length ? [{ key: tr.id, sort: mine[0]!.d.sortKey, icon: Luggage, label: tr.name, sub: `${mine.length} to pack`, value: mine[0]!.d.text.replace('Due in ', 'in ').replace('Due ', ''), go: `/trips/${tr.id}` }] : [];
+    }),
+  ].sort((a, b) => a.sort - b.sort);
   const latest = rides[0];
   const journals = groupByRide(useJournal((s) => s.entries)).slice(0, 3);
   const journalTitles = useJournal((s) => s.titles);
@@ -83,6 +103,7 @@ export default function Home() {
         <Button variant="danger" icon={Trash2} label="Cancel this plan" onPress={() => { useTrailStore.getState().cancelPlan(); setMenu(false); }} />
         <Button variant="soft" label="Keep it" onPress={() => setMenu(false)} />
       </Sheet>
+      <PlanTripSheet open={planTripOpen} onClose={() => setPlanTripOpen(false)} onCreated={(id) => router.push(`/trips/${id}`)} />
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
       <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} />
       <Sheet open={remindOpen} title="Turn on reminders" onClose={() => setRemindOpen(false)}>
@@ -101,26 +122,28 @@ export default function Home() {
         rightStartsWithSection
         left={<>
       {recoverable ? (
-        <View style={{ marginBottom: 12 }}>
+        <View style={{ marginBottom: space[3] }}>
           <Banner eyebrow="Unsaved ride" title={`Recovered a ride from ${new Date(recoverable.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Save it or discard it.`} onPress={() => setRecoverOpen(true)} />
         </View>
       ) : null}
       {checkin ? (
-        <View style={{ marginBottom: 12 }}>
+        <View style={{ marginBottom: space[3] }}>
           <Banner eyebrow="I haven't arrived" title={checkinStatus(nowMs, checkin.expectedAt) === 'overdue' ? `You are overdue. ${checkin.contactName} can see where you were last seen.` : `${checkin.contactName} is told if you are not back by ${clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}. Tap to change.`} onPress={() => setCheckinOpen(true)} />
         </View>
       ) : null}
       {group ? (
-        <View style={{ marginBottom: 12 }}>
+        <View style={{ marginBottom: space[3] }}>
           <Banner eyebrow="Group ride" title={`${group.name} · code ${group.code}`} onPress={() => setGroupOpen(true)} />
         </View>
       ) : null}
       {permission === 'undetermined' && !asked ? (
-        <View style={{ marginBottom: 12 }}>
+        <View style={{ marginBottom: space[3] }}>
           <Banner eyebrow="Reminders" title="Get a nudge before a to-do is due or a ride starts" onPress={() => setRemindOpen(true)} />
         </View>
       ) : null}
-      {trail ? (
+      {nextTripPlan ? (
+        <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} />
+      ) : trail ? (
         <HeroCard eyebrow={trail.date ? `Next ride · ${trail.date}` : 'Next ride'} title={trail.name} action={<IconButton icon={MoreHorizontal} label="Next ride options" onPress={() => setMenu(true)} plain />}>
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
             <StatusChip status={trail.status} label={trail.statusLabel} />
@@ -134,11 +157,14 @@ export default function Home() {
         </HeroCard>
       ) : (
         <HeroCard eyebrow="Next ride" title="Plan your next ride">
-          <Text variant="label" tone="muted">Pick a trail, set a date, and it shows up here with your checklist.</Text>
+          <Text variant="label" tone="muted">Plan a trip with a date and a route for each day, or pick a trail. It shows up here with its checklist.</Text>
         </HeroCard>
       )}
-      <View style={{ marginTop: 12, gap: 12 }}>
-        <Button label={trail ? 'Start ride' : 'Find a trail'} arrow onPress={() => router.push(trail ? '/ride' : '/trails')} />
+      <View style={{ marginTop: space[3], gap: space[3] }}>
+        {nextTripPlan && planStatus === 'ready' ? <Button variant="accent" label="Start trip" arrow onPress={() => startTrip(nextTripPlan.id, router)} />
+          : nextTripPlan && planStatus === 'active' ? <Button variant="accent" label={`Record day ${(dayIndexOn(nextTripPlan, today) ?? 0) + 1}`} arrow onPress={() => startTodaysRide(nextTripPlan.id, router)} />
+          : <Button label={trail ? 'Start ride' : 'Find a trail'} arrow onPress={() => router.push(trail ? '/ride' : '/trails')} />}
+        <Button variant="soft" label="Plan a trip" onPress={() => setPlanTripOpen(true)} />
         {overdue.length ? (
           <Banner eyebrow="Needs attention" title={overdue.length === 1 ? `${overdue[0].t.title}: ${overdue[0].d.text.toLowerCase()}` : `${overdue.length} things are overdue`} onPress={() => router.push('/todos')} />
         ) : contacts.length === 0 ? (
@@ -154,15 +180,15 @@ export default function Home() {
               <Row key={g.rideKey} icon={BookOpen} label={journalTitle(g.rideKey, rides, journalTitles)} sub={`${journalDate(g.rideKey)} · ${summarise(g.entries)}`} onPress={() => router.push(`/journal/${g.rideKey}`)} />
             ))}
           </ListCard>
-          <View style={{ marginTop: 12 }}><Button variant="soft" label="All journals" arrow onPress={() => router.push('/journal')} /></View>
+          <View style={{ marginTop: space[3] }}><Button variant="soft" label="All journals" arrow onPress={() => router.push('/journal')} /></View>
         </>
       ) : <EmptyState icon={BookOpen} title="No journals yet" body="Write a note, record a voice note or add a photo. Tie it to a ride or keep it on its own." />}
 
       <SectionTitle onAdd={() => router.push('/todos/new')} addLabel="Add a to-do">Due soon</SectionTitle>
-      {dues.length ? (
+      {dueRows.length ? (
         <ListCard>
-          {dues.slice(0, 3).map(({ t, d }) => (
-            <Row key={t.id} icon={t.category === 'pack' ? Camera : ClipboardList} label={t.title} value={d.text.replace('Due in ', 'in ').replace('Due ', '')} onPress={() => router.push('/todos')} chevron={false} />
+          {dueRows.slice(0, 3).map((r) => (
+            <Row key={r.key} icon={r.icon} label={r.label} sub={r.sub} value={r.value} onPress={() => router.push(r.go as never)} chevron={false} />
           ))}
         </ListCard>
       ) : <EmptyState icon={ClipboardList} title="Nothing due" body="Add your PUC, insurance or a chain lube reminder." />}

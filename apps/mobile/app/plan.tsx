@@ -29,6 +29,7 @@ import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import type { LatLng } from '@/lib/geo';
+import { space } from '@/theme/tokens';
 
 const km = (r: { distanceKm: number }) => asText(distanceKm(r.distanceKm));
 
@@ -101,11 +102,11 @@ export default function Plan() {
       </ListCard>
 
       <SectionTitle>Build a route</SectionTitle>
-      <Text variant="label" tone="muted" style={{ marginBottom: 12 }}>Tap the map to add points in order.</Text>
+      <Text variant="label" tone="muted" style={{ marginBottom: space[3] }}>Tap the map to add points in order.</Text>
       <OsmMap height={280} radius={24} line={tapped} waypoints={tapped} onTap={(p) => setTapped((t) => [...t, p])} />
-      <View style={{ marginTop: 12, gap: 12 }}>
+      <View style={{ marginTop: space[3], gap: space[3] }}>
         {planned ? <Text variant="label" tone="muted">{km(planned)} · about {asText(durationParts(planned.etaMin * 60))} at a steady pace</Text> : <Text variant="label" tone="muted">Add at least two points.</Text>}
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ flexDirection: 'row', gap: space[2] }}>
           <ChoiceChip icon={Undo2} label="Undo" onPress={() => setTapped((t) => t.slice(0, -1))} />
           <ChoiceChip label="Clear" onPress={() => setTapped([])} />
         </View>
@@ -120,7 +121,7 @@ export default function Plan() {
 
       <SectionTitle>Import</SectionTitle>
       <Button variant="soft" icon={FileUp} label="Import a GPX file" onPress={() => void importGpx()} />
-      {problem ? <Text variant="label" tone="stop" style={{ marginTop: 8 }}>{problem}</Text> : null}
+      {problem ? <Text variant="label" tone="stop" style={{ marginTop: space[2] }}>{problem}</Text> : null}
 
       {routes.length ? (
         <>

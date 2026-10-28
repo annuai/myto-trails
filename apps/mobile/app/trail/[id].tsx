@@ -6,13 +6,14 @@ import { accessOf, conditionOf, dur, headline, verificationOf } from '@/api/stat
 import { toLatLng } from '@/api/types';
 import { setSaved, useSaved, useTrail } from '@/api/useApi';
 import { useTrailCommentsSection } from '@/features/community/useTrailCommentsSection';
+import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
 import { RiderReports } from '@/features/RiderReports';
 import { markRidden, unmarkRidden } from '@/api/ridden';
 import { useRidden } from '@/features/passport/useRidden';
 import { ElevationChart } from '@/ui/ElevationChart';
 import { RouteCheck } from '@/features/RouteCheck';
 import { deleteTiles, downloadTiles, hasTiles, tilesAvailable } from '@/lib/offlineTiles';
-import { formatDate, todayISO } from '@/lib/dates';
+import { formatDate } from '@/lib/dates';
 import { asText, distanceKm, elevationM } from '@/lib/units';
 import { useAuth } from '@/store/auth';
 import { useTrailStore } from '@/store/trails';
@@ -21,15 +22,14 @@ import { Card } from '@/ui/Card';
 import { Columns } from '@/ui/Columns';
 import { useLayout } from '@/ui/useLayout';
 import { StatusChip } from '@/ui/Chip';
-import { DatePicker } from '@/ui/DatePicker';
 import { BackHeader, SectionTitle } from '@/ui/Header';
 import { Icon } from '@/ui/Icon';
 import { ListCard, Row } from '@/ui/ListCard';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { RouteArt } from '@/ui/RouteArt';
 import { Screen } from '@/ui/Screen';
-import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import { space } from '@/theme/tokens';
 
 const label = (s: string) => s.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
 const mb = (bytes: number) => `${Math.max(0.1, bytes / 1_000_000).toFixed(1)} MB`;
@@ -43,7 +43,6 @@ export default function TrailDetail() {
   const saved = useSaved();
   const { offline, downloading, download, removeDownload, planTrip } = useTrailStore();
   const [planning, setPlanning] = useState(false);
-  const [date, setDate] = useState(todayISO());
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
   const comments = useTrailCommentsSection(slug);
@@ -118,8 +117,8 @@ export default function TrailDetail() {
       <SectionTitle>Route</SectionTitle>
       {line ? <OsmMap height={260} line={line} radius={24} /> : <Card><Text variant="label" tone="muted">The route line is not published for this trail.</Text></Card>}
       {route ? <Text variant="data" tone="muted" style={{ marginTop: 10 }}>{asText(distanceKm(route.distanceKm))} · +{asText(elevationM(route.elevGainM))} / −{asText(elevationM(route.elevLossM))} · {route.minElevM}–{asText(elevationM(route.maxElevM))}</Text> : null}
-      {route?.profile?.length ? <View style={{ marginTop: 16 }}><ElevationChart samples={route.profile} /></View> : null}
-      {line ? <View style={{ marginTop: 16 }}><RouteCheck line={line} /></View> : null}
+      {route?.profile?.length ? <View style={{ marginTop: space[4] }}><ElevationChart samples={route.profile} /></View> : null}
+      {line ? <View style={{ marginTop: space[4] }}><RouteCheck line={line} /></View> : null}
       {detail.hazards.length || detail.safetyNotes ? (
         <>
           <SectionTitle>Safety</SectionTitle>
@@ -161,15 +160,13 @@ export default function TrailDetail() {
 
   return (
     <Screen overlay={<>
-      <Sheet open={planning} title="Plan a trip" onClose={() => setPlanning(false)} footer={<Button label={`Plan for ${formatDate(date)}`} onPress={() => { planTrip(detail, formatDate(date), date); setPlanning(false); router.replace('/'); }} />}>
-        <DatePicker value={date} onChange={setDate} />
-      </Sheet>
+      <PlanTripSheet open={planning} onClose={() => setPlanning(false)} name={detail.name} route={{ kind: 'trail', slug, name: detail.name, status: h.status, statusLabel: h.label }} onCreated={(tripId) => router.push(`/trips/${tripId}`)} />
       {comments.overlay}
     </>}>
       <BackHeader title="Trails" />
       {t.fromOffline ? <Card style={{ marginBottom: 12, flexDirection: 'row', gap: 12, alignItems: 'center' }}><Icon icon={CloudOff} tone="muted" /><Text variant="label" tone="muted" style={{ flex: 1 }}>Showing your downloaded copy, saved {formatDate(new Date(pack?.savedAt ?? Date.now()).toISOString().slice(0, 10))}. Access may have changed.</Text></Card> : null}
       {landscape ? <Columns left={<>{topEl}{actionsEl}</>} right={<>{routeEl}{comments.body}</>} /> : <>{topEl}{routeEl}{actionsEl}{comments.body}</>}
-      <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: 20 }}>{tiles === true ? 'Offline saves the details, access, route and map.' : 'Offline saves the details, access and route. Map tiles still need a connection.'}</Text>
+      <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: space[5] }}>{tiles === true ? 'Offline saves the details, access, route and map.' : 'Offline saves the details, access and route. Map tiles still need a connection.'}</Text>
     </Screen>
   );
 }

@@ -17,6 +17,7 @@ import { ChoiceChip } from '@/ui/Chip';
 import { RideCard } from '@/ui/RideCard';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import { space } from '@/theme/tokens';
 
 const FORMATS: { key: CardFormat; label: string }[] = [{ key: 'story', label: 'Story' }, { key: 'post', label: 'Post' }, { key: 'square', label: 'Square' }];
 const STATS: { key: CardStat; label: string }[] = [{ key: 'distance', label: 'Distance' }, { key: 'time', label: 'Time' }, { key: 'topSpeed', label: 'Top speed' }, { key: 'waypoints', label: 'Waypoints' }, { key: 'elevation', label: 'Climb' }];
@@ -77,10 +78,10 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
     <Sheet open={open} title="Share this ride" onClose={onClose}>
       <View style={{ alignItems: 'center' }}><RideCard key={`p${mapKey}`} model={model} width={PREVIEW_W} map={map} /></View>
       {tooShort && !fullRoute && !hideRoute ? <Text variant="caption" tone="muted">This ride is short, so its route is left off the map to keep your start private. Turn on Show whole route to draw it.</Text> : null}
-      <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center' }}>
+      <View style={{ flexDirection: 'row', gap: space[2], justifyContent: 'center' }}>
         {FORMATS.map((f) => <ChoiceChip key={f.key} label={f.label} selected={card.format === f.key} onPress={() => useCompanion.getState().setCard({ format: f.key })} />)}
       </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
         {STATS.map((s) => <ChoiceChip key={s.key} label={s.label} selected={card.stats.includes(s.key)} onPress={() => toggle(s.key)} />)}
         <ChoiceChip label="Hide route" selected={hideRoute} onPress={() => setHideRoute(!hideRoute)} />
         {tooShort ? <ChoiceChip label="Show whole route" selected={fullRoute} onPress={() => setFullRoute(!fullRoute)} /> : null}

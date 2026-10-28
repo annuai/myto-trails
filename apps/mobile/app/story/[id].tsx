@@ -60,7 +60,7 @@ function StoryBody() {
       </Sheet>
       <Sheet open={tripOpen} title="Add to a trip" onClose={() => setTripOpen(false)}>
         {trips.map((t) => <Button key={t.id} variant="soft" label={t.rideIds.includes(ride.id) ? `${t.name} · added` : t.name} onPress={() => { useTrips.getState().addRide(t.id, ride.id); setTripOpen(false); }} />)}
-        <Button label="Start a new trip with this ride" onPress={() => { const id = useTrips.getState().create(ride.name, ride.id); setTripOpen(false); router.push(`/trips/${id}`); }} />
+        <Button label="Start a new trip with this ride" onPress={() => { const id = useTrips.getState().create({ name: ride.name }); useTrips.getState().addRide(id, ride.id); setTripOpen(false); router.push(`/trips/${id}`); }} />
       </Sheet>
       <Sheet open={confirmDelete} title="Delete this ride?" onClose={() => setConfirmDelete(false)}>
         <Text variant="label" tone="muted">The ride and its journal ({journalCount} {journalCount === 1 ? 'entry' : 'entries'}, with their photos and voice notes) are removed from this phone. This cannot be undone.</Text>

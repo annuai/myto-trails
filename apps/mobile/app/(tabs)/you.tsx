@@ -148,7 +148,7 @@ export default function You() {
         <Row icon={Trash2} tone="stop" label="Erase all my data" onPress={() => setConfirm(true)} chevron={false} />
       </ListCard>
       </>} />
-      <View style={{ marginTop: 24, gap: 16 }}>
+      <View style={{ marginTop: space[6], gap: space[4] }}>
         <Text variant="caption" tone="muted" style={{ textAlign: 'center' }}>Your rides, journal and documents stay on this device. Myto Moto does not replace emergency services.</Text>
         <LegalFooter />
       </View>

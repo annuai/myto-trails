@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BellRing, Pause, Route as RouteIcon, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { GroupSheet } from '@/features/GroupSheet';
@@ -37,6 +37,7 @@ function validity(label: string, iso: string | undefined, go: string): Check {
 /** Record, ready: what we can truly check before a ride, then one big Start. */
 export default function RideReady() {
   const router = useRouter();
+  const { autostart } = useLocalSearchParams<{ autostart?: string }>();
   const running = useRecorder((s) => s.status === 'running');
   const [source, setSource] = useState<'gps' | 'sim'>('gps');
   const [explain, setExplain] = useState(false);
@@ -79,6 +80,9 @@ export default function RideReady() {
   // Before the system asks for Always location, say why: without it, recording stops when the phone locks.
   const start = async () => { if (!running && source === 'gps' && (await needsAlwaysExplainer())) setExplain(true); else await begin(); };
   const allow = async () => { setExplain(false); await requestRideLocationAccess(); await begin(); };
+  // Start trip and Record day open this screen already decided: recording starts at once (the Always-location question still comes first).
+  const autostarted = useRef(false);
+  useEffect(() => { if (autostart === '1' && !autostarted.current && !running) { autostarted.current = true; void start(); } }); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Screen footer={<Button big variant="accent" label={running ? 'Back to your ride' : 'Start ride'} onPress={() => void start()} />} overlay={<>

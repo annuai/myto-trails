@@ -1,14 +1,11 @@
 import type { LatLng } from './geo';
 import { elevationM, distanceKm, durationParts, speedKmh, type Quantity } from './units';
 import { forSharing } from './privacy';
+import { cardTokens } from './rideCard.tokens';
 import { simplifyTo } from './routePlan';
 
 export type CardFormat = 'story' | 'post' | 'square';
-export const CARD_SIZE: Record<CardFormat, { width: number; height: number }> = {
-  story: { width: 1080, height: 1920 },
-  post: { width: 1080, height: 1350 },
-  square: { width: 1080, height: 1080 },
-};
+export const CARD_SIZE: Record<CardFormat, { width: number; height: number }> = cardTokens.size;
 
 export type CardStat = 'distance' | 'time' | 'topSpeed' | 'waypoints' | 'elevation';
 export const DEFAULT_STATS: CardStat[] = ['distance', 'time', 'topSpeed'];

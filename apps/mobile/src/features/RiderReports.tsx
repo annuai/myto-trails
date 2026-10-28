@@ -7,6 +7,7 @@ import { ChoiceChip, StatusChip, type Status } from '@/ui/Chip';
 import { Card } from '@/ui/Card';
 import { SectionTitle } from '@/ui/Header';
 import { Text } from '@/ui/Text';
+import { space } from '@/theme/tokens';
 
 const TONE: Record<string, Status> = { clear: 'good', muddy: 'caution', blocked: 'stop', washed_out: 'stop', closed: 'stop' };
 const label = (kind: string) => CONDITION_CHOICES.find((c) => c.kind === kind)?.label ?? kind;
@@ -26,16 +27,16 @@ export function RiderReports({ slug }: { slug: string }) {
   return (
     <>
       <SectionTitle>Rider reports</SectionTitle>
-      <View style={{ gap: 12 }}>
+      <View style={{ gap: space[3] }}>
         {items.map((r) => (
-          <Card key={r.id} style={{ gap: 10 }}>
+          <Card key={r.id} style={{ gap: space[3] }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <StatusChip status={TONE[r.kind] ?? 'unknown'} label={label(r.kind)} />
               <Text variant="label" tone="muted">{ago(r.at)}{r.fresh ? '' : ' · may be out of date'}</Text>
             </View>
             {r.confirmations || r.disputes ? <Text variant="caption" tone="muted">{r.confirmations} riders say still true, {r.disputes} say it has changed</Text> : null}
             {token && !voted[r.id] ? (
-              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', gap: space[2], alignItems: 'center' }}>
                 <Text variant="label" tone="muted">Still true?</Text>
                 <ChoiceChip label="Yes" onPress={() => vote(r.id, true)} />
                 <ChoiceChip label="No" onPress={() => vote(r.id, false)} />

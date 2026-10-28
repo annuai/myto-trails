@@ -14,6 +14,7 @@ import { Field } from '@/ui/Field';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import { space } from '@/theme/tokens';
 
 const SIGNALS: GroupStatus[] = ['ok', 'wait_up', 'fuel', 'break', 'help'];
 const km = (m: number) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
@@ -77,7 +78,7 @@ export function GroupSheet({ open, onClose, position }: { open: boolean; onClose
           </View>
           {toLeader !== null ? <Text variant="label" tone="muted">{km(toLeader)} from the leader</Text> : null}
           <Text variant="labelMedium">Tell the group</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
             {SIGNALS.map((s) => <ChoiceChip key={s} label={STATUS_LABEL[s]} selected={live.myStatus === s} onPress={() => signal(s)} />)}
           </View>
           {live.riders.length ? (
