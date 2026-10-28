@@ -1,6 +1,8 @@
 import { Image, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, type Tint } from '@/theme/tokens';
+import { asText, distanceKm } from '@/lib/units';
+import { Measure } from './Measure';
 import { RouteArt } from './RouteArt';
 import { StatusChip, type Status } from './Chip';
 import { Text } from './Text';
@@ -21,7 +23,7 @@ export function TrailRow({ trail, onPress }: { trail: TrailLike; onPress: () => 
       </View>
       <View style={{ flex: 1, gap: 4 }}>
         <Text variant="bodyMedium">{trail.name}</Text>
-        <Text variant="data" tone="muted">{trail.km} km · {trail.time} · {trail.difficulty}</Text>
+        <Text variant="data" tone="muted">{asText(distanceKm(trail.km))} · {trail.time} · {trail.difficulty}</Text>
         <StatusChip status={trail.status} label={trail.statusLabel} />
       </View>
     </ScalePressable>
@@ -34,7 +36,7 @@ export function TrailTile({ trail, onPress }: { trail: TrailLike; onPress: () =>
     <ScalePressable scaleTo={0.98} accessibilityRole="button" onPress={onPress} style={{ width: 176, borderRadius: radius.card, backgroundColor: c.card, overflow: 'hidden' }}>
       <View style={{ height: 120, overflow: 'hidden' }}>{trail.cover ? <Image source={{ uri: trail.cover }} accessibilityLabel={trail.coverAlt} style={{ width: '100%', height: 120 }} resizeMode="cover" /> : <RouteArt seed={trail.seed} tint={trail.tint} height={120} />}</View>
       <View style={{ padding: 16, gap: 4 }}>
-        <Text variant="dataLarge">{trail.km} km</Text>
+        <Measure parts={distanceKm(trail.km)} />
         <Text variant="label" tone="muted" numberOfLines={1}>{trail.name}</Text>
       </View>
     </ScalePressable>

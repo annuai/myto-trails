@@ -8,7 +8,7 @@ import { useTrailStore } from '@/store/trails';
 import { IconButton } from '@/ui/IconButton';
 import { Sheet } from '@/ui/Sheet';
 import { dueInfo, isDueSoon } from '@/lib/todos';
-import { duration, km } from '@/lib/format';
+import { distanceKm, durationParts, speedKmh } from '@/lib/units';
 import { useProfile } from '@/store/profile';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
@@ -107,7 +107,7 @@ export default function Home() {
           <View style={{ padding: 20, gap: 16 }}>
             <Text variant="bodyMedium">{latest.name}{latest.sample ? ' (sample)' : ''}</Text>
             <View style={{ flexDirection: 'row' }}>
-              <Stat value={duration(latest.durationSec)} label="Duration" /><Stat value={`${km(latest.distanceKm)} km`} label="Distance" /><Stat value={`${latest.maxKmh}`} label="Top km/h" />
+              <Stat parts={durationParts(latest.durationSec)} label="Duration" /><Stat parts={distanceKm(latest.distanceKm)} label="Distance" /><Stat parts={speedKmh(latest.maxKmh)} label="Top speed" />
             </View>
           </View>
         </Card>
@@ -118,7 +118,6 @@ export default function Home() {
       </View> : null}
         </>}
       />
-      <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: 24 }}>Clubs are sample data</Text>
     </Screen>
   );
 }

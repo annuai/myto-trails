@@ -8,19 +8,21 @@ import { signOut, startSignIn } from '@/lib/signIn';
 import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAuth } from '@/store/auth';
 import { useTrailStore } from '@/store/trails';
-import { km } from '@/lib/format';
+import { distanceKm } from '@/lib/units';
 import { useProfile } from '@/store/profile';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { Avatar } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { Measure } from '@/ui/Measure';
 import { PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Columns } from '@/ui/Columns';
 import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import { media, space } from '@/theme/tokens';
 
 export default function You() {
   const router = useRouter();
@@ -67,15 +69,15 @@ export default function You() {
       <Columns rightStartsWithSection left={<>
       <Card style={{ padding: 24, gap: 6 }}>
         <Text variant="label" tone="muted">Ridden with Myto</Text>
-        <Text variant="hero" style={{ fontFamily: 'GeistMono_500Medium', fontSize: 40, lineHeight: 46 }}>{km(totalKm(rides))} km</Text>
+        <Measure parts={distanceKm(totalKm(rides))} size="liveSecondary" />
         <Text variant="label" tone="muted">{real} ride{real === 1 ? '' : 's'} recorded</Text>
       </Card>
       <SectionTitle>Account</SectionTitle>
       <Card style={{ gap: 14 }}>
         {signedIn ? (
           <>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-              <Avatar name={user?.displayName || 'Rider'} url={me.data?.avatarUrl} size={64} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
+              <Avatar name={user?.displayName || 'Rider'} url={me.data?.avatarUrl} size={media.avatarLg} />
               <View style={{ flex: 1, gap: 4 }}>
                 <Text variant="bodyMedium">{user?.displayName || 'Signed in'}</Text>
                 <Text variant="label" tone="muted">{user?.email}</Text>

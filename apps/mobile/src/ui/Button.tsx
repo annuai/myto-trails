@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { ArrowRight, type LucideIcon } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius } from '@/theme/tokens';
+import { opacity, radius } from '@/theme/tokens';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { ScalePressable } from './motion';
@@ -27,7 +27,7 @@ export function Button({ label, onPress, variant = 'primary', icon, arrow, big, 
       style={({ pressed }) => ({
         minHeight: big ? 72 : 56, borderRadius: radius.control, paddingHorizontal: 20, backgroundColor: bg,
         flexDirection: 'row', alignItems: 'center', justifyContent: between ? 'space-between' : 'center', gap: 10,
-        opacity: disabled ? 0.45 : pressed ? 0.85 : 1, flex: flex ? 1 : undefined,
+        opacity: disabled ? opacity.disabled : pressed ? opacity.pressed : 1, flex: flex ? 1 : undefined,
       })}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

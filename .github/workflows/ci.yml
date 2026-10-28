@@ -39,6 +39,7 @@ jobs:
       - run: npm test
       - run: npm run test:db -w @moto-trails/web
       - run: npm run check:colors
+      - run: npm run check:tokens
       # The build queries the database (cached pages such as /regions are prerendered), so give it a migrated one.
       - run: PGPASSWORD=postgres psql -h localhost -U postgres -c "create database moto_ci"
       - run: npm run db:migrate -w @moto-trails/web

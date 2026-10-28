@@ -6,6 +6,7 @@ import { accessOf, conditionOf, dur, headline, verificationOf } from '@/api/stat
 import { toLatLng } from '@/api/types';
 import { setSaved, useSaved, useTrail } from '@/api/useApi';
 import { formatDate, todayISO } from '@/lib/dates';
+import { asText, distanceKm, elevationM } from '@/lib/units';
 import { useAuth } from '@/store/auth';
 import { useTrailStore } from '@/store/trails';
 import { Button } from '@/ui/Button';
@@ -68,7 +69,7 @@ export default function TrailDetail() {
       <View style={{ marginTop: 24, gap: 6 }}>
         <Text variant="title">{detail.name}</Text>
         <Text variant="label" tone="muted">{detail.nearestTown}, {detail.state.name}</Text>
-        <Text variant="data" tone="muted">{[detail.distanceKm != null && `${detail.distanceKm} km`, detail.estDurationMin != null && dur(detail.estDurationMin), label(detail.difficulty), detail.elevationGainM != null && `${detail.elevationGainM} m climb`].filter(Boolean).join(' · ')}</Text>
+        <Text variant="data" tone="muted">{[detail.distanceKm != null && asText(distanceKm(detail.distanceKm)), detail.estDurationMin != null && dur(detail.estDurationMin), label(detail.difficulty), detail.elevationGainM != null && `${asText(elevationM(detail.elevationGainM))} climb`].filter(Boolean).join(' · ')}</Text>
       </View>
       {needsCare ? (
         <Card style={{ marginTop: 20, flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
@@ -88,7 +89,7 @@ export default function TrailDetail() {
   const routeEl = (<>
       <SectionTitle>Route</SectionTitle>
       {line ? <OsmMap height={260} line={line} radius={24} /> : <Card><Text variant="label" tone="muted">The route line is not published for this trail.</Text></Card>}
-      {route ? <Text variant="data" tone="muted" style={{ marginTop: 10 }}>{route.distanceKm} km · +{route.elevGainM} m / −{route.elevLossM} m · {route.minElevM}–{route.maxElevM} m</Text> : null}
+      {route ? <Text variant="data" tone="muted" style={{ marginTop: 10 }}>{asText(distanceKm(route.distanceKm))} · +{asText(elevationM(route.elevGainM))} / −{asText(elevationM(route.elevLossM))} · {route.minElevM}–{asText(elevationM(route.maxElevM))}</Text> : null}
       {detail.hazards.length || detail.safetyNotes ? (
         <>
           <SectionTitle>Safety</SectionTitle>

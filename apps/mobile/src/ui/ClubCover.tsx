@@ -1,9 +1,10 @@
 import { Image, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Text } from './Text';
+import { media } from '@/theme/tokens';
 
 /** A club's cover image, or its initials on the accent colour when no cover is set. */
-export function ClubCover({ name, url, height = 140 }: { name: string; url?: string | null; height?: number }) {
+export function ClubCover({ name, url, height = media.coverCard }: { name: string; url?: string | null; height?: number }) {
   const { c } = useTheme();
   const initials = name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
   return url ? (

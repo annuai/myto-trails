@@ -7,8 +7,12 @@ export type { Palette };
 export type Tone = 'ink' | 'muted' | 'accent' | 'good' | 'caution' | 'stop' | 'unknown' | 'onInk';
 export type Tint = keyof typeof tints;
 
-export const space = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 12: 48 } as const;
+export const space = { half: 2, 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 12: 48 } as const;
+/** Fixed opacities: dimmed controls, pressed controls, and the darker tint behind pull-down strips. */
+export const opacity = { overlay: 0.07, pressed: 0.85, disabled: 0.45 } as const;
 export const radius = { control: 16, card: 24, chip: 999, thumb: 18 } as const;
+/** Fixed sizes of pictures: riders, club covers and bikes. */
+export const media = { avatarSm: 44, avatarMd: 52, avatarLg: 64, coverCard: 110, coverHero: 180, bikePhoto: 190, bikeThumbW: 72, bikeThumbH: 54 } as const;
 export const size = { target: 48, button: 56, ride: 88, screenX: 20 } as const;
 
 export const font = {
@@ -31,5 +35,6 @@ export const type = {
   dataLarge: { fontFamily: font.monoMedium, fontSize: 24, lineHeight: 30 },
   live: { fontFamily: font.monoMedium, fontSize: 80, lineHeight: 84, letterSpacing: -2 },
   liveSecondary: { fontFamily: font.monoMedium, fontSize: 40, lineHeight: 44 },
+  liveCompact: { fontFamily: font.monoMedium, fontSize: 56, lineHeight: 62, letterSpacing: -1 },
 } as const;
 export type TypeVariant = keyof typeof type;

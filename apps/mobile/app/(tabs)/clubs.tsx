@@ -12,13 +12,14 @@ import { PageTitle, SectionTitle } from '@/ui/Header';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { ScalePressable } from '@/ui/motion';
+import { media, space } from '@/theme/tokens';
 
 function ClubCard({ club, onPress }: { club: ClubSummary; onPress: () => void }) {
   return (
     <ScalePressable scaleTo={0.98} accessibilityRole="button" onPress={onPress}>
       <Card padded={false}>
-        <ClubCover name={club.name} url={club.coverUrl} height={110} />
-        <View style={{ padding: 16, gap: 4 }}>
+        <ClubCover name={club.name} url={club.coverUrl} height={media.coverCard} />
+        <View style={{ padding: space[4], gap: space[1] }}>
           <Text variant="bodyMedium">{club.name}</Text>
           <Text variant="label" tone="muted">
             {club.memberCount} {club.memberCount === 1 ? 'member' : 'members'}{club.womenOnly ? ' · Women only' : ''}{club.role === 'admin' ? ' · You are admin' : ''}{club.requested ? ' · Request sent' : ''}
@@ -40,12 +41,12 @@ export default function Clubs() {
     <Screen tabs brand>
       <PageTitle>Clubs</PageTitle>
       {!signedIn ? (
-        <Card style={{ gap: 14 }}>
+        <Card style={{ gap: space[4] }}>
           <Text variant="label" tone="muted">Sign in with the same email link as moto-trails.com to see your clubs.</Text>
           <Button icon={LogIn} label="Sign in" onPress={() => router.push('/you')} />
         </Card>
       ) : clubs.error && !clubs.data ? (
-        <Card style={{ gap: 14 }}>
+        <Card style={{ gap: space[4] }}>
           <Text variant="label" tone="stop">{clubs.error}</Text>
           <Button variant="soft" label="Try again" onPress={clubs.reload} />
         </Card>
@@ -54,15 +55,15 @@ export default function Clubs() {
       ) : (
         <>
           <SectionTitle>Your clubs</SectionTitle>
-          {mine.length ? <View style={{ gap: 12 }}>{mine.map((c) => <ClubCard key={c.clubId} club={c} onPress={() => open(c.clubId)} />)}</View>
+          {mine.length ? <View style={{ gap: space[3] }}>{mine.map((c) => <ClubCard key={c.clubId} club={c} onPress={() => open(c.clubId)} />)}</View>
             : <EmptyState icon={Users} title="No club yet" body="Ask to join a club below, or start one on moto-trails.com." />}
           {others.length ? (
             <>
               <SectionTitle>Find a club</SectionTitle>
-              <View style={{ gap: 12 }}>{others.map((c) => <ClubCard key={c.clubId} club={c} onPress={() => open(c.clubId)} />)}</View>
+              <View style={{ gap: space[3] }}>{others.map((c) => <ClubCard key={c.clubId} club={c} onPress={() => open(c.clubId)} />)}</View>
             </>
           ) : null}
-          <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: 24 }}>Joining, posts and ride plans are on moto-trails.com for now.</Text>
+          <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: space[6] }}>Joining, posts and ride plans are on moto-trails.com for now.</Text>
         </>
       )}
     </Screen>

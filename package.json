@@ -15,6 +15,7 @@
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
-    "check:colors": "node tooling/check-colors.mjs"
+    "check:colors": "node tooling/check-colors.mjs",
+    "check:tokens": "node tooling/check-tokens.mjs"
   }
 }
