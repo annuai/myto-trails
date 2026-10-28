@@ -70,3 +70,10 @@ export function trackStats(segments: LatLng[][]): { distanceM: number; movingSec
   });
   return { distanceM, movingSec, gapM, maxKmh };
 }
+
+/** Rebuild segments from a flat track and the indices where each new segment starts (absent on rides saved before gaps were tracked). */
+export function segmentsOf(points: LatLng[], breaks: number[] = []): LatLng[][] {
+  if (!points.length) return [];
+  const starts = [0, ...breaks.filter((b) => b > 0 && b < points.length)];
+  return starts.map((s, i) => points.slice(s, starts[i + 1]));
+}
