@@ -11,6 +11,8 @@ npx expo run:ios --device      # iPhone
 npx expo run:android --device  # Android 13 or later
 ```
 
+`prebuild` rewrites the tracked `apps/mobile/ios/` project (background mode, location strings). **Commit those changes**; until then the committed iOS project does not carry the new settings.
+
 Allow **Always** location when asked. On Android 13+, also allow notifications, or the "Recording your ride" notice stays hidden (recording still runs).
 
 ## Reference
@@ -24,10 +26,12 @@ Before each ride, note the real distance from a trusted source (a second app, or
 | a | Ride about 6 km. Lock the screen for the whole ride, unlock at the end | Saved ride is about 6 km, one continuous line, no GPS gap | | |
 | b | Ride about 6 km with Google Maps navigating in front for most of it | Same as a | | |
 | c | Start a ride. Force-quit Myto after 1 km. Reopen | Home shows "Recovered a ride". **Keep riding** continues and finishes at the full distance. Also try **Save ride** on a second attempt | | |
+| c2 | Android: start a ride, swipe the app away from recents, ride 1 km, reopen. Then tap **Save ride** | Fixes recorded while the app was gone are in the ride (this proves the background task is defined in a headless start). After saving, the "Recording your ride" notice disappears and GPS stops | | |
+| c3 | Repeat c, but tap **Discard** | Same: notice gone, no recording continues | | |
 | d | Ride with Airplane mode on for 2 minutes mid-ride | GPS keeps recording (no network needed). Route continuous | | |
 | e | Start a ride with location set to "While using" only | "Start" shows the explainer. After "Not now" the live screen shows the "Recording stops if you lock the phone" banner | | |
-| f | Ride through a covered or poor-GPS stretch (tunnel, underpass) | Live screen shows "Lost GPS signal, still recording" after 15 s. The saved ride splits there and the story shows a "GPS gap". No straight line is drawn across it | | |
-| g | Stop for 10 minutes at a tea stop, standing still, then continue | No "GPS gap" is reported for the stop | | |
+| f | Ride through a covered or poor-GPS stretch (tunnel, underpass) | Live screen shows "Lost GPS signal, still recording" after 15 s. The saved ride splits there and the story shows a "GPS gap". No straight line is drawn across it, on the live map, the ride card and the story map | | |
+| g | Stop for 10 minutes at a tea stop, standing still, then continue | No "GPS gap" in the story, and no "Lost GPS signal" banner while stopped. Also note how far the distance grew while standing (GPS drift) | | |
 | h | Export the GPX from a ride with a gap | The file has two `<trkseg>` blocks | | |
 | i | Android: check the notification shade during a ride | "Recording your ride" is shown for the whole ride and goes away on stop | | |
 | j | iOS: look at the status bar during a ride with the screen on | The blue location indicator is shown | | |

@@ -41,7 +41,7 @@ export default function Home() {
   const recoverable = useRecorder((s) => s.recoverable);
   // A ride left on disk by a crash or a kill is offered back, never dropped.
   useEffect(() => { void useRecorder.getState().checkRecoverable(); }, []);
-  const saveRecovered = async () => { const id = await finishRide(); await useRecorder.getState().checkRecoverable(); setRecoverOpen(false); if (id) router.push(`/story/${id}`); };
+  const saveRecovered = async () => { const id = await finishRide().catch(() => undefined); await useRecorder.getState().checkRecoverable(); setRecoverOpen(false); if (id) router.push(`/story/${id}`); };
   const continueRecovered = async () => { await useRecorder.getState().recover(); setRecoverOpen(false); router.push('/ride/live'); };
   const discardRecovered = async () => { await useRecorder.getState().discardRecovered(); setRecoverOpen(false); };
   const near = useTrailSearch('');
@@ -123,7 +123,7 @@ export default function Home() {
       <SectionTitle>Your latest ride</SectionTitle>
       {latest ? (
         <Card padded={false}>
-          <RideMap points={latest.points} />
+          <RideMap points={latest.points} breaks={latest.breaks} />
           <View style={{ padding: 20, gap: 16 }}>
             <Text variant="bodyMedium">{latest.name}{latest.sample ? ' (sample)' : ''}</Text>
             <View style={{ flexDirection: 'row' }}>

@@ -1,14 +1,21 @@
-import { buildRide } from './buildRide';
+import { stopBackground } from './backgroundLocation';
+import { createFinisher } from './finishCore';
 import { journal } from './journalStore';
 import { useRecorder } from '@/store/recorder';
 import { useRides } from '@/store/rides';
 
-/** Turn the recording on disk into a saved ride. Returns undefined when there is nothing worth keeping. The journal is emptied only after the ride is saved. */
-export async function finishRide(): Promise<string | undefined> {
-  useRecorder.getState().reset();
-  const raw = await journal.read();
-  const ride = raw ? buildRide(raw, Date.now()) : undefined;
-  const id = ride ? useRides.getState().addRide(ride) : undefined;
-  await journal.clear();
-  return id;
+/** The persist middleware writes in the background; this waits for the saved rides to be on the phone before the journal is cleared. */
+async function persistRides() {
+  const o = useRides.persist.getOptions();
+  const state = useRides.getState();
+  await o.storage?.setItem(o.name as string, { state: o.partialize ? o.partialize(state) : state, version: o.version });
 }
+
+/** Save the recording on disk as a ride (see createFinisher). Returns undefined when there is nothing worth keeping. */
+export const finishRide = createFinisher({
+  journal, stopBackground, persist: persistRides, now: Date.now,
+  flush: () => useRecorder.getState().flush(),
+  reset: () => useRecorder.getState().reset(),
+  findSaved: (startedAt) => useRides.getState().rides.find((r) => r.startedAt === startedAt)?.id,
+  addRide: (r) => useRides.getState().addRide(r),
+});

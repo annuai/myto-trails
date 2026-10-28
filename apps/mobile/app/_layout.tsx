@@ -10,7 +10,6 @@ import { GeistMono_400Regular, GeistMono_500Medium } from '@expo-google-fonts/ge
 import { Michroma_400Regular } from '@expo-google-fonts/michroma';
 import { Theme } from '@/theme/ThemeProvider';
 import { fixed, light } from '@/theme/tokens';
-import '@/lib/backgroundLocation'; // defines the background recording task at startup
 import { RecorderHost } from '@/RecorderHost';
 
 void SplashScreen.preventAutoHideAsync();

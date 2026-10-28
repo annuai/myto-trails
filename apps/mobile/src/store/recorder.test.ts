@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { LatLng } from '@/lib/geo';
-import { createMemoryJournal } from '@/lib/journal';
+import { createMemoryJournal, type Journal } from '@/lib/journal';
 import { createRecorder } from './recorderCore';
 
 const M = 1 / 111_320;
@@ -68,5 +68,52 @@ describe('recorder over the journal', () => {
     const rec = createRecorder(createMemoryJournal());
     await rec.getState().checkRecoverable();
     expect(rec.getState().recoverable).toBeNull();
+  });
+});
+
+describe('recorder review fixes', () => {
+  it('a fix that arrives while the screen state is idle (app relaunched by the phone) is journaled but not shown', async () => {
+    const j = createMemoryJournal();
+    const first = createRecorder(j);
+    await first.getState().start('gps');
+    const relaunched = createRecorder(j);
+    await relaunched.getState().ingest(pt(0, 0));
+    expect((await j.read())!.points).toHaveLength(1);
+    expect(relaunched.getState().points).toEqual([]);
+    expect(relaunched.getState().lastFixAt).toBe(0);
+  });
+  it('flush waits for fixes still being written', async () => {
+    const inner = createMemoryJournal();
+    const slow: Journal = { ...inner, append: (f) => new Promise((r) => setTimeout(r, 20)).then(() => inner.append(f)) };
+    const rec = createRecorder(slow);
+    await rec.getState().start('gps');
+    void rec.getState().ingest(pt(0, 0));
+    void rec.getState().ingest(pt(20, 5));
+    await rec.getState().flush();
+    expect((await inner.read())!.points).toHaveLength(2);
+  });
+  it('moving is true at speed and false when standing still', async () => {
+    const rec = createRecorder(createMemoryJournal());
+    await rec.getState().start('gps');
+    await rec.getState().ingest({ ...pt(0, 0), speed: 10 });
+    expect(rec.getState().moving).toBe(true);
+    await rec.getState().ingest({ ...pt(0, 30), speed: 0 });
+    expect(rec.getState().moving).toBe(false);
+  });
+  it('a failed waypoint write sets an error and does not throw', async () => {
+    const inner = createMemoryJournal();
+    const rec = createRecorder({ ...inner, appendWaypoint: async () => { throw new Error('disk full'); } });
+    await rec.getState().start('gps');
+    await rec.getState().ingest(pt(0, 0));
+    await expect(rec.getState().addWaypoint()).resolves.toBeUndefined();
+    expect(rec.getState().error).toMatch(/could not save/i);
+  });
+  it('discarding a recovered ride stops background recording', async () => {
+    const j = createMemoryJournal();
+    await j.begin({ startedAt: 1, source: 'gps' });
+    const stopBackground = vi.fn(async () => undefined);
+    const rec = createRecorder(j, { stopBackground });
+    await rec.getState().discardRecovered();
+    expect(stopBackground).toHaveBeenCalledTimes(1);
   });
 });

@@ -22,6 +22,10 @@ type State = {
   speedKmh: number;
   maxKmh: number;
   notes: number;
+  /** The rider was moving at the last fix. The lost-signal warning only makes sense then: a stopped phone gets no fixes. */
+  moving: boolean;
+  /** Waits until every fix received so far has been written to the journal. */
+  flush: () => Promise<void>;
   /** When the last fix arrived, drawn or not. The live screen warns when this gets old. */
   lastFixAt: number;
   /** True while the phone's background task is the one recording (it keeps going with the screen locked). */
@@ -42,13 +46,14 @@ type State = {
   reset: () => void;
 };
 
-const blank = { status: 'idle' as const, startedAt: 0, points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0 };
+const blank = { status: 'idle' as const, startedAt: 0, points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0, moving: false };
 
 /** The live recorder. Every fix goes to the journal first; the store only shows what the screen needs. */
-export function createRecorder(journal: Journal) {
+export function createRecorder(journal: Journal, hooks: { stopBackground?: () => Promise<void> } = {}) {
   let queue: Promise<unknown> = Promise.resolve();
   return create<State>((set, get) => ({
     ...blank, source: 'gps', recoverable: null, backgrounded: false,
+    flush: async () => { await queue; },
     setBackgrounded: (backgrounded) => set({ backgrounded }),
     start: async (source) => {
       const existing = await journal.read();
@@ -60,16 +65,18 @@ export function createRecorder(journal: Journal) {
     },
     ingest: (p) => {
       queue = queue.then(() => journal.append(p)).catch(() => set({ error: 'Could not save this ride to the phone. Free up storage.' }));
+      // A fix can arrive while the screen state is idle (the phone relaunched the app for the background task): it is journaled, nothing more.
+      if (get().status !== 'running') return queue as Promise<void>;
       const { points, meters, maxKmh } = get();
-      set({ lastFixAt: Date.now() });
-      if (p.acc != null && p.acc > MAX_ACCURACY_M) return queue as Promise<void>;
       const last = points[points.length - 1];
-      if (!last) { set({ points: [p] }); return queue as Promise<void>; }
-      const step = haversine(last, p);
-      const dt = last.t != null && p.t != null ? (p.t - last.t) / 1000 : 0;
+      const step = last ? haversine(last, p) : 0;
+      const dt = last && last.t != null && p.t != null ? (p.t - last.t) / 1000 : 0;
       const derived = dt > 0 ? (step / dt) * 3.6 : 0;
-      if (derived > MAX_KMH || step < JITTER_M) return queue as Promise<void>;
       const kmh = p.speed != null && p.speed >= 0 ? p.speed * 3.6 : derived;
+      set({ lastFixAt: Date.now(), moving: kmh >= 3.6 });
+      if (p.acc != null && p.acc > MAX_ACCURACY_M) return queue as Promise<void>;
+      if (!last) { set({ points: [p] }); return queue as Promise<void>; }
+      if (derived > MAX_KMH || step < JITTER_M) return queue as Promise<void>;
       set({ points: [...points, p], meters: meters + step, speedKmh: kmh, maxKmh: Math.max(maxKmh, kmh) });
       return queue as Promise<void>;
     },
@@ -78,7 +85,7 @@ export function createRecorder(journal: Journal) {
       if (!last) return;
       const w = { name: `Waypoint ${waypoints.length + 1}`, lat: last.lat, lng: last.lng };
       set({ waypoints: [...waypoints, w] });
-      await journal.appendWaypoint(w);
+      try { await journal.appendWaypoint(w); } catch { set({ error: 'Could not save this waypoint to the phone. Free up storage.' }); }
     },
     addNote: () => set((s) => ({ notes: s.notes + 1 })),
     checkRecoverable: async () => {
@@ -93,7 +100,7 @@ export function createRecorder(journal: Journal) {
       const stats = trackStats(splitSegments(points));
       set({ ...blank, status: 'running', source: r.meta.source, startedAt: r.meta.startedAt, points, waypoints: r.waypoints, meters: stats.distanceM, maxKmh: stats.maxKmh, lastFixAt: Date.now(), recoverable: null });
     },
-    discardRecovered: async () => { await journal.clear(); set({ recoverable: null }); },
+    discardRecovered: async () => { await hooks.stopBackground?.(); await journal.clear(); set({ recoverable: null }); },
     setError: (error) => set({ error }),
     reset: () => set({ ...blank, error: undefined }),
   }));

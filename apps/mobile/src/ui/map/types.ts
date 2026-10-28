@@ -6,6 +6,8 @@ export type OsmMapProps = {
   line?: LatLng[];
   /** The recorded track, drawn as it grows. */
   track?: LatLng[];
+  /** Indices into `track` where a new GPS segment starts; no line is drawn across a gap. */
+  trackBreaks?: number[];
   /** Where the rider is now. */
   position?: LatLng;
   waypoints?: LatLng[];
