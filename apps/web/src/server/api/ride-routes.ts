@@ -1,7 +1,7 @@
 import { isValidSlug } from "@moto-trails/domain";
 import { arriveCheckin, extendCheckin, getMyCheckin, createCheckin, parseExpectedAt, parseNewCheckin, parsePosition, pingCheckin } from "../rides/checkins";
 import { confirmConditionReport, createConditionReport, listConditionReports } from "../rides/condition-reports";
-import { createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup, syncGroupRide } from "../rides/group-rides";
+import { activeClubGroupRide, createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup, syncGroupRide } from "../rides/group-rides";
 import { createSharedRoute, deleteSharedRoute, getSharedRoute, parseSharedRoute } from "../rides/shared-routes";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 
@@ -100,6 +100,13 @@ export const rideRoutes: RouteDef[] = [
       const b = await asObject(c);
       const r = await createGroupRide(c.sql, { userId: c.userId, name: str(b.name), clubId: str(b.clubId) || null, now: c.now });
       return r.ok ? ok({ id: r.id, code: r.code, name: r.name, expiresAt: r.expiresAt }, 201) : failWith(GROUP, r.reason);
+    },
+  },
+  {
+    method: "GET", path: "/clubs/{id}/group-ride", access: "token", cache: "none", summary: "The group ride a club's riders can join now: { ride: { id, name, code } } or { ride: null }. Club members only",
+    async handler(c) {
+      const r = await activeClubGroupRide(c.sql, { userId: c.userId, clubId: c.params.id!, now: c.now });
+      return r.ok ? ok({ ride: r.ride }) : failWith(GROUP, r.reason);
     },
   },
   {

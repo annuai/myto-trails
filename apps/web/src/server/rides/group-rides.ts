@@ -81,6 +81,21 @@ export async function createGroupRide(
   });
 }
 
+/** The group ride a club's member can join right now, if one of the club's riders started one. Members of the club only. */
+export async function activeClubGroupRide(
+  sql: Sql,
+  i: { userId: string; clubId: string; now: Date },
+): Promise<{ ok: true; ride: { id: string; name: string; code: string } | null } | Fail<"not_found">> {
+  if (!UUID.test(i.clubId)) return { ok: false, reason: "not_found" };
+  const [m] = await sql`
+    select c.id from club c join club_member cm on cm.club_id = c.id
+    where c.public_id = ${i.clubId} and c.archived_at is null and cm.user_id = ${i.userId}`;
+  if (!m) return { ok: false, reason: "not_found" };
+  const rows = await sql`select id, code, name, created_at, last_activity_at, ended_at from group_ride where club_id = ${m.id} and ended_at is null order by created_at desc limit 5`;
+  const live = rows.find((g) => !isExpired({ createdAt: g.created_at, lastActivityAt: g.last_activity_at, endedAt: g.ended_at }, i.now));
+  return { ok: true, ride: live ? { id: live.id as string, name: live.name as string, code: live.code as string } : null };
+}
+
 type Ride = { id: string; leaderId: string; name: string; createdAt: Date; lastActivityAt: Date; endedAt: Date | null };
 async function findRide(sql: Sql, id: string): Promise<Ride | null> {
   if (!UUID.test(id)) return null;
