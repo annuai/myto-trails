@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, BookOpen, Camera, ClipboardList, Download, IdCard, LogIn, LogOut, Luggage, Route as RouteIcon, Trash2, Upload } from 'lucide-react-native';
+import { Bell, BookOpen, Camera, ClipboardList, Download, IdCard, LogIn, LogOut, Luggage, Stamp, Route as RouteIcon, Trash2, Upload } from 'lucide-react-native';
 import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import { eraseDocumentPhotos } from '@/lib/backup/device';
 import { signOut, startSignIn } from '@/lib/signIn';
 import { pickAndUploadImage } from '@/lib/uploadImage';
+import { arriveCheckin } from '@/api/checkins';
+import { deleteSharedRoute } from '@/api/sharedRoutes';
 import { useAuth } from '@/store/auth';
 import { useTrailStore } from '@/store/trails';
 import { distanceKm } from '@/lib/units';
@@ -16,6 +18,7 @@ import { useTodos } from '@/store/todos';
 import { useJournal } from '@/store/journal';
 import { useCompanion } from '@/store/companion';
 import { useMyRoutes } from '@/store/myRoutes';
+import { sharedIdOf } from '@/lib/shareRoute';
 import { useTrips } from '@/store/trips';
 import { useNotifications } from '@/store/notifications';
 import { Avatar } from '@/ui/Avatar';
@@ -60,6 +63,10 @@ export default function You() {
   };
 
   const erase = () => {
+    // What is on the server for this rider goes too: an open check-in is closed (so nobody is told they are overdue) and shared route links stop working.
+    const checkin = useCompanion.getState().checkin;
+    if (token && checkin) void arriveCheckin(token, checkin.id).catch(() => undefined);
+    if (token) for (const r of useMyRoutes.getState().routes) if (r.sharedUrl) void deleteSharedRoute(token, sharedIdOf(r.sharedUrl)).catch(() => undefined);
     eraseDocumentPhotos();
     useJournal.getState().wipe();
     useNotifications.getState().wipe();
@@ -124,6 +131,7 @@ export default function You() {
       <SectionTitle>Keep track</SectionTitle>
       <ListCard>
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
+        <Row icon={Stamp} label="Trails ridden" onPress={() => router.push('/passport')} />
         <Row icon={Luggage} label="Trips" value={`${tripCount}`} mono onPress={() => router.push('/trips')} />
         <Row icon={BookOpen} label="Journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />
         <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />

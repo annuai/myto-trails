@@ -17,8 +17,23 @@ import { useMotion } from '@/store/motion';
 import { useRecorder } from '@/store/recorder';
 
 const iso = (t: number) => new Date(t).toISOString();
-/** A report the server refused for good (not a bad signal, not a busy server) is dropped rather than retried forever. */
-const permanent = (e: unknown) => e instanceof ApiFailure && e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429;
+/**
+ * The server refused for good: not a bad signal, not a busy server, and not a sign-in that may be fixed (an expired or revoked
+ * token, or a welcome step not finished yet), because the rider can put that right and the report should still be there.
+ */
+const permanent = (e: unknown) => e instanceof ApiFailure && e.status >= 400 && e.status < 500 && ![401, 403, 408, 429].includes(e.status);
+
+/** The ride paused itself (opt-in auto-pause): it is still the rider's ride, so the "Are you OK?" watch and the group keep going. */
+const flags = { autoPaused: false, arrivePending: false };
+
+/** Closes the check-in. If it cannot be reached it stays, on the Dash, and is tried again, so a missed "arrived" is never silent. */
+async function arrive() {
+  const { checkin } = useCompanion.getState();
+  const token = useAuth.getState().token;
+  if (!checkin || !token) { flags.arrivePending = false; return; }
+  try { await arriveCheckin(token, checkin.id); useCompanion.getState().setCheckin(null); flags.arrivePending = false; }
+  catch (e) { if (permanent(e)) { useCompanion.getState().setCheckin(null); flags.arrivePending = false; } else flags.arrivePending = true; }
+}
 
 /** Sends the condition reports that were queued without a signal, a few at a time. */
 async function flushOutbox() {
@@ -49,8 +64,9 @@ export function CompanionHost() {
       const token = useAuth.getState().token;
       if (prev.status === 'running' && s.status === 'idle') {
         last = null;
-        if (checkin && token) void arriveCheckin(token, checkin.id).catch(() => undefined).finally(() => useCompanion.getState().setCheckin(null));
-        if (group && token) { if (group.role !== 'leader') void leaveGroupRide(token, group.id).catch(() => undefined); useCompanion.getState().setGroup(null); }
+        if (checkin && token) void arrive();
+        // A member leaves. The leader keeps the group, so they can still end it from the Dash or the Ride screen.
+        if (group && token && group.role !== 'leader') { void leaveGroupRide(token, group.id).catch(() => undefined); useCompanion.getState().setGroup(null); }
         return;
       }
       if (s.status !== 'running' || s.paused || s.points.length === prev.points.length || !checkin || !token) return;
@@ -68,7 +84,7 @@ export function CompanionHost() {
       const token = useAuth.getState().token;
       if (!group || !token) return;
       const rec = useRecorder.getState();
-      const p = rec.status === 'running' && !rec.paused ? rec.points[rec.points.length - 1] : undefined;
+      const p = rec.status === 'running' && (!rec.paused || flags.autoPaused) ? rec.points[rec.points.length - 1] : undefined;
       try {
         const r = await syncGroupRide(token, group.id, { ...(p ? { lat: p.lat, lng: p.lng, at: iso(Date.now()) } : {}), status: live.myStatus });
         useCompanion.getState().setLive({ riders: r.riders, me: r.me, regroup: r.regroup, error: undefined });
@@ -88,15 +104,16 @@ export function CompanionHost() {
     loop();
 
     // Reports queued without a signal.
-    const outboxTimer = setInterval(() => void flushOutbox(), 30_000);
-    const app = AppState.addEventListener('change', (st) => { if (st === 'active') void flushOutbox(); });
+    const retry = () => { void flushOutbox(); if (flags.arrivePending && useRecorder.getState().status === 'idle') void arrive(); };
+    const outboxTimer = setInterval(retry, 30_000);
+    const app = AppState.addEventListener('change', (st) => { if (st === 'active') retry(); });
     void flushOutbox();
 
     // "Are you OK?": ask once when the bike has stood still for ten minutes.
     let prompt = startPrompt;
     const promptTimer = setInterval(() => {
       const rec = useRecorder.getState();
-      const r = stepPrompt(prompt, { now: Date.now(), running: rec.status === 'running', paused: rec.paused, stopped: useMotion.getState().stopped });
+      const r = stepPrompt(prompt, { now: Date.now(), running: rec.status === 'running', paused: rec.paused && !flags.autoPaused, stopped: useMotion.getState().stopped });
       prompt = r.state;
       if (r.ask) void notifier.notifyNow({ id: 'are-you-ok', fireAt: Date.now(), title: 'Are you OK?', body: 'You have been stopped for 10 minutes. Tap to open your ride.', route: '/ride/live' }).catch(() => undefined);
     }, 30_000);
@@ -110,11 +127,12 @@ export function CompanionHost() {
       const movingFast = !!fix && now - fix.t < 10_000 && (fix.speed ?? 0) * 3.6 >= 8;
       const r = stepAutoPause(auto, { now, enabled: useCompanion.getState().autoPause, running: rec.status === 'running', paused: rec.paused, stopped: useMotion.getState().stopped, movingFast });
       auto = r.state;
+      flags.autoPaused = auto.pausedAt !== null;
       if (r.action === 'pause') { void rec.pause(); void notifier.notifyNow({ id: 'auto-pause', fireAt: now, title: 'Ride paused', body: 'You have been still for 5 minutes. It carries on when you move.', route: '/ride/live' }).catch(() => undefined); }
       if (r.action === 'resume') void rec.resume();
     }, 5000);
 
-    return () => { unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); app.remove(); };
+    return () => { unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); app.remove(); flags.autoPaused = false; };
   }, []);
   return null;
 }

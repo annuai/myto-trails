@@ -29,11 +29,14 @@ function useNearbyTrails(at: LatLng | undefined, enabled: boolean): TrailSummary
  */
 export function ReportSheet({ open, onClose, at }: { open: boolean; onClose: () => void; at?: LatLng }) {
   const planned = useTrailStore((s) => s.nextTrip);
-  const nearby = useNearbyTrails(at, open && !planned);
+  const nearby = useNearbyTrails(at, open);
   const [slug, setSlug] = useState<string>();
   const [sent, setSent] = useState<string>();
   const close = () => { setSent(undefined); onClose(); };
-  const choices = planned ? [{ slug: planned.slug, name: planned.name }, ...nearby.filter((t) => t.slug !== planned.slug)] : nearby;
+  // The planned trail leads only when the rider is actually near it; 200 km away, a report would go against the wrong trail.
+  // With no signal to look nearby, the planned trail is the best guess.
+  const plannedHere = !!planned && (nearby.length === 0 || nearby.some((t) => t.slug === planned.slug));
+  const choices = planned ? (plannedHere ? [{ slug: planned.slug, name: planned.name }, ...nearby.filter((t) => t.slug !== planned.slug)] : [...nearby]) : nearby;
   const target = slug ?? choices[0]?.slug;
 
   const send = (kind: ConditionKind) => {

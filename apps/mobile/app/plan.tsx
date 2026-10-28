@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import { Download, FileUp, Link2, Play, Trash2, Undo2 } from 'lucide-react-native';
-import { createSharedRoute } from '@/api/sharedRoutes';
+import { createSharedRoute, deleteSharedRoute } from '@/api/sharedRoutes';
 import { RouteCheck } from '@/features/RouteCheck';
 import { elevationProfile } from '@/lib/elevation';
 import { exportGpx } from '@/lib/exportGpx';
@@ -12,7 +12,7 @@ import { pathLength } from '@/lib/geo';
 import { buildGpx } from '@/lib/gpx';
 import { parseGpx } from '@/lib/gpxImport';
 import { planRoute } from '@/lib/routePlan';
-import { buildSharedRoute } from '@/lib/shareRoute';
+import { buildSharedRoute, sharedIdOf } from '@/lib/shareRoute';
 import { asText, distanceKm, durationParts } from '@/lib/units';
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '@/store/auth';
@@ -86,7 +86,7 @@ export default function Plan() {
             <Button variant="soft" icon={Link2} label={open.sharedUrl ? 'Share the link again' : 'Share as a link'} disabled={share.busy} onPress={() => (open.sharedUrl ? void Share.share({ message: `${open.name} on Myto Moto: ${open.sharedUrl}` }) : void shareLink(open))} />
             <Button variant="soft" icon={Download} label="Export GPX file" onPress={() => void exportGpx(open.name, buildGpx(open.name, open.points))} />
             <RouteCheck line={open.points} />
-            <Button variant="danger" icon={Trash2} label="Delete this route" onPress={() => { remove(open.id); setOpen(undefined); }} />
+            <Button variant="danger" icon={Trash2} label="Delete this route" onPress={() => { if (token && open.sharedUrl) void deleteSharedRoute(token, sharedIdOf(open.sharedUrl)).catch(() => undefined); remove(open.id); setOpen(undefined); }} />
             {share.problem ? <Text variant="label" tone="stop">{share.problem}</Text> : null}
           </>);
         })() : null}

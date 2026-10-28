@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LatLng } from './geo';
-import { buildSharedRoute, MAX_SHARED_POINTS } from './shareRoute';
+import { buildSharedRoute, sharedIdOf, MAX_SHARED_POINTS } from './shareRoute';
 
 // About 11 km north along longitude 77, a point every ~11 m.
 const long: LatLng[] = Array.from({ length: 1000 }, (_, i) => ({ lat: 12 + i * 0.0001, lng: 77 + (i % 2) * 0.00001 }));
@@ -35,5 +35,10 @@ describe('buildSharedRoute', () => {
     expect(buildSharedRoute({ name: 'Hill', points: withEle })!.elevationGainM).toBeGreaterThan(900);
     expect(buildSharedRoute({ name: 'Flat', points: long, elevationGainM: 40 })!.elevationGainM).toBe(40);
     expect(buildSharedRoute({ name: 'None', points: long })).not.toHaveProperty('elevationGainM');
+  });
+
+  it('reads the id out of a share link, whatever follows it', () => {
+    expect(sharedIdOf('https://site.test/route/abc23xyz45')).toBe('abc23xyz45');
+    expect(sharedIdOf('https://site.test/route/abc23xyz45/?utm=1#top')).toBe('abc23xyz45');
   });
 });

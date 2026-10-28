@@ -55,4 +55,12 @@ describe('fuelGaps', () => {
   it('reports the whole route as the gap when there is no station at all', () => {
     expect(fuelGaps(line, []).longestGapKm).toBeGreaterThan(54);
   });
+
+  it('counts the whole length of a loop, so a long stretch after the last pump is not lost', () => {
+    // Out 22 km and back to the start: the last point is also the first, so "how far along" says 0.
+    const loop: LatLng[] = [{ lat: 12, lng: 77 }, { lat: 12.1, lng: 77 }, { lat: 12.2, lng: 77 }, { lat: 12.1, lng: 77 }, { lat: 12, lng: 77 }];
+    const g = fuelGaps(loop, [{ name: 'Pump', lat: 12.1, lng: 77 }]);
+    expect(g.totalKm).toBeGreaterThan(43);
+    expect(g.longestGapKm).toBeGreaterThan(30);
+  });
 });

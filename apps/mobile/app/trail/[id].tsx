@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AlertTriangle, Bookmark, CalendarPlus, CloudOff, Download, Trash2 } from 'lucide-react-native';
+import { AlertTriangle, Bookmark, CalendarPlus, CloudOff, Download, Stamp, Trash2 } from 'lucide-react-native';
 import { accessOf, conditionOf, dur, headline, verificationOf } from '@/api/status';
 import { toLatLng } from '@/api/types';
 import { setSaved, useSaved, useTrail } from '@/api/useApi';
 import { useTrailCommentsSection } from '@/features/community/useTrailCommentsSection';
 import { RiderReports } from '@/features/RiderReports';
+import { markRidden, unmarkRidden } from '@/api/ridden';
+import { useRidden } from '@/features/passport/useRidden';
 import { ElevationChart } from '@/ui/ElevationChart';
 import { RouteCheck } from '@/features/RouteCheck';
 import { deleteTiles, downloadTiles, hasTiles, tilesAvailable } from '@/lib/offlineTiles';
@@ -45,6 +47,13 @@ export default function TrailDetail() {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
   const comments = useTrailCommentsSection(slug);
+  const ridden = useRidden();
+  const iRode = !!ridden.items?.some((r) => r.slug === slug);
+  const toggleRidden = async () => {
+    if (!token) return router.push('/you');
+    setBusy(true); setProblem(undefined);
+    try { await (iRode ? unmarkRidden(token, slug) : markRidden(token, slug)); ridden.reload(); } catch (e) { setProblem(e instanceof Error ? e.message : 'Could not update your list.'); } finally { setBusy(false); }
+  };
   /** Map tiles saved for this trail: a percentage while they download, true once saved. */
   const [tiles, setTiles] = useState<number | true>();
   useEffect(() => { void hasTiles(slug).then((v) => v && setTiles(true)).catch(() => undefined); }, [slug]);
@@ -143,6 +152,7 @@ export default function TrailDetail() {
           <Button variant="soft" icon={Download} label={downloading[slug] ? 'Saving…' : typeof tiles === 'number' ? `Saving map ${tiles}%` : 'Save for offline'} disabled={!!downloading[slug] || typeof tiles === 'number'} onPress={getPack} />
         )}
         <Button variant="soft" icon={Bookmark} label={isSaved ? 'Saved. Tap to remove' : token ? 'Save this trail' : 'Sign in to save'} disabled={busy} onPress={toggleSave} />
+        <Button variant="soft" icon={Stamp} label={iRode ? "Ridden. Tap to undo" : token ? "I've ridden this" : 'Sign in to mark as ridden'} disabled={busy} onPress={() => void toggleRidden()} />
         <Button variant="soft" icon={CalendarPlus} label="Plan a trip" arrow onPress={() => setPlanning(true)} />
         <Button label="Ride this trail" onPress={() => { planTrip(detail); router.push('/ride'); }} />
       </View>

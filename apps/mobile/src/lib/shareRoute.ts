@@ -40,3 +40,6 @@ export function buildSharedRoute(r: { name: string; points: LatLng[]; waypoints?
     ...(gain !== undefined ? { elevationGainM: gain } : {}),
   };
 }
+
+/** The id in a shared route's link (.../route/<id>), which is what the server deletes it by. */
+export const sharedIdOf = (url: string): string => url.split(/[?#]/)[0]!.split('/').filter(Boolean).pop() ?? '';

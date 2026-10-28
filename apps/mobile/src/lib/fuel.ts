@@ -1,4 +1,4 @@
-import type { LatLng } from './geo';
+import { pathLength, type LatLng } from './geo';
 import { nearestOnLine } from './routeFollow';
 
 export type Bbox = { south: number; west: number; north: number; east: number };
@@ -41,7 +41,8 @@ export function parseOverpass(json: unknown): FuelStation[] {
 
 /** Fuel stops along a route and the longest stretch between two of them (the start and end count as stops). */
 export function fuelGaps(line: LatLng[], stations: FuelStation[], maxOffM: number = MAX_OFF_ROUTE_M): FuelGaps {
-  const totalKm = (nearestOnLine(line, line[line.length - 1] ?? { lat: 0, lng: 0 })?.alongM ?? 0) / 1000;
+  // The whole length of the line, not where its last point sits on it: on a loop the last point is also the first.
+  const totalKm = pathLength(line) / 1000;
   const stops: FuelStop[] = [];
   for (const s of stations) {
     const near = nearestOnLine(line, s);
