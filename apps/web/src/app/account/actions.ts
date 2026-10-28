@@ -57,6 +57,8 @@ export async function setAvatarAction(formData: FormData): Promise<void> {
   redirect("/account?avatar=saved");
 }
 
+const bikeModelField = (v: FormDataEntryValue | null) => (v === "none" ? null : String(v ?? "") || undefined);
+
 export async function saveBikeAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in?next=%2Faccount");
@@ -69,7 +71,8 @@ export async function saveBikeAction(formData: FormData): Promise<void> {
   const r = await saveBike(sql, {
     userId: user.id, name: formData.get("name"), modelYear: formData.get("modelYear"),
     photoMediaId: formData.get("removePhoto") === "on" ? null : photo || undefined,
-    bikeModelId: String(formData.get("bikeModelId") ?? "") || undefined,
+    // "none" is a bike that is not in the catalogue: drop the saved catalogue model and its picture.
+    bikeModelId: bikeModelField(formData.get("bikeModelId")),
   });
   redirect(r.ok ? "/account?bike=saved" : "/account?bike=error");
 }
