@@ -117,3 +117,94 @@ describe('recorder review fixes', () => {
     expect(stopBackground).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('pause', () => {
+  const clock = (start: number) => { let now = start; vi.spyOn(Date, 'now').mockImplementation(() => now); return (t: number) => { now = t; }; };
+  const T = 1_700_000_000_000;
+
+  it('pausing stops fixes being added to the track or the journal, and resuming continues', async () => {
+    const set = clock(T);
+    const j = createMemoryJournal();
+    const rec = createRecorder(j);
+    await rec.getState().start('gps');
+    await rec.getState().ingest(pt(0, 0));
+    await rec.getState().ingest(pt(30, 5));
+    set(T + 10_000);
+    await rec.getState().pause();
+    await rec.getState().ingest(pt(60, 10));
+    expect(rec.getState().paused).toBe(true);
+    expect(rec.getState().points).toHaveLength(2);
+    expect((await j.read())!.points).toHaveLength(2);
+    set(T + 20_000);
+    await rec.getState().resume();
+    await rec.getState().ingest(pt(90, 20));
+    expect(rec.getState().paused).toBe(false);
+    expect((await j.read())!.points).toHaveLength(3);
+    vi.restoreAllMocks();
+  });
+  it('elapsed time leaves out paused time and is frozen while paused', async () => {
+    const set = clock(T);
+    const rec = createRecorder(createMemoryJournal());
+    await rec.getState().start('gps');
+    set(T + 60_000);
+    await rec.getState().pause();
+    expect(rec.getState().elapsedMs(T + 60_000)).toBe(60_000);
+    expect(rec.getState().elapsedMs(T + 500_000)).toBe(60_000);
+    set(T + 360_000);
+    await rec.getState().resume();
+    expect(rec.getState().elapsedMs(T + 400_000)).toBe(100_000);
+    vi.restoreAllMocks();
+  });
+  it('a second pause or a resume while running does nothing', async () => {
+    const set = clock(T);
+    const rec = createRecorder(createMemoryJournal());
+    await rec.getState().start('gps');
+    await rec.getState().resume();
+    set(T + 1000);
+    await rec.getState().pause();
+    set(T + 5000);
+    await rec.getState().pause();
+    expect(rec.getState().pausedAt).toBe(T + 1000);
+    vi.restoreAllMocks();
+  });
+  it('pausing clears the moving flag', async () => {
+    clock(T);
+    const rec = createRecorder(createMemoryJournal());
+    await rec.getState().start('gps');
+    await rec.getState().ingest({ ...pt(0, 0), speed: 10 });
+    expect(rec.getState().moving).toBe(true);
+    await rec.getState().pause();
+    expect(rec.getState().moving).toBe(false);
+    vi.restoreAllMocks();
+  });
+  it('after a kill, a recovered ride is still paused and keeps its elapsed time', async () => {
+    const set = clock(T);
+    const j = createMemoryJournal();
+    const first = createRecorder(j);
+    await first.getState().start('gps');
+    set(T + 30_000);
+    await first.getState().pause();
+    set(T + 900_000);
+    const second = createRecorder(j);
+    await second.getState().recover();
+    expect(second.getState().paused).toBe(true);
+    expect(second.getState().elapsedMs(T + 900_000)).toBe(30_000);
+    set(T + 960_000);
+    await second.getState().resume();
+    expect(second.getState().elapsedMs(T + 1_000_000)).toBe(70_000);
+    vi.restoreAllMocks();
+  });
+  it('a recovered ride with a finished pause keeps the paused time out', async () => {
+    const set = clock(T);
+    const j = createMemoryJournal();
+    const first = createRecorder(j);
+    await first.getState().start('gps');
+    set(T + 10_000); await first.getState().pause();
+    set(T + 70_000); await first.getState().resume();
+    const second = createRecorder(j);
+    await second.getState().recover();
+    expect(second.getState().paused).toBe(false);
+    expect(second.getState().elapsedMs(T + 100_000)).toBe(40_000);
+    vi.restoreAllMocks();
+  });
+});

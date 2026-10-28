@@ -22,6 +22,16 @@ type State = {
   speedKmh: number;
   maxKmh: number;
   notes: number;
+  /** The rider paused the ride (a tea break): nothing is recorded until they resume. */
+  paused: boolean;
+  /** When the current pause began. */
+  pausedAt: number;
+  /** Total time of pauses that have ended. */
+  pausedMs: number;
+  pause: () => Promise<void>;
+  resume: () => Promise<void>;
+  /** Time spent riding: since the start, leaving out pauses. Frozen while paused. */
+  elapsedMs: (now: number) => number;
   /** The rider was moving at the last fix. The lost-signal warning only makes sense then: a stopped phone gets no fixes. */
   moving: boolean;
   /** Waits until every fix received so far has been written to the journal. */
@@ -46,7 +56,7 @@ type State = {
   reset: () => void;
 };
 
-const blank = { status: 'idle' as const, startedAt: 0, points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0, moving: false };
+const blank = { status: 'idle' as const, startedAt: 0, points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0, moving: false, paused: false, pausedAt: 0, pausedMs: 0 };
 
 /** The live recorder. Every fix goes to the journal first; the store only shows what the screen needs. */
 export function createRecorder(journal: Journal, hooks: { stopBackground?: () => Promise<void> } = {}) {
@@ -54,6 +64,19 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
   return create<State>((set, get) => ({
     ...blank, source: 'gps', recoverable: null, backgrounded: false,
     flush: async () => { await queue; },
+    pause: async () => {
+      if (get().status !== 'running' || get().paused) return;
+      const t = Date.now();
+      set({ paused: true, pausedAt: t, moving: false });
+      await journal.pause(t);
+    },
+    resume: async () => {
+      if (!get().paused) return;
+      const t = Date.now();
+      set({ paused: false, pausedMs: get().pausedMs + (t - get().pausedAt) });
+      await journal.resume(t);
+    },
+    elapsedMs: (now) => Math.max(0, (get().paused ? get().pausedAt : now) - get().startedAt - get().pausedMs),
     setBackgrounded: (backgrounded) => set({ backgrounded }),
     start: async (source) => {
       const existing = await journal.read();
@@ -64,6 +87,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       return true;
     },
     ingest: (p) => {
+      if (get().paused) return Promise.resolve();
       queue = queue.then(() => journal.append(p)).catch(() => set({ error: 'Could not save this ride to the phone. Free up storage.' }));
       // A fix can arrive while the screen state is idle (the phone relaunched the app for the background task): it is journaled, nothing more.
       if (get().status !== 'running') return queue as Promise<void>;
@@ -97,8 +121,10 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       const r = await journal.read();
       if (!r) return set({ recoverable: null });
       const points = cleanTrack(r.points);
-      const stats = trackStats(splitSegments(points));
-      set({ ...blank, status: 'running', source: r.meta.source, startedAt: r.meta.startedAt, points, waypoints: r.waypoints, meters: stats.distanceM, maxKmh: stats.maxKmh, lastFixAt: Date.now(), recoverable: null });
+      const stats = trackStats(splitSegments(points, r.pauses));
+      const open = r.pauses.find((x) => x.to === undefined);
+      const pausedMs = r.pauses.reduce((n, x) => n + (x.to !== undefined ? x.to - x.from : 0), 0);
+      set({ ...blank, status: 'running', source: r.meta.source, startedAt: r.meta.startedAt, points, waypoints: r.waypoints, meters: stats.distanceM, maxKmh: stats.maxKmh, lastFixAt: Date.now(), recoverable: null, paused: !!open, pausedAt: open?.from ?? 0, pausedMs });
     },
     discardRecovered: async () => { await hooks.stopBackground?.(); await journal.clear(); set({ recoverable: null }); },
     setError: (error) => set({ error }),

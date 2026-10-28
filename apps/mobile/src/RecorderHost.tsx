@@ -18,10 +18,12 @@ const KEEP_AWAKE = 'myto-ride';
 export function RecorderHost() {
   const status = useRecorder((s) => s.status);
   const source = useRecorder((s) => s.source);
+  const paused = useRecorder((s) => s.paused);
   useEffect(() => {
     if (status !== 'running') return;
     const { ingest, setBackgrounded } = useRecorder.getState();
     if (source === 'sim') {
+      if (paused) return;
       let i = 0;
       const id = setInterval(() => void ingest({ ...simPoint(i++, undefined, 0.0045), t: Date.now() }), 1000);
       return () => clearInterval(id);
@@ -32,6 +34,8 @@ export function RecorderHost() {
     const release = useLocation.getState().acquire();
     let cancelled = false;
     let unsub: (() => void) | undefined;
+    // Paused: the map dot keeps moving, but nothing is recorded and the background task is not running.
+    if (paused) return () => { release(); if (Platform.OS === 'web') void deactivateKeepAwake(KEEP_AWAKE); };
     void startBackground().then((ok) => {
       if (cancelled) { if (ok) void stopBackground(); return; }
       setBackgrounded(ok);
@@ -50,6 +54,6 @@ export function RecorderHost() {
       void stopBackground();
       if (Platform.OS === 'web') void deactivateKeepAwake(KEEP_AWAKE);
     };
-  }, [status, source]);
+  }, [status, source, paused]);
   return null;
 }
