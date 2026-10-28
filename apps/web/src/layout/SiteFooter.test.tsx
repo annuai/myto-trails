@@ -21,4 +21,15 @@ describe("SiteFooter", () => {
     render(<SiteFooter />);
     expect(screen.getByRole("link", { name: "Regions" })).toHaveAttribute("href", "/regions");
   });
+  it("shows the version and Proudly made in India", () => {
+    const { container } = render(<SiteFooter />);
+    expect(container.textContent).toContain("v0.0.0");
+    expect(container.textContent).toContain("Proudly made in India");
+  });
+  it("links to About, Terms and Privacy", () => {
+    render(<SiteFooter />);
+    expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
+    expect(screen.getAllByRole("link", { name: "Terms" })[0]).toHaveAttribute("href", "/terms");
+    expect(screen.getAllByRole("link", { name: "Privacy" })[0]).toHaveAttribute("href", "/privacy");
+  });
 });
