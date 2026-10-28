@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme/ThemeProvider';
 import { size } from '@/theme/tokens';
 import { FloatingHeader, HEADER_HEIGHT } from './FloatingHeader';
+import { PullQuote } from './PullQuote';
 import { Reveal } from './motion';
 import { CONTENT_MAX, useLayout } from './useLayout';
 
@@ -40,6 +41,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   );
   return (
     <LinearGradient colors={c.gradient as unknown as [string, string, string]} locations={[0, 0.45, 1]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={{ flex: 1, backgroundColor: c.paper }}>
+      {tabs && scroll ? <PullQuote scrollY={scrollY} top={top - 8} /> : null}
       {body}
       {brand ? <FloatingHeader scrollY={scrollY} /> : null}
       {footer ? (
