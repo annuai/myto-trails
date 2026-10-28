@@ -1,23 +1,35 @@
-import { useRef, type ReactNode } from 'react';
+import { useCallback, useRef, type ReactNode } from 'react';
 import { Animated, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { fadeTarget, isTap, touchPoint } from '@/lib/tabFade';
 import { useTheme } from '@/theme/ThemeProvider';
 import { size } from '@/theme/tokens';
 import { FloatingHeader, HEADER_HEIGHT } from './FloatingHeader';
 import { PullQuote } from './PullQuote';
-import { Reveal } from './motion';
+import { EASE, Reveal } from './motion';
+import { tabBarFade } from './tabBarFade';
 import { CONTENT_MAX, useLayout } from './useLayout';
 
 export const TAB_BAR_HEIGHT = 100;
 export const TAB_BAR_HEIGHT_LANDSCAPE = 84;
 export { CONTENT_MAX };
 
-type Props = { children: ReactNode; overlay?: ReactNode; tabs?: boolean; scroll?: boolean; footer?: ReactNode; /** Fixed logo and notifications bar that floats as a pill once the page scrolls. */ brand?: boolean };
+type Props = { children: ReactNode; overlay?: ReactNode; tabs?: boolean; scroll?: boolean; footer?: ReactNode; /** Fixed logo and notifications bar that floats as a pill once the page scrolls. */ brand?: boolean; /** The floating tab bar fades away near the end of the page and returns on scrolling up or a tap. */ fadeTabs?: boolean; /** Full-width content after everything else, edge to edge, flush with the bottom of the page. */ endCap?: ReactNode };
 
 /** Page frame: safe-area top, 20 px side margins, scrolls, leaves room for the tab bar. */
-export function Screen({ children, overlay, tabs = false, scroll = true, footer, brand = false }: Props) {
+export function Screen({ children, overlay, tabs = false, scroll = true, footer, brand = false, fadeTabs = false, endCap }: Props) {
   const scrollY = useRef(new Animated.Value(0)).current;
+  const bar = useRef({ prevY: 0, content: 0, layout: 0, value: 1, touch: null as { x: number; y: number } | null }).current;
+  const setBar = (to: number, animate: boolean) => {
+    bar.value = to;
+    tabBarFade.stopAnimation();
+    if (animate) Animated.timing(tabBarFade, { toValue: to, duration: 220, easing: EASE, useNativeDriver: true }).start();
+    else tabBarFade.setValue(to);
+  };
+  // Screens stay mounted behind the tabs, so the bar must come back when this one is left.
+  useFocusEffect(useCallback(() => () => { if (fadeTabs) setBar(1, false); }, [fadeTabs])); // eslint-disable-line react-hooks/exhaustive-deps
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const { landscape } = useLayout();
@@ -29,12 +41,26 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   const body = scroll ? (
     <Animated.ScrollView
       scrollEventThrottle={16}
-      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
-      contentContainerStyle={{ paddingTop: top, paddingBottom: bottom, paddingLeft: padL, paddingRight: padR }}
+      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+        useNativeDriver: false,
+        listener: (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+          if (!fadeTabs) return;
+          const y = e.nativeEvent.contentOffset.y;
+          const next = fadeTarget({ y, prevY: bar.prevY, maxY: Math.max(0, bar.content - bar.layout), current: bar.value });
+          bar.prevY = y;
+          if (next !== bar.value) setBar(next, next > bar.value);
+        },
+      })}
+      onLayout={fadeTabs ? (e) => { bar.layout = e.nativeEvent.layout.height; } : undefined}
+      onContentSizeChange={fadeTabs ? (_w, h) => { bar.content = h; } : undefined}
+      onTouchStart={fadeTabs ? (e) => { bar.touch = touchPoint(e.nativeEvent); } : undefined}
+      onTouchEnd={fadeTabs ? (e) => { if (bar.value < 1 && bar.touch && isTap(bar.touch, touchPoint(e.nativeEvent))) setBar(1, true); } : undefined}
+      contentContainerStyle={{ paddingTop: top, paddingBottom: endCap ? 0 : bottom, paddingLeft: padL, paddingRight: padR }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
       {frame(children)}
+      {endCap ? <View style={{ marginLeft: -padL, marginRight: -padR }}>{endCap}</View> : null}
     </Animated.ScrollView>
   ) : (
     <View style={{ flex: 1, paddingTop: top, paddingLeft: padL, paddingRight: padR, paddingBottom: insets.bottom + 16 }}>{frame(children, true)}</View>
