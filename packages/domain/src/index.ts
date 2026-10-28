@@ -7,3 +7,4 @@ export * from "./slug";
 export * from "./regions";
 export * from "./geo";
 export * from "./reports";
+export * from "./api";

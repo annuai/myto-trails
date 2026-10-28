@@ -6,7 +6,7 @@ import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAuth } from '@/store/auth';
-import { radius } from '@/theme/tokens';
+import { media, radius, space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Field } from '@/ui/Field';
@@ -54,16 +54,16 @@ export default function Bike() {
   return (
     <Screen footer={<Button label={busy ? 'Saving…' : 'Save bike'} disabled={busy || name.trim().length < 2} onPress={() => void save()} />}>
       <BackHeader title="Your bike" />
-      <Text variant="label" tone="muted" style={{ marginBottom: 16 }}>Shown to the members of your clubs, and no one else.</Text>
-      <Card style={{ gap: 18 }}>
+      <Text variant="label" tone="muted" style={{ marginBottom: space[4] }}>Shown to the members of your clubs, and no one else.</Text>
+      <Card style={{ gap: space[5] }}>
         <Field label="Bike name" value={name} onChangeText={setName} maxLength={60} placeholder="Himalayan 450" />
         <Field label="Model year (optional)" value={year} onChangeText={(t) => setYear(t.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" placeholder="2024" />
-        {photo.uri ? <Image source={{ uri: photo.uri }} accessibilityLabel="Your bike" style={{ width: '100%', height: 190, borderRadius: radius.control }} resizeMode="cover" /> : null}
+        {photo.uri ? <Image source={{ uri: photo.uri }} accessibilityLabel="Your bike" style={{ width: '100%', height: media.bikePhoto, borderRadius: radius.control }} resizeMode="cover" /> : null}
         <Button variant="soft" icon={Camera} label={photo.uri ? 'Change photo' : 'Add a photo'} disabled={busy} onPress={() => void choose()} />
         {photo.uri ? <Button variant="soft" label="Remove photo" disabled={busy} onPress={() => setPhoto({ mediaId: null, uri: null })} /> : null}
         {problem ? <Text variant="label" tone="stop">{problem}</Text> : null}
       </Card>
-      {me.data?.bike ? <View style={{ marginTop: 16 }}><Button variant="danger" label="Remove my bike" disabled={busy} onPress={() => void remove()} /></View> : null}
+      {me.data?.bike ? <View style={{ marginTop: space[4] }}><Button variant="danger" label="Remove my bike" disabled={busy} onPress={() => void remove()} /></View> : null}
     </Screen>
   );
 }

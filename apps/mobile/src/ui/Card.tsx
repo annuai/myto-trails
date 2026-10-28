@@ -10,7 +10,3 @@ export function Card({ children, padded = true, style }: Props) {
   const { c } = useTheme();
   return <View style={[{ backgroundColor: c.card, borderRadius: radius.card, padding: padded ? 20 : 0, overflow: 'hidden' }, style]}>{children}</View>;
 }
-
-export function Stack({ gap = 12, children }: { gap?: number; children: ReactNode }) {
-  return <View style={{ gap }}>{children}</View>;
-}

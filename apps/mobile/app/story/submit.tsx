@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Send } from 'lucide-react-native';
 import { ACCESS_BASES, INDIA_STATES, TERRAINS } from '@moto-trails/domain';
 import { ApiFailure } from '@/api/client';
+import { asText, distanceKm } from '@/lib/units';
 import { newUuid } from '@/lib/uuid';
 import { pathLength, trimEnds } from '@/lib/geo';
 import { startSignIn } from '@/lib/signIn';
@@ -130,7 +131,7 @@ export default function Submit() {
       ) : null}
       <SectionTitle>Hide the start and end</SectionTitle>
       <Chips>{TRIMS.map((t) => <ChoiceChip key={t} label={t ? `${t} m` : 'None'} selected={trim === t} onPress={() => setTrim(t)} />)}</Chips>
-      <Card style={{ marginTop: 16 }}><Text variant="label" tone="muted">The file sent has {points.length} points and {km.toFixed(1)} km. Trimming keeps your home or work out of it.</Text></Card>
+      <Card style={{ marginTop: 16 }}><Text variant="label" tone="muted">The file sent has {points.length} points and {asText(distanceKm(km))}. Trimming keeps your home or work out of it.</Text></Card>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
         <Checkbox checked={agreed} onChange={setAgreed} label="Accept the contribution licence" />
         <Text variant="label" style={{ flex: 1 }}>I accept the contribution licence in the Moto Trails terms, so my route can be published after review.</Text>

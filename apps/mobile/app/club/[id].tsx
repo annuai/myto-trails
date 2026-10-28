@@ -13,7 +13,7 @@ import { ClubCover } from '@/ui/ClubCover';
 import { BackHeader, SectionTitle } from '@/ui/Header';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
-import { radius } from '@/theme/tokens';
+import { media, radius, space } from '@/theme/tokens';
 
 export default function ClubScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -23,7 +23,7 @@ export default function ClubScreen() {
   const [problem, setProblem] = useState<string>();
 
   if (!c.data) {
-    return <Screen><BackHeader title="Clubs" /><Text variant="body" tone={c.error ? 'stop' : 'muted'}>{c.error ?? 'Loading…'}</Text>{c.error ? <View style={{ marginTop: 16 }}><Button variant="soft" label="Try again" onPress={c.reload} /></View> : null}</Screen>;
+    return <Screen><BackHeader title="Clubs" /><Text variant="body" tone={c.error ? 'stop' : 'muted'}>{c.error ?? 'Loading…'}</Text>{c.error ? <View style={{ marginTop: space[4] }}><Button variant="soft" label="Try again" onPress={c.reload} /></View> : null}</Screen>;
   }
   const { club, members } = c.data;
   const isAdmin = club.role === 'admin';
@@ -53,14 +53,14 @@ export default function ClubScreen() {
   return (
     <Screen>
       <BackHeader title="Clubs" />
-      <View style={{ borderRadius: radius.card, overflow: 'hidden' }}><ClubCover name={club.name} url={club.coverUrl} height={180} /></View>
-      <View style={{ marginTop: 16, gap: 6 }}>
+      <View style={{ borderRadius: radius.card, overflow: 'hidden' }}><ClubCover name={club.name} url={club.coverUrl} height={media.coverHero} /></View>
+      <View style={{ marginTop: space[4], gap: space[2] }}>
         <Text variant="title">{club.name}</Text>
         <Text variant="label" tone="muted">{club.memberCount} {club.memberCount === 1 ? 'member' : 'members'}{club.womenOnly ? ' · Women only' : ''}</Text>
         {club.description ? <Text variant="body">{club.description}</Text> : null}
       </View>
       {isAdmin ? (
-        <View style={{ marginTop: 16, gap: 10 }}>
+        <View style={{ marginTop: space[4], gap: space[3] }}>
           <Button variant="soft" icon={ImageIcon} label={busy ? 'Working…' : 'Change cover image'} disabled={busy} onPress={() => void change()} />
           {club.coverUrl ? <Button variant="soft" label="Remove cover image" disabled={busy} onPress={() => void setCover(null)} /> : null}
           {problem ? <Text variant="label" tone="stop">{problem}</Text> : null}
@@ -69,21 +69,21 @@ export default function ClubScreen() {
       {members ? (
         <>
           <SectionTitle>Members</SectionTitle>
-          <View style={{ gap: 12 }}>
+          <View style={{ gap: space[3] }}>
             {members.map((m) => (
-              <Card key={m.handle} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14 }}>
-                <Avatar name={m.name} url={m.avatarUrl} size={52} />
-                <View style={{ flex: 1, gap: 2 }}>
+              <Card key={m.handle} style={{ flexDirection: 'row', alignItems: 'center', gap: space[4], padding: space[4] }}>
+                <Avatar name={m.name} url={m.avatarUrl} size={media.avatarMd} />
+                <View style={{ flex: 1, gap: space.half }}>
                   <Text variant="bodyMedium">{m.name}{m.role === 'admin' ? ' · Admin' : ''}</Text>
                   {m.bike ? <Text variant="label" tone="muted">{m.bike.name}{m.bike.modelYear ? ` · ${m.bike.modelYear}` : ''}</Text> : <Text variant="label" tone="muted">No bike added</Text>}
                 </View>
-                {m.bike?.photoUrl ? <Image source={{ uri: m.bike.photoUrl }} accessibilityLabel={`${m.name}'s ${m.bike.name}`} style={{ width: 72, height: 54, borderRadius: radius.thumb - 6 }} resizeMode="cover" /> : null}
+                {m.bike?.photoUrl ? <Image source={{ uri: m.bike.photoUrl }} accessibilityLabel={`${m.name}'s ${m.bike.name}`} style={{ width: media.bikeThumbW, height: media.bikeThumbH, borderRadius: radius.thumb - 6 }} resizeMode="cover" /> : null}
               </Card>
             ))}
           </View>
         </>
       ) : (
-        <Card style={{ marginTop: 24 }}>
+        <Card style={{ marginTop: space[6] }}>
           <Text variant="label" tone="muted">{club.requested ? 'Your request is waiting for the club’s admins.' : 'Members, bikes and posts are only visible to the club’s members. Ask to join on moto-trails.com.'}</Text>
         </Card>
       )}

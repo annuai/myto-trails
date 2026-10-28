@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Download, Trash2, Upload } from 'lucide-react-native';
 import { exportGpx } from '@/lib/exportGpx';
 import { buildGpx } from '@/lib/gpx';
-import { duration, km } from '@/lib/format';
+import { asText, distanceKm, durationParts, speedKmh } from '@/lib/units';
 import { formatDate } from '@/lib/dates';
 import { useRides } from '@/store/rides';
 import { Theme } from '@/theme/ThemeProvider';
@@ -14,6 +14,7 @@ import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { Columns } from '@/ui/Columns';
 import { Screen } from '@/ui/Screen';
+import { Measure } from '@/ui/Measure';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -38,12 +39,12 @@ function StoryBody() {
         left={<>
       <View style={{ backgroundColor: c.accent, borderRadius: radius.card, padding: 24, gap: 4 }}>
         <Text variant="label" style={{ color: c.accentInk }}>You rode</Text>
-        <Text variant="live" style={{ color: c.accentInk, fontSize: 56, lineHeight: 62 }}>{km(ride.distanceKm)} km</Text>
-        <Text variant="label" style={{ color: c.accentInk }}>in {duration(ride.durationSec)}</Text>
+        <Measure parts={distanceKm(ride.distanceKm)} size="liveCompact" color={c.accentInk} />
+        <Text variant="label" style={{ color: c.accentInk }}>in {asText(durationParts(ride.durationSec))}</Text>
       </View>
       <SectionTitle>Highlights</SectionTitle>
       <Card style={{ flexDirection: 'row' }}>
-        <Stat value={`${ride.maxKmh}`} label="Top km/h" />
+        <Stat parts={speedKmh(ride.maxKmh)} label="Top speed" />
         <Stat value={`${ride.waypoints.length}`} label="Waypoints" />
         <Stat value={`${ride.points.length}`} label="Points" />
       </Card>

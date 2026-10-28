@@ -1,9 +1,10 @@
 import { Image, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Text } from './Text';
+import { media } from '@/theme/tokens';
 
 /** A rider's picture, or their initials on the accent colour when they have not set one. */
-export function Avatar({ name, url, size = 44 }: { name: string; url?: string | null; size?: number }) {
+export function Avatar({ name, url, size = media.avatarSm }: { name: string; url?: string | null; size?: number }) {
   const { c } = useTheme();
   const initials = name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || '?';
   return url ? (

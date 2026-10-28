@@ -1,10 +1,13 @@
 import { View } from 'react-native';
+import type { Quantity } from '@/lib/units';
+import { Measure } from './Measure';
 import { Text } from './Text';
 
-export function Stat({ value, label, large }: { value: string; label: string; large?: boolean }) {
+/** A figure with a label under it. Pass `parts` for a measurement (number and unit), `value` for a plain count. */
+export function Stat({ value, parts, label, large }: { value?: string; parts?: Quantity | Quantity[]; label: string; large?: boolean }) {
   return (
     <View style={{ flex: 1, gap: 2 }}>
-      <Text variant={large ? 'liveSecondary' : 'dataLarge'}>{value}</Text>
+      {parts ? <Measure parts={parts} size={large ? 'liveSecondary' : 'dataLarge'} /> : <Text variant={large ? 'liveSecondary' : 'dataLarge'}>{value}</Text>}
       <Text variant="label" tone="muted">{label}</Text>
     </View>
   );
