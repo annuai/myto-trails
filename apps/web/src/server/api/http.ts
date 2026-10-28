@@ -1,6 +1,7 @@
 import type { Sql } from "postgres";
 import { clientIp, hashIp } from "../auth/request-context";
 import type { StorageProvider } from "../storage";
+import { applyCachePolicy, type CachePolicy } from "./cache";
 import { verifyToken, type TokenScope, type VerifiedToken } from "./tokens";
 
 export const MAX_BODY_BYTES = 64 * 1024;
@@ -24,6 +25,8 @@ export type RouteDef = {
   /** `public` needs no token; a scope needs a token that holds it; `token` needs any valid token. */
   access: "public" | "token" | TokenScope;
   summary: string;
+  /** Shared-cache policy for a successful response; absent means `none`. */
+  cache?: CachePolicy;
   handler: (ctx: Ctx) => Promise<Response>;
 };
 
@@ -156,7 +159,7 @@ async function handle(req: Request, routes: RouteDef[], deps: Deps): Promise<Res
         return cached;
       },
     };
-    return await route.handler(ctx);
+    return await applyCachePolicy(await route.handler(ctx), { policy: route.cache ?? "none", authed: auth !== null, ifNoneMatch: req.headers.get("if-none-match") });
   } catch (e) {
     if (e instanceof ApiError) return fail(e.status, e.code, e.message, e.extra);
     console.error("API error", e instanceof Error ? e.message : "unknown");
