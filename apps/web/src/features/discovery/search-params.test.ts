@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_RADIUS_KM, parseSearchParams, toSearchString } from "./search-params";
+import { DEFAULT_RADIUS_KM, isShareableSearch, parseSearchParams, toSearchString } from "./search-params";
 
 describe("parseSearchParams", () => {
   it("fills defaults for an empty query", () => {
@@ -67,5 +67,14 @@ describe("toSearchString", () => {
   it("merges overrides and resets the page when filters change", () => {
     const base = parseSearchParams({ q: "x", page: "4" });
     expect(toSearchString({ ...base, terrain: ["mud"], page: 1 })).toBe("q=x&terrain=mud");
+  });
+});
+
+describe("isShareableSearch", () => {
+  it("near me is never shareable; text, place and filter searches are", () => {
+    expect(isShareableSearch(parseSearchParams({ near: "me" }))).toBe(false);
+    expect(isShareableSearch(parseSearchParams({ near: "goa" }))).toBe(true);
+    expect(isShareableSearch(parseSearchParams({ q: "ladakh" }))).toBe(true);
+    expect(isShareableSearch(parseSearchParams({}))).toBe(true);
   });
 });

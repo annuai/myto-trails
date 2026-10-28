@@ -56,6 +56,11 @@ export function defaultSort(p: Pick<SearchParams, "q" | "near">): SortMode {
   return p.near ? "nearest" : p.q ? "relevance" : "recent";
 }
 
+/** Whether the result can be shared between visitors: "near me" depends on the rider's own position, everything else does not. */
+export function isShareableSearch(p: SearchParams): boolean {
+  return p.near !== "me";
+}
+
 /** Reads search state from URL parameters. Never throws: unknown or invalid values are dropped. */
 export function parseSearchParams(raw: Raw): SearchParams {
   const q = (first(raw.q) ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, MAX_QUERY_LENGTH);

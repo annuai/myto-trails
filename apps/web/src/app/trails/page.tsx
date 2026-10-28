@@ -11,11 +11,12 @@ import { SearchCombobox } from "@/features/discovery/SearchCombobox";
 import { SearchResultCard } from "@/features/discovery/SearchResultCard";
 import { SortLinks } from "@/features/discovery/SortLinks";
 import { ViewToggle } from "@/features/discovery/ViewToggle";
-import { parseSearchParams, toSearchString } from "@/features/discovery/search-params";
+import { isShareableSearch, parseSearchParams, toSearchString } from "@/features/discovery/search-params";
 import { NEAR_COOKIE, parseNearCookie } from "@/lib/near-cookie";
 import { getSql, withPublicRole } from "@/server/db/client";
 import { TrailMapLoader } from "@/features/map/TrailMapLoader";
 import { searchMapPoints, searchTrails } from "@/server/queries/search.sql";
+import { getCachedMapPoints, getCachedSearch } from "@/server/queries/trails";
 
 // Search is uncached and depends on the URL (and, for "near me", a cookie), so this route renders on demand.
 export const instant = false;
@@ -36,8 +37,9 @@ export default async function TrailsPage({ searchParams }: PageProps<"/trails">)
   const params = parseSearchParams(await searchParams);
   const point = parseNearCookie((await cookies()).get(NEAR_COOKIE)?.value);
   await connection(); // the clock is request-specific: opt into request time before reading it
-  const result = await withPublicRole(getSql(), (tx) => searchTrails(tx, params, new Date(), { point }));
-  const mapPoints = params.view === "map" ? await withPublicRole(getSql(), (tx) => searchMapPoints(tx, params, { point })) : [];
+  const shared = isShareableSearch(params);
+  const result = shared ? await getCachedSearch(params) : await withPublicRole(getSql(), (tx) => searchTrails(tx, params, new Date(), { point }));
+  const mapPoints = params.view !== "map" ? [] : shared ? await getCachedMapPoints(params) : await withPublicRole(getSql(), (tx) => searchMapPoints(tx, params, { point }));
   const placeName = result.origin?.kind === "place" ? result.origin.name : undefined;
   const needsLocation = params.near === "me" && result.origin === null;
 
