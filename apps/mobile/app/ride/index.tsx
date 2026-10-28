@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { needsAlwaysExplainer, requestRideLocationAccess } from '@/lib/backgroundLocation';
 import { useLocation } from '@/store/location';
 import { useRecorder } from '@/store/recorder';
 import { OsmMap } from '@/ui/map/OsmMap';
@@ -16,6 +17,7 @@ import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Columns } from '@/ui/Columns';
 import { Screen } from '@/ui/Screen';
+import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 
 type Check = { label: string; status: Status; word: string; go?: string };
@@ -31,6 +33,7 @@ export default function RideReady() {
   const router = useRouter();
   const running = useRecorder((s) => s.status === 'running');
   const [source, setSource] = useState<'gps' | 'sim'>('gps');
+  const [explain, setExplain] = useState(false);
   const { licence, vehicle, contacts } = useProfile();
   const rides = useRides((s) => s.rides);
   const { offline, nextTrip } = useTrailStore();
@@ -56,10 +59,23 @@ export default function RideReady() {
   ];
   if (trail) checks.push(offline[trail.slug] ? { label: `Offline pack: ${trail.name}`, status: 'good', word: 'Ready' } : { label: `Offline pack: ${trail.name}`, status: 'caution', word: 'Not downloaded', go: `/trail/${trail.slug}` });
 
-  const start = () => { if (!running) useRecorder.getState().start(source); router.replace('/ride/live'); };
+  const begin = async () => {
+    // false means an unfinished ride is still on disk: go home, where it is offered for saving or discarding.
+    const ok = running || (await useRecorder.getState().start(source));
+    router.replace(ok ? '/ride/live' : '/');
+  };
+  // Before the system asks for Always location, say why: without it, recording stops when the phone locks.
+  const start = async () => { if (!running && source === 'gps' && (await needsAlwaysExplainer())) setExplain(true); else await begin(); };
+  const allow = async () => { setExplain(false); await requestRideLocationAccess(); await begin(); };
 
   return (
-    <Screen footer={<Button big variant="accent" label={running ? 'Back to your ride' : 'Start ride'} onPress={start} />}>
+    <Screen footer={<Button big variant="accent" label={running ? 'Back to your ride' : 'Start ride'} onPress={() => void start()} />} overlay={
+      <Sheet open={explain} title="Keep recording when your phone is locked" onClose={() => setExplain(false)}>
+        <Text variant="label" tone="muted">Choose Always Allow on the next screen. Without it, your ride stops recording whenever the screen locks or another app, like Google Maps, is in front.</Text>
+        <Button label="Allow always" onPress={() => void allow()} />
+        <Button variant="soft" label="Not now" onPress={() => { setExplain(false); void begin(); }} />
+      </Sheet>
+    }>
       <BackHeader />
       <PageTitle sub="These checks never stop you from starting.">Ready to ride?</PageTitle>
       <Columns rightStartsWithSection left={<>

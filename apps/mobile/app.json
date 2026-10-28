@@ -35,7 +35,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Myto records your ride's route while you ride."
+          "locationWhenInUsePermission": "Myto records your ride's route while you ride.",
+          "locationAlwaysAndWhenInUsePermission": "Myto records your ride's route in the background, so it keeps recording when your screen is locked or another app is open.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       "@maplibre/maplibre-react-native",
@@ -45,7 +49,9 @@
         {
           "faceIDPermission": "Myto asks for Face ID before it shows a photo of your documents."
         }
-      ]
+      ],
+      "expo-sqlite",
+      ["expo-audio", { "microphonePermission": "Myto records voice notes for your ride journal. They stay on this phone.", "enableBackgroundPlayback": false }]
     ],
     "experiments": {
       "typedRoutes": true

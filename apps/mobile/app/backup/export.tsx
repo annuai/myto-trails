@@ -34,7 +34,7 @@ export default function ExportBackup() {
   return (
     <Screen footer={<Button icon={Share2} label={busy ? 'Encrypting…' : 'Create and share backup'} disabled={busy} onPress={() => void go()} />}>
       <BackHeader title="You" />
-      <PageTitle sub="One encrypted file with your rides, to-dos, documents, document photos and emergency details.">Export my data</PageTitle>
+      <PageTitle sub="One encrypted file with your rides, ride journals (notes, photos and voice notes), to-dos, documents, document photos and emergency details.">Export my data</PageTitle>
       <Stack gap={5}>
         <Banner eyebrow="Cannot be recovered" title="If you forget the passphrase, nobody can open the backup, not even us." />
         <PassphraseField value={pass} onChange={setPass} hint={passphraseHint} />

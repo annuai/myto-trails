@@ -7,6 +7,8 @@ import { RouteArt } from './RouteArt';
 
 type Props = {
   points: LatLng[];
+  /** Where each GPS segment after the first starts, so no line is drawn across a gap. */
+  breaks?: number[];
   waypoints?: LatLng[];
   height?: number;
   radius?: number;
@@ -20,7 +22,7 @@ type Props = {
  * through, so the page behind it still scrolls. The map mounts after the first paint, and a ride with fewer
  * than two points keeps the drawn route.
  */
-export function RideMap({ points, waypoints, height = media.mapCard, radius = 0, dark, tint = 'sky' }: Props) {
+export function RideMap({ points, breaks, waypoints, height = media.mapCard, radius = 0, dark, tint = 'sky' }: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 0);
@@ -30,7 +32,7 @@ export function RideMap({ points, waypoints, height = media.mapCard, radius = 0,
   if (points.length < 2) return art;
   return (
     <View pointerEvents="none" style={{ height }}>
-      {mounted ? <OsmMap height={height} radius={radius} dark={dark} track={points} waypoints={waypoints} interactive={false} /> : art}
+      {mounted ? <OsmMap height={height} radius={radius} dark={dark} track={points} trackBreaks={breaks} waypoints={waypoints} interactive={false} /> : art}
     </View>
   );
 }

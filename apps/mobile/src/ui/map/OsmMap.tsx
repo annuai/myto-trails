@@ -6,13 +6,14 @@ import { Camera, GeoJSONSource, Layer, Map } from '@maplibre/maplibre-react-nati
 import type { LatLng } from '@/lib/geo';
 import { fixed } from '@/theme/tokens';
 import { MAP_STYLE_URL, OSM_STYLE, ROUTE_COLOR, TRACK_COLOR } from './style';
+import { trackFeature } from './geojson';
 import type { OsmMapProps } from './types';
 
 const line = (pts: LatLng[] = []) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'LineString' as const, coordinates: pts.map((p) => [p.lng, p.lat]) } });
 const points = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 const round = { 'line-cap': 'round', 'line-join': 'round' } as const;
 
-export function OsmMap({ height, line: route, track, position, waypoints, follow, radius = 0, interactive = true }: OsmMapProps) {
+export function OsmMap({ height, line: route, track, trackBreaks, position, waypoints, follow, radius = 0, interactive = true }: OsmMapProps) {
   const bounds = useMemo(() => {
     const all = [...(route ?? []), ...(track ?? [])];
     if (!all.length) return undefined;
@@ -24,7 +25,7 @@ export function OsmMap({ height, line: route, track, position, waypoints, follow
       <Map mapStyle={(MAP_STYLE_URL || OSM_STYLE) as never} attribution style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive}>
         {follow && position ? <Camera center={[position.lng, position.lat]} zoom={15} /> : <Camera initialViewState={bounds ? { bounds, padding: { top: 32, bottom: 32, left: 32, right: 32 } } : { center: [78.9, 21], zoom: 3.5 }} />}
         <GeoJSONSource id="route" data={line(route)}><Layer id="route-line" type="line" layout={round} paint={{ 'line-color': ROUTE_COLOR, 'line-width': 4 }} /></GeoJSONSource>
-        <GeoJSONSource id="track" data={line(track)}><Layer id="track-line" type="line" layout={round} paint={{ 'line-color': TRACK_COLOR, 'line-width': 5 }} /></GeoJSONSource>
+        <GeoJSONSource id="track" data={trackFeature(track, trackBreaks)}><Layer id="track-line" type="line" layout={round} paint={{ 'line-color': TRACK_COLOR, 'line-width': 5 }} /></GeoJSONSource>
         <GeoJSONSource id="wpts" data={points(waypoints)}><Layer id="wpts-dot" type="circle" paint={{ 'circle-radius': 7, 'circle-color': fixed.white, 'circle-stroke-color': fixed.ink, 'circle-stroke-width': 3 }} /></GeoJSONSource>
         <GeoJSONSource id="pos" data={points(position ? [position] : [])}><Layer id="pos-dot" type="circle" paint={{ 'circle-radius': 9, 'circle-color': fixed.position, 'circle-stroke-color': fixed.white, 'circle-stroke-width': 3 }} /></GeoJSONSource>
       </Map>

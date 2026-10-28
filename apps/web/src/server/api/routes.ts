@@ -13,6 +13,7 @@ import { exchangeAppCode } from "../auth/app-auth";
 import { listBikeMakes, listBikeModels } from "../community/bikes";
 import { getClub, listClubs, listMembers, setClubCover } from "../community/clubs";
 import { getAvatarUrl, getBike, removeBike, saveBike, setAvatar } from "../community/profile";
+import { communityRoutes } from "./community-routes";
 import { revokeToken } from "./tokens";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 import { clientIp, hashIp } from "../auth/request-context";
@@ -301,6 +302,7 @@ export const routes: RouteDef[] = [
       return fail(map[r.reason][0], r.reason, map[r.reason][1]);
     },
   },
+  ...communityRoutes,
 ];
 
 // validateStep is re-exported so contract tests and clients can reuse the exact field rules.

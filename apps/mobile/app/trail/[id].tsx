@@ -5,6 +5,7 @@ import { AlertTriangle, Bookmark, CalendarPlus, CloudOff, Download, Trash2 } fro
 import { accessOf, conditionOf, dur, headline, verificationOf } from '@/api/status';
 import { toLatLng } from '@/api/types';
 import { setSaved, useSaved, useTrail } from '@/api/useApi';
+import { useTrailCommentsSection } from '@/features/community/useTrailCommentsSection';
 import { formatDate, todayISO } from '@/lib/dates';
 import { asText, distanceKm, elevationM } from '@/lib/units';
 import { useAuth } from '@/store/auth';
@@ -39,6 +40,7 @@ export default function TrailDetail() {
   const [date, setDate] = useState(todayISO());
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
+  const comments = useTrailCommentsSection(slug);
   const line = useMemo(() => (t.data?.route ? toLatLng(t.data.route.line) : undefined), [t.data?.route]);
 
   if (!t.data) {
@@ -129,14 +131,15 @@ export default function TrailDetail() {
   </>);
 
   return (
-    <Screen overlay={
-      <Sheet open={planning} title="Plan a trip" onClose={() => setPlanning(false)} footer={<Button label={`Plan for ${formatDate(date)}`} onPress={() => { planTrip(detail, formatDate(date)); setPlanning(false); router.replace('/'); }} />}>
+    <Screen overlay={<>
+      <Sheet open={planning} title="Plan a trip" onClose={() => setPlanning(false)} footer={<Button label={`Plan for ${formatDate(date)}`} onPress={() => { planTrip(detail, formatDate(date), date); setPlanning(false); router.replace('/'); }} />}>
         <DatePicker value={date} onChange={setDate} />
       </Sheet>
-    }>
+      {comments.overlay}
+    </>}>
       <BackHeader title="Trails" />
       {t.fromOffline ? <Card style={{ marginBottom: 12, flexDirection: 'row', gap: 12, alignItems: 'center' }}><Icon icon={CloudOff} tone="muted" /><Text variant="label" tone="muted" style={{ flex: 1 }}>Showing your downloaded copy, saved {formatDate(new Date(pack?.savedAt ?? Date.now()).toISOString().slice(0, 10))}. Access may have changed.</Text></Card> : null}
-      {landscape ? <Columns left={<>{topEl}{actionsEl}</>} right={routeEl} /> : <>{topEl}{routeEl}{actionsEl}</>}
+      {landscape ? <Columns left={<>{topEl}{actionsEl}</>} right={<>{routeEl}{comments.body}</>} /> : <>{topEl}{routeEl}{actionsEl}{comments.body}</>}
       <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: 20 }}>Offline saves the details, access and route. Map tiles from OpenStreetMap still need a connection.</Text>
     </Screen>
   );

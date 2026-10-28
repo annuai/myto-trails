@@ -1,4 +1,4 @@
-export type LatLng = { lat: number; lng: number; t?: number; ele?: number };
+export type LatLng = { lat: number; lng: number; t?: number; ele?: number; /** Horizontal accuracy in metres, when the phone reports it. */ acc?: number; speed?: number | null };
 
 export function haversine(a: LatLng, b: LatLng): number {
   const R = 6_371_000, rad = Math.PI / 180;

@@ -59,11 +59,18 @@ const filesIn = (dir: Directory) => (dir.exists ? dir.list().filter((e): e is Fi
 /**
  * Replace: existing photos are set aside, the staged ones moved in, and the old ones put back if anything fails.
  * Merge: staged photos are added; ones already on the phone are kept (same id means same picture).
+ * Returns a swap: `finalize` deletes the set-aside files, `rollback` puts them back.
  */
-export function commitStaged(mode: 'replace' | 'merge') {
+export function commitStaged(mode: 'replace' | 'merge'): { finalize: () => void; rollback: () => void } {
   const dir = ensure(photoDir());
   const aside = new Map<string, File>();
   const moved: File[] = [];
+  const rollback = () => {
+    for (const f of moved) if (f.exists) f.delete();
+    for (const [name, f] of aside) f.moveSync(new File(dir, name), { overwrite: true });
+    remove(oldDir());
+    remove(stageDir());
+  };
   try {
     if (mode === 'replace') {
       ensure(oldDir());
@@ -76,11 +83,9 @@ export function commitStaged(mode: 'replace' | 'merge') {
       moved.push(to);
     }
   } catch (e) {
-    for (const f of moved) if (f.exists) f.delete();
-    for (const [name, f] of aside) f.moveSync(new File(dir, name), { overwrite: true });
-    remove(oldDir());
+    rollback();
     throw e;
   }
-  remove(oldDir());
-  remove(stageDir());
+  // The old files stay in the set-aside folder until `finalize`, so the swap can still be undone.
+  return { finalize: () => { remove(oldDir()); remove(stageDir()); }, rollback };
 }

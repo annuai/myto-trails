@@ -45,3 +45,20 @@ export type ClubMember = { handle: string; name: string; role: "admin" | "member
 export type ClubDetail = { club: ClubView; members: ClubMember[] | null };
 
 export type MeProfile = { displayName: string; email: string; scopes: string[]; avatarUrl: string | null; bike: Bike | null };
+
+/** A reply under a club post. */
+export type ClubReply = { id: string; authorName: string; body: string; createdAt: string; mine: boolean };
+/** A club post or ride plan. `at` and `place` are set on ride plans only. */
+export type ClubPost = {
+  id: string; kind: "post" | "ride_plan"; authorName: string; authorHandle: string; body: string; createdAt: string; mine: boolean;
+  at: string | null; place: string | null; going: number; maybe: number; myResponse: "going" | "maybe" | null; replies: ClubReply[];
+};
+/** Admins only. `phone` is null once its retention time has passed. */
+export type ClubJoinRequest = { id: string; name: string; phone: string | null; message: string | null; status: "pending" | "accepted" | "declined" | "withdrawn"; createdAt: string };
+
+export type CommentTag = "gate_closed" | "water_high" | "blocked" | "good_condition" | "tip";
+/** A trail comment. `pending` comments are the viewer's own, waiting for a moderator. */
+export type TrailComment = {
+  id: string; body: string; tag: CommentTag | null; createdAt: string; editedAt: string | null; authorName: string; authorId: string | null;
+  mine: boolean; pending: boolean; replies: TrailComment[];
+};

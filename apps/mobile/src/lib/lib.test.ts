@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, addMonths, daysUntil, monthGrid } from './dates';
 import { buildGpx } from './gpx';
+import { segmentsOf } from './track';
 import { haversine, pathLength, trimEnds, type LatLng } from './geo';
 import { dueInfo, type Todo } from './todos';
 
@@ -53,5 +54,24 @@ describe('geo and gpx', () => {
     expect(g).toContain('<name>A &amp; B &lt;x&gt;</name>');
     expect(g.match(/<trkpt /g)).toHaveLength(2);
     expect(g).toContain('<wpt lat="13.000000" lon="77.600000">');
+  });
+});
+
+describe('segmented GPX', () => {
+  const pts: LatLng[] = Array.from({ length: 5 }, (_, i) => ({ lat: 13 + i * 0.001, lng: 77.6, t: 1_700_000_000_000 + i * 1000 }));
+  const count = (s: string, tag: string) => s.split(tag).length - 1;
+  it('writes one trkseg per segment and keeps every point', () => {
+    const gpx = buildGpx('Ride', pts, [], [3]);
+    expect(count(gpx, '<trkseg>')).toBe(2);
+    expect(count(gpx, '<trkpt')).toBe(5);
+  });
+  it('writes a single trkseg when there are no breaks', () => {
+    expect(count(buildGpx('Ride', pts), '<trkseg>')).toBe(1);
+    expect(count(buildGpx('Ride', pts, [], []), '<trkseg>')).toBe(1);
+  });
+  it('segmentsOf a legacy ride (no breaks) returns one segment, and splits at the break indices otherwise', () => {
+    expect(segmentsOf(pts)).toEqual([pts]);
+    expect(segmentsOf(pts, [2, 4]).map((s) => s.length)).toEqual([2, 2, 1]);
+    expect(segmentsOf([])).toEqual([]);
   });
 });

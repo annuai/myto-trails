@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bike as BikeIcon, Camera, ClipboardList, Download, IdCard, LogIn, LogOut, Route as RouteIcon, Trash2, Upload } from 'lucide-react-native';
+import { BookOpen, Camera, ClipboardList, Download, IdCard, LogIn, LogOut, Route as RouteIcon, Trash2, Upload } from 'lucide-react-native';
 import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import { eraseDocumentPhotos } from '@/lib/backup/device';
@@ -13,7 +13,9 @@ import { distanceKm } from '@/lib/units';
 import { useProfile } from '@/store/profile';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
+import { useJournal } from '@/store/journal';
 import { Avatar } from '@/ui/Avatar';
+import { BikeCard } from '@/ui/BikeCard';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Measure } from '@/ui/Measure';
@@ -29,6 +31,7 @@ export default function You() {
   const router = useRouter();
   const rides = useRides((s) => s.rides);
   const { licence, vehicle, contacts } = useProfile();
+  const journalCount = useJournal((s) => s.entries.length);
   const openTodos = useTodos((s) => s.todos.filter((t) => !t.done).length);
   const [confirm, setConfirm] = useState(false);
   const user = useAuth((s) => s.user);
@@ -51,6 +54,7 @@ export default function You() {
 
   const erase = () => {
     eraseDocumentPhotos();
+    useJournal.getState().wipe();
     useProfile.getState().wipe();
     useTodos.setState({ todos: [] });
     useRides.setState({ rides: [] });
@@ -62,7 +66,7 @@ export default function You() {
   return (
     <Screen tabs brand overlay={
       <Sheet open={confirm} title="Erase all my data?" onClose={() => setConfirm(false)}>
-        <Text variant="body" tone="muted">This removes your rides, to-dos, documents and contacts from this device. It cannot be undone.</Text>
+        <Text variant="body" tone="muted">This removes your rides, ride journals, to-dos, documents and contacts from this device. It cannot be undone.</Text>
         <Button label="Erase everything" variant="danger" icon={Trash2} onPress={erase} />
         <Button label="Keep my data" variant="soft" onPress={() => setConfirm(false)} />
       </Sheet>
@@ -74,6 +78,12 @@ export default function You() {
         <Measure parts={distanceKm(totalKm(rides))} size="liveSecondary" />
         <Text variant="label" tone="muted">{real} ride{real === 1 ? '' : 's'} recorded</Text>
       </Card>
+      {signedIn ? (
+        <>
+          <SectionTitle action="Edit" onAction={() => router.push('/bike')}>Your bike</SectionTitle>
+          <BikeCard bike={me.data?.bike} onPress={() => router.push('/bike')} />
+        </>
+      ) : null}
       <SectionTitle>Account</SectionTitle>
       <Card style={{ gap: 14 }}>
         {signedIn ? (
@@ -101,8 +111,8 @@ export default function You() {
       </>} right={<>
       <SectionTitle>Keep track</SectionTitle>
       <ListCard>
-        {signedIn ? <Row icon={BikeIcon} label="Your bike" value={me.data?.bike ? me.data.bike.name : 'Add'} onPress={() => router.push('/bike')} /> : null}
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
+        <Row icon={BookOpen} label="Ride journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />
         <Row icon={ClipboardList} label="To-do list" value={`${openTodos} open`} onPress={() => router.push('/todos')} />
         <Row icon={IdCard} label="Documents and emergency" sub={docs || 'Licence, vehicle, emergency contacts'} onPress={() => router.push('/documents')} />
       </ListCard>

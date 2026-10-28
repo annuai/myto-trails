@@ -6,6 +6,10 @@
     {
       "path": "/api/cron/purge-contact-shares",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/keepalive",
+      "schedule": "0 4 * * 1,4"
     }
   ]
 }

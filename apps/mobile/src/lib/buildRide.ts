@@ -1,0 +1,23 @@
+import { formatShort } from './dates';
+import type { JournalRide } from './journal';
+import { breaksOf, cleanTrack, splitSegments, trackStats } from './track';
+import type { Ride } from '@/store/rides';
+
+const part = (h: number) => (h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening');
+
+/** Turn the journal of a finished recording into a ride to save. Returns undefined when there is nothing worth keeping. */
+export function buildRide(raw: JournalRide, now: number): Omit<Ride, 'id'> | undefined {
+  const points = cleanTrack(raw.points);
+  if (points.length < 2) return undefined;
+  const segments = splitSegments(points, raw.pauses);
+  const stats = trackStats(segments);
+  const d = new Date(raw.meta.startedAt);
+  const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const endedAt = points[points.length - 1].t ?? now;
+  // Paused time inside the ride (an open pause ends at `now`, and time after the last fix is not the ride's).
+  const pausedMs = raw.pauses.reduce((n, p) => n + Math.max(0, Math.min(p.to ?? now, endedAt) - Math.max(p.from, raw.meta.startedAt)), 0);
+  return {
+    name: `${formatShort(iso)} ${part(d.getHours())} ride`, startedAt: raw.meta.startedAt, durationSec: Math.max(0, Math.round((endedAt - raw.meta.startedAt - pausedMs) / 1000)), pausedSec: Math.round(pausedMs / 1000),
+    distanceKm: +(stats.distanceM / 1000).toFixed(1), maxKmh: Math.round(stats.maxKmh), points, breaks: breaksOf(segments), waypoints: raw.waypoints,
+  };
+}
