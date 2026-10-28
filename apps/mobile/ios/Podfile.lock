@@ -126,6 +126,8 @@ PODS:
     - Yoga
   - ExpoAsset (58.0.18):
     - ExpoModulesCore
+  - ExpoAudio (58.0.10):
+    - ExpoModulesCore
   - ExpoCrypto (58.0.7):
     - ExpoModulesCore
   - ExpoDocumentPicker (58.0.4):
@@ -140,7 +142,6 @@ PODS:
     - ExpoModulesCore
   - ExpoImageManipulator (58.0.15):
     - ExpoModulesCore
-    - SDWebImageWebPCoder
   - ExpoImagePicker (58.0.10):
     - ExpoModulesCore
   - ExpoKeepAwake (58.0.3):
@@ -200,8 +201,13 @@ PODS:
     - ExpoModulesCore
   - ExpoSplashScreen (58.0.11):
     - ExpoModulesCore
+  - ExpoSQLite (58.0.14):
+    - ExpoModulesCore
   - ExpoStatusBar (58.0.4):
     - ExpoModulesCore
+  - ExpoTaskManager (58.0.12):
+    - ExpoModulesCore
+    - UMAppLoader
   - ExpoWebBrowser (58.0.6):
     - ExpoModulesCore
   - EXUpdatesInterface (58.0.1):
@@ -217,18 +223,6 @@ PODS:
   - hermes-engine (260318099.0.4):
     - hermes-engine/Pre-built (= 260318099.0.4)
   - hermes-engine/Pre-built (260318099.0.4)
-  - libwebp (1.6.0):
-    - libwebp/demux (= 1.6.0)
-    - libwebp/mux (= 1.6.0)
-    - libwebp/sharpyuv (= 1.6.0)
-    - libwebp/webp (= 1.6.0)
-  - libwebp/demux (1.6.0):
-    - libwebp/webp
-  - libwebp/mux (1.6.0):
-    - libwebp/demux
-  - libwebp/sharpyuv (1.6.0)
-  - libwebp/webp (1.6.0):
-    - libwebp/sharpyuv
   - MapLibreReactNative (11.5.0):
     - hermes-engine
     - RCTRequired
@@ -2394,12 +2388,9 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - SDWebImage/Core (5.21.7)
-  - SDWebImageWebPCoder (0.15.0):
-    - libwebp (~> 1.0)
-    - SDWebImage/Core (~> 5.17)
   - SocketRocket (0.7.1):
     - ReactNativeDependencies
+  - UMAppLoader (58.0.2)
   - Yoga (0.0.0):
     - React-Core-prebuilt
 
@@ -2415,13 +2406,14 @@ DEPENDENCIES:
   - expo-dev-menu (from `../../../node_modules/expo-dev-menu`)
   - expo-dev-menu-interface (from `../../../node_modules/expo-dev-menu-interface/ios`)
   - ExpoAsset (from `../../../node_modules/expo-asset/ios`)
+  - ExpoAudio (from `../../../node_modules/expo-audio/ios`)
   - ExpoCrypto (from `../../../node_modules/expo-crypto/ios`)
   - ExpoDocumentPicker (from `../../../node_modules/expo-document-picker/ios`)
   - "ExpoDomWebView (from `../../../node_modules/@expo/dom-webview/ios`)"
-  - ExpoFileSystem (from `../../../node_modules/expo-file-system/ios`)
-  - ExpoFont (from `../../../node_modules/expo-font/ios`)
+  - ExpoFileSystem (from `../../../node_modules/expo-file-system/ios/ExpoFileSystem.podspec`)
+  - ExpoFont (from `../../../node_modules/expo-font/ios/ExpoFont.podspec`)
   - ExpoGlassEffect (from `../../../node_modules/expo-glass-effect/ios`)
-  - ExpoImageManipulator (from `../../../node_modules/expo-image-manipulator/ios`)
+  - ExpoImageManipulator (from `../../../node_modules/expo-image-manipulator/ios/ExpoImageManipulator.podspec`)
   - ExpoImagePicker (from `../../../node_modules/expo-image-picker/ios`)
   - ExpoKeepAwake (from `../../../node_modules/expo-keep-awake/ios`)
   - ExpoLinearGradient (from `../../../node_modules/expo-linear-gradient/ios`)
@@ -2429,15 +2421,17 @@ DEPENDENCIES:
   - ExpoLocalAuthentication (from `../../../node_modules/expo-local-authentication/ios`)
   - ExpoLocation (from `../../../node_modules/expo-location/ios`)
   - "ExpoLogBox (from `../../../node_modules/@expo/log-box`)"
-  - ExpoModulesCore (from `../../../node_modules/expo-modules-core`)
+  - ExpoModulesCore (from `../../../node_modules/expo-modules-core/ExpoModulesCore.podspec`)
   - ExpoModulesJSI (from `../../../node_modules/expo-modules-jsi/apple`)
-  - ExpoModulesWorklets (from `../../../node_modules/expo-modules-core`)
+  - ExpoModulesWorklets (from `../../../node_modules/expo-modules-core/ExpoModulesWorklets.podspec`)
   - ExpoModulesWorkletsAdapter (from `../../../node_modules/expo-modules-core`)
   - ExpoRouter (from `../../../node_modules/expo-router/ios`)
   - ExpoSecureStore (from `../../../node_modules/expo-secure-store/ios`)
   - ExpoSharing (from `../../../node_modules/expo-sharing/ios`)
   - ExpoSplashScreen (from `../../../node_modules/expo-splash-screen/ios`)
+  - ExpoSQLite (from `../../../node_modules/expo-sqlite/ios`)
   - ExpoStatusBar (from `../../../node_modules/expo-status-bar/ios`)
+  - ExpoTaskManager (from `../../../node_modules/expo-task-manager/ios`)
   - ExpoWebBrowser (from `../../../node_modules/expo-web-browser/ios`)
   - EXUpdatesInterface (from `../../../node_modules/expo-updates-interface/ios`)
   - fast_float (from `build/rndeps-facades/fast_float`)
@@ -2533,13 +2527,8 @@ DEPENDENCIES:
   - RNSVG (from `../../../node_modules/react-native-svg`)
   - RNWorklets (from `../../../node_modules/react-native-worklets`)
   - SocketRocket (from `build/rndeps-facades/SocketRocket`)
+  - UMAppLoader (from `../../../node_modules/unimodules-app-loader/ios`)
   - Yoga (from `build/rncore-facades/Yoga`)
-
-SPEC REPOS:
-  trunk:
-    - libwebp
-    - SDWebImage
-    - SDWebImageWebPCoder
 
 EXTERNAL SOURCES:
   boost:
@@ -2564,6 +2553,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/expo-dev-menu-interface/ios"
   ExpoAsset:
     :path: "../../../node_modules/expo-asset/ios"
+  ExpoAudio:
+    :path: "../../../node_modules/expo-audio/ios"
   ExpoCrypto:
     :path: "../../../node_modules/expo-crypto/ios"
   ExpoDocumentPicker:
@@ -2571,13 +2562,13 @@ EXTERNAL SOURCES:
   ExpoDomWebView:
     :path: "../../../node_modules/@expo/dom-webview/ios"
   ExpoFileSystem:
-    :path: "../../../node_modules/expo-file-system/ios"
+    :podspec: "../../../node_modules/expo-file-system/ios/ExpoFileSystem.podspec"
   ExpoFont:
-    :path: "../../../node_modules/expo-font/ios"
+    :podspec: "../../../node_modules/expo-font/ios/ExpoFont.podspec"
   ExpoGlassEffect:
     :path: "../../../node_modules/expo-glass-effect/ios"
   ExpoImageManipulator:
-    :path: "../../../node_modules/expo-image-manipulator/ios"
+    :podspec: "../../../node_modules/expo-image-manipulator/ios/ExpoImageManipulator.podspec"
   ExpoImagePicker:
     :path: "../../../node_modules/expo-image-picker/ios"
   ExpoKeepAwake:
@@ -2593,11 +2584,11 @@ EXTERNAL SOURCES:
   ExpoLogBox:
     :path: "../../../node_modules/@expo/log-box"
   ExpoModulesCore:
-    :path: "../../../node_modules/expo-modules-core"
+    :podspec: "../../../node_modules/expo-modules-core/ExpoModulesCore.podspec"
   ExpoModulesJSI:
     :path: "../../../node_modules/expo-modules-jsi/apple"
   ExpoModulesWorklets:
-    :path: "../../../node_modules/expo-modules-core"
+    :podspec: "../../../node_modules/expo-modules-core/ExpoModulesWorklets.podspec"
   ExpoModulesWorkletsAdapter:
     :path: "../../../node_modules/expo-modules-core"
   ExpoRouter:
@@ -2608,8 +2599,12 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/expo-sharing/ios"
   ExpoSplashScreen:
     :path: "../../../node_modules/expo-splash-screen/ios"
+  ExpoSQLite:
+    :path: "../../../node_modules/expo-sqlite/ios"
   ExpoStatusBar:
     :path: "../../../node_modules/expo-status-bar/ios"
+  ExpoTaskManager:
+    :path: "../../../node_modules/expo-task-manager/ios"
   ExpoWebBrowser:
     :path: "../../../node_modules/expo-web-browser/ios"
   EXUpdatesInterface:
@@ -2799,6 +2794,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/react-native-worklets"
   SocketRocket:
     :path: build/rndeps-facades/SocketRocket
+  UMAppLoader:
+    :path: "../../../node_modules/unimodules-app-loader/ios"
   Yoga:
     :path: build/rncore-facades/Yoga
 
@@ -2814,6 +2811,7 @@ SPEC CHECKSUMS:
   expo-dev-menu: 467097ec7bcafceb0fd2d32328bc6315a0ed6ba9
   expo-dev-menu-interface: d304e400271187edf1534704a4a05dcc140076e2
   ExpoAsset: 9548991f0332bd8ed8819299e0b413d713104a1a
+  ExpoAudio: 7f919daf0ebf1b0e1cf8b7464b7c85be6664a412
   ExpoCrypto: 33ede543a3747abbef071c3bd747135ccc4e4fd5
   ExpoDocumentPicker: af0917aa6f1b54ab3a0f47977935a1e20ffb1537
   ExpoDomWebView: b2a6d681b9d34c23b1f584321386ca8da1d36afb
@@ -2828,7 +2826,7 @@ SPEC CHECKSUMS:
   ExpoLocalAuthentication: ac9c695d877aafc2d7b33b3fdc47ed8fdf90053e
   ExpoLocation: c53c819086d289897111caf450e73b45d0fdf4b6
   ExpoLogBox: 624d64042d73abe0dc230a24b1a9f835adb2cec9
-  ExpoModulesCore: cd86371968bee2ad7204f06e4cb1693fd8a9a277
+  ExpoModulesCore: fe1320912fa6ecea2acada4de90a7e27fe6b5d25
   ExpoModulesJSI: d9f7f7a1625c1a29cb116a6c264f1752230d4783
   ExpoModulesWorklets: 208e6112a0467df1cc21530e280d650a3adf6261
   ExpoModulesWorkletsAdapter: 90b767c4eb39d9907ba2a0f6772ffe521feab3fa
@@ -2836,7 +2834,9 @@ SPEC CHECKSUMS:
   ExpoSecureStore: 64e1fe78b5b0a1edb61beff044bb2cad03084f9c
   ExpoSharing: 3287d1b7e0382c59f346df0c0b80da9acb899cb1
   ExpoSplashScreen: 4a16996856aeceb61b1c253c5fc9b43208705fa5
+  ExpoSQLite: e36e471b931a62bae175a55fb659e2519df9a740
   ExpoStatusBar: 56aa9746e1bee4d8adbab12f4d7efc97000ac49f
+  ExpoTaskManager: a9a9c3ccecdf3e0b76d11c35893a5ee0989ccd7a
   ExpoWebBrowser: 2999ed3f2ee8c06985cb37b4ac566328ca0e4c7a
   EXUpdatesInterface: 1c6a522d0eb0485f4de3fa55d0316288763b3f10
   fast_float: 7c925d1cebf8328d4018d061f49377e9f887e3b4
@@ -2844,7 +2844,6 @@ SPEC CHECKSUMS:
   fmt: ba0886e864ebb21d14c98b2e12e164b8002f5b93
   glog: 3cf7cb46f743c4bc758ae3e6d9c15bd1b4cfd6d4
   hermes-engine: 9458d26f2edf7c65ad37da5c067990c267ac807f
-  libwebp: af5937a13536ef73f3784d69cc342b98961acf33
   MapLibreReactNative: 3db92e44829c7f35197313f7e338fefabeaf009d
   RCT-Folly: 82921e585c0400eda46fac1068297aa9dfb035e4
   RCTDeprecation: e134f2a2c096a6450f5fcbbe949531f913a2ff04
@@ -2931,9 +2930,8 @@ SPEC CHECKSUMS:
   RNScreens: d8ca12efabbcfaf7c35ac3244f191ee463b528ec
   RNSVG: c35beed3dcf6fd14b50ca1fc0d4214a17ec5334d
   RNWorklets: 0d23420091001705e895540acae9fa4f67d6c21e
-  SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
-  SDWebImageWebPCoder: 0e06e365080397465cc73a7a9b472d8a3bd0f377
   SocketRocket: 37aec555668fb852ec12e3c0de59a86ca58f0871
+  UMAppLoader: 813e4d172a12484f5bb149d9e99b1e7c11ae0b0c
   Yoga: d1c536142c5ff8ec8cd856ab2a7c227a1d875c8e
 
 PODFILE CHECKSUM: 5441bb98c010bd7a1ea50403c8cf28b8705b7c66
