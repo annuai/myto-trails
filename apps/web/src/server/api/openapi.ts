@@ -1,7 +1,10 @@
 import type { RouteDef } from "./http";
 
-const CREATES = new Set(["POST /uploads", "POST /submissions", "POST /trails/{slug}/reports"]);
-const NO_CONTENT = new Set(["PUT /me/saved/{slug}", "DELETE /me/saved/{slug}"]);
+const CREATES = new Set(["POST /uploads", "POST /submissions", "POST /trails/{slug}/reports", "POST /checkins", "POST /group-rides", "POST /trails/{slug}/condition-reports", "POST /shared-routes"]);
+const NO_CONTENT = new Set([
+  "PUT /me/saved/{slug}", "DELETE /me/saved/{slug}", "POST /checkins/{id}/ping", "POST /checkins/{id}/extend", "POST /checkins/{id}/arrive", "POST /group-rides/{id}/regroup",
+  "POST /group-rides/{id}/leave", "POST /group-rides/{id}/end", "POST /condition-reports/{id}/confirm", "DELETE /shared-routes/{id}",
+]);
 const successStatus = (r: RouteDef) => (CREATES.has(`${r.method} ${r.path}`) ? "201" : NO_CONTENT.has(`${r.method} ${r.path}`) ? "204" : "200");
 /** Error statuses a route can return (422 carries extra `fields` or `steps`; GPX returns application/gpx+xml on success). */
 function errorStatuses(r: RouteDef): number[] {

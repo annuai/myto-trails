@@ -6,7 +6,6 @@ import { isMember } from "./members";
 export const COMMENT_TAGS = ["gate_closed", "water_high", "blocked", "good_condition", "tip"] as const;
 export type CommentTag = (typeof COMMENT_TAGS)[number];
 const EDIT_WINDOW_MS = 10 * 60_000;
-const PENDING_FIRST = 2;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const LINK = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|in|org|net|co|io|app|dev|me|ly)\b\/?)/i;
 
@@ -38,11 +37,8 @@ export async function postComment(
       const [p] = await tx`select 1 from trail_comment where id = ${i.parentId} and trail_id = ${trail.id} and parent_id is null and status = 'visible' and deleted_at is null`;
       if (!p) return { ok: false, reason: "not_found" } as const;
     }
-    // New members' first comments wait for a moderator; moderators and admins post straight away.
-    const [trusted] = await tx`
-      select (exists (select 1 from user_role where user_id = ${i.userId})
-        or (select count(*) from trail_comment where user_id = ${i.userId} and status = 'visible') >= ${PENDING_FIRST}) as ok`;
-    const status = trusted!.ok ? "visible" : "pending";
+    // Comments show straight away. Moderators hide one afterwards if riders report it.
+    const status = "visible";
     const [row] = await tx`
       insert into trail_comment (trail_id, user_id, parent_id, body, tag, status)
       values (${trail.id}, ${i.userId}, ${i.parentId ?? null}, ${body}, ${tag}, ${status}) returning id`;

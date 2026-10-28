@@ -15,6 +15,7 @@ import { listBikeMakes, listBikeModels } from "../community/bikes";
 import { getClub, listClubs, listMembers, setClubCover } from "../community/clubs";
 import { getAvatarUrl, getBike, removeBike, saveBike, setAvatar } from "../community/profile";
 import { communityRoutes } from "./community-routes";
+import { rideRoutes } from "./ride-routes";
 import { revokeToken } from "./tokens";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 import { clientIp, hashIp } from "../auth/request-context";
@@ -314,6 +315,7 @@ export const routes: RouteDef[] = [
     },
   },
   ...communityRoutes,
+  ...rideRoutes,
 ];
 
 // validateStep is re-exported so contract tests and clients can reuse the exact field rules.

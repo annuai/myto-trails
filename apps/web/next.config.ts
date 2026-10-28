@@ -20,6 +20,9 @@ const nextConfig: NextConfig = {
           publicAssetBase: process.env.R2_PUBLIC_BASE_URL,
         }),
       },
+      // Pages that are the key to a rider's check-in or a shared route must never sit in a shared cache.
+      { source: "/track/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
+      { source: "/route/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
     ];
   },
   turbopack: {
