@@ -10,6 +10,7 @@ import { Field } from '@/ui/Field';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { TimeStepper } from '@/ui/TimeStepper';
+import { space } from '@/theme/tokens';
 
 export type NewPost = { body: string; rideAt?: string; place?: string };
 const DEFAULT_START = 6 * 60 + 30;
@@ -34,12 +35,12 @@ export function PostSheet({ open, busy, problem, onSubmit, onClose }: { open: bo
         <ChoiceChip icon={CalendarClock} label="Make it a ride plan" selected={ride} onPress={() => setRide((r) => !r)} />
       </View>
       {ride ? (
-        <View style={{ gap: 16 }}>
-          <View style={{ gap: 8 }}>
+        <View style={{ gap: space[4] }}>
+          <View style={{ gap: space[2] }}>
             <Text variant="labelMedium">Day: {formatDate(date)}</Text>
             <DatePicker value={date} onChange={setDate} />
           </View>
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: space[2] }}>
             <Text variant="labelMedium">Start time (India time): {clockLabel(minutes)}</Text>
             <TimeStepper label="Start time" value={minutes} onChange={setMinutes} />
           </View>

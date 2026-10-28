@@ -6,7 +6,7 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Icon } from '@/ui/Icon';
 import { Text } from '@/ui/Text';
-import { space } from '@/theme/tokens';
+import { size, space } from '@/theme/tokens';
 
 /** One join request, for the club's admins. The number can be tapped to call; it is only shown while the club may keep it. */
 export function JoinRequestCard({ request: r, busy, onDecide }: { request: ClubJoinRequest; busy: boolean; onDecide: (d: 'accept' | 'decline') => void }) {
@@ -15,7 +15,7 @@ export function JoinRequestCard({ request: r, busy, onDecide }: { request: ClubJ
       <Text variant="bodyMedium">{r.name}<Text variant="label" tone="muted">{`  ·  ${formatPosted(r.createdAt)}  ·  ${r.status}`}</Text></Text>
       {r.message ? <Text variant="body">{r.message}</Text> : null}
       {r.phone ? (
-        <View accessibilityRole="link" accessibilityLabel={`Call ${r.phone}`} style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], minHeight: 44 }}>
+        <View accessibilityRole="link" accessibilityLabel={`Call ${r.phone}`} style={{ flexDirection: 'row', alignItems: 'center', gap: space[2], minHeight: size.target }}>
           <Icon icon={Phone} size={18} tone="accent" />
           <Text variant="data" onPress={() => void Linking.openURL(`tel:${r.phone}`)}>{r.phone}</Text>
         </View>

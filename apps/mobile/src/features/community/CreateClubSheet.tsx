@@ -5,6 +5,7 @@ import { Checkbox } from '@/ui/Checkbox';
 import { Field } from '@/ui/Field';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import { space } from '@/theme/tokens';
 import { hasLink } from '@/lib/community';
 
 /** Start a club. The rider becomes its admin. */
@@ -19,7 +20,7 @@ export function CreateClubSheet({ open, busy, problem, onSubmit, onClose }: { op
     <Sheet open={open} title="Start a club" onClose={onClose} footer={<Button label={busy ? 'Creating…' : 'Create club'} disabled={busy || n.length < 3 || linky} onPress={() => onSubmit({ name: n, description: description.trim(), womenOnly })} />}>
       <Field label="Club name" value={name} onChangeText={setName} maxLength={60} autoFocus hint="3 to 60 characters." />
       <Field label="About the club (optional)" value={description} onChangeText={setDescription} multiline maxLength={500} error={linky ? 'Please leave web addresses out.' : undefined} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[1] }}>
         <Checkbox checked={womenOnly} onChange={setWomenOnly} label="Women only" />
         <View style={{ flex: 1 }}>
           <Text variant="bodyMedium">Women only</Text>

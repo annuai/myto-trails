@@ -7,7 +7,7 @@ import { Card } from '@/ui/Card';
 import { ChoiceChip } from '@/ui/Chip';
 import { Icon } from '@/ui/Icon';
 import { Text } from '@/ui/Text';
-import { space } from '@/theme/tokens';
+import { size, space } from '@/theme/tokens';
 
 /** A club post or ride plan, with its replies and Going / Maybe. Replies are rows inside the card, never cards of their own. */
 export function ClubPostCard({ post, canRemove, busy, onRespond, onReply, onRemove }: {
@@ -32,7 +32,7 @@ export function ClubPostCard({ post, canRemove, busy, onRespond, onReply, onRemo
         </View>
       ) : null}
       {post.replies.length ? (
-        <View style={{ gap: space[3], borderLeftWidth: 2, borderLeftColor: c.line, paddingLeft: space[4] }}>
+        <View style={{ gap: space[3], borderLeftWidth: size.rule, borderLeftColor: c.line, paddingLeft: space[4] }}>
           {post.replies.map((r) => (
             <View key={r.id} style={{ gap: space.half }}>
               <Text variant="caption" tone="muted">{r.authorName}{r.mine ? ' (you)' : ''} · {formatPosted(r.createdAt)}</Text>

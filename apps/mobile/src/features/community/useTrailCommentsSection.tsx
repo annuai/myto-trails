@@ -9,7 +9,7 @@ import { canEditComment, formatPosted, hasLink, TAG_LABEL } from '@/lib/communit
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '@/store/auth';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space } from '@/theme/tokens';
+import { size, space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { EmptyState } from '@/ui/EmptyState';
@@ -114,7 +114,7 @@ export function useTrailCommentsSection(slug: string) {
               <Card key={root.id} style={{ gap: space[3] }}>
                 <CommentView c={root} isReply={false} {...handlers(root)} />
                 {root.replies.length ? (
-                  <View style={{ gap: space[4], borderLeftWidth: 2, borderLeftColor: c.line, paddingLeft: space[4] }}>
+                  <View style={{ gap: space[4], borderLeftWidth: size.rule, borderLeftColor: c.line, paddingLeft: space[4] }}>
                     {root.replies.map((r) => <CommentView key={r.id} c={r} isReply {...handlers(r)} />)}
                   </View>
                 ) : null}
