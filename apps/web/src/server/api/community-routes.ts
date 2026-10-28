@@ -192,7 +192,7 @@ export const communityRoutes: RouteDef[] = [
   },
 
   {
-    method: "GET", path: "/trails/{slug}/comments", access: "public", summary: "A trail's comments with replies, newest conversation first. With a token, your own comments waiting for a moderator are included",
+    method: "GET", path: "/trails/{slug}/comments", access: "public", cache: "none", /* not cached: with a token it includes the caller's own pending comments */ summary: "A trail's comments with replies, newest conversation first. With a token, your own comments waiting for a moderator are included",
     async handler(c) {
       return ok({ items: await listComments(c.sql, trailSlug(c), c.auth?.userId ?? null) });
     },

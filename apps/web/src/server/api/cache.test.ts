@@ -3,6 +3,7 @@ import type { Sql } from "postgres";
 import { describe, expect, it } from "vitest";
 import { applyCachePolicy, PUBLIC_DAY_CACHE_CONTROL } from "./cache";
 import { dispatch, ok, type Deps, type RouteDef } from "./http";
+import { routes } from "./routes";
 
 const body = () => new Response(JSON.stringify({ hello: "world" }), { status: 200, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" } });
 const tagOf = async () => (await applyCachePolicy(body(), { policy: "day", authed: false, ifNoneMatch: null })).headers.get("etag")!;
@@ -61,11 +62,26 @@ describe("applyCachePolicy", () => {
   });
 });
 
+describe("the route table", () => {
+  it("every public GET route declares a cache policy", () => {
+    const missing = routes.filter((r) => r.method === "GET" && r.access === "public" && r.cache === undefined).map((r) => r.path);
+    expect(missing).toEqual([]);
+  });
+
+  it("no route that needs a token is cached", () => {
+    expect(routes.filter((r) => r.access !== "public" && r.cache === "day").map((r) => r.path)).toEqual([]);
+  });
+
+  it("the cached set is exactly trails, trail, route, bikes, makes and the API description", () => {
+    expect(routes.filter((r) => r.cache === "day").map((r) => r.path).sort()).toEqual(["/bikes", "/bikes/makes", "/openapi.json", "/trails", "/trails/{slug}", "/trails/{slug}/route"]);
+  });
+});
+
 describe("dispatch applies the policy", () => {
   const sql = (async () => [{ ok: true }]) as unknown as Sql;
   const deps = { sql } as unknown as Deps;
-  const routes: RouteDef[] = [{ method: "GET", path: "/thing", access: "public", summary: "t", cache: "day", handler: async () => ok({ a: 1 }) }];
-  const get = (headers: Record<string, string> = {}) => dispatch(new Request("http://x/api/v1/thing", { headers }), routes, deps);
+  const fake: RouteDef[] = [{ method: "GET", path: "/thing", access: "public", summary: "t", cache: "day", handler: async () => ok({ a: 1 }) }];
+  const get = (headers: Record<string, string> = {}) => dispatch(new Request("http://x/api/v1/thing", { headers }), fake, deps);
 
   it("serves the public header, then 304 for the same validator", async () => {
     const first = await get();
