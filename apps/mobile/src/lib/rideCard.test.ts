@@ -33,6 +33,18 @@ describe('buildRideCard', () => {
   it('shows no route for a ride too short to share', () => {
     expect(buildRideCard({ ...ride, points: track.slice(0, 20) }).route).toBeNull();
   });
+  it('shows the whole route of a short ride only when the rider chooses to', () => {
+    const short = { ...ride, points: track.slice(0, 20) };
+    const c = buildRideCard(short, { fullRoute: true });
+    expect(c.route).not.toBeNull();
+    expect(c.geoRoute).toHaveLength(20);
+    expect(buildRideCard(short, { fullRoute: true, hideRoute: true }).geoRoute).toBeNull();
+  });
+  it('gives the map route without the first and last 300 m', () => {
+    const c = buildRideCard(ride);
+    expect(c.geoRoute![0]).not.toEqual(track[0]);
+    expect(c.geoRoute!.length).toBeLessThanOrEqual(200);
+  });
 });
 
 describe('normaliseRoute', () => {
