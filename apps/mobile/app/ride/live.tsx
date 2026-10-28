@@ -71,8 +71,8 @@ function LiveBody() {
         </View>
       </View>
       <View style={{ flexDirection: 'row' }}>
-        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{r.paused ? 'Paused' : 'Time'}</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{clock(r.elapsedMs(Date.now()))}</Text></View>
-        <View style={{ flex: 1 }}><Text variant="label" tone="muted">Speed</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{r.paused ? 0 : Math.round(r.speedKmh)}</Text></View>
+        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{r.paused ? 'Paused' : 'Time'}</Text><Text variant={landscape ? 'liveSecondaryCompact' : 'liveSecondary'}>{clock(r.elapsedMs(Date.now()))}</Text></View>
+        <View style={{ flex: 1 }}><Text variant="label" tone="muted">Speed</Text><Text variant={landscape ? 'liveSecondaryCompact' : 'liveSecondary'}>{r.paused ? 0 : Math.round(r.speedKmh)}</Text></View>
       </View>
     </Card>
   );

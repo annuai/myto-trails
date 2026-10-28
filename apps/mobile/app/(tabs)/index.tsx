@@ -22,6 +22,7 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Columns } from '@/ui/Columns';
 import { useLayout } from '@/ui/useLayout';
+import { space } from '@/theme/tokens';
 import { StatusChip } from '@/ui/Chip';
 import { EmptyState } from '@/ui/EmptyState';
 import { SectionTitle } from '@/ui/Header';
@@ -136,7 +137,7 @@ export default function Home() {
           </View>
         </Card>
       ) : <EmptyState icon={RouteIcon} title="No rides yet" body="Tap Record to log your first ride." />}
-      {latest ? <View style={{ marginTop: 12, gap: 12 }}>
+      {latest ? <View style={{ marginTop: space[3], gap: space[3] }}>
         <Button variant="soft" label="View ride story" arrow onPress={() => router.push(`/story/${latest.id}`)} />
         <Button variant="soft" label="All rides" arrow onPress={() => router.push('/rides')} />
       </View> : null}
@@ -149,7 +150,7 @@ export default function Home() {
               <Row key={g.rideKey} icon={BookOpen} label={journalTitle(g.rideKey, rides)} sub={`${journalDate(g.rideKey)} · ${summarise(g.entries)}`} onPress={() => router.push(`/journal/${g.rideKey}`)} />
             ))}
           </ListCard>
-          <View style={{ marginTop: 12 }}><Button variant="soft" label="All journals" arrow onPress={() => router.push('/journal')} /></View>
+          <View style={{ marginTop: space[3] }}><Button variant="soft" label="All journals" arrow onPress={() => router.push('/journal')} /></View>
         </>
       ) : <EmptyState icon={BookOpen} title="No journals yet" body="Add a note, voice note or photo to a ride, even while you ride." />}
         </>}

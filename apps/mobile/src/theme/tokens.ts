@@ -35,6 +35,7 @@ export const type = {
   dataLarge: { fontFamily: font.monoMedium, fontSize: 24, lineHeight: 30 },
   live: { fontFamily: font.monoMedium, fontSize: 80, lineHeight: 84, letterSpacing: -2 },
   liveSecondary: { fontFamily: font.monoMedium, fontSize: 40, lineHeight: 44 },
+  liveSecondaryCompact: { fontFamily: font.monoMedium, fontSize: 32, lineHeight: 36 },
   liveCompact: { fontFamily: font.monoMedium, fontSize: 56, lineHeight: 62, letterSpacing: -1 },
 } as const;
 export type TypeVariant = keyof typeof type;

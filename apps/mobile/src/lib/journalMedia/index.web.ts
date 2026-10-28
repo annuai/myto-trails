@@ -6,10 +6,14 @@ const files = new Map<string, string>();
 const staged = new Map<string, string>();
 const key = (id: string, kind: MediaKind) => `${kind}:${id}`;
 
+// The web build keeps the picked file as is, so it reports a typical photo size.
+const WEB_PHOTO_W = 1200;
+const WEB_PHOTO_H = 900;
+
 export async function savePhoto(sourceUri: string): Promise<{ id: string; width: number; height: number }> {
   const id = uid();
   files.set(key(id, 'photo'), sourceUri);
-  return { id, width: 1200, height: 900 };
+  return { id, width: WEB_PHOTO_W, height: WEB_PHOTO_H };
 }
 export async function saveVoice(sourceUri: string, id: string): Promise<void> { files.set(key(id, 'voice'), sourceUri); }
 export const mediaUri = (id: string, kind: MediaKind) => files.get(key(id, kind)) ?? '';
