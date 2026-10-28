@@ -10,6 +10,8 @@ export type GroupSync = { riders: GroupRiderView[]; regroup: GroupRegroup | null
 export type SyncBody = { lat?: number; lng?: number; at?: string; status?: GroupStatus };
 
 export const createGroupRide = (token: string, body: { name: string; clubId?: string }) => api<GroupRide>('/group-rides', { method: 'POST', token, body });
+/** The group ride a club's riders can join right now, or null. Club members only. */
+export const getClubGroupRide = (token: string, clubId: string) => api<{ ride: { id: string; name: string; code: string } | null }>(`/clubs/${clubId}/group-ride`, { token });
 export const joinGroupRide = (token: string, body: { code: string; displayName: string }) => api<JoinedGroup>('/group-rides/join', { method: 'POST', token, body });
 /** Sends this rider's position and signal and returns everyone's: one round trip per poll. */
 export const syncGroupRide = (token: string, id: string, body: SyncBody) => api<GroupSync>(`/group-rides/${id}/sync`, { method: 'POST', token, body });

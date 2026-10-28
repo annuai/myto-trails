@@ -20,11 +20,14 @@ type State = {
   /** Condition reports waiting for a signal. */
   outbox: Outbox;
   card: { format: CardFormat; stats: CardStat[] };
+  /** Pause the ride by itself after a long stop (opt-in). */
+  autoPause: boolean;
   live: Live;
   setCheckin: (c: Checkin | null) => void;
   setGroup: (g: GroupSession | null) => void;
   setOutbox: (o: Outbox) => void;
   setCard: (c: Partial<State['card']>) => void;
+  setAutoPause: (on: boolean) => void;
   setLive: (l: Partial<Live>) => void;
   /** Used by "Erase all my data". */
   wipe: () => void;
@@ -35,14 +38,15 @@ const noLive: Live = { riders: [], regroup: null, myStatus: 'ok' };
 export const useCompanion = create<State>()(
   persist(
     (set) => ({
-      checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, live: noLive,
+      checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, live: noLive,
       setCheckin: (checkin) => set({ checkin }),
       setGroup: (group) => set({ group, live: noLive }),
       setOutbox: (outbox) => set({ outbox }),
       setCard: (c) => set((s) => ({ card: { ...s.card, ...c } })),
+      setAutoPause: (autoPause) => set({ autoPause }),
       setLive: (l) => set((s) => ({ live: { ...s.live, ...l } })),
-      wipe: () => set({ checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, live: noLive }),
+      wipe: () => set({ checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, live: noLive }),
     }),
-    { name: 'myto-companion', storage, partialize: (s) => ({ checkin: s.checkin, group: s.group, outbox: s.outbox, card: s.card }) },
+    { name: 'myto-companion', storage, partialize: (s) => ({ checkin: s.checkin, group: s.group, outbox: s.outbox, card: s.card, autoPause: s.autoPause }) },
   ),
 );

@@ -11,6 +11,11 @@ import { useJournal } from '@/store/journal';
 import { useNotifications } from '@/store/notifications';
 import { toTrailLike } from '@/api/status';
 import { useTrailSearch } from '@/api/useApi';
+import { CheckinSheet } from '@/features/CheckinSheet';
+import { GroupSheet } from '@/features/GroupSheet';
+import { checkinStatus } from '@/lib/checkinCore';
+import { clockLabel } from '@/lib/community';
+import { useCompanion } from '@/store/companion';
 import { useTrailStore } from '@/store/trails';
 import { finishRide } from '@/lib/finishRide';
 import { useRecorder } from '@/store/recorder';
@@ -65,6 +70,11 @@ export default function Home() {
   const { permission, refresh } = usePermission();
   const asked = useNotifications((s) => s.asked);
   const [remindOpen, setRemindOpen] = useState(false);
+  const [checkinOpen, setCheckinOpen] = useState(false);
+  const [groupOpen, setGroupOpen] = useState(false);
+  const checkin = useCompanion((s) => s.checkin);
+  const group = useCompanion((s) => s.group);
+  const nowMs = Date.now();
 
   return (
     <Screen tabs brand overlay={<>
@@ -73,6 +83,8 @@ export default function Home() {
         <Button variant="danger" icon={Trash2} label="Cancel this plan" onPress={() => { useTrailStore.getState().cancelPlan(); setMenu(false); }} />
         <Button variant="soft" label="Keep it" onPress={() => setMenu(false)} />
       </Sheet>
+      <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
+      <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} />
       <Sheet open={remindOpen} title="Turn on reminders" onClose={() => setRemindOpen(false)}>
         <Text variant="label" tone="muted">Myto Moto can remind you before a to-do is due, and the evening before a ride. Reminders are scheduled on this phone and nothing about them is sent anywhere.</Text>
         <Button label="Allow reminders" onPress={() => { setRemindOpen(false); void notifier.request().then(() => { refresh(); return syncReminders(); }).catch(() => undefined); }} />
@@ -91,6 +103,16 @@ export default function Home() {
       {recoverable ? (
         <View style={{ marginBottom: 12 }}>
           <Banner eyebrow="Unsaved ride" title={`Recovered a ride from ${new Date(recoverable.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Save it or discard it.`} onPress={() => setRecoverOpen(true)} />
+        </View>
+      ) : null}
+      {checkin ? (
+        <View style={{ marginBottom: 12 }}>
+          <Banner eyebrow="I haven't arrived" title={checkinStatus(nowMs, checkin.expectedAt) === 'overdue' ? `You are overdue. ${checkin.contactName} can see where you were last seen.` : `${checkin.contactName} is told if you are not back by ${clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}. Tap to change.`} onPress={() => setCheckinOpen(true)} />
+        </View>
+      ) : null}
+      {group ? (
+        <View style={{ marginBottom: 12 }}>
+          <Banner eyebrow="Group ride" title={`${group.name} · code ${group.code}`} onPress={() => setGroupOpen(true)} />
         </View>
       ) : null}
       {permission === 'undetermined' && !asked ? (

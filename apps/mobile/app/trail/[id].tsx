@@ -7,6 +7,7 @@ import { toLatLng } from '@/api/types';
 import { setSaved, useSaved, useTrail } from '@/api/useApi';
 import { useTrailCommentsSection } from '@/features/community/useTrailCommentsSection';
 import { RiderReports } from '@/features/RiderReports';
+import { ElevationChart } from '@/ui/ElevationChart';
 import { RouteCheck } from '@/features/RouteCheck';
 import { deleteTiles, downloadTiles, hasTiles, tilesAvailable } from '@/lib/offlineTiles';
 import { formatDate, todayISO } from '@/lib/dates';
@@ -108,6 +109,7 @@ export default function TrailDetail() {
       <SectionTitle>Route</SectionTitle>
       {line ? <OsmMap height={260} line={line} radius={24} /> : <Card><Text variant="label" tone="muted">The route line is not published for this trail.</Text></Card>}
       {route ? <Text variant="data" tone="muted" style={{ marginTop: 10 }}>{asText(distanceKm(route.distanceKm))} · +{asText(elevationM(route.elevGainM))} / −{asText(elevationM(route.elevLossM))} · {route.minElevM}–{asText(elevationM(route.maxElevM))}</Text> : null}
+      {route?.profile?.length ? <View style={{ marginTop: 16 }}><ElevationChart samples={route.profile} /></View> : null}
       {line ? <View style={{ marginTop: 16 }}><RouteCheck line={line} /></View> : null}
       {detail.hazards.length || detail.safetyNotes ? (
         <>

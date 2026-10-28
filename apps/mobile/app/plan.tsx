@@ -24,6 +24,7 @@ import { Field } from '@/ui/Field';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { OsmMap } from '@/ui/map/OsmMap';
+import { ElevationChart } from '@/ui/ElevationChart';
 import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
@@ -76,9 +77,11 @@ export default function Plan() {
     <Screen overlay={
       <Sheet open={!!open} title={open?.name ?? ''} onClose={() => setOpen(undefined)}>
         {open ? (() => {
-          const gain = elevationProfile(open.points)?.gainM;
+          const profile = elevationProfile(open.points);
+          const gain = profile?.gainM;
           return (<>
             <Text variant="label" tone="muted">{km(open)}{gain ? ` · ${Math.round(gain)} m climb` : ''}</Text>
+            {profile ? <ElevationChart samples={profile.samples} /> : null}
             <Button icon={Play} label="Ride this route" onPress={() => { follow(open.id); setOpen(undefined); router.back(); }} />
             <Button variant="soft" icon={Link2} label={open.sharedUrl ? 'Share the link again' : 'Share as a link'} disabled={share.busy} onPress={() => (open.sharedUrl ? void Share.share({ message: `${open.name} on Myto Moto: ${open.sharedUrl}` }) : void shareLink(open))} />
             <Button variant="soft" icon={Download} label="Export GPX file" onPress={() => void exportGpx(open.name, buildGpx(open.name, open.points))} />

@@ -8,9 +8,11 @@ import { shouldPing, type LastPing } from '@/lib/checkinCore';
 import { markFailed, markSent, nextBatch } from '@/lib/conditions';
 import { pollIntervalMs } from '@/lib/groupCore';
 import { notifier } from '@/lib/notifier';
+import { startAutoPause, stepAutoPause } from '@/lib/autoPause';
 import { startPrompt, stepPrompt } from '@/lib/stoppedPrompt';
 import { useAuth } from '@/store/auth';
 import { useCompanion } from '@/store/companion';
+import { useLocation } from '@/store/location';
 import { useMotion } from '@/store/motion';
 import { useRecorder } from '@/store/recorder';
 
@@ -99,7 +101,20 @@ export function CompanionHost() {
       if (r.ask) void notifier.notifyNow({ id: 'are-you-ok', fireAt: Date.now(), title: 'Are you OK?', body: 'You have been stopped for 10 minutes. Tap to open your ride.', route: '/ride/live' }).catch(() => undefined);
     }, 30_000);
 
-    return () => { unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); app.remove(); };
+    // Opt-in: pause after five minutes still (saves battery and keeps a tea break out of the time), and carry on when the bike moves.
+    let auto = startAutoPause;
+    const autoTimer = setInterval(() => {
+      const rec = useRecorder.getState();
+      const fix = useLocation.getState().fix;
+      const now = Date.now();
+      const movingFast = !!fix && now - fix.t < 10_000 && (fix.speed ?? 0) * 3.6 >= 8;
+      const r = stepAutoPause(auto, { now, enabled: useCompanion.getState().autoPause, running: rec.status === 'running', paused: rec.paused, stopped: useMotion.getState().stopped, movingFast });
+      auto = r.state;
+      if (r.action === 'pause') { void rec.pause(); void notifier.notifyNow({ id: 'auto-pause', fireAt: now, title: 'Ride paused', body: 'You have been still for 5 minutes. It carries on when you move.', route: '/ride/live' }).catch(() => undefined); }
+      if (r.action === 'resume') void rec.resume();
+    }, 5000);
+
+    return () => { unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); app.remove(); };
   }, []);
   return null;
 }

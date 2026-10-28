@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image as ImageIcon, LogOut, MessageSquare } from 'lucide-react-native';
 import { decideRequest, leaveClub, postToClub, removeMember, removePost, requestJoin, respondToRide, setMemberRole, withdrawJoin } from '@/api/community';
 import { ApiFailure, api } from '@/api/client';
+import { createGroupRide, getClubGroupRide, joinGroupRide } from '@/api/groups';
 import type { ClubMember, ClubPost } from '@/api/types';
 import { forgetProfile, useClub, useClubPosts, useClubRequests } from '@/api/useApi';
 import { ClubPostCard } from '@/features/community/ClubPostCard';
@@ -16,6 +17,7 @@ import { TextSheet } from '@/features/community/TextSheet';
 import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '@/store/auth';
+import { useCompanion } from '@/store/companion';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { ClubCover } from '@/ui/ClubCover';
@@ -40,6 +42,15 @@ export default function ClubScreen() {
   const [problem, setProblem] = useState<string>();
   const [open, setOpen] = useState<Open>();
   const act = useAction();
+  const user = useAuth((s) => s.user);
+  /** A group ride one of the club's riders has on now, so the ride plans can offer to join it. */
+  const [live, setLive] = useState<{ id: string; name: string; code: string } | null>(null);
+  useEffect(() => {
+    if (!token || role === null) return;
+    let on = true;
+    getClubGroupRide(token, id).then((r) => on && setLive(r.ride)).catch(() => undefined);
+    return () => { on = false; };
+  }, [token, id, role]);
   const close = () => { setOpen(undefined); act.clear(); };
   const refresh = () => { c.reload(); posts.reload(); requests.reload(); };
   /** Runs a server action; on success the screen reloads and any open sheet closes. */
@@ -57,6 +68,16 @@ export default function ClubScreen() {
   const clubId = id;
   const ref = { token: token!, clubId };
   const pending = requests.data?.filter((r) => r.status === 'pending') ?? [];
+  const startGroup = async () => {
+    if (!token) return;
+    const r = await act.run(() => createGroupRide(token, { name: `${club.name} ride`, clubId }));
+    if (r) { useCompanion.getState().setGroup({ id: r.value.id, code: r.value.code, name: r.value.name, role: 'leader' }); setLive({ id: r.value.id, name: r.value.name, code: r.value.code }); router.push('/ride'); }
+  };
+  const joinGroup = async () => {
+    if (!token || !live) return;
+    const r = await act.run(() => joinGroupRide(token, { code: live.code, displayName: user?.displayName ?? 'Rider' }));
+    if (r) { useCompanion.getState().setGroup({ id: r.value.id, code: live.code, name: r.value.name, role: r.value.role }); router.push('/ride'); }
+  };
 
   const setCover = async (mediaId: string | null) => {
     if (!token) return;
@@ -166,6 +187,7 @@ export default function ClubScreen() {
             <View style={{ gap: space[3] }}>
               {posts.data.map((p) => (
                 <ClubPostCard key={p.id} post={p} busy={act.busy} canRemove={p.mine || isAdmin}
+                  group={live ? { label: 'Join the group ride', onPress: () => void joinGroup() } : p.mine || isAdmin ? { label: 'Start a group ride', onPress: () => void startGroup() } : undefined}
                   onRespond={(r) => void submit(() => respondToRide(token!, p.id, r))}
                   onReply={() => setOpen({ kind: 'reply', post: p })} onRemove={() => setOpen({ kind: 'removePost', post: p })} />
               ))}

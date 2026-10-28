@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BellRing, Route as RouteIcon, Users } from 'lucide-react-native';
+import { BellRing, Pause, Route as RouteIcon, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { GroupSheet } from '@/features/GroupSheet';
 import { clockLabel } from '@/lib/community';
@@ -44,6 +44,7 @@ export default function RideReady() {
   const [groupOpen, setGroupOpen] = useState(false);
   const checkin = useCompanion((s) => s.checkin);
   const group = useCompanion((s) => s.group);
+  const autoPause = useCompanion((s) => s.autoPause);
   const myRoute = useMyRoutes((s) => s.routes.find((r) => r.id === s.followId));
   const { licence, vehicle, contacts } = useProfile();
   const rides = useRides((s) => s.rides);
@@ -99,6 +100,7 @@ export default function RideReady() {
       <ListCard>
         <Row icon={RouteIcon} label="Route" value={myRoute?.name ?? trail?.name ?? 'None'} onPress={() => router.push('/plan')} />
         <Row icon={Users} label="Group ride" value={group ? `Code ${group.code}` : 'Off'} onPress={() => setGroupOpen(true)} />
+        <Row icon={Pause} label="Pause when stopped" sub="After 5 minutes still. It carries on when you move." value={autoPause ? 'On' : 'Off'} onPress={() => useCompanion.getState().setAutoPause(!autoPause)} chevron={false} />
         <Row icon={BellRing} label="I haven't arrived" value={checkin ? `Back by ${clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}` : 'Off'} onPress={() => setCheckinOpen(true)} />
       </ListCard>
       </>} right={<>
