@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LatLng } from './geo';
-import { layoutCardMap, TILE } from './cardMap';
+import { AREA_ZOOM, layoutAreaMap, layoutCardMap, TILE } from './cardMap';
 
 const BOX = { width: 900, height: 600 };
 // About 11 km north to south near Bengaluru.
@@ -38,5 +38,16 @@ describe('layoutCardMap', () => {
   it('copes with a route that does not move', () => {
     const still: LatLng[] = [{ lat: 12.9, lng: 77.6 }, { lat: 12.9, lng: 77.6 }];
     expect(layoutCardMap(still, BOX)!.zoom).toBeLessThanOrEqual(16);
+  });
+});
+
+describe('layoutAreaMap', () => {
+  it('is a city-level map with tiles over the whole box and no route', () => {
+    const m = layoutAreaMap({ lat: 12.97, lng: 77.59 }, BOX);
+    expect(m.zoom).toBe(AREA_ZOOM);
+    expect(m.points).toEqual([]);
+    expect(Math.min(...m.tiles.map((t) => t.left))).toBeLessThanOrEqual(0);
+    expect(Math.max(...m.tiles.map((t) => t.left + TILE))).toBeGreaterThanOrEqual(BOX.width);
+    expect(Math.max(...m.tiles.map((t) => t.top + TILE))).toBeGreaterThanOrEqual(BOX.height);
   });
 });

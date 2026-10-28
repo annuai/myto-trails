@@ -53,7 +53,7 @@ export const RideCard = forwardRef<ComponentRef<typeof View>, { model: CardModel
           <View style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: fixed.ink, opacity: 0.3 }} />
         </View>
       ) : null}
-      <Svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`}>
+      <Svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} style={{ position: 'absolute', left: 0, top: 0 }}>
         <SvgText x={PAD} y={PAD + 70} fill={fixed.white} fontFamily="Geist_600SemiBold" fontSize={72}>{model.title.length > 22 ? `${model.title.slice(0, 21)}…` : model.title}</SvgText>
         <SvgText x={PAD} y={PAD + 130} fill={fixed.white} fillOpacity={FAINT} fontFamily="Geist_500Medium" fontSize={36}>{model.date}</SvgText>
         {map ? (

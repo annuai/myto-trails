@@ -17,7 +17,9 @@ export function RiderBanner() {
       {width > 0 ? (
         <>
           <Image source={require('../../assets/rider-on-ridge.jpg')} style={{ width, height: width / RATIO }} resizeMode="cover" accessibilityIgnoresInvertColors />
-          <LinearGradient colors={[c.paper, 'transparent']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '30%' }} />
+          {/* The fade goes from the page's own colour at this end of the page to the same colour with no opacity. 'transparent' is transparent
+              black on the phone, and fading to it leaves a grey band; and the page is bluer here than the plain paper colour. */}
+          <LinearGradient colors={[c.gradient[2], `${c.gradient[2]}00`]} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '30%' }} />
         </>
       ) : null}
     </View>

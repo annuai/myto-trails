@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Share, View } from 'react-native';
 import { Image as ImageIcon, Link2 } from 'lucide-react-native';
 import { createSharedRoute } from '@/api/sharedRoutes';
-import { layoutCardMap, mapBoxOf } from '@/lib/cardMap';
+import { layoutAreaMap, layoutCardMap, mapBoxOf } from '@/lib/cardMap';
 import { forSharing } from '@/lib/privacy';
 import { buildRideCard, CARD_SIZE, MAX_CARD_STATS, type CardFormat, type CardStat } from '@/lib/rideCard';
 import { buildSharedRoute } from '@/lib/shareRoute';
@@ -43,7 +43,16 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
     [ride, card.format, card.stats, hideRoute, fullRoute, gain],
   );
   const full = CARD_SIZE[card.format];
-  const map = useMemo(() => (model.geoRoute ? layoutCardMap(model.geoRoute, mapBoxOf(model)) : null), [model]);
+  // The route over its map; or, when the route is hidden (too short to trim, or hidden by the rider), the map of the area alone.
+  // Hiding the route also drops the map: nothing about where the ride was is shown.
+  const map = useMemo(() => {
+    if (hideRoute) return null;
+    if (model.geoRoute) return layoutCardMap(model.geoRoute, mapBoxOf(model));
+    const p = ride.points;
+    if (!p.length) return null;
+    const centre = { lat: p.reduce((n, x) => n + x.lat, 0) / p.length, lng: p.reduce((n, x) => n + x.lng, 0) / p.length };
+    return layoutAreaMap(centre, mapBoxOf(model));
+  }, [model, hideRoute, ride.points]);
   // A new map (another size, another route) has to load its tiles again before the picture can be saved.
   const mapKey = map ? `${map.zoom}:${map.tiles.map((t) => t.url).join('|')}` : 'none';
   const mapReady = readyKey === mapKey;
@@ -67,7 +76,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   return (
     <Sheet open={open} title="Share this ride" onClose={onClose}>
       <View style={{ alignItems: 'center' }}><RideCard key={`p${mapKey}`} model={model} width={PREVIEW_W} map={map} /></View>
-      {tooShort && !fullRoute && !hideRoute ? <Text variant="caption" tone="muted">This ride is short, so its route is hidden to keep your start private. Turn on Show whole route to include it.</Text> : null}
+      {tooShort && !fullRoute && !hideRoute ? <Text variant="caption" tone="muted">This ride is short, so its route is left off the map to keep your start private. Turn on Show whole route to draw it.</Text> : null}
       <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center' }}>
         {FORMATS.map((f) => <ChoiceChip key={f.key} label={f.label} selected={card.format === f.key} onPress={() => useCompanion.getState().setCard({ format: f.key })} />)}
       </View>
