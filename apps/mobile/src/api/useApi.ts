@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '@/lib/geo';
 import { ApiFailure, api } from './client';
-import { toLatLng, type BikeMakeList, type BikeModelPage, type ClubDetail, type ClubSummary, type Me, type RouteDto, type SavedItem, type SearchResult, type TrailDetail } from './types';
+import { toLatLng, type BikeMakeList, type BikeModelPage, type ClubDetail, type ClubJoinRequest, type ClubPost, type ClubSummary, type Me, type RouteDto, type SavedItem, type SearchResult, type TrailComment, type TrailDetail } from './types';
 import { useAuth } from '@/store/auth';
 import { useTrailStore } from '@/store/trails';
 
@@ -75,6 +75,34 @@ export function useClubs(): Async<ClubSummary[]> {
 export function useClub(id: string): Async<ClubDetail> {
   const token = useAuth((s) => s.token);
   return useFetch(token ? `club:${id}` : null, (signal) => api<ClubDetail>(`/clubs/${id}`, { token, signal }));
+}
+
+/** A club's posts and ride plans. Members only: pass `enabled` false for anyone else. */
+export function useClubPosts(id: string, enabled: boolean): Async<ClubPost[]> {
+  const token = useAuth((s) => s.token);
+  return useFetch(token && enabled ? `club:${id}:posts` : null, async (signal) => (await api<{ posts: ClubPost[] }>(`/clubs/${id}/posts`, { token, signal })).posts);
+}
+
+/** Join requests with phone numbers. Club admins only. */
+export function useClubRequests(id: string, enabled: boolean): Async<ClubJoinRequest[]> {
+  const token = useAuth((s) => s.token);
+  return useFetch(token && enabled ? `club:${id}:requests` : null, async (signal) => (await api<{ items: ClubJoinRequest[] }>(`/clubs/${id}/requests`, { token, signal })).items);
+}
+
+/** A trail's comments. Public; when signed in, the rider's own comments awaiting a moderator are included. */
+export function useTrailComments(slug: string): Async<TrailComment[]> {
+  const token = useAuth((s) => s.token);
+  // Comments are public: a token only adds the rider's own comments awaiting approval. If it is no longer valid, read without it.
+  return useFetch(`comments:${slug}:${token ? 'in' : 'out'}`, async (signal) => {
+    const get = (t: string | null) => api<{ items: TrailComment[] }>(`/trails/${slug}/comments`, { token: t, signal });
+    try { return (await get(token)).items; }
+    catch (e) { if (token && e instanceof ApiFailure && e.status === 401) return (await get(null)).items; throw e; }
+  });
+}
+
+/** Forget a trail's cached comments after posting, editing or deleting one. */
+export function forgetComments(slug: string) {
+  for (const k of [...cache.keys()]) if (k.startsWith(`comments:${slug}:`)) cache.delete(k);
 }
 
 /** Forget cached profile and club screens after an edit, so they reload. */
