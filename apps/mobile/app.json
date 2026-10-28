@@ -45,7 +45,8 @@
         {
           "faceIDPermission": "Myto asks for Face ID before it shows a photo of your documents."
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true
