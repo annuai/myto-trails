@@ -11,6 +11,8 @@ export type LegalDoc = { slug: LegalSlug; title: string; updated: string; /** Dr
 export const CONTACT_EMAIL = "clubmyto@gmail.com";
 export const MYTO_URL = "https://myto-moto.com";
 export const MADE_IN_INDIA = "Proudly made in India";
+/** The word a person types to confirm deleting their account, on the website and in the app. */
+export const DELETE_CONFIRMATION = "delete";
 export const LEGAL_SLUGS: readonly LegalSlug[] = ["about", "terms", "privacy"];
 
 const UPDATED = "28 October 2026";
@@ -171,7 +173,7 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
       {
         heading: "Your choices",
         blocks: [
-          p("You can change your display name and sign out everywhere on your account page. You can export or erase your on-device data in the app. To delete your account and the data tied to it, email ", email, " and we will do it and tell you when it is done."),
+          p("You can change your display name and sign out everywhere on your account page. You can export or erase your on-device data in the app. You can delete your account and the personal data tied to it from your account page on the website, or in the app under You, \"Delete account\". Trails you submitted that were published stay for other riders with your name removed, and problem reports you filed stay as from a \"Former rider\". If you cannot sign in, email ", email, " and we will delete it for you."),
         ],
       },
       {

@@ -31,11 +31,14 @@ describe("legal documents", () => {
     expect(docText(legalDocs.terms)).toContain("can take up to a day");
   });
 
-  it("privacy says account deletion is by email, with no button promised", () => {
+  it("privacy says how to delete an account on the website and in the app, what stays, and who to email if signing in is impossible", () => {
     const text = docText(legalDocs.privacy);
     expect(text).toContain("delete your account");
-    expect(text).toContain("email clubmyto@gmail.com");
-    expect(text).not.toMatch(/delete (it|your account) (from|in) the app/i);
+    expect(text).toContain("account page on the website");
+    expect(text).toContain("Delete account");
+    expect(text).toContain("stay for other riders with your name removed");
+    expect(text).toContain("Former rider");
+    expect(text).toContain("If you cannot sign in, email clubmyto@gmail.com");
   });
 
   it("terms and privacy are drafts, about is not", () => {

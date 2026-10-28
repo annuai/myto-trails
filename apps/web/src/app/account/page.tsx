@@ -84,6 +84,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <SubmitButton className="min-h-12 rounded-lg border border-foreground px-5 text-sm font-medium">Sign out on all devices</SubmitButton>
         </form>
       </div>
+      <p className="border-t border-border pt-6 text-sm text-muted">Leaving for good? <Link href="/account/delete" className="underline underline-offset-4">Delete your account</Link>.</p>
     </section>
   );
 }

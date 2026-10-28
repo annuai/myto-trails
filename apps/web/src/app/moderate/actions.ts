@@ -112,7 +112,7 @@ export async function resolveReportAction(formData: FormData): Promise<void> {
     condition: status ? { status: status as "open", expectedUntil: text(formData, "expectedUntil") || undefined, reason: (text(formData, "reason") || undefined) as undefined } : undefined,
   });
   if (!r.ok) back("/moderate/reports", r.reason);
-  await sendToUser(sql, getEmailSender(), r.notify.reporterId, reportOutcomeEmail(r.notify, getSiteUrl(process.env)));
+  if (r.notify.reporterId) await sendToUser(sql, getEmailSender(), r.notify.reporterId, reportOutcomeEmail(r.notify, getSiteUrl(process.env))); // a deleted reporter has no one to tell
   refresh(r.trailSlug);
   back("/moderate/reports", "saved");
 }

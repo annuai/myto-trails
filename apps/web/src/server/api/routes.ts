@@ -1,4 +1,5 @@
 import { isValidSlug } from "@moto-trails/domain";
+import { deleteAccount, isDeleteConfirmed } from "../account/delete";
 import { parseSearchParams } from "@/features/discovery/search-params";
 import { withPublicRole } from "../db/client";
 import { buildGpxExport } from "../gpx/export";
@@ -139,6 +140,16 @@ export const routes: RouteDef[] = [
     },
   },
 
+  {
+    method: "DELETE", path: "/me", access: "token", summary: "Delete your account and your personal data (body: confirm, the word delete). Published trails stay without your name. 409 club_admin while you are the only admin of a club other riders belong to",
+    async handler(c) {
+      const b = await asObject(c);
+      if (!isDeleteConfirmed(b.confirm)) return fail(422, "validation_failed", 'Type "delete" to confirm.');
+      const r = await deleteAccount(c.sql, c.storage, c.userId);
+      if (r.ok) return noContent();
+      return fail(409, "club_admin", `You are the only admin of ${r.clubs.join(", ")}. Make another member an admin, or leave the club, first.`, { clubs: r.clubs });
+    },
+  },
   {
     method: "GET", path: "/me/saved", access: "saved", summary: "The token owner's Saved trails with changes since they last looked",
     async handler(c) {

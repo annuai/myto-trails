@@ -4,7 +4,7 @@
     "slug": "myto",
     "scheme": "myto",
     "icon": "./assets/icon.png",
-    "version": "0.0.0",
+    "version": "0.8.0",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
