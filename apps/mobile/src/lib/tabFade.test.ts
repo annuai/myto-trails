@@ -29,6 +29,17 @@ describe('fadeTarget', () => {
     expect(fadeTarget({ y: 100, prevY: 80, maxY: 150, current: 1 })).toBe(1);
   });
 
+  it('the bounce settling back from past the end does not bring the bar back', () => {
+    // Pulled 40 past the end, then the rubber band returns: y goes down with no one scrolling up.
+    expect(fadeTarget({ y: maxY + 20, prevY: maxY + 40, maxY, current: 0 })).toBe(0);
+    expect(fadeTarget({ y: maxY, prevY: maxY + 20, maxY, current: 0 })).toBe(0);
+  });
+  it('scrolling up from the very end, once the bounce has settled, does bring it back', () => {
+    expect(fadeTarget({ y: maxY - 12, prevY: maxY, maxY, current: 0 })).toBe(1);
+  });
+  it('a bounce does not hide a bar that was still showing, either', () => {
+    expect(fadeTarget({ y: maxY, prevY: maxY + 20, maxY, current: 0.6 })).toBe(0.6);
+  });
   it('bouncing past the end gives 0, never a negative', () => {
     expect(fadeTarget({ y: maxY + 40, prevY: maxY + 20, maxY, current: 1 })).toBe(0);
   });

@@ -5,11 +5,14 @@ const TAP_SLOP = 8;
 
 /**
  * Opacity the floating tab bar should have after a scroll step. Scrolling up shows it fully; scrolling down fades it
- * in proportion to how little page is left, so it is gone at the very end; a page too short to need it never fades it.
+ * in proportion to how little page is left, so it is gone at the very end and stays gone while the end bounces back;
+ * a page too short to need it never fades it.
  */
 export function fadeTarget({ y, prevY, maxY, current }: { y: number; prevY: number; maxY: number; current: number }): number {
   if (maxY < FADE_ZONE * 2) return 1;
   const dy = y - prevY;
+  // The rubber band settling back from past the end moves the page "up" with no one touching it: that is not the rider scrolling up.
+  if (prevY > maxY && y < prevY) return current;
   if (dy < -MOVE) return 1;
   if (dy > MOVE) return Math.min(current, Math.min(1, Math.max(0, (maxY - y) / FADE_ZONE)));
   return current;
