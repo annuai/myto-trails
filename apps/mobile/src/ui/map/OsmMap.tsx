@@ -12,7 +12,7 @@ const line = (pts: LatLng[] = []) => ({ type: 'Feature' as const, properties: {}
 const points = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 const round = { 'line-cap': 'round', 'line-join': 'round' } as const;
 
-export function OsmMap({ height, line: route, track, position, waypoints, follow, radius = 0 }: OsmMapProps) {
+export function OsmMap({ height, line: route, track, position, waypoints, follow, radius = 0, interactive = true }: OsmMapProps) {
   const bounds = useMemo(() => {
     const all = [...(route ?? []), ...(track ?? [])];
     if (!all.length) return undefined;
@@ -21,7 +21,7 @@ export function OsmMap({ height, line: route, track, position, waypoints, follow
   }, [route, track]);
   return (
     <View style={{ height, borderRadius: radius, overflow: 'hidden' }}>
-      <Map mapStyle={(MAP_STYLE_URL || OSM_STYLE) as never} attribution style={{ flex: 1 }}>
+      <Map mapStyle={(MAP_STYLE_URL || OSM_STYLE) as never} attribution style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive}>
         {follow && position ? <Camera center={[position.lng, position.lat]} zoom={15} /> : <Camera initialViewState={bounds ? { bounds, padding: { top: 32, bottom: 32, left: 32, right: 32 } } : { center: [78.9, 21], zoom: 3.5 }} />}
         <GeoJSONSource id="route" data={line(route)}><Layer id="route-line" type="line" layout={round} paint={{ 'line-color': ROUTE_COLOR, 'line-width': 4 }} /></GeoJSONSource>
         <GeoJSONSource id="track" data={line(track)}><Layer id="track-line" type="line" layout={round} paint={{ 'line-color': TRACK_COLOR, 'line-width': 5 }} /></GeoJSONSource>
