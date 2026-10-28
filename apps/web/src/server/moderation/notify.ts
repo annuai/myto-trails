@@ -26,7 +26,7 @@ export function decisionEmail(n: Notify, siteUrl: string): Pick<EmailMessage, "s
   };
 }
 
-export function reportOutcomeEmail(n: { reporterId: string; outcome: ReportOutcome; trailName: string; note: string }, siteUrl: string): Pick<EmailMessage, "subject" | "text"> {
+export function reportOutcomeEmail(n: { reporterId: string | null; outcome: ReportOutcome; trailName: string; note: string }, siteUrl: string): Pick<EmailMessage, "subject" | "text"> {
   const result = { accepted: "We acted on your report.", rejected: "We reviewed your report and could not confirm the problem.", needs_info: "We need a little more information about your report.", duplicate: "Another report already covers this; thank you for confirming it." }[n.outcome];
   return {
     subject: `Your report about ${oneLine(n.trailName)}`,
