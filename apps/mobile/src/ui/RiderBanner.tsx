@@ -3,7 +3,7 @@ import { Image, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/theme/ThemeProvider';
 
-const RATIO = 2170 / 725;
+const RATIO = 2000 / 667;
 
 /** The rider on the ridge, as wide as the page it sits in, at the very end of the You page. Its top edge melts into the page colour. */
 export function RiderBanner() {
@@ -14,7 +14,7 @@ export function RiderBanner() {
     <View pointerEvents="none" onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ alignSelf: 'stretch', height: width / RATIO }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {width > 0 ? (
         <>
-          <Image source={require('../../assets/rider-on-ridge.webp')} style={{ width, height: width / RATIO }} resizeMode="cover" accessibilityIgnoresInvertColors />
+          <Image source={require('../../assets/rider-on-ridge-v2.webp')} style={{ width, height: width / RATIO }} resizeMode="cover" accessibilityIgnoresInvertColors />
           <LinearGradient colors={[c.paper, 'transparent']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '30%' }} />
         </>
       ) : null}
