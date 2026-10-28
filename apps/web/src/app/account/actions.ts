@@ -69,6 +69,7 @@ export async function saveBikeAction(formData: FormData): Promise<void> {
   const r = await saveBike(sql, {
     userId: user.id, name: formData.get("name"), modelYear: formData.get("modelYear"),
     photoMediaId: formData.get("removePhoto") === "on" ? null : photo || undefined,
+    bikeModelId: String(formData.get("bikeModelId") ?? "") || undefined,
   });
   redirect(r.ok ? "/account?bike=saved" : "/account?bike=error");
 }
