@@ -2,28 +2,35 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '@/lib/geo';
 import { ApiFailure, api } from './client';
 import { toLatLng, type BikeMakeList, type BikeModelPage, type ClubDetail, type ClubJoinRequest, type ClubPost, type ClubSummary, type Me, type RouteDto, type SavedItem, type SearchResult, type TrailComment, type TrailDetail } from './types';
+import { cacheDelete, cacheDeleteWhere, cacheGet, cacheSet, clearUserCache, isFresh } from './cacheStore';
 import { useAuth } from '@/store/auth';
 import { useTrailStore } from '@/store/trails';
 
 type Async<T> = { data?: T; error?: string; loading: boolean; reload: () => void };
-const cache = new Map<string, unknown>();
 
-/** Fetch with a tiny in-memory cache, so going back to a screen shows the last result at once and refreshes behind it. */
+// Signing out forgets the account's cached screens.
+useAuth.subscribe((s, prev) => { if (prev.token && !s.token) clearUserCache(); });
+
+/** Fetch with a tiny in-memory cache: going back to a screen shows the last result at once, and asks again only once it is five minutes old. `reload` always asks. */
 function useFetch<T>(key: string | null, load: (signal: AbortSignal) => Promise<T>): Async<T> {
-  const [state, set] = useState<{ data?: T; error?: string; loading: boolean }>({ data: key ? (cache.get(key) as T | undefined) : undefined, loading: !!key });
+  const [state, set] = useState<{ data?: T; error?: string; loading: boolean }>({ data: key ? cacheGet<T>(key)?.data : undefined, loading: !!key });
   const [tick, setTick] = useState(0);
   const loadRef = useRef(load);
+  const forceRef = useRef(false);
   loadRef.current = load;
   useEffect(() => {
     if (!key) return set({ loading: false });
+    const force = forceRef.current;
+    forceRef.current = false;
+    if (!force && isFresh(key)) return set({ data: cacheGet<T>(key)?.data, loading: false });
     const ctl = new AbortController();
-    set((s) => ({ data: (cache.get(key) as T | undefined) ?? s.data, loading: true }));
+    set((s) => ({ data: cacheGet<T>(key)?.data ?? s.data, loading: true }));
     loadRef.current(ctl.signal)
-      .then((data) => { cache.set(key, data); set({ data, loading: false }); })
+      .then((data) => { cacheSet(key, data); set({ data, loading: false }); })
       .catch((e: unknown) => { if (!ctl.signal.aborted) set((s) => ({ data: s.data, loading: false, error: e instanceof ApiFailure ? e.message : 'Something went wrong.' })); });
     return () => ctl.abort();
   }, [key, tick]);
-  return { ...state, reload: useCallback(() => setTick((n) => n + 1), []) };
+  return { ...state, reload: useCallback(() => { forceRef.current = true; setTick((n) => n + 1); }, []) };
 }
 
 export function useTrailSearch(q: string): Async<SearchResult> {
@@ -50,7 +57,7 @@ export function useSaved(): Async<SavedItem[]> {
 
 export async function setSaved(slug: string, saved: boolean, token: string) {
   await api(`/me/saved/${slug}`, { method: saved ? 'PUT' : 'DELETE', token });
-  cache.delete('saved');
+  cacheDelete('saved');
 }
 
 /** The published route of a trail, from the offline copy when there is one. Used to show the planned route while riding. */
@@ -102,12 +109,12 @@ export function useTrailComments(slug: string): Async<TrailComment[]> {
 
 /** Forget a trail's cached comments after posting, editing or deleting one. */
 export function forgetComments(slug: string) {
-  for (const k of [...cache.keys()]) if (k.startsWith(`comments:${slug}:`)) cache.delete(k);
+  cacheDeleteWhere((k) => k.startsWith(`comments:${slug}:`));
 }
 
 /** Forget cached profile and club screens after an edit, so they reload. */
 export function forgetProfile() {
-  for (const k of [...cache.keys()]) if (k === 'me' || k === 'clubs' || k.startsWith('club:')) cache.delete(k);
+  cacheDeleteWhere((k) => k === 'me' || k === 'clubs' || k.startsWith('club:'));
 }
 
 /** One page of the bike catalogue (only models that have a picture). Public, so no token. */
