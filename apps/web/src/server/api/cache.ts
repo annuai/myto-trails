@@ -9,7 +9,8 @@ const strip = (tag: string) => tag.trim().replace(/^W\//, "");
 
 /**
  * Cache headers for one API response. A request that carried a token is private whatever the route says, so the shared
- * cache can only ever hold public, tokenless output. Only a 200 is cached; errors keep the handler's no-store.
+ * cache can only ever hold public, tokenless output. Only a 200 is cached; errors keep the handler's no-store, and a
+ * response the handler marked private (a rider's position in the query) stays private.
  */
 export async function applyCachePolicy(res: Response, o: { policy: CachePolicy; authed: boolean; ifNoneMatch: string | null }): Promise<Response> {
   if (o.authed) {
@@ -17,6 +18,7 @@ export async function applyCachePolicy(res: Response, o: { policy: CachePolicy; 
     return res;
   }
   if (o.policy !== "day" || res.status !== 200) return res;
+  if (res.headers.get("Cache-Control")?.includes("private")) return res; // the handler decided this one is per-request
 
   const text = await res.text();
   const etag = `W/"${createHash("sha1").update(text).digest("base64url")}"`;

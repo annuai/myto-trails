@@ -55,6 +55,13 @@ describe("applyCachePolicy", () => {
     expect(r.headers.get("etag")).toBeNull();
   });
 
+  it("a response the handler already made private is left private, with no ETag", async () => {
+    const mine = new Response("{}", { status: 200, headers: { "Cache-Control": "private, no-store" } });
+    const r = await applyCachePolicy(mine, { policy: "day", authed: false, ifNoneMatch: null });
+    expect(r.headers.get("cache-control")).toBe("private, no-store");
+    expect(r.headers.get("etag")).toBeNull();
+  });
+
   it("policy none leaves the response unchanged", async () => {
     const r = await applyCachePolicy(body(), { policy: "none", authed: false, ifNoneMatch: null });
     expect(r.headers.get("cache-control")).toBe("no-store");

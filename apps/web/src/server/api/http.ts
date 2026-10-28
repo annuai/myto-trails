@@ -100,7 +100,6 @@ export async function dispatch(req: Request, routes: RouteDef[], deps: Deps): Pr
   const cors = (h: Headers, preflight: boolean) => {
     if (!allow) return;
     h.set("Access-Control-Allow-Origin", allow);
-    h.append("Vary", "Origin");
     if (preflight) {
       h.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
       h.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
@@ -108,11 +107,12 @@ export async function dispatch(req: Request, routes: RouteDef[], deps: Deps): Pr
     }
   };
   if (req.method === "OPTIONS") {
-    const h = new Headers();
+    const h = new Headers({ Vary: "Origin" });
     cors(h, true);
     return new Response(null, { status: 204, headers: h });
   }
   const res = await handle(req, routes, deps);
+  res.headers.append("Vary", "Origin"); // always: a cached copy made for one caller must not be served to a caller with a different Origin
   cors(res.headers, false);
   return res;
 }

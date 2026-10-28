@@ -58,7 +58,9 @@ export const routes: RouteDef[] = [
       const lat = num(c.url.searchParams.get("lat"));
       const lon = num(c.url.searchParams.get("lon"));
       const point = lat !== undefined && lon !== undefined ? { lat, lon } : undefined;
-      return ok(await withPublicRole(c.sql, (tx) => searchTrails(tx, p, c.now, { point })));
+      const res = ok(await withPublicRole(c.sql, (tx) => searchTrails(tx, p, c.now, { point })));
+      if (p.near === "me") res.headers.set("Cache-Control", "private, no-store"); // the rider's position is in the URL: never shared
+      return res;
     },
   },
   {
