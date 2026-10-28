@@ -1,6 +1,6 @@
 # Ride journal: design
 
-Status: **draft for approval. Nothing is built.** Scope: `apps/mobile` only. Phone-local; no server work.
+Status: **approved 2026-10-28 with the decisions in section 6.** Scope: `apps/mobile` only. Phone-local; no server work.
 
 ## 1. What you asked for
 
@@ -88,3 +88,38 @@ It follows phase 1 (recording), on its own branch.
 1. **Text while riding.** I defaulted to voice and photo only on the live screen, with typing after you stop, to match the app's rule of no text input while moving. Do you want a text box on the live screen too?
 2. **Backup size.** Voice notes are large (about 0.5 MB a minute). Include audio in the encrypted backup (bigger files, nothing lost on a new phone) or leave audio out of it (small backups, voice notes stay on this phone only)? I recommend including it.
 3. **Deleting a ride.** When you delete a ride that has a journal, should its journal be deleted with it (my default, with a clear prompt) or always kept?
+
+## 6. Decisions (from you, 2026-10-28)
+
+1. **No cap on what you can do while riding.** Voice, photo **and typing** are all available on the live screen. Typing is allowed **only while the vehicle is reliably stopped**; if the app cannot be sure, it treats you as moving and typing stays locked. Voice and photo are never locked. See section 7.
+2. **Backup includes everything**, images and voice recordings too, and importing a backup restores them. Backup size is not a concern. Backup format goes to version 2 (a migration from version 1 adds an empty journal).
+3. **Deleting a ride deletes its journal** (entries and files), after a confirmation that says so.
+4. **Pause** (not part of the original journal ask): a Pause button on the live ride. See section 8.
+
+## 7. Telling whether the vehicle is really stopped
+
+Why it is hard: phone GPS speed drifts. You have seen about 1 km/h persist after stopping, and positions wander several metres while parked. Any single reading is unreliable, so no single reading decides it.
+
+**Signals** (from the phone's GPS fix stream, one per second while the app is on screen):
+- the speed the phone reports (Doppler based, much steadier than speed worked out from positions), when it is valid;
+- how far the position has moved from where it was when the slow period began, compared with the fix's own accuracy radius.
+
+**Rule (a small state machine, pure and tested):**
+- **Stopped** only after **8 seconds in a row** where every fix is slow (reported speed under **2 km/h**, or if the phone gives no speed, no displacement beyond the radius) **and** every position stays within `max(8 m, 1.5 x accuracy)` of the position at the start of that period, **and** fix accuracy is **50 m or better**.
+- **Moving again immediately** on any fix with speed of **6 km/h or more**, or a position outside that radius. Speeds between 2 and 6 km/h change nothing, which is the hysteresis that stops flicker at a crawl.
+- **Fails safe to moving:** no fix for **5 seconds**, poor accuracy, or no fixes yet all mean "not stopped", so typing stays locked.
+- The 1 km/h case: 1 km/h is under 2 km/h, so a parked phone that keeps reporting 1 km/h still becomes Stopped after 8 seconds, and a rider creeping at 3 km/h is correctly not stopped.
+
+**Behaviour:**
+- The note field is disabled with "Available when you have stopped" until Stopped. If you start moving while a note is open, the draft is saved as a note and the editor closes.
+- This applies wherever a ride is being recorded, including the journal screens. With no ride recording, typing is always available.
+- The same radius rule also improves recorded distance: a fix that has not moved beyond its accuracy radius from the last kept point is treated as drift. (Fixes the stationary drift the review noted.)
+- Not used: the accelerometer (a running engine vibrates a parked bike, so it is an unreliable "stopped" signal).
+
+**Limits I cannot test here:** real GPS behaviour on your bike. The thresholds live in one place and the device protocol records what you see (does it declare Stopped at a tea stop, does it wrongly declare Stopped in slow traffic).
+
+## 8. Pause
+
+- **Pause** button on the live ride next to Waypoint. While paused: timer frozen, no points recorded, background recording stopped (battery), a "Paused" state with a large **Resume**.
+- Persisted in the ride journal as pause and resume events, so it survives the app closing. Leaving the live screen (Minimise) keeps the ride paused or running. Home shows a "Ride in progress / Paused" banner that returns you to the ride.
+- **Saved ride:** duration excludes paused time. A pause also starts a new GPS segment so no line is drawn across it, and a pause is **not** reported as a GPS gap.
