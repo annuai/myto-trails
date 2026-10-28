@@ -4,7 +4,11 @@ import { useRouter } from 'expo-router';
 import { BookOpen, Camera, ClipboardList, MoreHorizontal, Route as RouteIcon, Trash2 } from 'lucide-react-native';
 import { groupByRide, summarise } from '@/lib/journalEntries';
 import { journalDate, journalTitle } from '@/lib/journalTitle';
+import { notifier } from '@/lib/notifier';
+import { usePermission } from '@/lib/usePermission';
+import { syncReminders } from '@/NotificationHost';
 import { useJournal } from '@/store/journal';
+import { useNotifications } from '@/store/notifications';
 import { toTrailLike } from '@/api/status';
 import { useTrailSearch } from '@/api/useApi';
 import { useTrailStore } from '@/store/trails';
@@ -57,6 +61,10 @@ export default function Home() {
   const overdue = dues.filter(({ d }) => d.state === 'overdue');
   const latest = rides[0];
   const journals = groupByRide(useJournal((s) => s.entries)).slice(0, 3);
+  const journalTitles = useJournal((s) => s.titles);
+  const { permission, refresh } = usePermission();
+  const asked = useNotifications((s) => s.asked);
+  const [remindOpen, setRemindOpen] = useState(false);
 
   return (
     <Screen tabs brand overlay={<>
@@ -65,8 +73,13 @@ export default function Home() {
         <Button variant="danger" icon={Trash2} label="Cancel this plan" onPress={() => { useTrailStore.getState().cancelPlan(); setMenu(false); }} />
         <Button variant="soft" label="Keep it" onPress={() => setMenu(false)} />
       </Sheet>
+      <Sheet open={remindOpen} title="Turn on reminders" onClose={() => setRemindOpen(false)}>
+        <Text variant="label" tone="muted">Myto Moto can remind you before a to-do is due, and the evening before a ride. Reminders are scheduled on this phone and nothing about them is sent anywhere.</Text>
+        <Button label="Allow reminders" onPress={() => { setRemindOpen(false); void notifier.request().then(() => { refresh(); return syncReminders(); }).catch(() => undefined); }} />
+        <Button variant="soft" label="Not now" onPress={() => { useNotifications.getState().setAsked(); setRemindOpen(false); }} />
+      </Sheet>
       <Sheet open={recoverOpen} title="Recovered ride" onClose={() => setRecoverOpen(false)}>
-        <Text variant="label" tone="muted">Myto closed while you were recording. {recoverable ? `${recoverable.points} GPS points were saved on this phone.` : ''}</Text>
+        <Text variant="label" tone="muted">Myto Moto closed while you were recording. {recoverable ? `${recoverable.points} GPS points were saved on this phone.` : ''}</Text>
         <Button label="Save ride" onPress={() => void saveRecovered()} />
         <Button variant="soft" label="Keep riding" onPress={() => void continueRecovered()} />
         <Button variant="danger" icon={Trash2} label="Discard" onPress={() => void discardRecovered()} />
@@ -78,6 +91,11 @@ export default function Home() {
       {recoverable ? (
         <View style={{ marginBottom: 12 }}>
           <Banner eyebrow="Unsaved ride" title={`Recovered a ride from ${new Date(recoverable.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Save it or discard it.`} onPress={() => setRecoverOpen(true)} />
+        </View>
+      ) : null}
+      {permission === 'undetermined' && !asked ? (
+        <View style={{ marginBottom: 12 }}>
+          <Banner eyebrow="Reminders" title="Get a nudge before a to-do is due or a ride starts" onPress={() => setRemindOpen(true)} />
         </View>
       ) : null}
       {trail ? (
@@ -105,6 +123,18 @@ export default function Home() {
           <Banner eyebrow="Safety" title="Add an emergency contact so SOS can reach someone" onPress={() => router.push('/documents/contacts')} />
         ) : null}
       </View>
+
+      <SectionTitle onAdd={() => router.push(`/journal/${Date.now()}`)} addLabel="Start a journal">Recent journals</SectionTitle>
+      {journals.length ? (
+        <>
+          <ListCard>
+            {journals.map((g) => (
+              <Row key={g.rideKey} icon={BookOpen} label={journalTitle(g.rideKey, rides, journalTitles)} sub={`${journalDate(g.rideKey)} · ${summarise(g.entries)}`} onPress={() => router.push(`/journal/${g.rideKey}`)} />
+            ))}
+          </ListCard>
+          <View style={{ marginTop: 12 }}><Button variant="soft" label="All journals" arrow onPress={() => router.push('/journal')} /></View>
+        </>
+      ) : <EmptyState icon={BookOpen} title="No journals yet" body="Write a note, record a voice note or add a photo. Tie it to a ride or keep it on its own." />}
 
       <SectionTitle onAdd={() => router.push('/todos/new')} addLabel="Add a to-do">Due soon</SectionTitle>
       {dues.length ? (
@@ -135,23 +165,11 @@ export default function Home() {
             </View>
           </View>
         </Card>
-      ) : <EmptyState icon={RouteIcon} title="No rides yet" body="Tap Record to log your first ride." />}
+      ) : <EmptyState icon={RouteIcon} title="No rides yet" body="Tap Ride to log your first ride." />}
       {latest ? <View style={{ marginTop: 12, gap: 12 }}>
         <Button variant="soft" label="View ride story" arrow onPress={() => router.push(`/story/${latest.id}`)} />
         <Button variant="soft" label="All rides" arrow onPress={() => router.push('/rides')} />
       </View> : null}
-
-      <SectionTitle>Recent journals</SectionTitle>
-      {journals.length ? (
-        <>
-          <ListCard>
-            {journals.map((g) => (
-              <Row key={g.rideKey} icon={BookOpen} label={journalTitle(g.rideKey, rides)} sub={`${journalDate(g.rideKey)} · ${summarise(g.entries)}`} onPress={() => router.push(`/journal/${g.rideKey}`)} />
-            ))}
-          </ListCard>
-          <View style={{ marginTop: 12 }}><Button variant="soft" label="All journals" arrow onPress={() => router.push('/journal')} /></View>
-        </>
-      ) : <EmptyState icon={BookOpen} title="No journals yet" body="Add a note, voice note or photo to a ride, even while you ride." />}
         </>}
       />
     </Screen>

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { haversine, type LatLng } from '@/lib/geo';
 import type { Journal } from '@/lib/journal';
 import { breaksOf, cleanTrack, driftRadius, splitSegments, trackStats } from '@/lib/track';
+import { WAYPOINT_LABEL, type WaypointKind } from '@/lib/waypointKinds';
 import type { Waypoint } from './rides';
 
 // The live track and distance leave out the same fixes the saved ride will (poor accuracy, impossible jumps, jitter);
@@ -52,6 +53,8 @@ type State = {
   start: (source: 'gps' | 'sim') => Promise<boolean>;
   ingest: (p: LatLng) => Promise<void>;
   addWaypoint: () => Promise<void>;
+  /** The rider says what the waypoint they just dropped marks (fuel, water, food, hazard). */
+  retypeLastWaypoint: (kind: WaypointKind) => Promise<void>;
   addNote: () => void;
   checkRecoverable: () => Promise<void>;
   recover: () => Promise<void>;
@@ -98,10 +101,14 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       const last = points[points.length - 1];
       const step = last ? haversine(last, p) : 0;
       const dt = last && last.t != null && p.t != null ? (p.t - last.t) / 1000 : 0;
+      // A step inside the jitter radius is not travel: a parked phone wandering 5 m a second must not read as moving.
       const derived = dt > 0 ? (step / dt) * 3.6 : 0;
-      const kmh = p.speed != null && p.speed >= 0 ? p.speed * 3.6 : derived;
-      set({ lastFixAt: Date.now(), moving: kmh >= 3.6 });
-      if (p.acc != null && p.acc > MAX_ACCURACY_M) return queue as Promise<void>;
+      const real = step >= driftRadius(p.acc) ? derived : 0;
+      const kmh = p.speed != null && p.speed >= 0 ? p.speed * 3.6 : real;
+      const poor = p.acc != null && p.acc > MAX_ACCURACY_M;
+      // A fix too poor to draw says nothing about whether the rider is moving, so it leaves that as it was.
+      set(poor ? { lastFixAt: Date.now() } : { lastFixAt: Date.now(), moving: kmh >= 3.6 });
+      if (poor) return queue as Promise<void>;
       if (!last) { set({ points: [p] }); return queue as Promise<void>; }
       if (get().skipStep) { set({ points: [...points, p], pauseBreaks: [...get().pauseBreaks, points.length], skipStep: false }); return queue as Promise<void>; }
       if (derived > MAX_KMH || step < driftRadius(p.acc)) return queue as Promise<void>;
@@ -114,6 +121,13 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       const w = { name: `Waypoint ${waypoints.length + 1}`, lat: last.lat, lng: last.lng };
       set({ waypoints: [...waypoints, w] });
       try { await journal.appendWaypoint(w); } catch { set({ error: 'Could not save this waypoint to the phone. Free up storage.' }); }
+    },
+    retypeLastWaypoint: async (kind) => {
+      const { waypoints } = get(); const index = waypoints.length - 1;
+      if (index < 0) return;
+      const name = `${WAYPOINT_LABEL[kind]} ${waypoints.filter((w) => w.kind === kind).length + 1}`;
+      set({ waypoints: waypoints.map((w, i) => (i === index ? { ...w, kind, name } : w)) });
+      try { await journal.retypeWaypoint(index, kind, name); } catch { set({ error: 'Could not save this waypoint to the phone. Free up storage.' }); }
     },
     addNote: () => set((s) => ({ notes: s.notes + 1 })),
     checkRecoverable: async () => {

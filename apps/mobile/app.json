@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Myto",
+    "name": "Myto Moto",
     "slug": "myto",
     "scheme": "myto",
     "icon": "./assets/icon.png",
@@ -24,19 +24,20 @@
       ],
       "expo-font",
       "expo-secure-store",
+      ["expo-notifications", { "enableRemoteNotifications": false }],
       "expo-web-browser",
       [
         "expo-image-picker",
         {
-          "photosPermission": "Myto uses your photos for your profile picture, your bike, club covers and the photos of your documents.",
-          "cameraPermission": "Myto uses the camera to photograph your licence, registration, insurance and PUC. The photos stay on this phone."
+          "photosPermission": "Myto Moto uses your photos for your profile picture, your bike, club covers and the photos of your documents.",
+          "cameraPermission": "Myto Moto uses the camera to photograph your licence, registration, insurance and PUC. The photos stay on this phone."
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Myto records your ride's route while you ride.",
-          "locationAlwaysAndWhenInUsePermission": "Myto records your ride's route in the background, so it keeps recording when your screen is locked or another app is open.",
+          "locationWhenInUsePermission": "Myto Moto records your ride's route while you ride.",
+          "locationAlwaysAndWhenInUsePermission": "Myto Moto records your ride's route in the background, so it keeps recording when your screen is locked or another app is open.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
@@ -47,11 +48,11 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Myto asks for Face ID before it shows a photo of your documents."
+          "faceIDPermission": "Myto Moto asks for Face ID before it shows a photo of your documents."
         }
       ],
       "expo-sqlite",
-      ["expo-audio", { "microphonePermission": "Myto records voice notes for your ride journal. They stay on this phone.", "enableBackgroundPlayback": false }]
+      ["expo-audio", { "microphonePermission": "Myto Moto records voice notes for your ride journal. They stay on this phone.", "enableBackgroundPlayback": false }]
     ],
     "experiments": {
       "typedRoutes": true

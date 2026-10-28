@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, View } from 'react-native';
+import { Linking, Platform, Share, Vibration, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Camera, Flag, Mic, Pause, PenLine, Phone, Play, Square, Siren } from 'lucide-react-native';
+import { Camera, Flag, Megaphone, Mic, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
+import { CheckinSheet } from '@/features/CheckinSheet';
+import { GroupSheet } from '@/features/GroupSheet';
 import { NoteSheet } from '@/features/NoteSheet';
+import { ReportSheet } from '@/features/ReportSheet';
+import { clockLabel } from '@/lib/community';
+import { distanceToLine, startFollow, stepFollow } from '@/lib/routeFollow';
+import { WAYPOINT_KINDS, WAYPOINT_LABEL } from '@/lib/waypointKinds';
+import { useCompanion } from '@/store/companion';
+import { useMyRoutes } from '@/store/myRoutes';
+import { ChoiceChip } from '@/ui/Chip';
 import { useJournalActions } from '@/lib/useJournalActions';
 import { Banner } from '@/ui/Banner';
 import { clock } from '@/lib/format';
@@ -38,8 +47,16 @@ function LiveBody() {
   const { landscape, height } = useLayout();
   const r = useRecorder();
   const contacts = useProfile((s) => s.contacts);
+  const medical = useProfile((s) => s.medical);
   const planned = useTrailStore((s) => s.nextTrip);
-  const routeLine = useRouteLine(planned?.slug);
+  const trailLine = useRouteLine(planned?.slug);
+  // A route the rider built or imported wins over a published trail's line.
+  const mine = useMyRoutes((s) => s.routes.find((x) => x.id === s.followId));
+  const routeLine = mine?.points ?? trailLine;
+  const checkin = useCompanion((s) => s.checkin);
+  const group = useCompanion((s) => s.group);
+  const live = useCompanion((s) => s.live);
+  const others = useMemo(() => live.riders.filter((x) => x.id !== live.me && x.lat != null && x.lng != null).map((x) => ({ lat: x.lat!, lng: x.lng! })), [live.riders, live.me]);
   const fix = useLocation((s) => s.fix);
   const gpsError = useLocation((s) => s.error);
   const lastPoint = r.points[r.points.length - 1];
@@ -50,10 +67,26 @@ function LiveBody() {
   const [sos, setSos] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [groupOpen, setGroupOpen] = useState(false);
+  const [checkinOpen, setCheckinOpen] = useState(false);
+  /** When the rider last dropped a waypoint: for a few seconds the screen asks what it marks. */
+  const [dropAt, setDropAt] = useState(0);
+  const [off, setOff] = useState(false);
+  const follow = useRef(startFollow);
   const j = useJournalActions(r.startedAt);
   const stopping = useRef(false);
   useEffect(() => { const id = setInterval(() => tick((n) => n + 1), 1000); return () => clearInterval(id); }, []);
   useEffect(() => { if (r.status === 'idle' && !stopping.current) router.replace('/'); }, [r.status, router]);
+  // Off the route for 20 seconds: buzz and say so. Back within 60 m: clear it.
+  useEffect(() => {
+    if (!routeLine || !last || r.paused) return;
+    const step = stepFollow(follow.current, distanceToLine(routeLine, last), Date.now());
+    follow.current = step.state;
+    if (step.wentOff) { setOff(true); Vibration.vibrate([0, 400, 200, 400]); }
+    if (step.backOn) setOff(false);
+  }, [last?.lat, last?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  const shareHere = () => last && Share.share({ message: `I need help. My position: https://maps.google.com/?q=${last.lat.toFixed(5)},${last.lng.toFixed(5)}` });
 
   const stop = async () => {
     stopping.current = true;
@@ -85,6 +118,14 @@ function LiveBody() {
     <View style={{ gap: 8 }}>
       {r.error ? <Banner eyebrow="Storage" title={r.error} /> : null}
       {lostSignal ? <Banner eyebrow="GPS" title="Lost GPS signal, still recording" /> : null}
+      {off ? <Banner eyebrow="Route" title="You are off the route" /> : null}
+      {dropAt && Date.now() - dropAt < 6000 && r.waypoints.length ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {WAYPOINT_KINDS.map((k) => <ChoiceChip key={k} label={WAYPOINT_LABEL[k]} onPress={() => { void r.retypeLastWaypoint(k); setDropAt(0); }} />)}
+        </View>
+      ) : null}
+      {checkin ? <Pressable accessibilityRole="button" onPress={() => setCheckinOpen(true)} style={{ minHeight: 40, justifyContent: 'center' }}><Text variant="label" tone="muted">Check-in on · back by {clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}</Text></Pressable> : null}
+      {live.regroup ? <Banner eyebrow="Group" title="The leader dropped a regroup pin" onPress={() => setGroupOpen(true)} /> : null}
       {foregroundOnly ? <Banner eyebrow="Heads up" title="Recording stops if you lock the phone. Tap to allow Always in Settings." onPress={() => void Linking.openSettings()} /> : null}
       {r.source === 'gps' && !fix && gpsError ? <Text variant="label" tone="caution">{gpsError}</Text>
         : <Text variant="label" tone="muted" style={{ textAlign: landscape ? 'left' : 'center' }}>{r.paused ? 'Paused. Nothing is recorded until you resume.' : r.lastFixAt ? `Last fix ${ageSec} s ago${fix?.accuracy ? ` · GPS ±${Math.round(fix.accuracy)} m` : ''}` : 'Waiting for a GPS fix…'}</Text>}
@@ -97,7 +138,7 @@ function LiveBody() {
     </Pressable>
   );
   const waypointBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => void useRecorder.getState().addWaypoint()} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: 6 })}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => void useRecorder.getState().addWaypoint().then(() => setDropAt(Date.now()))} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: 6 })}>
       <Icon icon={Flag} size={h > 70 ? 26 : 22} /><Text variant="labelMedium">Waypoint{r.waypoints.length ? ` · ${r.waypoints.length}` : ''}</Text>
     </Pressable>
   );
@@ -107,8 +148,17 @@ function LiveBody() {
     </Pressable>
   );
 
+  const smallBtn = (label: string, icon: typeof Users, onPress: () => void, h: number) => (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' })}>
+      <Icon icon={icon} size={22} /><Text variant="bodyMedium">{label}</Text>
+    </Pressable>
+  );
+
   return (
     <Screen scroll={false} overlay={<>
+      <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={last} />
+      <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={last} />
+      <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
       <NoteSheet open={noteOpen} canType={j.canType} onSave={j.addNote} onClose={() => setNoteOpen(false)} />
       <Sheet open={journalOpen} title="Ride journal" onClose={() => setJournalOpen(false)}>
         <Button icon={j.recording ? Square : Mic} label={j.recording ? `Stop recording ${Math.floor(j.seconds / 60)}:${String(j.seconds % 60).padStart(2, '0')}` : 'Record a voice note'} onPress={() => void j.toggleVoice()} />
@@ -119,6 +169,8 @@ function LiveBody() {
       <Sheet open={sos} title="SOS" onClose={() => setSos(false)}>
         <Text variant="label" tone="muted">Call for help. This does not replace emergency services.</Text>
         <Button label="Call 112 (emergency)" variant="danger" icon={Phone} onPress={() => Linking.openURL('tel:112')} />
+        <Button variant="soft" icon={Share2} label="Share my position" onPress={() => void shareHere()} />
+        {medical.bloodGroup || medical.notes ? <Text variant="label" tone="muted">Emergency card: {[medical.bloodGroup && `blood group ${medical.bloodGroup}`, medical.notes].filter(Boolean).join(' · ')}</Text> : null}
         {contacts.map((c) => <Button key={c.id} variant="soft" icon={Phone} label={`${c.name}${c.primary ? ' (main)' : ''}`} onPress={() => Linking.openURL(`tel:${c.phone}`)} />)}
         {contacts.length === 0 ? <Text variant="label" tone="muted">No emergency contacts yet. Add them under You, Documents and emergency.</Text> : null}
       </Sheet>
@@ -129,6 +181,8 @@ function LiveBody() {
           <Text variant="labelMedium" tone="muted">{r.paused ? 'Paused' : r.source === 'sim' ? 'Recording (simulated)' : 'Recording'}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+          {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
+          {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">{group ? 'Group' : 'Group ride'}</Text></Pressable> : null}
           <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Journal</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
         </View>
@@ -138,7 +192,7 @@ function LiveBody() {
         <View style={{ flex: 1, flexDirection: 'row', gap: 16 }}>
           <View style={{ flex: 1, gap: 12 }}>{stats}{status}</View>
           <View style={{ flex: 1.25, gap: 12 }}>
-            <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} />
+            <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
             <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(64)}{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
           </View>
         </View>
@@ -146,12 +200,12 @@ function LiveBody() {
         <>
           <View style={{ marginTop: 8 }}>{stats}</View>
           <View style={{ marginTop: 12 }}>
-            <OsmMap height={200} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} />
+            <OsmMap height={200} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
           </View>
           <View style={{ marginTop: 12 }}>{status}</View>
           <View style={{ flex: 1 }} />
           <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(88)}{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} onComplete={stop} /></View>
-          <View style={{ marginTop: 12, flexDirection: 'row' }}>{sosBtn(56)}</View>
+          <View style={{ marginTop: 12, flexDirection: 'row', gap: 12 }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn(group ? 'Group' : 'Group ride', Users, () => setGroupOpen(true), 56)}</View>
         </>
       )}
     </Screen>

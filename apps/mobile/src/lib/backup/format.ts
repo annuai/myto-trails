@@ -1,7 +1,9 @@
 import type { Todo } from '../todos';
 import type { DocPhoto } from '../localMedia/types';
 import type { JournalEntry } from '../journalEntries';
+import type { MyRoute } from '@/store/myRoutes';
 import type { Ride } from '@/store/rides';
+import type { Trip } from '@/store/trips';
 import type { Contact, Licence, Medical, Vehicle } from '@/store/profile';
 
 export const FORMAT = 'myto-backup';
@@ -19,6 +21,11 @@ export type Snapshot = {
   photos: DocPhoto[]; todos: Todo[]; rides: Ride[];
   /** Ride journal entries (notes, voice, photos). Their files are in `journalFiles`. */
   journal: JournalEntry[];
+  /** Titles the rider gave journals, by journal key. Backups made before titles existed have none. */
+  journalTitles?: Record<number, string>;
+  /** Routes the rider built or imported, and trips of several days. Backups made before they existed have none. */
+  routes?: MyRoute[];
+  trips?: Trip[];
   /** Chosen bike, when the app stores one on the phone. */
   bike?: unknown;
 };
@@ -33,8 +40,8 @@ export type OpenedBackup = { meta: Snapshot; files: () => AsyncGenerator<BackupF
 export type BackupErrorCode = 'not-a-backup' | 'newer-version' | 'wrong-passphrase' | 'corrupt' | 'apply-failed' | 'weak-passphrase' | 'unreadable-file';
 
 const messages: Record<BackupErrorCode, string> = {
-  'not-a-backup': 'This is not a Myto backup file.',
-  'newer-version': 'This backup was made by a newer version of Myto. Update the app and try again.',
+  'not-a-backup': 'This is not a Myto Moto backup file.',
+  'newer-version': 'This backup was made by a newer version of Myto Moto. Update the app and try again.',
   'wrong-passphrase': 'Wrong passphrase, or the file is damaged.',
   corrupt: 'The backup file is damaged and cannot be read.',
   'apply-failed': 'Nothing was changed on this phone: the backup could not be applied.',

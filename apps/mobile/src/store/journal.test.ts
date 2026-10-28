@@ -50,4 +50,28 @@ describe('journal store', () => {
     expect(store.getState().entries.map((x) => x.id)).toEqual(['z']);
     expect(media.remove).not.toHaveBeenCalled();
   });
+  it('rename gives a journal its own title, trimmed, and an empty title takes it away', () => {
+    const { store } = setup();
+    store.getState().rename(5, '  Tea at Nandi  ');
+    expect(store.getState().titles[5]).toBe('Tea at Nandi');
+    store.getState().rename(5, '   ');
+    expect(store.getState().titles[5]).toBeUndefined();
+  });
+  it('removeForRide and wipe drop the titles too', () => {
+    const { store } = setup();
+    store.getState().rename(1, 'One');
+    store.getState().rename(2, 'Two');
+    store.getState().removeForRide(1);
+    expect(store.getState().titles).toEqual({ 2: 'Two' });
+    store.getState().wipe();
+    expect(store.getState().titles).toEqual({});
+  });
+  it('restore replaces entries and titles, and a backup with no titles clears them', () => {
+    const { store } = setup();
+    store.getState().rename(1, 'Old');
+    store.getState().restore([entry('a', 7, 'note')], { 7: 'New' });
+    expect(store.getState().titles).toEqual({ 7: 'New' });
+    store.getState().restore([]);
+    expect(store.getState().titles).toEqual({});
+  });
 });

@@ -35,7 +35,7 @@ export function useJournalActions(rideKey: number) {
     try {
       if (from === 'camera') {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
-        if (!perm.granted) return setProblem('The camera is turned off for Myto. Allow it in your phone settings.');
+        if (!perm.granted) return setProblem('The camera is turned off for Myto Moto. Allow it in your phone settings.');
       }
       const r = from === 'camera' ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 }) : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
       if (r.canceled) return;

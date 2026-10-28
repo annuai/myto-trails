@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BookOpen, Camera, ClipboardList, Download, IdCard, LogIn, LogOut, Route as RouteIcon, Trash2, Upload } from 'lucide-react-native';
+import { Bell, BookOpen, Camera, ClipboardList, Download, IdCard, LogIn, LogOut, Luggage, Route as RouteIcon, Trash2, Upload } from 'lucide-react-native';
 import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import { eraseDocumentPhotos } from '@/lib/backup/device';
@@ -14,7 +14,13 @@ import { useProfile } from '@/store/profile';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { useJournal } from '@/store/journal';
+import { useCompanion } from '@/store/companion';
+import { useMyRoutes } from '@/store/myRoutes';
+import { useTrips } from '@/store/trips';
+import { useNotifications } from '@/store/notifications';
 import { Avatar } from '@/ui/Avatar';
+import { LegalFooter } from '@/ui/LegalFooter';
+import { RiderBanner } from '@/ui/RiderBanner';
 import { BikeCard } from '@/ui/BikeCard';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
@@ -32,6 +38,7 @@ export default function You() {
   const rides = useRides((s) => s.rides);
   const { licence, vehicle, contacts } = useProfile();
   const journalCount = useJournal((s) => s.entries.length);
+  const tripCount = useTrips((s) => s.trips.length);
   const openTodos = useTodos((s) => s.todos.filter((t) => !t.done).length);
   const [confirm, setConfirm] = useState(false);
   const user = useAuth((s) => s.user);
@@ -55,6 +62,10 @@ export default function You() {
   const erase = () => {
     eraseDocumentPhotos();
     useJournal.getState().wipe();
+    useNotifications.getState().wipe();
+    useCompanion.getState().wipe();
+    useMyRoutes.getState().wipe();
+    useTrips.getState().wipe();
     useProfile.getState().wipe();
     useTodos.setState({ todos: [] });
     useRides.setState({ rides: [] });
@@ -64,7 +75,7 @@ export default function You() {
   };
 
   return (
-    <Screen tabs brand overlay={
+    <Screen tabs brand fadeTabs endCap={<RiderBanner />} overlay={
       <Sheet open={confirm} title="Erase all my data?" onClose={() => setConfirm(false)}>
         <Text variant="body" tone="muted">This removes your rides, ride journals, to-dos, documents and contacts from this device. It cannot be undone.</Text>
         <Button label="Erase everything" variant="danger" icon={Trash2} onPress={erase} />
@@ -74,7 +85,7 @@ export default function You() {
       <PageTitle>You</PageTitle>
       <Columns rightStartsWithSection left={<>
       <Card style={{ padding: 24, gap: 6 }}>
-        <Text variant="label" tone="muted">Ridden with Myto</Text>
+        <Text variant="label" tone="muted">Ridden with Myto Moto</Text>
         <Measure parts={distanceKm(totalKm(rides))} size="liveSecondary" />
         <Text variant="label" tone="muted">{real} ride{real === 1 ? '' : 's'} recorded</Text>
       </Card>
@@ -99,6 +110,7 @@ export default function You() {
             {authError ? <Text variant="label" tone="stop">{authError}</Text> : null}
             <Text variant="label" tone="muted">Your Saved trails and ride uploads use this account, the same one as moto-trails.com.</Text>
             <Button variant="soft" icon={LogOut} label="Sign out" onPress={() => void signOut()} />
+            <Button variant="soft" icon={Trash2} label="Delete account" onPress={() => router.push('/delete-account')} />
           </>
         ) : (
           <>
@@ -112,22 +124,25 @@ export default function You() {
       <SectionTitle>Keep track</SectionTitle>
       <ListCard>
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
-        <Row icon={BookOpen} label="Ride journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />
+        <Row icon={Luggage} label="Trips" value={`${tripCount}`} mono onPress={() => router.push('/trips')} />
+        <Row icon={BookOpen} label="Journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />
+        <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
         <Row icon={ClipboardList} label="To-do list" value={`${openTodos} open`} onPress={() => router.push('/todos')} />
         <Row icon={IdCard} label="Documents and emergency" sub={docs || 'Licence, vehicle, emergency contacts'} onPress={() => router.push('/documents')} />
       </ListCard>
       <SectionTitle>Backup</SectionTitle>
       <ListCard>
         <Row icon={Upload} label="Export my data" sub="One encrypted file you keep" onPress={() => router.push('/backup/export')} />
-        <Row icon={Download} label="Import data" sub="From a Myto backup file" onPress={() => router.push('/backup/import')} />
+        <Row icon={Download} label="Import data" sub="From a Myto Moto backup file" onPress={() => router.push('/backup/import')} />
       </ListCard>
       <SectionTitle>Privacy</SectionTitle>
       <ListCard>
         <Row icon={Trash2} tone="stop" label="Erase all my data" onPress={() => setConfirm(true)} chevron={false} />
       </ListCard>
       </>} />
-      <View style={{ marginTop: 24 }}>
-        <Text variant="caption" tone="muted" style={{ textAlign: 'center' }}>Everything is stored on this device only. Myto does not replace emergency services.</Text>
+      <View style={{ marginTop: 24, gap: 16 }}>
+        <Text variant="caption" tone="muted" style={{ textAlign: 'center' }}>Your rides, journal and documents stay on this device. Myto Moto does not replace emergency services.</Text>
+        <LegalFooter />
       </View>
     </Screen>
   );

@@ -10,7 +10,9 @@ import { GeistMono_400Regular, GeistMono_500Medium } from '@expo-google-fonts/ge
 import { Michroma_400Regular } from '@expo-google-fonts/michroma';
 import { Theme } from '@/theme/ThemeProvider';
 import { fixed, light } from '@/theme/tokens';
+import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
+import { CompanionHost } from '@/CompanionHost';
 import { VoiceHost } from '@/VoiceHost';
 
 void SplashScreen.preventAutoHideAsync();
@@ -42,6 +44,8 @@ export default function Root() {
   const app = (
     <Theme mode="light">
       <RecorderHost />
+      <NotificationHost />
+      <CompanionHost />
           <VoiceHost />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: light.paper }, animation: 'slide_from_right' }}>
         <Stack.Screen name="ride/live" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />

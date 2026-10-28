@@ -2,6 +2,7 @@ import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Bell } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNotifications } from '@/store/notifications';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fixed, size } from '@/theme/tokens';
 import { IconButton } from './IconButton';
@@ -19,6 +20,7 @@ export function FloatingHeader({ scrollY }: { scrollY: Animated.Value }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const unread = useNotifications((s) => s.inbox.some((n) => !n.read));
   const p = scrollY.interpolate({ inputRange: [0, 48], outputRange: [0, 1], extrapolate: 'clamp' });
   const pill = c.bar;
   const edge = (rest: number, floating: number) => p.interpolate({ inputRange: [0, 1], outputRange: [rest, floating] });
@@ -38,7 +40,10 @@ export function FloatingHeader({ scrollY }: { scrollY: Animated.Value }) {
         <ScalePressable accessibilityRole="link" accessibilityLabel="Go to Dash" onPress={() => router.replace('/')} style={{ minHeight: 48, justifyContent: 'center', paddingRight: 16 }}>
           <Logo height={30} />
         </ScalePressable>
-        <View><IconButton icon={Bell} label="Notifications" /></View>
+        <View>
+          <IconButton icon={Bell} label={unread ? 'Notifications, new' : 'Notifications'} onPress={() => router.push('/notifications')} />
+          {unread ? <View pointerEvents="none" style={{ position: 'absolute', top: 11, right: 12, width: 10, height: 10, borderRadius: 5, backgroundColor: c.accent, borderWidth: 2, borderColor: c.card }} /> : null}
+        </View>
       </Animated.View>
     </Animated.View>
   );

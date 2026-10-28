@@ -55,7 +55,7 @@ export default function NewTodo() {
               <View style={{ gap: 12 }}><Text variant="labelMedium">Due on {formatDate(draft.due)}</Text><DatePicker value={draft.due} onChange={(due) => set({ due })} /></View>
             ) : (
               <View style={{ gap: 20 }}>
-                <Text variant="label" tone="muted">Due after whichever comes first. Only rides recorded in Myto count towards kilometres, so keep the months limit too.</Text>
+                <Text variant="label" tone="muted">Due after whichever comes first. Only rides recorded in Myto Moto count towards kilometres, so keep the months limit too.</Text>
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={{ flex: 1 }}><Field label="Every (km)" keyboardType="numeric" value={draft.everyKm} onChangeText={(everyKm) => set({ everyKm: everyKm.replace(/\D/g, '') })} placeholder="500" /></View>
                   <View style={{ flex: 1 }}><Field label="Or months" keyboardType="numeric" value={draft.everyMonths} onChangeText={(everyMonths) => set({ everyMonths: everyMonths.replace(/\D/g, '') })} placeholder="1" /></View>

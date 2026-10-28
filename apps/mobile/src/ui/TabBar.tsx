@@ -18,7 +18,7 @@ const items: Record<string, { label: string; icon: LucideIcon }> = {
 
 type BottomTabBarProps = { state: { index: number; routes: { key: string; name: string }[] }; navigateToTab: (routeKey: string) => void };
 
-/** Four tabs and a raised Record button (docs/16 §2). */
+/** Four tabs and a raised Ride button (docs/16 §2). */
 export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   const { c } = useTheme();
   const router = useRouter();
@@ -44,11 +44,11 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
         if (name === 'REC') {
           return (
             <View key={name} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <ScalePressable scaleTo={0.92} accessibilityRole="button" accessibilityLabel="Record a ride" onPress={() => router.push('/ride')}
+              <ScalePressable scaleTo={0.92} accessibilityRole="button" accessibilityLabel="Ride" onPress={() => router.push('/ride')}
                 style={({ pressed }) => ({ marginTop: landscape ? -22 : -30, width: landscape ? 60 : 72, height: landscape ? 60 : 72, borderRadius: 36, backgroundColor: c.record, alignItems: 'center', justifyContent: 'center', borderWidth: 6, borderColor: bar, opacity: pressed ? 0.9 : 1, shadowColor: fixed.shadow, shadowOpacity: 0.18, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } })}>
                 <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: fixed.white }} />
               </ScalePressable>
-              <Text variant="caption" style={{ marginTop: 2, fontFamily: 'Geist_500Medium' }}>Record</Text>
+              <Text variant="caption" style={{ marginTop: 2, fontFamily: 'Geist_500Medium' }}>Ride</Text>
             </View>
           );
         }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { BookOpen, Camera, Image as ImageIcon, Mic, Square, Trash2, PenLine } from 'lucide-react-native';
+import { BookOpen, Camera, Image as ImageIcon, Mic, Square, Trash2, PenLine, Pencil } from 'lucide-react-native';
 import { JournalEntryCard } from '@/features/JournalEntryCard';
 import { NoteSheet } from '@/features/NoteSheet';
 import { journalDate, journalTitle } from '@/lib/journalTitle';
@@ -9,6 +9,8 @@ import { useJournalActions } from '@/lib/useJournalActions';
 import { useJournal } from '@/store/journal';
 import { useRides } from '@/store/rides';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
+import { IconButton } from '@/ui/IconButton';
 import { EmptyState } from '@/ui/EmptyState';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { Screen } from '@/ui/Screen';
@@ -18,17 +20,25 @@ import { space } from '@/theme/tokens';
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
-/** One ride's journal: its entries in the order they were made, and the ways to add more. */
+/** One journal: its entries in the order they were made, and the ways to add more. It may belong to a ride or stand alone. */
 export default function RideJournal() {
   const { rideKey: raw } = useLocalSearchParams<{ rideKey: string }>();
   const rideKey = Number(raw);
   const entries = useJournal((s) => s.entries).filter((e) => e.rideKey === rideKey).sort((a, b) => a.at - b.at);
   const rides = useRides((s) => s.rides);
+  const titles = useJournal((s) => s.titles);
+  const title = journalTitle(rideKey, rides, titles);
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState('');
   const a = useJournalActions(rideKey);
   const [note, setNote] = useState(false);
   const [deleting, setDeleting] = useState<string>();
   return (
     <Screen overlay={<>
+      <Sheet open={renaming} title="Journal title" onClose={() => setRenaming(false)}>
+        <Field label="Title" value={draft} onChangeText={setDraft} placeholder={journalDate(rideKey)} autoFocus />
+        <Button label="Save title" onPress={() => { useJournal.getState().rename(rideKey, draft); setRenaming(false); }} />
+      </Sheet>
       <NoteSheet open={note} canType={a.canType} onSave={a.addNote} onClose={() => setNote(false)} />
       <Sheet open={!!deleting} title="Delete this entry?" onClose={() => setDeleting(undefined)}>
         <Text variant="label" tone="muted">It is removed from this phone, along with its photo or recording. This cannot be undone.</Text>
@@ -36,8 +46,8 @@ export default function RideJournal() {
         <Button variant="soft" label="Keep it" onPress={() => setDeleting(undefined)} />
       </Sheet>
     </>}>
-      <BackHeader title="Ride journal" />
-      <PageTitle sub={`${journalDate(rideKey)}. Kept on this phone only.`}>{journalTitle(rideKey, rides)}</PageTitle>
+      <BackHeader title="Journal" right={<IconButton icon={Pencil} label="Rename journal" onPress={() => { setDraft(titles[rideKey] ?? title); setRenaming(true); }} plain />} />
+      <PageTitle sub={`${journalDate(rideKey)}. Kept on this phone only.`}>{title}</PageTitle>
       <View style={{ gap: space[3] }}>
         <Button icon={PenLine} label="Write a note" onPress={() => setNote(true)} />
         <Button variant="soft" icon={a.recording ? Square : Mic} label={a.recording ? `Stop recording ${mmss(a.seconds)}` : 'Record a voice note'} onPress={() => void a.toggleVoice()} />
@@ -51,7 +61,7 @@ export default function RideJournal() {
       <SectionTitle>Entries</SectionTitle>
       {entries.length ? (
         <View style={{ gap: space[3] }}>{entries.map((e) => <JournalEntryCard key={e.id} entry={e} onDelete={() => setDeleting(e.id)} />)}</View>
-      ) : <EmptyState icon={BookOpen} title="Nothing here yet" body="Add a note, a voice note or a photo from this ride." />}
+      ) : <EmptyState icon={BookOpen} title="Nothing here yet" body="Add a note, a voice note or a photo." />}
     </Screen>
   );
 }

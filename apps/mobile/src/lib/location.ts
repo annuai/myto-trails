@@ -15,7 +15,7 @@ export function watchLocation(onFix: (f: Fix) => void, onError: (message: string
   (async () => {
     try {
       const perm = await Location.requestForegroundPermissionsAsync();
-      if (perm.status !== 'granted') return onError('Location is turned off for Myto. Allow it in your phone settings.', true);
+      if (perm.status !== 'granted') return onError('Location is turned off for Myto Moto. Allow it in your phone settings.', true);
       const last = await Location.getLastKnownPositionAsync().catch(() => null); // an instant rough position while GPS warms up
       if (last && !stopped) onFix({ lat: last.coords.latitude, lng: last.coords.longitude, t: last.timestamp, accuracy: last.coords.accuracy ?? undefined });
       const s = await Location.watchPositionAsync({ accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 0, timeInterval: 1000 }, (loc) =>

@@ -1,5 +1,5 @@
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
-import type { Journal, JournalRide, Pause } from './journal';
+import type { Journal, JournalRide, JournalWaypoint, Pause } from './journal';
 
 type FixRow = { lat: number; lng: number; t: number | null; ele: number | null; speed: number | null; acc: number | null };
 
@@ -16,6 +16,8 @@ function db(): Promise<SQLiteDatabase> {
       CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, t INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS waypoints (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, lat REAL NOT NULL, lng REAL NOT NULL);
     `);
+    // The kind column came later: add it to a journal created before it (the statement fails harmlessly when it is already there).
+    await d.execAsync('ALTER TABLE waypoints ADD COLUMN kind TEXT').catch(() => undefined);
     return d;
   })();
   return opened;
@@ -36,7 +38,10 @@ export const journal: Journal = {
     await (await db()).runAsync('INSERT INTO fixes (lat, lng, t, ele, speed, acc) VALUES (?, ?, ?, ?, ?, ?)', f.lat, f.lng, f.t ?? null, f.ele ?? null, f.speed ?? null, f.acc ?? null);
   },
   async appendWaypoint(w) {
-    await (await db()).runAsync('INSERT INTO waypoints (name, lat, lng) VALUES (?, ?, ?)', w.name, w.lat, w.lng);
+    await (await db()).runAsync('INSERT INTO waypoints (name, lat, lng, kind) VALUES (?, ?, ?, ?)', w.name, w.lat, w.lng, w.kind ?? null);
+  },
+  async retypeWaypoint(index, kind, name) {
+    await (await db()).runAsync('UPDATE waypoints SET kind = ?, name = ? WHERE id = (SELECT id FROM waypoints ORDER BY id LIMIT 1 OFFSET ?)', kind, name, index);
   },
   async pause(t) {
     const d = await db();
@@ -53,7 +58,8 @@ export const journal: Journal = {
     const meta = await d.getFirstAsync<{ started_at: number; source: 'gps' | 'sim' }>('SELECT started_at, source FROM meta WHERE id = 1');
     if (!meta) return null;
     const rows = await d.getAllAsync<FixRow>('SELECT lat, lng, t, ele, speed, acc FROM fixes ORDER BY id');
-    const waypoints = await d.getAllAsync<{ name: string; lat: number; lng: number }>('SELECT name, lat, lng FROM waypoints ORDER BY id');
+    const wpRows = await d.getAllAsync<{ name: string; lat: number; lng: number; kind: JournalWaypoint['kind'] | null }>('SELECT name, lat, lng, kind FROM waypoints ORDER BY id');
+    const waypoints: JournalWaypoint[] = wpRows.map(({ kind, ...w }) => (kind ? { ...w, kind } : w));
     const events = await d.getAllAsync<{ kind: string; t: number }>('SELECT kind, t FROM events ORDER BY id');
     const pauses: Pause[] = [];
     for (const e of events) { if (e.kind === 'pause') pauses.push({ from: e.t }); else if (pauses.length) pauses[pauses.length - 1].to = e.t; }

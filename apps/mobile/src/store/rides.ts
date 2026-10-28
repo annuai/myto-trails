@@ -3,9 +3,10 @@ import { persist } from 'zustand/middleware';
 import { uid } from '@/lib/id';
 import type { LatLng } from '@/lib/geo';
 import { sampleRide } from '@/lib/sim';
+import type { WaypointKind } from '@/lib/waypointKinds';
 import { storage } from './persist';
 
-export type Waypoint = { name: string; lat: number; lng: number };
+export type Waypoint = { name: string; lat: number; lng: number; kind?: WaypointKind };
 export type SubmissionState = { status: 'submitted'; at: number; trailName: string; slug: string; clientId: string };
 
 export type Ride = {

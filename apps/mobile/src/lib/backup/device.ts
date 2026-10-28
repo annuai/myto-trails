@@ -5,7 +5,9 @@ import { commitStaged, deleteAllPhotos, discardStaged, hasPhoto, readPhotoBase64
 import { commitStaged as commitJournalMedia, discardStaged as discardJournalMedia, hasMedia, readBase64 as readJournalMedia, stageMedia } from '../journalMedia';
 import { useJournal } from '@/store/journal';
 import { useProfile } from '@/store/profile';
+import { useMyRoutes } from '@/store/myRoutes';
 import { useRides } from '@/store/rides';
+import { useTrips } from '@/store/trips';
 import { useTodos } from '@/store/todos';
 import { writeBackup } from './export';
 import { backupFileName, type OpenedBackup, type Snapshot } from './format';
@@ -14,7 +16,7 @@ import { openBackupFile, type Target } from './import';
 /** Reads the phone's data. The sign-in token, trail packs and the quote queue are not part of it. */
 export function currentSnapshot(): Snapshot {
   const { licence, vehicle, contacts, medical, photos } = useProfile.getState();
-  return { licence, vehicle, contacts, medical, photos, todos: useTodos.getState().todos, rides: useRides.getState().rides, journal: useJournal.getState().entries };
+  return { licence, vehicle, contacts, medical, photos, todos: useTodos.getState().todos, rides: useRides.getState().rides, journal: useJournal.getState().entries, journalTitles: useJournal.getState().titles, routes: useMyRoutes.getState().routes, trips: useTrips.getState().trips };
 }
 
 export const phoneTarget: Target = {
@@ -23,7 +25,10 @@ export const phoneTarget: Target = {
     useProfile.getState().restore({ licence: s.licence, vehicle: s.vehicle, contacts: s.contacts, medical: s.medical, photos: s.photos });
     useTodos.setState({ todos: s.todos });
     useRides.setState({ rides: s.rides });
-    useJournal.getState().restore(s.journal);
+    useJournal.getState().restore(s.journal, s.journalTitles);
+    // A backup made before routes and trips existed leaves the phone's own alone.
+    if (s.routes) useMyRoutes.setState({ routes: s.routes });
+    if (s.trips) useTrips.setState({ trips: s.trips });
   },
   photos: { stage: stagePhoto, commit: commitStaged, discard: discardStaged },
   journal: { stage: (kind, id, b64) => stageMedia(id, kind, b64), commit: commitJournalMedia, discard: discardJournalMedia },
@@ -45,7 +50,7 @@ export async function exportToShareSheet(passphrase: string): Promise<boolean> {
       await writeBackup(currentSnapshot(), { has: hasPhoto, read: readPhotoBase64 }, { has: hasMedia, read: readJournalMedia }, passphrase, { write: (b) => handle.writeBytes(b) });
     } finally { handle.close(); }
     if (!(await Sharing.isAvailableAsync())) return false;
-    await Sharing.shareAsync(file.uri, { dialogTitle: 'Save your Myto backup', UTI: 'public.data' });
+    await Sharing.shareAsync(file.uri, { dialogTitle: 'Save your Myto Moto backup', UTI: 'public.data' });
     return true;
   } finally {
     // the file holds encrypted personal data: do not leave it in the cache

@@ -21,7 +21,7 @@ export default function RideLog() {
             <Row key={r.id} icon={RouteIcon} label={r.name} sub={`${formatDate(new Date(r.startedAt).toISOString().slice(0, 10))} · ${asText(durationParts(r.durationSec))}${r.submission ? ' · uploaded' : ''}${r.sample ? ' · sample' : ''}`} value={asText(distanceKm(r.distanceKm))} mono onPress={() => router.push(`/story/${r.id}`)} />
           ))}
         </ListCard>
-      ) : <EmptyState icon={RouteIcon} title="No rides yet" body="Tap Record to log your first ride." />}
+      ) : <EmptyState icon={RouteIcon} title="No rides yet" body="Tap Ride to log your first ride." />}
     </Screen>
   );
 }

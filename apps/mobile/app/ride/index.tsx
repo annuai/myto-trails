@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { BellRing, Route as RouteIcon, Users } from 'lucide-react-native';
+import { CheckinSheet } from '@/features/CheckinSheet';
+import { GroupSheet } from '@/features/GroupSheet';
+import { clockLabel } from '@/lib/community';
+import { useCompanion } from '@/store/companion';
+import { useMyRoutes } from '@/store/myRoutes';
 import { needsAlwaysExplainer, requestRideLocationAccess } from '@/lib/backgroundLocation';
 import { useLocation } from '@/store/location';
 import { useRecorder } from '@/store/recorder';
@@ -34,6 +40,11 @@ export default function RideReady() {
   const running = useRecorder((s) => s.status === 'running');
   const [source, setSource] = useState<'gps' | 'sim'>('gps');
   const [explain, setExplain] = useState(false);
+  const [checkinOpen, setCheckinOpen] = useState(false);
+  const [groupOpen, setGroupOpen] = useState(false);
+  const checkin = useCompanion((s) => s.checkin);
+  const group = useCompanion((s) => s.group);
+  const myRoute = useMyRoutes((s) => s.routes.find((r) => r.id === s.followId));
   const { licence, vehicle, contacts } = useProfile();
   const rides = useRides((s) => s.rides);
   const { offline, nextTrip } = useTrailStore();
@@ -69,18 +80,26 @@ export default function RideReady() {
   const allow = async () => { setExplain(false); await requestRideLocationAccess(); await begin(); };
 
   return (
-    <Screen footer={<Button big variant="accent" label={running ? 'Back to your ride' : 'Start ride'} onPress={() => void start()} />} overlay={
+    <Screen footer={<Button big variant="accent" label={running ? 'Back to your ride' : 'Start ride'} onPress={() => void start()} />} overlay={<>
       <Sheet open={explain} title="Keep recording when your phone is locked" onClose={() => setExplain(false)}>
         <Text variant="label" tone="muted">Choose Always Allow on the next screen. Without it, your ride stops recording whenever the screen locks or another app, like Google Maps, is in front.</Text>
         <Button label="Allow always" onPress={() => void allow()} />
         <Button variant="soft" label="Not now" onPress={() => { setExplain(false); void begin(); }} />
       </Sheet>
-    }>
+      <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
+      <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={here} />
+    </>}>
       <BackHeader />
       <PageTitle sub="These checks never stop you from starting.">Ready to ride?</PageTitle>
       <Columns rightStartsWithSection left={<>
       <ListCard>
         {checks.map((c) => <Row key={c.label} label={c.label} right={<StatusChip status={c.status} label={c.word} />} onPress={c.go ? () => router.push(c.go as never) : undefined} chevron={false} />)}
+      </ListCard>
+      <SectionTitle>Options</SectionTitle>
+      <ListCard>
+        <Row icon={RouteIcon} label="Route" value={myRoute?.name ?? trail?.name ?? 'None'} onPress={() => router.push('/plan')} />
+        <Row icon={Users} label="Group ride" value={group ? `Code ${group.code}` : 'Off'} onPress={() => setGroupOpen(true)} />
+        <Row icon={BellRing} label="I haven't arrived" value={checkin ? `Back by ${clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}` : 'Off'} onPress={() => setCheckinOpen(true)} />
       </ListCard>
       </>} right={<>
       <SectionTitle>Location</SectionTitle>
