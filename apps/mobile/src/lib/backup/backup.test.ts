@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createBackup } from './export';
+import { encrypt } from './crypto';
 import { BackupError, CURRENT_VERSION, FORMAT, fromBase64, toBase64, type BackupPayload, type Snapshot } from './format';
 import { applyBackup, mergeSnapshots, openBackup, summarize, type ImportMode, type Target } from './import';
 import { migrate } from './migrate';
@@ -16,6 +17,7 @@ const snapshot = (over: Partial<Snapshot> = {}): Snapshot => ({
   photos: [{ id: 'p1', docKind: 'licence', side: 'front', width: 10, height: 10, addedAt: 1 }],
   todos: [{ id: 't1', title: 'PUC', category: 'document', kind: 'date', done: false, updatedAt: 10 }],
   rides: [ride('r1', 10), ride('demo', 0, { sample: true })],
+  journal: [],
   ...over,
 });
 const files = { p1: toBase64(new Uint8Array([1, 2, 3, 255])) };
@@ -23,7 +25,7 @@ const source = { read: async (id: string) => { if (!(id in files)) throw new Err
 
 /** Phone in memory: state plus a photo folder, so an interrupted import can be checked. */
 function phone(initial: Snapshot, failOn?: string) {
-  const state = { snap: initial, folder: new Map<string, string>(), staged: new Map<string, string>(), discarded: 0 };
+  const state = { snap: initial, folder: new Map<string, string>(), staged: new Map<string, string>(), discarded: 0, jfolder: new Map<string, string>(), jstaged: new Map<string, string>(), jdiscarded: 0 };
   const target: Target = {
     get: () => state.snap,
     set: (s) => { state.snap = s; },
@@ -31,6 +33,11 @@ function phone(initial: Snapshot, failOn?: string) {
       stage: async (id, b64) => { if (id === failOn) throw new Error('disk full'); state.staged.set(id, b64); },
       commit: (mode: ImportMode) => { if (mode === 'replace') state.folder.clear(); for (const [k, v] of state.staged) state.folder.set(k, v); state.staged.clear(); },
       discard: () => { state.staged.clear(); state.discarded++; },
+    },
+    journal: {
+      stage: async (kind, id, b64) => { if (id === failOn) throw new Error('disk full'); state.jstaged.set(`${kind}:${id}`, b64); },
+      commit: (mode: ImportMode) => { if (mode === 'replace') state.jfolder.clear(); for (const [k, v] of state.jstaged) if (!state.jfolder.has(k)) state.jfolder.set(k, v); state.jstaged.clear(); },
+      discard: () => { state.jstaged.clear(); state.jdiscarded++; },
     },
   };
   return { state, target };
@@ -53,7 +60,7 @@ describe('backup file', () => {
     expect(back.licence?.number).toBe('MH0120200000001');
     expect(back.rides.map((r) => r.id)).toEqual(['r1']);
     expect(back.photoFiles.p1).toBe(files.p1);
-    expect(summarize(back)).toEqual({ rides: 1, todos: 1, contacts: 1, documents: 2, photos: 1 });
+    expect(summarize(back)).toEqual({ rides: 1, todos: 1, contacts: 1, documents: 2, photos: 1, journalEntries: 0 });
   });
 
   it('refuses a short passphrase', async () => {
@@ -168,5 +175,67 @@ describe('applying an import', () => {
     p.target.photos.commit = () => { throw new Error('boom'); };
     await expect(applyBackup(await payload(), 'merge', p.target)).rejects.toBeInstanceOf(BackupError);
     expect(p.state.snap).toBe(before);
+  });
+});
+
+
+describe('journal in the backup', () => {
+  const entries = [
+    { id: 'n1', rideKey: 100, at: 1, kind: 'note' as const, text: 'Chai stop' },
+    { id: 'ph1', rideKey: 100, at: 2, kind: 'photo' as const, text: 'View', width: 4, height: 3 },
+    { id: 'v1', rideKey: 100, at: 3, kind: 'voice' as const, durationSec: 12 },
+  ];
+  const media = { 'photo:ph1': toBase64(new Uint8Array([9, 8, 7])), 'voice:v1': toBase64(new Uint8Array([1, 2, 3, 4, 5])) };
+  const mediaSource = { read: async (id: string, kind: 'photo' | 'voice') => { const f = media[`${kind}:${id}` as keyof typeof media]; if (!f) throw new Error('missing'); return f; } };
+  const withJournal = () => snapshot({ rides: [ride('r1', 10, { startedAt: 100 })], journal: entries });
+  const file = async (s: Snapshot = withJournal()) => (await createBackup(s, source, PASS, now, mediaSource)).text;
+
+  it('round trips the entries and their photo and voice files, and counts them in the summary', async () => {
+    const back = await openBackup(await file(), PASS);
+    expect(back.journal).toEqual(entries);
+    expect(back.journalFiles).toEqual(media);
+    expect(summarize(back).journalEntries).toBe(3);
+  });
+  it('keeps a note but leaves out an entry whose photo or voice file is gone', async () => {
+    const s = snapshot({ journal: [...entries, { id: 'lost', rideKey: 100, at: 4, kind: 'photo' as const }] });
+    const back = await openBackup(await file(s), PASS);
+    expect(back.journal.map((e) => e.id)).toEqual(['n1', 'ph1', 'v1']);
+  });
+  it('a version 1 backup (made before the journal existed) imports with an empty journal', async () => {
+    const v1 = { licence: undefined, vehicle: undefined, contacts: [], medical: {}, photos: [], todos: [], rides: [], photoFiles: {} };
+    const createdAt = now.toISOString();
+    const ciphertext = await encrypt(new TextEncoder().encode(JSON.stringify(v1)), PASS, { version: 1, createdAt });
+    const back = await openBackup(JSON.stringify({ format: FORMAT, version: 1, createdAt, ciphertext }), PASS);
+    expect(back.journal).toEqual([]);
+    expect(back.journalFiles).toEqual({});
+  });
+  it('refuses a payload whose journal entry has no file', async () => {
+    const bad = { ...snapshot(), photoFiles: {}, journal: [{ id: 'x', rideKey: 1, at: 1, kind: 'voice' }], journalFiles: {} };
+    const createdAt = now.toISOString();
+    const ciphertext = await encrypt(new TextEncoder().encode(JSON.stringify(bad)), PASS, { version: CURRENT_VERSION, createdAt });
+    await expect(openBackup(JSON.stringify({ format: FORMAT, version: CURRENT_VERSION, createdAt, ciphertext }), PASS)).rejects.toMatchObject({ code: 'corrupt' });
+  });
+  it('replace brings back the journal and its files and drops the journal that was on the phone', async () => {
+    const p = phone(snapshot({ journal: [{ id: 'old', rideKey: 5, at: 1, kind: 'note', text: 'x' }] }));
+    p.state.jfolder.set('photo:oldphoto', 'x');
+    await applyBackup(await openBackup(await file(), PASS), 'replace', p.target);
+    expect(p.state.snap.journal.map((e) => e.id)).toEqual(['n1', 'ph1', 'v1']);
+    expect([...p.state.jfolder.keys()].sort()).toEqual(['photo:ph1', 'voice:v1']);
+  });
+  it('merge keeps the phone\'s journal, adds the file\'s and does not duplicate an entry with the same id', async () => {
+    const p = phone(snapshot({ journal: [{ id: 'n1', rideKey: 100, at: 1, kind: 'note', text: 'phone copy' }, { id: 'mine', rideKey: 7, at: 9, kind: 'note', text: 'm' }] }));
+    await applyBackup(await openBackup(await file(), PASS), 'merge', p.target);
+    const ids = p.state.snap.journal.map((e) => e.id).sort();
+    expect(ids).toEqual(['mine', 'n1', 'ph1', 'v1']);
+    expect(p.state.snap.journal.find((e) => e.id === 'n1')?.text).toBe('phone copy');
+  });
+  it('an import interrupted while writing journal files leaves the phone untouched and clears both staging folders', async () => {
+    const p = phone(snapshot(), 'ph1');
+    const before = p.state.snap;
+    await expect(applyBackup(await openBackup(await file(), PASS), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
+    expect(p.state.snap).toBe(before);
+    expect(p.state.jstaged.size).toBe(0);
+    expect(p.state.staged.size).toBe(0);
+    expect(p.state.jdiscarded + p.state.discarded).toBeGreaterThanOrEqual(2);
   });
 });

@@ -1,11 +1,12 @@
 import type { Todo } from '../todos';
 import type { DocPhoto } from '../localMedia/types';
+import type { JournalEntry } from '../journalEntries';
 import type { Ride } from '@/store/rides';
 import type { Contact, Licence, Medical, Vehicle } from '@/store/profile';
 
 export const FORMAT = 'myto-backup';
 /** Bump with every change to `BackupPayload` and add a `migrate` step from the old number. */
-export const CURRENT_VERSION = 1;
+export const CURRENT_VERSION = 2;
 export const MIN_PASSPHRASE_LENGTH = 10;
 export const FILE_EXTENSION = 'myto';
 
@@ -16,11 +17,13 @@ export type Envelope = { format: typeof FORMAT; version: number; createdAt: stri
 export type Snapshot = {
   licence?: Licence; vehicle?: Vehicle; contacts: Contact[]; medical: Medical;
   photos: DocPhoto[]; todos: Todo[]; rides: Ride[];
+  /** Ride journal entries (notes, voice, photos). Their files are in `journalFiles`. */
+  journal: JournalEntry[];
   /** Chosen bike, when the app stores one on the phone. */
   bike?: unknown;
 };
-/** Plaintext inside the ciphertext. `photoFiles` maps a photo id to its JPEG as base64. */
-export type BackupPayload = Snapshot & { photoFiles: Record<string, string> };
+/** Plaintext inside the ciphertext. `photoFiles` maps a photo id to its JPEG as base64; `journalFiles` maps `photo:<id>` or `voice:<id>` to the file as base64. */
+export type BackupPayload = Snapshot & { photoFiles: Record<string, string>; journalFiles: Record<string, string> };
 
 export type BackupErrorCode = 'not-a-backup' | 'newer-version' | 'wrong-passphrase' | 'corrupt' | 'apply-failed' | 'weak-passphrase';
 

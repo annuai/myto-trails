@@ -54,6 +54,7 @@ export default function You() {
 
   const erase = () => {
     eraseDocumentPhotos();
+    useJournal.getState().wipe();
     useProfile.getState().wipe();
     useTodos.setState({ todos: [] });
     useRides.setState({ rides: [] });
@@ -65,7 +66,7 @@ export default function You() {
   return (
     <Screen tabs brand overlay={
       <Sheet open={confirm} title="Erase all my data?" onClose={() => setConfirm(false)}>
-        <Text variant="body" tone="muted">This removes your rides, to-dos, documents and contacts from this device. It cannot be undone.</Text>
+        <Text variant="body" tone="muted">This removes your rides, ride journals, to-dos, documents and contacts from this device. It cannot be undone.</Text>
         <Button label="Erase everything" variant="danger" icon={Trash2} onPress={erase} />
         <Button label="Keep my data" variant="soft" onPress={() => setConfirm(false)} />
       </Sheet>

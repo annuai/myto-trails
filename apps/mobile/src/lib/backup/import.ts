@@ -8,8 +8,13 @@ export type PhotoSink = {
   commit: (mode: ImportMode) => void;
   discard: () => void;
 };
-/** The phone side of an import: read and write the stores, and the photo folder. */
-export type Target = { get: () => Snapshot; set: (next: Snapshot) => void; photos: PhotoSink };
+export type JournalSink = {
+  stage: (kind: 'photo' | 'voice', id: string, base64: string) => Promise<void>;
+  commit: (mode: ImportMode) => void;
+  discard: () => void;
+};
+/** The phone side of an import: read and write the stores, and the photo and journal folders. */
+export type Target = { get: () => Snapshot; set: (next: Snapshot) => void; photos: PhotoSink; journal: JournalSink };
 
 export async function openBackup(text: string, passphrase: string): Promise<BackupPayload> {
   const env = parseEnvelope(text);
@@ -21,10 +26,10 @@ export async function openBackup(text: string, passphrase: string): Promise<Back
   return payload;
 }
 
-export type Summary = { rides: number; todos: number; contacts: number; documents: number; photos: number };
+export type Summary = { rides: number; todos: number; contacts: number; documents: number; photos: number; journalEntries: number };
 export const summarize = (p: Snapshot): Summary => ({
   rides: p.rides.length, todos: p.todos.length, contacts: p.contacts.length,
-  documents: (p.licence ? 1 : 0) + (p.vehicle ? 1 : 0), photos: p.photos.length,
+  documents: (p.licence ? 1 : 0) + (p.vehicle ? 1 : 0), photos: p.photos.length, journalEntries: p.journal.length,
 });
 
 type Stamped = { updatedAt?: number };
@@ -39,7 +44,7 @@ function mergeById<T extends { id: string } & Stamped>(local: T[], incoming: T[]
 }
 
 /** Copy of `incoming` as a Snapshot, without the photo files. */
-const plain = (p: Snapshot): Snapshot => ({ licence: p.licence, vehicle: p.vehicle, contacts: p.contacts, medical: p.medical, photos: p.photos, todos: p.todos, rides: p.rides, bike: p.bike });
+const plain = (p: Snapshot): Snapshot => ({ licence: p.licence, vehicle: p.vehicle, contacts: p.contacts, medical: p.medical, photos: p.photos, todos: p.todos, rides: p.rides, journal: p.journal, bike: p.bike });
 
 export function mergeSnapshots(local: Snapshot, incoming: Snapshot): Snapshot {
   const contacts = mergeById(local.contacts, incoming.contacts);
@@ -52,6 +57,8 @@ export function mergeSnapshots(local: Snapshot, incoming: Snapshot): Snapshot {
     contacts: fixed,
     photos: [...new Map([...local.photos, ...incoming.photos].map((p) => [p.id, p])).values()],
     todos: mergeById(local.todos, incoming.todos), rides: mergeById(local.rides, incoming.rides),
+    // an entry with the same id is the same entry: the phone's copy stays
+    journal: [...new Map([...incoming.journal, ...local.journal].map((e) => [e.id, e])).values()],
     bike: incoming.bike !== undefined && local.bike === undefined ? incoming.bike : local.bike,
   };
 }
@@ -62,16 +69,22 @@ export const replaceSnapshot = (local: Snapshot, incoming: Snapshot): Snapshot =
 });
 
 /**
- * Works out the result first, writes the photos to a temporary folder, swaps them in, and only then changes the stores.
+ * Works out the result first, writes the photos and journal files to temporary folders, swaps them in, and only then changes the stores.
  * Any failure before the swap leaves the phone as it was.
  */
 export async function applyBackup(payload: BackupPayload, mode: ImportMode, target: Target): Promise<void> {
   const next = mode === 'replace' ? replaceSnapshot(target.get(), payload) : mergeSnapshots(target.get(), payload);
   try {
     for (const [id, b64] of Object.entries(payload.photoFiles)) await target.photos.stage(id, b64);
+    for (const [key, b64] of Object.entries(payload.journalFiles)) {
+      const [kind, ...rest] = key.split(':');
+      await target.journal.stage(kind as 'photo' | 'voice', rest.join(':'), b64);
+    }
     target.photos.commit(mode);
+    target.journal.commit(mode);
   } catch {
     target.photos.discard();
+    target.journal.discard();
     throw new BackupError('apply-failed');
   }
   target.set(next);

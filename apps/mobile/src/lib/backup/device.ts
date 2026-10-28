@@ -2,6 +2,8 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
 import { commitStaged, deleteAllPhotos, discardStaged, readPhotoBase64, stagePhoto } from '../localMedia';
+import { commitStaged as commitJournalMedia, discardStaged as discardJournalMedia, readBase64 as readJournalMedia, stageMedia } from '../journalMedia';
+import { useJournal } from '@/store/journal';
 import { useProfile } from '@/store/profile';
 import { useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
@@ -12,7 +14,7 @@ import type { Target } from './import';
 /** Reads the phone's data. The sign-in token, trail packs and the quote queue are not part of it. */
 export function currentSnapshot(): Snapshot {
   const { licence, vehicle, contacts, medical, photos } = useProfile.getState();
-  return { licence, vehicle, contacts, medical, photos, todos: useTodos.getState().todos, rides: useRides.getState().rides };
+  return { licence, vehicle, contacts, medical, photos, todos: useTodos.getState().todos, rides: useRides.getState().rides, journal: useJournal.getState().entries };
 }
 
 export const phoneTarget: Target = {
@@ -21,8 +23,10 @@ export const phoneTarget: Target = {
     useProfile.getState().restore({ licence: s.licence, vehicle: s.vehicle, contacts: s.contacts, medical: s.medical, photos: s.photos });
     useTodos.setState({ todos: s.todos });
     useRides.setState({ rides: s.rides });
+    useJournal.getState().restore(s.journal);
   },
   photos: { stage: stagePhoto, commit: commitStaged, discard: discardStaged },
+  journal: { stage: (kind, id, b64) => stageMedia(id, kind, b64), commit: commitJournalMedia, discard: discardJournalMedia },
 };
 
 /** Erase all my data: the files go with the store entries. */
@@ -30,7 +34,7 @@ export const eraseDocumentPhotos = deleteAllPhotos;
 
 /** Writes the encrypted file to the cache and opens the share sheet. Returns false when sharing is not available. */
 export async function exportToShareSheet(passphrase: string): Promise<boolean> {
-  const { fileName, text } = await createBackup(currentSnapshot(), { read: readPhotoBase64 }, passphrase);
+  const { fileName, text } = await createBackup(currentSnapshot(), { read: readPhotoBase64 }, passphrase, new Date(), { read: readJournalMedia });
   const file = new File(Paths.cache, fileName);
   file.create({ overwrite: true });
   await file.write(text);
