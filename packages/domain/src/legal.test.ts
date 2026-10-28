@@ -45,6 +45,36 @@ describe("legal documents", () => {
   });
 });
 
+describe("privacy claims match the code", () => {
+  const text = docText(legalDocs.privacy);
+
+  it("join-request phone numbers are deleted 7 days after the admins decide, not 'once settled'", () => {
+    expect(text).toContain("7 days after the admins decide");
+    expect(text).not.toContain("once the request is settled");
+  });
+
+  it("photo originals are kept privately with their location data; only published copies are stripped", () => {
+    expect(text).toContain("original upload privately");
+    expect(text).not.toContain("Location data is removed from photos you upload");
+  });
+
+  it("lists the profile choices, bio and women-rider flag that the account page stores", () => {
+    expect(text).toContain("whether you are listed publicly");
+    expect(text).toContain("your short bio");
+    expect(text).toContain("ride as a woman");
+  });
+
+  it("names the map providers", () => {
+    expect(text).toContain("OpenStreetMap");
+    expect(text).toContain("MapLibre");
+  });
+
+  it("says a submitted ride includes the times, and that moderator actions are recorded", () => {
+    expect(text).toContain("the times you rode it");
+    expect(text).toContain("record of moderator actions");
+  });
+});
+
 describe("footer copy", () => {
   it("versionLabel falls back instead of printing undefined", () => {
     expect(versionLabel("1.2.3")).toBe("v1.2.3");

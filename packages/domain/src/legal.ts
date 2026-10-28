@@ -115,7 +115,7 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
             ["Your documents, document photos and emergency contacts."],
             ["Backups you export, which are one encrypted file only you hold."],
           ),
-          p('None of this is sent to us. You can erase it in the app under You, "Erase all my data". If you choose to submit a ride as a trail, that submission is sent to us (see below).'),
+          p('None of this is sent to us. You can erase it in the app under You, "Erase all my data". If you choose to submit a ride as a trail, that submission is sent to us, including the route and the times you rode it (see below).'),
         ],
       },
       {
@@ -127,15 +127,16 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
             ["Trails you save."],
             ["Trails, photos and GPX files you submit, and the comments, questions and club posts you write."],
             ["Your club membership and join requests."],
-            ["A scrambled (hashed) form of your network address and device, used only to limit abuse and keep you signed in."],
+            ["Your rider profile choices: whether you are listed publicly, your short bio, and, if you choose to say so, that you ride as a woman (used only to join women-only clubs, never shown)."],
+            ["A scrambled (hashed) form of your network address and device, used to limit abuse, keep you signed in, and keep a record of moderator actions."],
           ),
-          p("We do not store your precise location. Location data is removed from photos you upload."),
+          p("We do not store your precise location. Location data is removed from the photo copies shown on the site. We keep your original upload privately, so it still contains whatever your camera recorded."),
         ],
       },
       {
         heading: "Phone numbers",
         blocks: [
-          p("If you ask to join a club, or offer your number to another rider, the number is stored encrypted. Only the club admins you asked, or the rider you offered it to, can see it. It is deleted automatically once the request is settled or its time limit passes."),
+          p("If you ask to join a club, or offer your number to another rider, the number is stored encrypted. Only the club admins you asked, or the rider you offered it to, can see it. A number you give with a club join request is deleted automatically 7 days after the admins decide. A number you offer to another rider is deleted automatically when its time limit passes."),
         ],
       },
       {
@@ -158,7 +159,7 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
             ["Supabase hosts our database."],
             ["Cloudflare R2 stores photos and GPX files."],
             ["Resend sends your sign-in email links."],
-            ["A map provider supplies map tiles and sees which map area your device asks for."],
+            ["OpenStreetMap supplies the map tiles and MapLibre's font server supplies map lettering. They see which map area your device asks for."],
           ),
           p("They handle data only to provide that service. We do not sell your data or use it for advertising."),
         ],
