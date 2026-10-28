@@ -28,7 +28,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Myto uses your photos for your profile picture, your bike and club covers."
+          "photosPermission": "Myto uses your photos for your profile picture, your bike, club covers and the photos of your documents.",
+          "cameraPermission": "Myto uses the camera to photograph your licence, registration, insurance and PUC. The photos stay on this phone."
         }
       ],
       [
@@ -37,7 +38,14 @@
           "locationWhenInUsePermission": "Myto records your ride's route while you ride."
         }
       ],
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      "expo-sharing",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Myto asks for Face ID before it shows a photo of your documents."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

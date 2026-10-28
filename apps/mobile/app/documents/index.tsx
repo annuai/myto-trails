@@ -6,7 +6,6 @@ import { StatusChip, type Status } from '@/ui/Chip';
 import { BackHeader, PageTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
-import { Text } from '@/ui/Text';
 
 function expiry(iso?: string): { status: Status; word: string } {
   if (!iso) return { status: 'unknown', word: 'No date' };
@@ -27,7 +26,6 @@ export default function Documents() {
         <Row icon={Bike} label="Vehicle, registration and insurance" sub={vehicle ? `${vehicle.regNo} · ${vehicle.model}` : 'Add your bike and its papers'} onPress={() => router.push('/documents/vehicle')} />
         <Row icon={Siren} label="Emergency contacts" sub={contacts.length ? `${contacts.length} added` : 'Who should we call if something goes wrong'} right={contacts.length ? <StatusChip status="good" label="Set" /> : <StatusChip status="caution" label="Add one" />} onPress={() => router.push('/documents/contacts')} />
       </ListCard>
-      <Text variant="caption" tone="muted" style={{ marginTop: 24 }}>Photos of documents are not supported yet. Keep the originals with you when you ride.</Text>
     </Screen>
   );
 }

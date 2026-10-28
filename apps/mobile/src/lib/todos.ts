@@ -3,7 +3,7 @@ import { addDays, addMonths, daysUntil, formatDate, todayISO } from './dates';
 export type TodoCategory = 'document' | 'service' | 'pack' | 'other';
 export type Todo = {
   id: string; title: string; category: TodoCategory; kind: 'date' | 'service'; done: boolean;
-  due?: string; source?: string;
+  due?: string; source?: string; updatedAt?: number;
   // service items: due after N km or N months, whichever comes first
   everyKm?: number; everyMonths?: number; lastDate?: string; lastKm?: number;
 };

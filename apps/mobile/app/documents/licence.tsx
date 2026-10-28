@@ -7,8 +7,10 @@ import { useTodos } from '@/store/todos';
 import { Button } from '@/ui/Button';
 import { ChoiceChip } from '@/ui/Chip';
 import { DateField, DatePickSheet } from '@/ui/DateField';
+import { DocumentPhotoField } from '@/ui/DocumentPhotoField';
 import { Field } from '@/ui/Field';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
+import { Stack } from '@/ui/layout';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 
@@ -44,6 +46,11 @@ export default function LicenceForm() {
         <Field label="Issuing RTO (optional)" value={f.rto ?? ''} onChangeText={(rto) => setF({ ...f, rto })} />
         <DateField label="Valid till" value={f.validTill} onPress={() => setPicking(true)} hint="You get a reminder in your to-do list" />
       </View>
+      <SectionTitle>Photos</SectionTitle>
+      <Stack gap={5}>
+        <DocumentPhotoField docKind="licence" side="front" label="Front of licence" />
+        <DocumentPhotoField docKind="licence" side="back" label="Back of licence" />
+      </Stack>
       <SectionTitle>Vehicle classes</SectionTitle>
       <View style={{ gap: 8 }}>{classes.map(([k, l]) => <ChoiceChip key={k} label={`${k} · ${l}`} selected={f.classes.includes(k)} onPress={() => toggle(k)} />)}</View>
       {error ? <Text variant="label" tone="stop" style={{ marginTop: 16 }}>{error}</Text> : null}
