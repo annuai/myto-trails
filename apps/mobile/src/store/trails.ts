@@ -7,13 +7,13 @@ import type { Status } from '@/ui/Chip';
 import { storage } from './persist';
 
 export type Offline = { detail: TrailDetail; route: RouteDto | null; savedAt: number; bytes: number };
-export type NextTrip = { slug: string; name: string; status: Status; statusLabel: string; date?: string };
+export type NextTrip = { slug: string; name: string; status: Status; statusLabel: string; date?: string; /** The date as YYYY-MM-DD, which reminders are built from. `date` is the label shown on the dash. */ iso?: string };
 
 type State = {
   offline: Record<string, Offline>;
   downloading: Record<string, true>;
   nextTrip?: NextTrip;
-  planTrip: (detail: TrailDetail, date?: string) => void;
+  planTrip: (detail: TrailDetail, date?: string, iso?: string) => void;
   cancelPlan: () => void;
   download: (slug: string) => Promise<void>;
   removeDownload: (slug: string) => void;
@@ -25,7 +25,7 @@ export const useTrailStore = create<State>()(
   persist(
     (set, get) => ({
       offline: {}, downloading: {},
-      planTrip: (d, date) => { const h = headline(d); set({ nextTrip: { slug: d.slug, name: d.name, status: h.status, statusLabel: h.label, date } }); },
+      planTrip: (d, date, iso) => { const h = headline(d); set({ nextTrip: { slug: d.slug, name: d.name, status: h.status, statusLabel: h.label, date, iso } }); },
       cancelPlan: () => set({ nextTrip: undefined }),
       download: async (slug) => {
         if (get().downloading[slug]) return;
