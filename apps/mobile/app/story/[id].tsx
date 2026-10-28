@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { BookOpen, Download, Luggage, Megaphone, Share2, Trash2, Upload } from 'lucide-react-native';
+import { BookOpen, Download, Luggage, Megaphone, Pencil, Share2, Trash2, Upload } from 'lucide-react-native';
 import { ReportSheet } from '@/features/ReportSheet';
 import { ShareRideSheet } from '@/features/ShareRideSheet';
 import { useJournal } from '@/store/journal';
@@ -15,6 +15,8 @@ import { formatDate } from '@/lib/dates';
 import { useRides } from '@/store/rides';
 import { Theme } from '@/theme/ThemeProvider';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
+import { IconButton } from '@/ui/IconButton';
 import { Card } from '@/ui/Card';
 import { StatusChip } from '@/ui/Chip';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
@@ -41,6 +43,8 @@ function StoryBody() {
   const [shareOpen, setShareOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [tripOpen, setTripOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [draftName, setDraftName] = useState('');
   const trips = useTrips((s) => s.trips);
   if (!ride) return <Screen><BackHeader /><Text>Ride not found.</Text></Screen>;
   const deleteRide = () => { useJournal.getState().removeForRide(ride.startedAt); useTrips.getState().forgetRide(ride.id); useRides.getState().removeRide(ride.id); router.replace('/rides'); };
@@ -50,6 +54,10 @@ function StoryBody() {
     <Screen overlay={<>
       <ShareRideSheet ride={ride} open={shareOpen} onClose={() => setShareOpen(false)} />
       <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={ride.points[ride.points.length - 1]} />
+      <Sheet open={renaming} title="Rename this ride" onClose={() => setRenaming(false)}>
+        <Field label="Name" value={draftName} onChangeText={setDraftName} maxLength={80} autoFocus returnKeyType="done" onSubmitEditing={() => { useRides.getState().renameRide(ride.id, draftName); setRenaming(false); }} />
+        <Button label="Save name" disabled={!draftName.trim()} onPress={() => { useRides.getState().renameRide(ride.id, draftName); setRenaming(false); }} />
+      </Sheet>
       <Sheet open={tripOpen} title="Add to a trip" onClose={() => setTripOpen(false)}>
         {trips.map((t) => <Button key={t.id} variant="soft" label={t.rideIds.includes(ride.id) ? `${t.name} · added` : t.name} onPress={() => { useTrips.getState().addRide(t.id, ride.id); setTripOpen(false); }} />)}
         <Button label="Start a new trip with this ride" onPress={() => { const id = useTrips.getState().create(ride.name, ride.id); setTripOpen(false); router.push(`/trips/${id}`); }} />
@@ -60,7 +68,7 @@ function StoryBody() {
         <Button variant="soft" label="Keep it" onPress={() => setConfirmDelete(false)} />
       </Sheet>
     </>}>
-      <BackHeader title="Ride story" />
+      <BackHeader title="Ride story" right={<IconButton icon={Pencil} label="Rename this ride" onPress={() => { setDraftName(ride.name); setRenaming(true); }} plain />} />
       <PageTitle sub={formatDate(new Date(ride.startedAt).toISOString().slice(0, 10)) + (ride.sample ? ' · sample' : '')}>{ride.name}</PageTitle>
       <Columns
         left={<>
