@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { versionLabel } from "@moto-trails/domain";
+import pkg from "../../package.json";
 import { SiteFooter } from "./SiteFooter";
 
 describe("SiteFooter", () => {
@@ -23,7 +25,8 @@ describe("SiteFooter", () => {
   });
   it("shows the version and Proudly made in India", () => {
     const { container } = render(<SiteFooter />);
-    expect(container.textContent).toContain("v0.0.0");
+    expect(container.textContent).toContain(versionLabel(pkg.version)); // follows the release bot, so no edit per release
+    expect(versionLabel(pkg.version)).toMatch(/^v\d+\.\d+\.\d+/);
     expect(container.textContent).toContain("Proudly made in India");
   });
   it("links to About, Terms and Privacy", () => {
