@@ -1,7 +1,7 @@
 // Every package and the phone app carry one product version, recorded in .release-please-manifest.json.
 // The release bot (see docs/versioning.md) bumps them together; this stops a hand edit from letting one drift.
 import { readFileSync } from "node:fs";
-import { findVersionDrift } from "./find-version-drift.ts";
+import { findVersionDrift, plistVersion } from "./find-version-drift.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const read = (path) => JSON.parse(readFileSync(root + path, "utf8"));
@@ -16,6 +16,9 @@ const files = [
   ["packages/tokens/package.json", (j) => j.version],
   ["tooling/package.json", (j) => j.version],
 ].map(([path, pick]) => ({ path, version: pick(read(path)) }));
+// The iOS build reads its version from Info.plist, not from app.json.
+const plist = "apps/mobile/ios/Myto/Info.plist";
+files.push({ path: plist, version: plistVersion(readFileSync(root + plist, "utf8")) });
 
 const drift = findVersionDrift(manifest, files);
 if (drift.length) {

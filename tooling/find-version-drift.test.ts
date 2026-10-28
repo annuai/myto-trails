@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findVersionDrift, isSemver } from "./find-version-drift";
+import { findVersionDrift, isSemver, plistVersion } from "./find-version-drift";
 
 describe("isSemver", () => {
   it("accepts MAJOR.MINOR.PATCH, with an optional pre-release, and nothing looser", () => {
@@ -26,5 +26,22 @@ describe("findVersionDrift", () => {
 
   it("refuses a manifest version that is not semantic", () => {
     expect(findVersionDrift("0.8", files)).toEqual(['the manifest version "0.8" is not MAJOR.MINOR.PATCH']);
+  });
+});
+
+describe("plistVersion", () => {
+  const plist = (v: string) => `<dict>
+\t<key>CFBundleShortVersionString</key>
+\t<string>${v}</string>
+\t<key>CFBundleVersion</key>
+\t<string>1</string>
+</dict>`;
+
+  it("reads the marketing version, not the build number", () => {
+    expect(plistVersion(plist("0.8.0"))).toBe("0.8.0");
+  });
+
+  it("is undefined when the key is missing", () => {
+    expect(plistVersion("<dict><key>CFBundleVersion</key><string>1</string></dict>")).toBeUndefined();
   });
 });
