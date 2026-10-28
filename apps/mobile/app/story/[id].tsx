@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Download, Trash2, Upload } from 'lucide-react-native';
+import { BookOpen, Download, Trash2, Upload } from 'lucide-react-native';
+import { useJournal } from '@/store/journal';
+import { Sheet } from '@/ui/Sheet';
 import { exportGpx } from '@/lib/exportGpx';
 import { buildGpx } from '@/lib/gpx';
 import { segmentsOf, trackStats } from '@/lib/track';
@@ -30,11 +33,20 @@ function StoryBody() {
   const router = useRouter();
   const { c } = useTheme();
   const ride = useRides((s) => s.rides.find((r) => r.id === id));
+  const journalCount = useJournal((s) => s.entries.filter((e) => e.rideKey === ride?.startedAt).length);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   if (!ride) return <Screen><BackHeader /><Text>Ride not found.</Text></Screen>;
+  const deleteRide = () => { useJournal.getState().removeForRide(ride.startedAt); useRides.getState().removeRide(ride.id); router.replace('/rides'); };
   const sub = ride.submission;
   const gapM = trackStats(segmentsOf(ride.points, ride.breaks)).gapM;
   return (
-    <Screen>
+    <Screen overlay={
+      <Sheet open={confirmDelete} title="Delete this ride?" onClose={() => setConfirmDelete(false)}>
+        <Text variant="label" tone="muted">The ride and its journal ({journalCount} {journalCount === 1 ? 'entry' : 'entries'}, with their photos and voice notes) are removed from this phone. This cannot be undone.</Text>
+        <Button variant="danger" icon={Trash2} label="Delete ride and journal" onPress={deleteRide} />
+        <Button variant="soft" label="Keep it" onPress={() => setConfirmDelete(false)} />
+      </Sheet>
+    }>
       <BackHeader title="Ride story" />
       <PageTitle sub={formatDate(new Date(ride.startedAt).toISOString().slice(0, 10)) + (ride.sample ? ' · sample' : '')}>{ride.name}</PageTitle>
       <Columns
@@ -62,8 +74,9 @@ function StoryBody() {
       ) : null}
       <View style={{ gap: 12, marginTop: sub ? 12 : 0 }}>
         <Button icon={Upload} label={sub ? 'Upload again' : 'Upload to Moto Trails'} arrow onPress={() => router.push(`/story/submit?id=${ride.id}`)} />
+        <Button variant="soft" icon={BookOpen} label={journalCount ? `Journal · ${journalCount}` : 'Journal'} onPress={() => router.push(`/journal/${ride.startedAt}`)} />
         <Button variant="soft" icon={Download} label="Export GPX file" onPress={() => exportGpx(ride.name, buildGpx(ride.name, ride.points, ride.waypoints, ride.breaks))} />
-        <Button variant="danger" icon={Trash2} label="Delete this ride" onPress={() => { useRides.getState().removeRide(ride.id); router.replace('/rides'); }} />
+        <Button variant="danger" icon={Trash2} label="Delete this ride" onPress={() => (journalCount ? setConfirmDelete(true) : deleteRide())} />
       </View>
         </>}
       />

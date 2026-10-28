@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Camera, ClipboardList, Download, IdCard, LogIn, LogOut, Route as RouteIcon, Trash2, Upload } from 'lucide-react-native';
+import { BookOpen, Camera, ClipboardList, Download, IdCard, LogIn, LogOut, Route as RouteIcon, Trash2, Upload } from 'lucide-react-native';
 import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import { eraseDocumentPhotos } from '@/lib/backup/device';
@@ -13,6 +13,7 @@ import { distanceKm } from '@/lib/units';
 import { useProfile } from '@/store/profile';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
+import { useJournal } from '@/store/journal';
 import { Avatar } from '@/ui/Avatar';
 import { BikeCard } from '@/ui/BikeCard';
 import { Button } from '@/ui/Button';
@@ -30,6 +31,7 @@ export default function You() {
   const router = useRouter();
   const rides = useRides((s) => s.rides);
   const { licence, vehicle, contacts } = useProfile();
+  const journalCount = useJournal((s) => s.entries.length);
   const openTodos = useTodos((s) => s.todos.filter((t) => !t.done).length);
   const [confirm, setConfirm] = useState(false);
   const user = useAuth((s) => s.user);
@@ -109,6 +111,7 @@ export default function You() {
       <SectionTitle>Keep track</SectionTitle>
       <ListCard>
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
+        <Row icon={BookOpen} label="Ride journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />
         <Row icon={ClipboardList} label="To-do list" value={`${openTodos} open`} onPress={() => router.push('/todos')} />
         <Row icon={IdCard} label="Documents and emergency" sub={docs || 'Licence, vehicle, emergency contacts'} onPress={() => router.push('/documents')} />
       </ListCard>

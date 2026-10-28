@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Platform, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Flag, Pause, Phone, Play, Square, Siren } from 'lucide-react-native';
+import { Camera, Flag, Mic, Pause, PenLine, Phone, Play, Square, Siren } from 'lucide-react-native';
+import { NoteSheet } from '@/features/NoteSheet';
+import { useJournalActions } from '@/lib/useJournalActions';
 import { Banner } from '@/ui/Banner';
 import { clock } from '@/lib/format';
 import { finishRide } from '@/lib/finishRide';
@@ -46,6 +48,9 @@ function LiveBody() {
   const last = r.source === 'sim' ? lastPoint : fix ? { lat: fix.lat, lng: fix.lng } : lastPoint;
   const [, tick] = useState(0);
   const [sos, setSos] = useState(false);
+  const [journalOpen, setJournalOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const j = useJournalActions(r.startedAt);
   const stopping = useRef(false);
   useEffect(() => { const id = setInterval(() => tick((n) => n + 1), 1000); return () => clearInterval(id); }, []);
   useEffect(() => { if (r.status === 'idle' && !stopping.current) router.replace('/'); }, [r.status, router]);
@@ -103,20 +108,30 @@ function LiveBody() {
   );
 
   return (
-    <Screen scroll={false} overlay={
+    <Screen scroll={false} overlay={<>
+      <NoteSheet open={noteOpen} canType={j.canType} onSave={j.addNote} onClose={() => setNoteOpen(false)} />
+      <Sheet open={journalOpen} title="Ride journal" onClose={() => setJournalOpen(false)}>
+        <Button icon={j.recording ? Square : Mic} label={j.recording ? `Stop recording ${Math.floor(j.seconds / 60)}:${String(j.seconds % 60).padStart(2, '0')}` : 'Record a voice note'} onPress={() => void j.toggleVoice()} />
+        <Button variant="soft" icon={Camera} label="Take photo" onPress={() => void j.addPhoto('camera')} />
+        <Button variant="soft" icon={PenLine} label={j.canType ? 'Write a note' : 'Write a note (when stopped)'} onPress={() => { setJournalOpen(false); setNoteOpen(true); }} />
+        {j.problem ? <Text variant="label" tone="stop">{j.problem}</Text> : null}
+      </Sheet>
       <Sheet open={sos} title="SOS" onClose={() => setSos(false)}>
         <Text variant="label" tone="muted">Call for help. This does not replace emergency services.</Text>
         <Button label="Call 112 (emergency)" variant="danger" icon={Phone} onPress={() => Linking.openURL('tel:112')} />
         {contacts.map((c) => <Button key={c.id} variant="soft" icon={Phone} label={`${c.name}${c.primary ? ' (main)' : ''}`} onPress={() => Linking.openURL(`tel:${c.phone}`)} />)}
         {contacts.length === 0 ? <Text variant="label" tone="muted">No emergency contacts yet. Add them under You, Documents and emergency.</Text> : null}
       </Sheet>
-    }>
+    </>}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 48 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: r.paused ? c.muted : c.stop }} />
           <Text variant="labelMedium" tone="muted">{r.paused ? 'Paused' : r.source === 'sim' ? 'Recording (simulated)' : 'Recording'}</Text>
         </View>
-        <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+          <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Journal</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
+        </View>
       </View>
       {landscape ? (
         // Turned on its side (a handlebar mount): numbers on the left, map and big buttons on the right, no scrolling.

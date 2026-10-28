@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Camera, ClipboardList, MoreHorizontal, Route as RouteIcon, Trash2 } from 'lucide-react-native';
+import { BookOpen, Camera, ClipboardList, MoreHorizontal, Route as RouteIcon, Trash2 } from 'lucide-react-native';
+import { groupByRide, summarise } from '@/lib/journalEntries';
+import { journalDate, journalTitle } from '@/lib/journalTitle';
+import { useJournal } from '@/store/journal';
 import { toTrailLike } from '@/api/status';
 import { useTrailSearch } from '@/api/useApi';
 import { useTrailStore } from '@/store/trails';
@@ -53,6 +56,7 @@ export default function Home() {
   const dues = todos.map((t) => ({ t, d: dueInfo(t, km_) })).filter(({ d }) => d.state !== 'done').sort((a, b) => a.d.sortKey - b.d.sortKey);
   const overdue = dues.filter(({ d }) => d.state === 'overdue');
   const latest = rides[0];
+  const journals = groupByRide(useJournal((s) => s.entries)).slice(0, 3);
 
   return (
     <Screen tabs brand overlay={<>
@@ -136,6 +140,18 @@ export default function Home() {
         <Button variant="soft" label="View ride story" arrow onPress={() => router.push(`/story/${latest.id}`)} />
         <Button variant="soft" label="All rides" arrow onPress={() => router.push('/rides')} />
       </View> : null}
+
+      <SectionTitle>Recent journals</SectionTitle>
+      {journals.length ? (
+        <>
+          <ListCard>
+            {journals.map((g) => (
+              <Row key={g.rideKey} icon={BookOpen} label={journalTitle(g.rideKey, rides)} sub={`${journalDate(g.rideKey)} · ${summarise(g.entries)}`} onPress={() => router.push(`/journal/${g.rideKey}`)} />
+            ))}
+          </ListCard>
+          <View style={{ marginTop: 12 }}><Button variant="soft" label="All journals" arrow onPress={() => router.push('/journal')} /></View>
+        </>
+      ) : <EmptyState icon={BookOpen} title="No journals yet" body="Add a note, voice note or photo to a ride, even while you ride." />}
         </>}
       />
     </Screen>
