@@ -17,6 +17,7 @@ import { Field } from '@/ui/Field';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { TimeStepper } from '@/ui/TimeStepper';
+import { space } from '@/theme/tokens';
 
 const minutesOf = (t: number) => { const d = new Date(t); return d.getHours() * 60 + d.getMinutes(); };
 const shareLink = (name: string, expectedAt: number, url: string) =>
@@ -77,7 +78,7 @@ export function CheckinSheet({ open, onClose }: { open: boolean; onClose: () => 
             {checkinStatus(Date.now(), checkin.expectedAt) === 'overdue' ? `${checkin.contactName} can see you are overdue.` : `${checkin.contactName} will be able to see where you were last seen if you are not back by ${clockLabel(minutesOf(checkin.expectedAt))}.`}
           </Text>
           <Button icon={Share2} label="Share the link again" onPress={() => void shareLink(riderName ?? 'A rider', checkin.expectedAt, checkin.url)} />
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flexDirection: 'row', gap: space[2] }}>
             <ChoiceChip label="+30 min" onPress={() => void extend(30 * 60_000)} />
             <ChoiceChip label="+1 hour" onPress={() => void extend(60 * 60_000)} />
             <ChoiceChip label="+2 hours" onPress={() => void extend(120 * 60_000)} />
@@ -93,13 +94,13 @@ export function CheckinSheet({ open, onClose }: { open: boolean; onClose: () => 
         <>
           <Text variant="label" tone="muted">If you have not ended your ride by this time, the person you choose can see where you were last seen. Your position stays private until then.</Text>
           <Text variant="labelMedium">Tell</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
             {contacts.map((c) => <ChoiceChip key={c.id} label={c.name} selected={c.id === contactId} onPress={() => setContactId(c.id)} />)}
           </View>
           <Text variant="labelMedium">Be back by</Text>
           <TimeStepper label="Be back by" value={minutes} onChange={setMinutes} />
           <Field label="Their email (optional)" hint="They get an email too if you are overdue." value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
-          <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flexDirection: 'row', gap: space[2] }}>
             <ChoiceChip icon={BellRing} label="Share my live position" selected={live} onPress={() => setLive(!live)} />
           </View>
           <Button label="Start check-in and share link" disabled={busy || !contact} onPress={() => void create()} />

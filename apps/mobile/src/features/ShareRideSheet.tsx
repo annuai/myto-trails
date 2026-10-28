@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Share, View } from 'react-native';
 import { Image as ImageIcon, Link2 } from 'lucide-react-native';
 import { createSharedRoute } from '@/api/sharedRoutes';
-import { layoutCardMap, mapBoxOf } from '@/lib/cardMap';
+import { layoutAreaMap, layoutCardMap, mapBoxOf } from '@/lib/cardMap';
 import { forSharing } from '@/lib/privacy';
 import { buildRideCard, CARD_SIZE, MAX_CARD_STATS, type CardFormat, type CardStat } from '@/lib/rideCard';
 import { buildSharedRoute } from '@/lib/shareRoute';
@@ -17,6 +17,7 @@ import { ChoiceChip } from '@/ui/Chip';
 import { RideCard } from '@/ui/RideCard';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import { space } from '@/theme/tokens';
 
 const FORMATS: { key: CardFormat; label: string }[] = [{ key: 'story', label: 'Story' }, { key: 'post', label: 'Post' }, { key: 'square', label: 'Square' }];
 const STATS: { key: CardStat; label: string }[] = [{ key: 'distance', label: 'Distance' }, { key: 'time', label: 'Time' }, { key: 'topSpeed', label: 'Top speed' }, { key: 'waypoints', label: 'Waypoints' }, { key: 'elevation', label: 'Climb' }];
@@ -43,7 +44,16 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
     [ride, card.format, card.stats, hideRoute, fullRoute, gain],
   );
   const full = CARD_SIZE[card.format];
-  const map = useMemo(() => (model.geoRoute ? layoutCardMap(model.geoRoute, mapBoxOf(model)) : null), [model]);
+  // The route over its map; or, when the route is hidden (too short to trim, or hidden by the rider), the map of the area alone.
+  // Hiding the route also drops the map: nothing about where the ride was is shown.
+  const map = useMemo(() => {
+    if (hideRoute) return null;
+    if (model.geoRoute) return layoutCardMap(model.geoRoute, mapBoxOf(model));
+    const p = ride.points;
+    if (!p.length) return null;
+    const centre = { lat: p.reduce((n, x) => n + x.lat, 0) / p.length, lng: p.reduce((n, x) => n + x.lng, 0) / p.length };
+    return layoutAreaMap(centre, mapBoxOf(model));
+  }, [model, hideRoute, ride.points]);
   // A new map (another size, another route) has to load its tiles again before the picture can be saved.
   const mapKey = map ? `${map.zoom}:${map.tiles.map((t) => t.url).join('|')}` : 'none';
   const mapReady = readyKey === mapKey;
@@ -67,11 +77,11 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   return (
     <Sheet open={open} title="Share this ride" onClose={onClose}>
       <View style={{ alignItems: 'center' }}><RideCard key={`p${mapKey}`} model={model} width={PREVIEW_W} map={map} /></View>
-      {tooShort && !fullRoute && !hideRoute ? <Text variant="caption" tone="muted">This ride is short, so its route is hidden to keep your start private. Turn on Show whole route to include it.</Text> : null}
-      <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center' }}>
+      {tooShort && !fullRoute && !hideRoute ? <Text variant="caption" tone="muted">This ride is short, so its route is left off the map to keep your start private. Turn on Show whole route to draw it.</Text> : null}
+      <View style={{ flexDirection: 'row', gap: space[2], justifyContent: 'center' }}>
         {FORMATS.map((f) => <ChoiceChip key={f.key} label={f.label} selected={card.format === f.key} onPress={() => useCompanion.getState().setCard({ format: f.key })} />)}
       </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
         {STATS.map((s) => <ChoiceChip key={s.key} label={s.label} selected={card.stats.includes(s.key)} onPress={() => toggle(s.key)} />)}
         <ChoiceChip label="Hide route" selected={hideRoute} onPress={() => setHideRoute(!hideRoute)} />
         {tooShort ? <ChoiceChip label="Show whole route" selected={fullRoute} onPress={() => setFullRoute(!fullRoute)} /> : null}

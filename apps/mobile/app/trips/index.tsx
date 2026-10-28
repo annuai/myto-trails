@@ -1,44 +1,43 @@
 import { useState } from 'react';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Luggage } from 'lucide-react-native';
+import { CalendarClock, Luggage } from 'lucide-react-native';
+import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
+import { todayISO } from '@/lib/dates';
+import { rangeText, tripStatus, whenText } from '@/lib/tripPlan';
 import { tripTotals } from '@/lib/trips';
 import { asText, distanceKm } from '@/lib/units';
 import { useRides } from '@/store/rides';
-import { useTrips } from '@/store/trips';
+import { useTrips, type Trip } from '@/store/trips';
+import { space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
 import { EmptyState } from '@/ui/EmptyState';
-import { Field } from '@/ui/Field';
-import { BackHeader, PageTitle } from '@/ui/Header';
+import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
-import { Sheet } from '@/ui/Sheet';
 
-/** Trips: several days of riding gathered into one story. */
+/** Trips: planned ahead with a date and days, then ridden. Coming up first, finished and older ones below. */
 export default function Trips() {
   const router = useRouter();
   const trips = useTrips((s) => s.trips);
   const rides = useRides((s) => s.rides);
-  const [naming, setNaming] = useState(false);
-  const [name, setName] = useState('');
-  const create = () => { const id = useTrips.getState().create(name); setNaming(false); setName(''); router.push(`/trips/${id}`); };
+  const [planning, setPlanning] = useState(false);
+  const today = todayISO();
+  const ahead = trips.filter((t) => ['active', 'ready', 'upcoming'].includes(tripStatus(t, today))).sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''));
+  const past = trips.filter((t) => !ahead.includes(t));
+  const row = (t: Trip) => {
+    const km = tripTotals(rides.filter((r) => t.rideIds.includes(r.id))).distanceKm;
+    const when = whenText(t, today);
+    return <Row key={t.id} icon={t.startDate ? CalendarClock : Luggage} label={t.name} sub={[rangeText(t), when].filter(Boolean).join(' · ') || undefined} value={km ? asText(distanceKm(km)) : undefined} mono onPress={() => router.push(`/trips/${t.id}`)} />;
+  };
   return (
-    <Screen overlay={
-      <Sheet open={naming} title="New trip" onClose={() => setNaming(false)}>
-        <Field label="Name" value={name} onChangeText={setName} placeholder="Ladakh in September" maxLength={60} />
-        <Button label="Create trip" onPress={create} />
-      </Sheet>
-    }>
+    <Screen overlay={<PlanTripSheet open={planning} onClose={() => setPlanning(false)} onCreated={(id) => router.push(`/trips/${id}`)} />}>
       <BackHeader title="You" />
-      <PageTitle sub="Add each day's ride from its story, and the trip shows all of it together.">Trips</PageTitle>
-      {trips.length ? (
-        <ListCard>
-          {trips.map((t) => {
-            const t2 = tripTotals(rides.filter((r) => t.rideIds.includes(r.id)));
-            return <Row key={t.id} icon={Luggage} label={t.name} sub={`${t2.days} ${t2.days === 1 ? 'day' : 'days'}`} value={asText(distanceKm(t2.distanceKm))} mono onPress={() => router.push(`/trips/${t.id}`)} />;
-          })}
-        </ListCard>
-      ) : <EmptyState icon={Luggage} title="No trips yet" body="Make one, then add your rides to it from each ride's story." />}
-      <Button label="New trip" onPress={() => setNaming(true)} />
+      <PageTitle sub="Pick a start date and the days. You start the trip yourself on its first day, and it records from there.">Trips</PageTitle>
+      {trips.length === 0 ? <EmptyState icon={Luggage} title="No trips yet" body="Plan one with a date, a route for each day and a packing list." /> : null}
+      {ahead.length ? <><SectionTitle>Coming up</SectionTitle><ListCard>{ahead.map(row)}</ListCard></> : null}
+      {past.length ? <><SectionTitle>Finished and earlier</SectionTitle><ListCard>{past.map(row)}</ListCard></> : null}
+      <View style={{ marginTop: space[8] }}><Button label="Plan a trip" onPress={() => setPlanning(true)} /></View>
     </Screen>
   );
 }

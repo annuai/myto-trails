@@ -3,6 +3,7 @@ import { Image, View } from 'react-native';
 import Svg, { G, Path, Polyline, Text as SvgText, TSpan } from 'react-native-svg';
 import { ATTRIBUTION, CARD_PAD, mapBoxOf, TILE, type CardMapLayout } from '@/lib/cardMap';
 import type { CardModel } from '@/lib/rideCard';
+import { cardTokens } from '@/lib/rideCard.tokens';
 import { fixed } from '@/theme/tokens';
 import { LOGO_PATHS, LOGO_RATIO, LOGO_VIEWBOX } from './logoPaths';
 
@@ -48,12 +49,12 @@ export const RideCard = forwardRef<ComponentRef<typeof View>, { model: CardModel
   return (
     <View ref={ref} collapsable={false} style={{ width, height: (width * H) / W, backgroundColor: fixed.ink, overflow: 'hidden' }}>
       {map ? (
-        <View style={{ position: 'absolute', left: box.x * k, top: box.y * k, width: box.width * k, height: box.height * k, borderRadius: 28 * k, overflow: 'hidden', backgroundColor: fixed.mapNight }}>
+        <View style={{ position: 'absolute', left: box.x * k, top: box.y * k, width: box.width * k, height: box.height * k, borderRadius: cardTokens.mapRadius * k, overflow: 'hidden', backgroundColor: fixed.mapNight }}>
           {map.tiles.map((t) => <Image key={t.url + t.left + t.top} source={{ uri: t.url }} onLoad={tileDone} onError={tileDone} style={{ position: 'absolute', left: t.left * k, top: t.top * k, width: Math.ceil(TILE * k) + 1, height: Math.ceil(TILE * k) + 1 }} />)}
-          <View style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: fixed.ink, opacity: 0.3 }} />
+          <View style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: fixed.ink, opacity: cardTokens.mapTint }} />
         </View>
       ) : null}
-      <Svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`}>
+      <Svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} style={{ position: 'absolute', left: 0, top: 0 }}>
         <SvgText x={PAD} y={PAD + 70} fill={fixed.white} fontFamily="Geist_600SemiBold" fontSize={72}>{model.title.length > 22 ? `${model.title.slice(0, 21)}…` : model.title}</SvgText>
         <SvgText x={PAD} y={PAD + 130} fill={fixed.white} fillOpacity={FAINT} fontFamily="Geist_500Medium" fontSize={36}>{model.date}</SvgText>
         {map ? (

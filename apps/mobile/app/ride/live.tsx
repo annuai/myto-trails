@@ -11,6 +11,7 @@ import { distanceToLine, startFollow, stepFollow } from '@/lib/routeFollow';
 import { WAYPOINT_KINDS, WAYPOINT_LABEL } from '@/lib/waypointKinds';
 import { useCompanion } from '@/store/companion';
 import { useMyRoutes } from '@/store/myRoutes';
+import { useTrips } from '@/store/trips';
 import { ChoiceChip } from '@/ui/Chip';
 import { useJournalActions } from '@/lib/useJournalActions';
 import { Banner } from '@/ui/Banner';
@@ -33,7 +34,7 @@ import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { Pressable } from 'react-native';
 import { Icon } from '@/ui/Icon';
-import { fixed, radius } from '@/theme/tokens';
+import { fixed, radius, size, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 /** Live riding: dark, no tab bar, big numbers, nothing that needs text input. */
@@ -92,6 +93,8 @@ function LiveBody() {
     stopping.current = true;
     // If the ride could not be written, it stays on the phone and Home offers it back for saving.
     const id = await finishRide().catch(() => undefined);
+    // A ride recorded while a trip is under way belongs to it.
+    if (id) useTrips.getState().attachToActive(id);
     router.replace(id ? `/story/${id}` : '/');
   };
 
@@ -120,11 +123,11 @@ function LiveBody() {
       {lostSignal ? <Banner eyebrow="GPS" title="Lost GPS signal, still recording" /> : null}
       {off ? <Banner eyebrow="Route" title="You are off the route" /> : null}
       {dropAt && Date.now() - dropAt < 6000 && r.waypoints.length ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
           {WAYPOINT_KINDS.map((k) => <ChoiceChip key={k} label={WAYPOINT_LABEL[k]} onPress={() => { void r.retypeLastWaypoint(k); setDropAt(0); }} />)}
         </View>
       ) : null}
-      {checkin ? <Pressable accessibilityRole="button" onPress={() => setCheckinOpen(true)} style={{ minHeight: 40, justifyContent: 'center' }}><Text variant="label" tone="muted">Check-in on · back by {clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}</Text></Pressable> : null}
+      {checkin ? <Pressable accessibilityRole="button" onPress={() => setCheckinOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="label" tone="muted">Check-in on · back by {clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}</Text></Pressable> : null}
       {live.regroup ? <Banner eyebrow="Group" title="The leader dropped a regroup pin" onPress={() => setGroupOpen(true)} /> : null}
       {foregroundOnly ? <Banner eyebrow="Heads up" title="Recording stops if you lock the phone. Tap to allow Always in Settings." onPress={() => void Linking.openSettings()} /> : null}
       {r.source === 'gps' && !fix && gpsError ? <Text variant="label" tone="caution">{gpsError}</Text>
@@ -132,13 +135,13 @@ function LiveBody() {
     </View>
   );
   const pauseBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel={r.paused ? 'Resume ride' : 'Pause ride'} onPress={() => void (r.paused ? r.resume() : r.pause())} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: r.paused ? c.accent : pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: 6 })}>
+    <Pressable accessibilityRole="button" accessibilityLabel={r.paused ? 'Resume ride' : 'Pause ride'} onPress={() => void (r.paused ? r.resume() : r.pause())} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: r.paused ? c.accent : pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
       <Icon icon={r.paused ? Play : Pause} size={h > 70 ? 26 : 22} />
       <Text variant="labelMedium" style={r.paused ? { color: c.accentInk } : undefined}>{r.paused ? 'Resume' : 'Pause'}</Text>
     </Pressable>
   );
   const waypointBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => void useRecorder.getState().addWaypoint().then(() => setDropAt(Date.now()))} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: 6 })}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => void useRecorder.getState().addWaypoint().then(() => setDropAt(Date.now()))} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
       <Icon icon={Flag} size={h > 70 ? 26 : 22} /><Text variant="labelMedium">Waypoint{r.waypoints.length ? ` · ${r.waypoints.length}` : ''}</Text>
     </Pressable>
   );
@@ -149,7 +152,7 @@ function LiveBody() {
   );
 
   const smallBtn = (label: string, icon: typeof Users, onPress: () => void, h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' })}>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, flexDirection: 'row', gap: space[3], alignItems: 'center', justifyContent: 'center' })}>
       <Icon icon={icon} size={22} /><Text variant="bodyMedium">{label}</Text>
     </Pressable>
   );
@@ -181,10 +184,10 @@ function LiveBody() {
           <Text variant="labelMedium" tone="muted">{r.paused ? 'Paused' : r.source === 'sim' ? 'Recording (simulated)' : 'Recording'}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
-          {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
-          {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">{group ? 'Group' : 'Group ride'}</Text></Pressable> : null}
-          <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Journal</Text></Pressable>
-          <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: 48, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
+          {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
+          {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">{group ? 'Group' : 'Group ride'}</Text></Pressable> : null}
+          <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Journal</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
         </View>
       </View>
       {landscape ? (
@@ -205,7 +208,7 @@ function LiveBody() {
           <View style={{ marginTop: 12 }}>{status}</View>
           <View style={{ flex: 1 }} />
           <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(88)}{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} onComplete={stop} /></View>
-          <View style={{ marginTop: 12, flexDirection: 'row', gap: 12 }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn(group ? 'Group' : 'Group ride', Users, () => setGroupOpen(true), 56)}</View>
+          <View style={{ marginTop: space[3], flexDirection: 'row', gap: space[3] }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn(group ? 'Group' : 'Group ride', Users, () => setGroupOpen(true), 56)}</View>
         </>
       )}
     </Screen>

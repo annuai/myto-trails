@@ -10,7 +10,7 @@ export type Reminder = { id: string; fireAt: number; title: string; body: string
 export type PlanInput = {
   now: number; todos: Todo[]; appKm: number; prefs: ReminderPrefs;
   /** The planned trip. `iso` is its date (YYYY-MM-DD); a trip with no date (the rider chose "Ride this trail") gets no reminders. */
-  trip?: { slug: string; name: string; iso?: string };
+  trip?: { slug: string; name: string; iso?: string; /** Where a tap on its notification goes. Defaults to the trail page for `slug`. */ route?: string; /** Set for a planned trip: its pack to-dos are counted, and each of its days gets a morning reminder. */ tripId?: string; days?: { iso: string; title: string }[] };
   /** Set while a ride recording is paused. */
   paused?: { since: number };
 };
@@ -29,7 +29,8 @@ function todoReminders(todos: Todo[]): Reminder[] {
   const out: Reminder[] = [];
   for (const t of todos) {
     const due = dueDate(t);
-    if (t.done || !due) continue;
+    // A trip's pack to-dos are covered by the trip's own reminders (one evening-before nudge with the count), not one each.
+    if (t.done || !due || t.tripId) continue;
     const steps: [number, string, string][] = [[-1, 'is due tomorrow', 'A to-do is due tomorrow'], [0, 'is due today', 'A to-do is due today'], [1, 'is overdue', 'A to-do is overdue']];
     if (t.category === 'document') steps.unshift([-7, 'is due in a week', 'A to-do is due in a week']);
     for (const [offset, text, lock] of steps) {
@@ -40,15 +41,17 @@ function todoReminders(todos: Todo[]): Reminder[] {
 }
 
 function tripReminders(trip: NonNullable<PlanInput['trip']>, todos: Todo[]): Reminder[] {
-  const route = `/trail/${trip.slug}`;
+  const route = trip.route ?? `/trail/${trip.slug}`;
   if (!trip.iso) return [];
-  const packs = todos.filter((t) => t.category === 'pack');
+  const packs = todos.filter((t) => t.category === 'pack' && (trip.tripId ? t.tripId === trip.tripId : !t.tripId));
   const left = packs.filter((t) => !t.done).length;
   const body = !packs.length ? 'Check your list before you go' : left ? `${left} of ${packs.length} things still to pack` : 'All packed';
-  return [
-    { id: `trip:${trip.slug}:${trip.iso}:eve`, fireAt: at(addDays(trip.iso, -1), 21), title: `Tomorrow: ${trip.name}`, body, lock: 'You have a ride planned tomorrow', route, kind: 'trip' },
-    { id: `trip:${trip.slug}:${trip.iso}:day`, fireAt: at(trip.iso, 7, 30), title: `Ride day: ${trip.name}`, body: 'Have a safe one', lock: 'You have a ride planned today', route, kind: 'trip' },
-  ];
+  const eve: Reminder = { id: `trip:${trip.slug}:${trip.iso}:eve`, fireAt: at(addDays(trip.iso, -1), 21), title: `Tomorrow: ${trip.name}`, body, lock: 'You have a ride planned tomorrow', route, kind: 'trip' };
+  // One morning reminder for each day of a trip with days; a plain planned trail has just the one.
+  const mornings: Reminder[] = trip.days?.length
+    ? trip.days.map((d, i) => ({ id: `trip:${trip.slug}:${trip.iso}:day${i}`, fireAt: at(d.iso, 7, 30), title: trip.days!.length > 1 ? `Day ${i + 1} of ${trip.days!.length}: ${trip.name}` : `Ride day: ${trip.name}`, body: d.title, lock: 'You have a ride planned today', route, kind: 'trip' as const }))
+    : [{ id: `trip:${trip.slug}:${trip.iso}:day`, fireAt: at(trip.iso, 7, 30), title: `Ride day: ${trip.name}`, body: 'Have a safe one', lock: 'You have a ride planned today', route, kind: 'trip' as const }];
+  return [eve, ...mornings];
 }
 
 /** Every reminder that should be scheduled from now on, soonest first. Pure: it depends only on its input. */

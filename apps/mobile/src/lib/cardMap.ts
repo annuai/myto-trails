@@ -40,6 +40,28 @@ export function layoutCardMap(route: LatLng[], box: { width: number; height: num
   return { zoom, tiles, points: route.map((p) => ({ x: worldX(p.lng, zoom) - left, y: worldY(p.lat, zoom) - top })) };
 }
 
+/** City level: wide enough that it does not point at a street, so it is safe to show for a ride whose own route is hidden. */
+export const AREA_ZOOM = 12;
+
+/**
+ * The map of the area around a ride, with no route on it. Used when the route itself is hidden (a ride too short to trim, or the
+ * rider hid it), so the card still shows where in the world the ride was without showing where it started.
+ */
+export function layoutAreaMap(center: LatLng, box: { width: number; height: number }, template: string = TILE_URL): CardMapLayout {
+  const zoom = AREA_ZOOM;
+  const left = worldX(center.lng, zoom) - box.width / 2, top = worldY(center.lat, zoom) - box.height / 2;
+  const n = 2 ** zoom;
+  const tiles: MapTile[] = [];
+  for (let ty = Math.floor(top / TILE); ty <= Math.floor((top + box.height) / TILE); ty++) {
+    if (ty < 0 || ty >= n) continue;
+    for (let tx = Math.floor(left / TILE); tx <= Math.floor((left + box.width) / TILE); tx++) {
+      const wrapped = ((tx % n) + n) % n;
+      tiles.push({ url: template.replace('{z}', String(zoom)).replace('{x}', String(wrapped)).replace('{y}', String(ty)), left: tx * TILE - left, top: ty * TILE - top });
+    }
+  }
+  return { zoom, tiles, points: [] };
+}
+
 /** The rectangle on the card where the map goes, in card pixels. The card's padding is the same on every side. */
 export const CARD_PAD = 88;
 export const mapBoxOf = (card: { width: number; height: number }) => ({ x: CARD_PAD, y: card.height * 0.2, width: card.width - CARD_PAD * 2, height: Math.min(card.width - CARD_PAD * 2, card.height * 0.46) });

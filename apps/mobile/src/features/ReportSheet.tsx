@@ -9,6 +9,7 @@ import { useTrailStore } from '@/store/trails';
 import { ChoiceChip } from '@/ui/Chip';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import { space } from '@/theme/tokens';
 
 /** The few trails nearest a position, so a report can say which trail it is about without the rider typing anything. */
 function useNearbyTrails(at: LatLng | undefined, enabled: boolean): TrailSummary[] {
@@ -55,12 +56,12 @@ export function ReportSheet({ open, onClose, at }: { open: boolean; onClose: () 
       ) : (
         <>
           {choices.length > 1 ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
               {choices.map((t) => <ChoiceChip key={t.slug} label={t.name} selected={t.slug === target} onPress={() => setSlug(t.slug)} />)}
             </View>
           ) : <Text variant="labelMedium">{choices[0]!.name}</Text>}
           <Text variant="label" tone="muted">What is it like right now?</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
             {CONDITION_CHOICES.map((c) => <ChoiceChip key={c.kind} label={c.label} onPress={() => send(c.kind)} />)}
           </View>
         </>

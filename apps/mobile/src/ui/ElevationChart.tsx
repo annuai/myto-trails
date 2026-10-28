@@ -4,6 +4,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '@/theme/ThemeProvider';
 import { asText, distanceKm, elevationM } from '@/lib/units';
 import { Text } from './Text';
+import { space } from '@/theme/tokens';
 
 /** Height against distance along a route: a filled line, with the lowest and highest point and the length written under it. */
 export function ElevationChart({ samples, height = 96 }: { samples: { d: number; e: number }[]; height?: number }) {
@@ -17,7 +18,7 @@ export function ElevationChart({ samples, height = 96 }: { samples: { d: number;
   const y = (e: number) => height - ((e - minE) / span) * (height - 8) - 4;
   const line = samples.map((s, i) => `${i ? 'L' : 'M'}${x(s.d).toFixed(1)},${y(s.e).toFixed(1)}`).join(' ');
   return (
-    <View style={{ gap: 6 }} accessibilityRole="image" accessibilityLabel={`Elevation from ${Math.round(minE)} to ${Math.round(maxE)} metres over ${lastD.toFixed(0)} kilometres`}>
+    <View style={{ gap: space[2] }} accessibilityRole="image" accessibilityLabel={`Elevation from ${Math.round(minE)} to ${Math.round(maxE)} metres over ${lastD.toFixed(0)} kilometres`}>
       <View style={{ height }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
         {w > 0 ? (
           <Svg width={w} height={height}>
