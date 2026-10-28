@@ -56,7 +56,11 @@ export default function RideReady() {
   ];
   if (trail) checks.push(offline[trail.slug] ? { label: `Offline pack: ${trail.name}`, status: 'good', word: 'Ready' } : { label: `Offline pack: ${trail.name}`, status: 'caution', word: 'Not downloaded', go: `/trail/${trail.slug}` });
 
-  const start = () => { if (!running) useRecorder.getState().start(source); router.replace('/ride/live'); };
+  const start = async () => {
+    // false means an unfinished ride is still on disk: go home, where it is offered for saving or discarding.
+    const ok = running || (await useRecorder.getState().start(source));
+    router.replace(ok ? '/ride/live' : '/');
+  };
 
   return (
     <Screen footer={<Button big variant="accent" label={running ? 'Back to your ride' : 'Start ride'} onPress={start} />}>

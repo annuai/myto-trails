@@ -47,7 +47,7 @@ function LiveBody() {
   useEffect(() => { const id = setInterval(() => tick((n) => n + 1), 1000); return () => clearInterval(id); }, []);
   useEffect(() => { if (r.status === 'idle' && !stopping.current) router.replace('/'); }, [r.status, router]);
 
-  const stop = () => { stopping.current = true; const id = finishRide(); router.replace(id ? `/story/${id}` : '/'); };
+  const stop = async () => { stopping.current = true; const id = await finishRide(); router.replace(id ? `/story/${id}` : '/'); };
 
   const stats = (
     <Card style={{ gap: landscape ? 12 : 20, paddingVertical: landscape ? 16 : 20 }}>
@@ -66,7 +66,7 @@ function LiveBody() {
   const status = r.source === 'gps' && !fix && gpsError ? <Text variant="label" tone="caution">{gpsError}</Text>
     : <Text variant="label" tone="muted" style={{ textAlign: landscape ? 'left' : 'center' }}>{r.points.length ? `${r.points.length} points recorded${fix?.accuracy ? ` · GPS ±${Math.round(fix.accuracy)} m` : ''}` : 'Waiting for a GPS fix…'}</Text>;
   const waypointBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => useRecorder.getState().addWaypoint()} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: 6 })}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => void useRecorder.getState().addWaypoint()} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: 6 })}>
       <Icon icon={Flag} size={h > 70 ? 26 : 22} /><Text variant="labelMedium">Waypoint{r.waypoints.length ? ` · ${r.waypoints.length}` : ''}</Text>
     </Pressable>
   );
