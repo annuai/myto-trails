@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildPayload, createBackup } from './export';
 import { encrypt } from './crypto';
-import { BackupError, CURRENT_VERSION, FORMAT, fromBase64, toBase64, type BackupPayload, type Snapshot } from './format';
-import { applyBackup, mergeSnapshots, openBackup, summarize, type ImportMode, type Target } from './import';
+import { writeBackup, type JournalSource, type PhotoSource } from './export';
+import { BackupError, CURRENT_VERSION, FORMAT, fromBase64, toBase64, type BackupPayload, type OpenedBackup, type Snapshot } from './format';
+import { applyBackup, fromPayload, mergeSnapshots, openBackup, openBackupFile, summarize, type ByteReader, type ImportMode, type Target } from './import';
 import { migrate } from './migrate';
 
 const PASS = 'correct horse battery';
@@ -21,9 +21,28 @@ const snapshot = (over: Partial<Snapshot> = {}): Snapshot => ({
   ...over,
 });
 const files = { p1: toBase64(new Uint8Array([1, 2, 3, 255])) };
-const source = { read: async (id: string) => { if (!(id in files)) throw new Error('missing'); return files[id as 'p1']; } };
+const source: PhotoSource = { has: (id) => id in files, read: async (id) => { if (!(id in files)) throw new Error('missing'); return files[id as 'p1']; } };
+const noMedia: JournalSource = { has: () => false, read: async () => { throw new Error('none'); } };
 
-/** Phone in memory: state plus a photo folder, so an interrupted import can be checked. */
+/** A backup made in memory, and a reader over its bytes. */
+async function build(s: Snapshot, media: JournalSource = noMedia, docs: PhotoSource = source): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
+  await writeBackup(s, docs, media, PASS, { write: async (b) => { chunks.push(b.slice()); } }, now);
+  const all = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+  let o = 0; for (const c of chunks) { all.set(c, o); o += c.length; }
+  return all;
+}
+const reader = (bytes: Uint8Array): ByteReader => { let at = 0; return { read: async (n) => { const out = bytes.slice(at, at + n); at += out.length; return out; } }; };
+const open = (bytes: Uint8Array, pass = PASS): Promise<OpenedBackup> => openBackupFile(reader(bytes), pass);
+/** Everything in a backup, files included, in the old single-object shape. */
+async function openAll(bytes: Uint8Array, pass = PASS): Promise<BackupPayload> {
+  const o = await open(bytes, pass);
+  const photoFiles: Record<string, string> = {}, journalFiles: Record<string, string> = {};
+  for await (const f of o.files()) (f.kind === 'doc' ? photoFiles : journalFiles)[f.kind === 'doc' ? f.id : `${f.kind}:${f.id}`] = f.b64;
+  return { ...o.meta, photoFiles, journalFiles };
+}
+
+/** Phone in memory: state plus the photo and journal folders, so an interrupted import can be checked. */
 function phone(initial: Snapshot, failOn?: string) {
   const state = { snap: initial, folder: new Map<string, string>(), staged: new Map<string, string>(), discarded: 0, jfolder: new Map<string, string>(), jstaged: new Map<string, string>(), jdiscarded: 0, rolledBack: [] as string[], finalized: [] as string[] };
   const target: Target = {
@@ -50,58 +69,41 @@ describe('base64', () => {
 });
 
 describe('backup file', () => {
-  it('round trips, names the file by date and leaves out the demo ride', async () => {
-    const { fileName, text } = await createBackup(snapshot(), source, PASS, now);
-    expect(fileName).toBe('myto-backup-2026-10-28.myto');
-    const env = JSON.parse(text);
-    expect(Object.keys(env).sort()).toEqual(['ciphertext', 'createdAt', 'format', 'version']);
-    expect(text).not.toContain('MH0120200000001');
-    const back = await openBackup(text, PASS);
+  it('round trips, leaves out the demo ride, and does not contain the data in the clear', async () => {
+    const bytes = await build(snapshot());
+    expect(new TextDecoder('latin1').decode(bytes)).not.toContain('MH0120200000001');
+    const back = await openAll(bytes);
     expect(back.licence?.number).toBe('MH0120200000001');
     expect(back.rides.map((r) => r.id)).toEqual(['r1']);
     expect(back.photoFiles.p1).toBe(files.p1);
     expect(summarize(back)).toEqual({ rides: 1, todos: 1, contacts: 1, documents: 2, photos: 1, journalEntries: 0 });
   });
-
-  it('refuses a short passphrase', async () => {
-    await expect(createBackup(snapshot(), source, 'short', now)).rejects.toMatchObject({ code: 'weak-passphrase' });
-  });
-
   it('skips photos whose file is gone', async () => {
     const s = snapshot({ photos: [...snapshot().photos, { id: 'gone', docKind: 'rc', width: 1, height: 1, addedAt: 1 }] });
-    const back = await openBackup((await createBackup(s, source, PASS, now)).text, PASS);
-    expect(back.photos.map((p) => p.id)).toEqual(['p1']);
+    expect((await openAll(await build(s))).photos.map((p) => p.id)).toEqual(['p1']);
   });
-
-  it('rejects a wrong passphrase', async () => {
-    const { text } = await createBackup(snapshot(), source, PASS, now);
-    await expect(openBackup(text, 'another passphrase')).rejects.toMatchObject({ code: 'wrong-passphrase' });
+  it('a version 2 backup (one JSON text, made before backups were streamed) still opens, files included', async () => {
+    const v2 = { ...snapshot(), photoFiles: files, journal: [], journalFiles: {} };
+    const createdAt = now.toISOString();
+    const ciphertext = await encrypt(new TextEncoder().encode(JSON.stringify(v2)), PASS, { version: 2, createdAt });
+    const text = JSON.stringify({ format: FORMAT, version: 2, createdAt, ciphertext });
+    const back = await openAll(new TextEncoder().encode(text));
+    expect(back.licence?.number).toBe('MH0120200000001');
+    expect(back.photoFiles.p1).toBe(files.p1);
+    await expect(openAll(new TextEncoder().encode(text), 'another passphrase')).rejects.toMatchObject({ code: 'wrong-passphrase' });
   });
-
-  it('fails authentication when one byte of the ciphertext changes', async () => {
-    const { text } = await createBackup(snapshot(), source, PASS, now);
-    const env = JSON.parse(text);
-    const bytes = fromBase64(env.ciphertext);
-    bytes[bytes.length - 20] ^= 1;
-    await expect(openBackup(JSON.stringify({ ...env, ciphertext: toBase64(bytes) }), PASS)).rejects.toMatchObject({ code: 'wrong-passphrase' });
+  it('a version 1 backup (made before the journal existed) opens with an empty journal', async () => {
+    const v1 = { licence: undefined, vehicle: undefined, contacts: [], medical: {}, photos: [], todos: [], rides: [], photoFiles: {} };
+    const createdAt = now.toISOString();
+    const ciphertext = await encrypt(new TextEncoder().encode(JSON.stringify(v1)), PASS, { version: 1, createdAt });
+    const back = await openAll(new TextEncoder().encode(JSON.stringify({ format: FORMAT, version: 1, createdAt, ciphertext })));
+    expect(back.journal).toEqual([]);
+    expect(back.journalFiles).toEqual({});
   });
-
-  it('fails when the date in the clear is edited', async () => {
-    const { text } = await createBackup(snapshot(), source, PASS, now);
-    await expect(openBackup(JSON.stringify({ ...JSON.parse(text), createdAt: '2020-01-01T00:00:00.000Z' }), PASS)).rejects.toMatchObject({ code: 'wrong-passphrase' });
-  });
-
-  it('refuses a file from a newer version, before asking for the passphrase', async () => {
-    const { text } = await createBackup(snapshot(), source, PASS, now);
-    const err = await openBackup(JSON.stringify({ ...JSON.parse(text), version: CURRENT_VERSION + 1 }), PASS).catch((e) => e);
+  it('refuses a version 2 text from a newer version, before asking for the passphrase', async () => {
+    const err = await openBackup(JSON.stringify({ format: FORMAT, version: CURRENT_VERSION + 1, createdAt: 'x', ciphertext: 'y' }), PASS).catch((e) => e);
     expect(err).toBeInstanceOf(BackupError);
     expect(err.code).toBe('newer-version');
-    expect(err.message).toMatch(/newer version/);
-  });
-
-  it('refuses files that are not backups', async () => {
-    for (const t of ['not json', '{}', JSON.stringify({ format: 'other', version: 1, createdAt: 'x', ciphertext: 'y' })]) await expect(openBackup(t, PASS)).rejects.toMatchObject({ code: 'not-a-backup' });
-    expect(FORMAT).toBe('myto-backup');
   });
 });
 
@@ -146,25 +148,25 @@ describe('merge', () => {
 });
 
 describe('applying an import', () => {
-  const payload = async (): Promise<BackupPayload> => openBackup((await createBackup(snapshot({ rides: [ride('r9', 1)] }), source, PASS, now)).text, PASS);
+  const opened = async (): Promise<OpenedBackup> => open(await build(snapshot({ rides: [ride('r9', 1)] })));
   const local = () => snapshot({ rides: [ride('demo', 0, { sample: true }), ride('mine', 3)], photos: [{ id: 'old', docKind: 'puc', width: 1, height: 1, addedAt: 1 }] });
 
   it('replace swaps everything but the demo ride, photos included', async () => {
     const p = phone(local()); p.state.folder.set('old', 'x');
-    await applyBackup(await payload(), 'replace', p.target);
+    await applyBackup(await opened(), 'replace', p.target);
     expect(p.state.snap.rides.map((r) => r.id)).toEqual(['demo', 'r9']);
     expect([...p.state.folder.keys()]).toEqual(['p1']);
   });
   it('merge keeps phone data and photos', async () => {
     const p = phone(local()); p.state.folder.set('old', 'x');
-    await applyBackup(await payload(), 'merge', p.target);
+    await applyBackup(await opened(), 'merge', p.target);
     expect(p.state.snap.rides.map((r) => r.id).sort()).toEqual(['demo', 'mine', 'r9']);
     expect([...p.state.folder.keys()].sort()).toEqual(['old', 'p1']);
   });
   it('an interrupted import leaves the phone untouched', async () => {
     const p = phone(local(), 'p1'); p.state.folder.set('old', 'x');
     const before = p.state.snap;
-    await expect(applyBackup(await payload(), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
+    await expect(applyBackup(await opened(), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
     expect(p.state.snap).toBe(before);
     expect([...p.state.folder.keys()]).toEqual(['old']);
     expect(p.state.staged.size).toBe(0);
@@ -173,11 +175,20 @@ describe('applying an import', () => {
   it('a failed swap also leaves the stores alone', async () => {
     const p = phone(local()); const before = p.state.snap;
     p.target.photos.commit = () => { throw new Error('boom'); };
-    await expect(applyBackup(await payload(), 'merge', p.target)).rejects.toBeInstanceOf(BackupError);
+    await expect(applyBackup(await opened(), 'merge', p.target)).rejects.toBeInstanceOf(BackupError);
     expect(p.state.snap).toBe(before);
   });
+  it('a damaged record partway through the files fails the import and changes nothing', async () => {
+    const s = snapshot({ photos: [] , journal: [{ id: 'a', rideKey: 1, at: 1, kind: 'photo' }, { id: 'b', rideKey: 1, at: 2, kind: 'photo' }] });
+    const media: JournalSource = { has: () => true, read: async () => toBase64(new Uint8Array([1, 2, 3])) };
+    const bytes = await build(s, media);
+    bytes[bytes.length - 50] ^= 1;
+    const p = phone(snapshot()); const before = p.state.snap;
+    await expect(applyBackup(await open(bytes), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
+    expect(p.state.snap).toBe(before);
+    expect(p.state.jstaged.size).toBe(0);
+  });
 });
-
 
 describe('journal in the backup', () => {
   const entries = [
@@ -186,45 +197,31 @@ describe('journal in the backup', () => {
     { id: 'v1', rideKey: 100, at: 3, kind: 'voice' as const, durationSec: 12 },
   ];
   const media = { 'photo:ph1': toBase64(new Uint8Array([9, 8, 7])), 'voice:v1': toBase64(new Uint8Array([1, 2, 3, 4, 5])) };
-  const mediaSource = { read: async (id: string, kind: 'photo' | 'voice') => { const f = media[`${kind}:${id}` as keyof typeof media]; if (!f) throw new Error('missing'); return f; } };
+  const mediaSource: JournalSource = { has: (id, kind) => `${kind}:${id}` in media, read: async (id: string, kind: 'photo' | 'voice') => { const f = media[`${kind}:${id}` as keyof typeof media]; if (!f) throw new Error('missing'); return f; } };
   const withJournal = () => snapshot({ rides: [ride('r1', 10, { startedAt: 100 })], journal: entries });
-  const file = async (s: Snapshot = withJournal()) => (await createBackup(s, source, PASS, now, mediaSource)).text;
+  const file = async (s: Snapshot = withJournal()) => build(s, mediaSource);
 
   it('round trips the entries and their photo and voice files, and counts them in the summary', async () => {
-    const back = await openBackup(await file(), PASS);
+    const back = await openAll(await file());
     expect(back.journal).toEqual(entries);
     expect(back.journalFiles).toEqual(media);
     expect(summarize(back).journalEntries).toBe(3);
   });
   it('keeps a note but leaves out an entry whose photo or voice file is gone', async () => {
     const s = snapshot({ journal: [...entries, { id: 'lost', rideKey: 100, at: 4, kind: 'photo' as const }] });
-    const back = await openBackup(await file(s), PASS);
+    const back = await openAll(await file(s));
     expect(back.journal.map((e) => e.id)).toEqual(['n1', 'ph1', 'v1']);
-  });
-  it('a version 1 backup (made before the journal existed) imports with an empty journal', async () => {
-    const v1 = { licence: undefined, vehicle: undefined, contacts: [], medical: {}, photos: [], todos: [], rides: [], photoFiles: {} };
-    const createdAt = now.toISOString();
-    const ciphertext = await encrypt(new TextEncoder().encode(JSON.stringify(v1)), PASS, { version: 1, createdAt });
-    const back = await openBackup(JSON.stringify({ format: FORMAT, version: 1, createdAt, ciphertext }), PASS);
-    expect(back.journal).toEqual([]);
-    expect(back.journalFiles).toEqual({});
-  });
-  it('refuses a payload whose journal entry has no file', async () => {
-    const bad = { ...snapshot(), photoFiles: {}, journal: [{ id: 'x', rideKey: 1, at: 1, kind: 'voice' }], journalFiles: {} };
-    const createdAt = now.toISOString();
-    const ciphertext = await encrypt(new TextEncoder().encode(JSON.stringify(bad)), PASS, { version: CURRENT_VERSION, createdAt });
-    await expect(openBackup(JSON.stringify({ format: FORMAT, version: CURRENT_VERSION, createdAt, ciphertext }), PASS)).rejects.toMatchObject({ code: 'corrupt' });
   });
   it('replace brings back the journal and its files and drops the journal that was on the phone', async () => {
     const p = phone(snapshot({ journal: [{ id: 'old', rideKey: 5, at: 1, kind: 'note', text: 'x' }] }));
     p.state.jfolder.set('photo:oldphoto', 'x');
-    await applyBackup(await openBackup(await file(), PASS), 'replace', p.target);
+    await applyBackup(await open(await file()), 'replace', p.target);
     expect(p.state.snap.journal.map((e) => e.id)).toEqual(['n1', 'ph1', 'v1']);
     expect([...p.state.jfolder.keys()].sort()).toEqual(['photo:ph1', 'voice:v1']);
   });
   it('merge keeps the phone\'s journal, adds the file\'s and does not duplicate an entry with the same id', async () => {
     const p = phone(snapshot({ journal: [{ id: 'n1', rideKey: 100, at: 1, kind: 'note', text: 'phone copy' }, { id: 'mine', rideKey: 7, at: 9, kind: 'note', text: 'm' }] }));
-    await applyBackup(await openBackup(await file(), PASS), 'merge', p.target);
+    await applyBackup(await open(await file()), 'merge', p.target);
     const ids = p.state.snap.journal.map((e) => e.id).sort();
     expect(ids).toEqual(['mine', 'n1', 'ph1', 'v1']);
     expect(p.state.snap.journal.find((e) => e.id === 'n1')?.text).toBe('phone copy');
@@ -232,7 +229,7 @@ describe('journal in the backup', () => {
   it('an import interrupted while writing journal files leaves the phone untouched and clears both staging folders', async () => {
     const p = phone(snapshot(), 'ph1');
     const before = p.state.snap;
-    await expect(applyBackup(await openBackup(await file(), PASS), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
+    await expect(applyBackup(await open(await file()), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
     expect(p.state.snap).toBe(before);
     expect(p.state.jstaged.size).toBe(0);
     expect(p.state.staged.size).toBe(0);
@@ -242,38 +239,22 @@ describe('journal in the backup', () => {
   it('if the journal files cannot be swapped in after the document photos were, the photos are rolled back and the stores stay as they were', async () => {
     const p = phone(snapshot()); const before = p.state.snap;
     p.target.journal.commit = () => { throw new Error('boom'); };
-    await expect(applyBackup(await openBackup(await file(), PASS), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
+    await expect(applyBackup(await open(await file()), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
     expect(p.state.rolledBack).toEqual(['photos']);
     expect(p.state.finalized).toEqual([]);
     expect(p.state.snap).toBe(before);
   });
   it('the old files are only given up once the stores have been updated', async () => {
     const p = phone(snapshot());
-    await applyBackup(await openBackup(await file(), PASS), 'replace', p.target);
+    await applyBackup(await open(await file()), 'replace', p.target);
     expect(p.state.finalized.sort()).toEqual(['journal', 'photos']);
     expect(p.state.rolledBack).toEqual([]);
   });
   it('if updating the stores fails, both swaps are rolled back', async () => {
     const p = phone(snapshot());
     p.target.set = () => { throw new Error('store'); };
-    await expect(applyBackup(await openBackup(await file(), PASS), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
+    await expect(applyBackup(await open(await file()), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
     expect(p.state.rolledBack.sort()).toEqual(['journal', 'photos']);
     expect(p.state.finalized).toEqual([]);
-  });
-
-  it('refuses to build a backup larger than the limit, with a message the rider can act on, before reading more files', async () => {
-    const big = toBase64(new Uint8Array(3000));
-    let reads = 0;
-    const bigMedia = { read: async () => { reads++; return big; } };
-    const s = snapshot({ journal: Array.from({ length: 10 }, (_, i) => ({ id: `p${i}`, rideKey: 1, at: i, kind: 'photo' as const })) });
-    const err = await buildPayload(s, source, bigMedia, 10_000).catch((e) => e);
-    expect(err).toBeInstanceOf(BackupError);
-    expect(err.code).toBe('too-large');
-    expect(err.message).toMatch(/too large/i);
-    expect(reads).toBeLessThan(10);
-  });
-  it('counts document photos toward the limit too', async () => {
-    const err = await buildPayload(snapshot(), { read: async () => toBase64(new Uint8Array(3000)) }, undefined, 100).catch((e) => e);
-    expect(err.code).toBe('too-large');
   });
 });

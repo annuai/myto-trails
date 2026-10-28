@@ -6,7 +6,7 @@ import type { Contact, Licence, Medical, Vehicle } from '@/store/profile';
 
 export const FORMAT = 'myto-backup';
 /** Bump with every change to `BackupPayload` and add a `migrate` step from the old number. */
-export const CURRENT_VERSION = 2;
+export const CURRENT_VERSION = 3;
 export const MIN_PASSPHRASE_LENGTH = 10;
 export const FILE_EXTENSION = 'myto';
 
@@ -25,7 +25,12 @@ export type Snapshot = {
 /** Plaintext inside the ciphertext. `photoFiles` maps a photo id to its JPEG as base64; `journalFiles` maps `photo:<id>` or `voice:<id>` to the file as base64. */
 export type BackupPayload = Snapshot & { photoFiles: Record<string, string>; journalFiles: Record<string, string> };
 
-export type BackupErrorCode = 'not-a-backup' | 'newer-version' | 'wrong-passphrase' | 'corrupt' | 'apply-failed' | 'weak-passphrase' | 'too-large';
+/** One photo or voice file of a backup: `doc` is a document photo, the others belong to the ride journal. */
+export type BackupFile = { kind: 'doc' | 'photo' | 'voice'; id: string; b64: string };
+/** A backup opened for reading: its data in full, and its files one at a time so they never all sit in memory. */
+export type OpenedBackup = { meta: Snapshot; files: () => AsyncGenerator<BackupFile> };
+
+export type BackupErrorCode = 'not-a-backup' | 'newer-version' | 'wrong-passphrase' | 'corrupt' | 'apply-failed' | 'weak-passphrase' | 'unreadable-file';
 
 const messages: Record<BackupErrorCode, string> = {
   'not-a-backup': 'This is not a Myto backup file.',
@@ -33,7 +38,7 @@ const messages: Record<BackupErrorCode, string> = {
   'wrong-passphrase': 'Wrong passphrase, or the file is damaged.',
   corrupt: 'The backup file is damaged and cannot be read.',
   'apply-failed': 'Nothing was changed on this phone: the backup could not be applied.',
-  'too-large': 'Your photos and voice notes are too large to export as one file yet. Delete some you no longer need, then try again.',
+  'unreadable-file': 'A photo or voice note could not be read, so the backup was not created. Try again, or delete the item that fails.',
   'weak-passphrase': `Use a passphrase of at least ${MIN_PASSPHRASE_LENGTH} characters.`,
 };
 

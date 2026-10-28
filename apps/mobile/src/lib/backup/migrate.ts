@@ -5,6 +5,8 @@ export type Migrations = Record<number, (payload: any) => any>;
 export const migrations: Migrations = {
   // 1 to 2: the ride journal was added.
   1: (p) => ({ ...p, journal: [], journalFiles: {} }),
+  // 2 to 3: the file became a stream of encrypted records. The data inside is the same shape.
+  2: (p) => p,
 };
 
 export function migrate(payload: unknown, from: number, to = CURRENT_VERSION, steps: Migrations = migrations): BackupPayload {

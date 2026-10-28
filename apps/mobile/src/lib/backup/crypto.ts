@@ -13,8 +13,10 @@ const utf8 = (s: string) => new TextEncoder().encode(s);
 /** The header is authenticated too, so changing the version or date in the clear makes the file fail to open. */
 const aad = (h: Header) => utf8(`${FORMAT}|${h.version}|${h.createdAt}`);
 const key = (passphrase: string, salt: Uint8Array) => scryptAsync(utf8(passphrase.normalize('NFKC')), salt, SCRYPT);
+/** Derives the key once per file; a streamed backup seals every record with it. */
+export const deriveKey = key;
 
-async function randomBytes(n: number): Promise<Uint8Array> {
+export async function randomBytes(n: number): Promise<Uint8Array> {
   if (globalThis.crypto?.getRandomValues) return globalThis.crypto.getRandomValues(new Uint8Array(n));
   const { getRandomBytes } = await import('expo-crypto');
   return getRandomBytes(n);
@@ -37,6 +39,24 @@ export async function decrypt(ciphertext: string, passphrase: string, header: He
   const salt = all.slice(0, SALT_BYTES), nonce = all.slice(SALT_BYTES, SALT_BYTES + NONCE_BYTES), sealed = all.slice(SALT_BYTES + NONCE_BYTES);
   try {
     return xchacha20poly1305(await key(passphrase, salt), nonce, aad(header)).decrypt(sealed);
+  } catch {
+    throw new BackupError('wrong-passphrase');
+  }
+}
+
+/** Seals one record of a streamed backup: a fresh random nonce, then the ciphertext. `aad` binds the record to its place in the file. */
+export async function sealRecord(k: Uint8Array, plain: Uint8Array, aadText: string): Promise<Uint8Array> {
+  const nonce = await randomBytes(NONCE_BYTES);
+  const sealed = xchacha20poly1305(k, nonce, utf8(aadText)).encrypt(plain);
+  const out = new Uint8Array(NONCE_BYTES + sealed.length);
+  out.set(nonce); out.set(sealed, NONCE_BYTES);
+  return out;
+}
+
+export function openRecord(k: Uint8Array, framed: Uint8Array, aadText: string): Uint8Array {
+  if (framed.length < NONCE_BYTES) throw new BackupError('corrupt');
+  try {
+    return xchacha20poly1305(k, framed.slice(0, NONCE_BYTES), utf8(aadText)).decrypt(framed.slice(NONCE_BYTES));
   } catch {
     throw new BackupError('wrong-passphrase');
   }

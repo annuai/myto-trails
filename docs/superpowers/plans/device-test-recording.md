@@ -46,6 +46,7 @@ Before each ride, note the real distance from a trusted source (a second app, or
 | n | Roll off in traffic at 3 to 5 km/h and try **Write a note** | Stays locked. If you start moving while typing, the draft is saved as a note and the editor closes | | |
 | o | While riding, tap Journal, **Record a voice note**, stop, **Take photo** | Both are saved; open the ride story, **Journal**: the voice note plays back and the photo shows | | |
 | p | **Export my data**, erase all data, **Import data** (replace) | Notes, photos and voice notes all come back and play. Repeat with merge on a phone that has other journals | | |
+| p2 | Make a backup with a large journal (for example 30 photos and 10 one-minute voice notes), then import it on the same phone (replace) | No freeze or crash, the progress finishes, everything plays back. Old `.myto` files from before streamed backups also still import | | |
 | q | Delete a ride that has a journal | The prompt says the journal is deleted too, and its photos and voice files go with it | | |
 
 ## Also check the journal on a device

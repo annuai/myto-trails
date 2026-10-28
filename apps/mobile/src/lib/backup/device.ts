@@ -1,15 +1,15 @@
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
-import { File, Paths } from 'expo-file-system';
-import { commitStaged, deleteAllPhotos, discardStaged, readPhotoBase64, stagePhoto } from '../localMedia';
-import { commitStaged as commitJournalMedia, discardStaged as discardJournalMedia, readBase64 as readJournalMedia, stageMedia } from '../journalMedia';
+import { File, FileMode, Paths } from 'expo-file-system';
+import { commitStaged, deleteAllPhotos, discardStaged, hasPhoto, readPhotoBase64, stagePhoto } from '../localMedia';
+import { commitStaged as commitJournalMedia, discardStaged as discardJournalMedia, hasMedia, readBase64 as readJournalMedia, stageMedia } from '../journalMedia';
 import { useJournal } from '@/store/journal';
 import { useProfile } from '@/store/profile';
 import { useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
-import { createBackup } from './export';
-import type { Snapshot } from './format';
-import type { Target } from './import';
+import { writeBackup } from './export';
+import { backupFileName, type OpenedBackup, type Snapshot } from './format';
+import { openBackupFile, type Target } from './import';
 
 /** Reads the phone's data. The sign-in token, trail packs and the quote queue are not part of it. */
 export function currentSnapshot(): Snapshot {
@@ -32,13 +32,18 @@ export const phoneTarget: Target = {
 /** Erase all my data: the files go with the store entries. */
 export const eraseDocumentPhotos = deleteAllPhotos;
 
-/** Writes the encrypted file to the cache and opens the share sheet. Returns false when sharing is not available. */
+/**
+ * Writes the encrypted backup to the cache one record at a time (so a large journal never sits in memory) and opens
+ * the share sheet. Returns false when sharing is not available.
+ */
 export async function exportToShareSheet(passphrase: string): Promise<boolean> {
-  const { fileName, text } = await createBackup(currentSnapshot(), { read: readPhotoBase64 }, passphrase, new Date(), { read: readJournalMedia });
-  const file = new File(Paths.cache, fileName);
+  const file = new File(Paths.cache, backupFileName(new Date()));
   file.create({ overwrite: true });
-  await file.write(text);
   try {
+    const handle = file.open(FileMode.WriteOnly);
+    try {
+      await writeBackup(currentSnapshot(), { has: hasPhoto, read: readPhotoBase64 }, { has: hasMedia, read: readJournalMedia }, passphrase, { write: (b) => handle.writeBytes(b) });
+    } finally { handle.close(); }
     if (!(await Sharing.isAvailableAsync())) return false;
     await Sharing.shareAsync(file.uri, { dialogTitle: 'Save your Myto backup', UTI: 'public.data' });
     return true;
@@ -48,10 +53,21 @@ export async function exportToShareSheet(passphrase: string): Promise<boolean> {
   }
 }
 
-/** Lets the rider pick a backup and returns its text, or undefined when they cancel. */
+/** Lets the rider pick a backup. Returns the address of a private copy in the cache, or undefined when they cancel. Delete it with `discardPickedBackup`. */
 export async function pickBackupFile(): Promise<string | undefined> {
   const r = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
-  if (r.canceled) return undefined;
-  const picked = new File(r.assets[0].uri);
-  try { return await picked.text(); } finally { if (picked.exists) picked.delete(); }
+  return r.canceled ? undefined : r.assets[0].uri;
+}
+
+export function discardPickedBackup(uri: string) {
+  const f = new File(uri);
+  if (f.exists) f.delete();
+}
+
+/** Opens a picked backup for the length of `fn`, then closes it. A streamed backup is read as `fn` asks for its files. */
+export async function withBackup<T>(uri: string, passphrase: string, fn: (opened: OpenedBackup) => Promise<T>): Promise<T> {
+  const handle = new File(uri).open(FileMode.ReadOnly);
+  try {
+    return await fn(await openBackupFile({ read: (n) => handle.readBytes(n) }, passphrase));
+  } finally { handle.close(); }
 }
