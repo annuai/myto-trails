@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bike as BikeIcon, Camera, ClipboardList, Download, IdCard, LogIn, LogOut, Route as RouteIcon, Trash2, Upload } from 'lucide-react-native';
+import { Camera, ClipboardList, Download, IdCard, LogIn, LogOut, Route as RouteIcon, Trash2, Upload } from 'lucide-react-native';
 import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import { eraseDocumentPhotos } from '@/lib/backup/device';
@@ -14,6 +14,7 @@ import { useProfile } from '@/store/profile';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { Avatar } from '@/ui/Avatar';
+import { BikeCard } from '@/ui/BikeCard';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Measure } from '@/ui/Measure';
@@ -74,6 +75,12 @@ export default function You() {
         <Measure parts={distanceKm(totalKm(rides))} size="liveSecondary" />
         <Text variant="label" tone="muted">{real} ride{real === 1 ? '' : 's'} recorded</Text>
       </Card>
+      {signedIn ? (
+        <>
+          <SectionTitle action="Edit" onAction={() => router.push('/bike')}>Your bike</SectionTitle>
+          <BikeCard bike={me.data?.bike} onPress={() => router.push('/bike')} />
+        </>
+      ) : null}
       <SectionTitle>Account</SectionTitle>
       <Card style={{ gap: 14 }}>
         {signedIn ? (
@@ -101,7 +108,6 @@ export default function You() {
       </>} right={<>
       <SectionTitle>Keep track</SectionTitle>
       <ListCard>
-        {signedIn ? <Row icon={BikeIcon} label="Your bike" value={me.data?.bike ? me.data.bike.name : 'Add'} onPress={() => router.push('/bike')} /> : null}
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
         <Row icon={ClipboardList} label="To-do list" value={`${openTodos} open`} onPress={() => router.push('/todos')} />
         <Row icon={IdCard} label="Documents and emergency" sub={docs || 'Licence, vehicle, emergency contacts'} onPress={() => router.push('/documents')} />

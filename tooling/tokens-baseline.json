@@ -3,7 +3,6 @@
   "apps/mobile/app/(tabs)/trails.tsx": 6,
   "apps/mobile/app/(tabs)/you.tsx": 5,
   "apps/mobile/app/documents/contacts.tsx": 10,
-  "apps/mobile/app/documents/index.tsx": 1,
   "apps/mobile/app/documents/licence.tsx": 4,
   "apps/mobile/app/documents/vehicle.tsx": 4,
   "apps/mobile/app/ride/index.tsx": 3,
