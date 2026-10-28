@@ -26,15 +26,15 @@ export const useTodos = create<State>()(
   persist(
     (set) => ({
       todos: seed(),
-      add: (t) => { const id = uid(); set((s) => ({ todos: [...s.todos, { ...t, id, done: false }] })); return id; },
+      add: (t) => { const id = uid(); set((s) => ({ todos: [...s.todos, { ...t, id, done: false, updatedAt: Date.now() }] })); return id; },
       remove: (id) => set((s) => ({ todos: s.todos.filter((t) => t.id !== id) })),
-      toggle: (id) => set((s) => ({ todos: s.todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)) })),
-      markServiceDone: (id, appKm) => set((s) => ({ todos: s.todos.map((t) => (t.id === id ? { ...t, lastDate: todayISO(), lastKm: appKm, done: false } : t)) })),
+      toggle: (id) => set((s) => ({ todos: s.todos.map((t) => (t.id === id ? { ...t, done: !t.done, updatedAt: Date.now() } : t)) })),
+      markServiceDone: (id, appKm) => set((s) => ({ todos: s.todos.map((t) => (t.id === id ? { ...t, lastDate: todayISO(), lastKm: appKm, done: false, updatedAt: Date.now() } : t)) })),
       syncSource: (source, title, due) => set((s) => {
         const rest = s.todos.filter((t) => t.source !== source);
         if (!due) return { todos: rest };
         const old = s.todos.find((t) => t.source === source);
-        return { todos: [...rest, { id: old?.id ?? uid(), title, category: 'document', kind: 'date', due, source, done: false }] };
+        return { todos: [...rest, { id: old?.id ?? uid(), title, category: 'document', kind: 'date', due, source, done: false, updatedAt: Date.now() }] };
       }),
     }),
     { name: 'myto-todos', storage },

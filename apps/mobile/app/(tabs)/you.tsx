@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bike as BikeIcon, Camera, ClipboardList, IdCard, LogIn, LogOut, Route as RouteIcon, Trash2 } from 'lucide-react-native';
+import { Bike as BikeIcon, Camera, ClipboardList, Download, IdCard, LogIn, LogOut, Route as RouteIcon, Trash2, Upload } from 'lucide-react-native';
 import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
+import { eraseDocumentPhotos } from '@/lib/backup/device';
 import { signOut, startSignIn } from '@/lib/signIn';
 import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAuth } from '@/store/auth';
@@ -49,6 +50,7 @@ export default function You() {
   };
 
   const erase = () => {
+    eraseDocumentPhotos();
     useProfile.getState().wipe();
     useTodos.setState({ todos: [] });
     useRides.setState({ rides: [] });
@@ -103,6 +105,11 @@ export default function You() {
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
         <Row icon={ClipboardList} label="To-do list" value={`${openTodos} open`} onPress={() => router.push('/todos')} />
         <Row icon={IdCard} label="Documents and emergency" sub={docs || 'Licence, vehicle, emergency contacts'} onPress={() => router.push('/documents')} />
+      </ListCard>
+      <SectionTitle>Backup</SectionTitle>
+      <ListCard>
+        <Row icon={Upload} label="Export my data" sub="One encrypted file you keep" onPress={() => router.push('/backup/export')} />
+        <Row icon={Download} label="Import data" sub="From a Myto backup file" onPress={() => router.push('/backup/import')} />
       </ListCard>
       <SectionTitle>Privacy</SectionTitle>
       <ListCard>

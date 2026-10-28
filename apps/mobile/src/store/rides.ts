@@ -10,7 +10,7 @@ export type SubmissionState = { status: 'submitted'; at: number; trailName: stri
 
 export type Ride = {
   id: string; name: string; startedAt: number; durationSec: number; distanceKm: number; maxKmh: number; points: LatLng[];
-  waypoints: Waypoint[]; sample?: boolean; submission?: SubmissionState; /** Stays the same across upload attempts so a retry continues the same draft. */ clientId?: string;
+  waypoints: Waypoint[]; sample?: boolean; updatedAt?: number; submission?: SubmissionState; /** Stays the same across upload attempts so a retry continues the same draft. */ clientId?: string;
 };
 
 type State = {
@@ -26,7 +26,7 @@ export const useRides = create<State>()(
       rides: [sampleRide()],
       addRide: (r) => { const id = uid(); set((s) => ({ rides: [{ ...r, id }, ...s.rides] })); return id; },
       removeRide: (id) => set((s) => ({ rides: s.rides.filter((r) => r.id !== id) })),
-      setSubmission: (id, submission) => set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, submission } : r)) })),
+      setSubmission: (id, submission) => set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, submission, updatedAt: Date.now() } : r)) })),
     }),
     { name: 'myto-rides', storage },
   ),
