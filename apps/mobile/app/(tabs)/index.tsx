@@ -79,7 +79,7 @@ export default function Home() {
   // A trip's pack to-dos all fall due on its start date: they are one line under Due soon, not a dozen.
   const dueRows = [
     ...dues.filter(({ t }) => !t.tripId).map(({ t, d }) => ({ key: t.id, sort: d.sortKey, icon: t.category === 'pack' ? Camera : ClipboardList, label: t.title, sub: undefined as string | undefined, value: d.text.replace('Due in ', 'in ').replace('Due ', ''), go: '/todos' })),
-    ...trips.flatMap((tr) => {
+    ...trips.filter((tr) => ['active', 'ready', 'upcoming'].includes(tripStatus(tr, today))).flatMap((tr) => {
       const mine = dues.filter(({ t }) => t.tripId === tr.id);
       return mine.length ? [{ key: tr.id, sort: mine[0]!.d.sortKey, icon: Luggage, label: tr.name, sub: `${mine.length} to pack`, value: mine[0]!.d.text.replace('Due in ', 'in ').replace('Due ', ''), go: `/trips/${tr.id}` }] : [];
     }),

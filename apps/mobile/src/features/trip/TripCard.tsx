@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { CalendarClock } from 'lucide-react-native';
 import { todayISO } from '@/lib/dates';
-import { rangeText, tripStatus, whenText } from '@/lib/tripPlan';
+import { rangeText, startTimeText, tripStatus, whenText } from '@/lib/tripPlan';
 import { useTodos } from '@/store/todos';
 import type { Trip } from '@/store/trips';
 import { space } from '@/theme/tokens';
@@ -29,7 +29,7 @@ export function TripCard({ trip, onOpen }: { trip: Trip; onOpen: () => void }) {
         </View>
         <Text variant="hero">{trip.name}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space[2] }}>
-          <Text variant="data" tone="muted">{rangeText(trip)} · {trip.days?.length ?? 1} {(trip.days?.length ?? 1) === 1 ? 'day' : 'days'}</Text>
+          <Text variant="data" tone="muted">{rangeText(trip)}{trip.startTime !== undefined ? ` · ${startTimeText(trip.startTime)}` : ''} · {trip.days?.length ?? 1} {(trip.days?.length ?? 1) === 1 ? 'day' : 'days'}</Text>
           {trail?.kind === 'trail' ? <StatusChip status={trail.status} label={trail.statusLabel} /> : null}
         </View>
         {todos.length ? (

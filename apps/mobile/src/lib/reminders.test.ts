@@ -85,6 +85,29 @@ describe('a planned trip', () => {
     expect(out[1].body).toBe('Manali to Keylong');
     expect(out[2].title).toBe('Day 2 of 2: Ladakh');
   });
+  it('with a start time, reminds ten minutes before each day, and nudges once after the first if it was not started', () => {
+    const timed = { ...planned, startTime: 6 * 60 + 30 };
+    const out = planReminders(input({ trip: timed })).filter((r) => r.kind === 'trip' && !r.id.endsWith(':eve'));
+    expect(out.map((r) => r.fireAt)).toEqual([at('2026-11-02', 6, 20), at('2026-11-02', 6, 45), at('2026-11-03', 6, 20)]);
+    expect(out[0].title).toBe('Ladakh starts in 10 minutes');
+    expect(out[0].body).toBe('Open Myto Moto and tap Start trip');
+    expect(out[1].title).toBe('Ladakh has not started');
+    expect(out[2].body).toBe('Open Myto Moto and tap Record day 2');
+    // No 7:30 morning reminder alongside them.
+    expect(out.some((r) => r.fireAt === at('2026-11-02', 7, 30))).toBe(false);
+  });
+  it('uses the lead time from the settings, and sends no start reminder or nudge when it is off', () => {
+    const timed = { ...planned, startTime: 6 * 60 + 30 };
+    const fifteen = planReminders(input({ trip: timed, prefs: { ...prefs, tripLeadMin: 30 } })).filter((r) => r.id.endsWith(':pre'));
+    expect(fifteen[0].fireAt).toBe(at('2026-11-02', 6, 0));
+    expect(fifteen[0].title).toBe('Ladakh starts in 30 minutes');
+    const off = planReminders(input({ trip: timed, prefs: { ...prefs, tripLeadMin: 0 } })).filter((r) => r.kind === 'trip');
+    expect(off.map((r) => r.id)).toEqual([`trip:trip1:2026-11-02:eve`]);
+  });
+  it('sends no "has not started" nudge once the trip was started', () => {
+    const out = planReminders(input({ trip: { ...planned, startTime: 6 * 60 + 30, started: true } })).filter((r) => r.id.endsWith(':late'));
+    expect(out).toEqual([]);
+  });
   it('does not remind about each pack to-do on its own', () => {
     const out = planReminders(input({ trip: undefined, todos: [tripTodo('a', false), tripTodo('b', false)] }));
     expect(out).toEqual([]);

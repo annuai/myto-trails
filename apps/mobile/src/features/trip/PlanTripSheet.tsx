@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { Minus, Plus } from 'lucide-react-native';
 import { addDays, formatDate, todayISO } from '@/lib/dates';
-import { MAX_TRIP_DAYS, type TripRoute } from '@/lib/tripPlan';
+import { DEFAULT_START_TIME, leadLabel, MAX_TRIP_DAYS, REMIND_BEFORE_MIN, type TripRoute } from '@/lib/tripPlan';
+import { useNotifications } from '@/store/notifications';
 import { useTrips, type Trip } from '@/store/trips';
 import { space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
@@ -10,6 +11,7 @@ import { ChoiceChip } from '@/ui/Chip';
 import { DatePicker } from '@/ui/DatePicker';
 import { Field } from '@/ui/Field';
 import { IconButton } from '@/ui/IconButton';
+import { TimeStepper } from '@/ui/TimeStepper';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 
@@ -17,13 +19,15 @@ import { Text } from '@/ui/Text';
 export function PlanTripSheet({ open, onClose, onCreated, name: initialName = '', route, trip }: { open: boolean; onClose: () => void; onCreated?: (id: string) => void; name?: string; route?: TripRoute; /** Change this trip instead of making a new one. */ trip?: Trip }) {
   const [name, setName] = useState(trip?.name ?? initialName);
   const [startDate, setStartDate] = useState(trip?.startDate ?? addDays(todayISO(), 1));
+  const [startTime, setStartTime] = useState(trip?.startTime ?? DEFAULT_START_TIME);
   const [days, setDays] = useState(trip?.days?.length ?? 1);
   const [pack, setPack] = useState(true);
+  const lead = useNotifications((s) => s.prefs.tripLeadMin ?? REMIND_BEFORE_MIN);
 
   const save = () => {
-    if (trip) { useTrips.getState().update(trip.id, { name, startDate, dayCount: days }); onClose(); return; }
+    if (trip) { useTrips.getState().update(trip.id, { name, startDate, startTime, dayCount: days }); onClose(); return; }
     const { create: make, addStarterTodos } = useTrips.getState();
-    const id = make({ name, startDate, dayCount: days, route });
+    const id = make({ name, startDate, startTime, dayCount: days, route });
     if (pack) addStarterTodos(id);
     setName(initialName); setDays(1); setPack(true);
     onClose();
@@ -35,6 +39,9 @@ export function PlanTripSheet({ open, onClose, onCreated, name: initialName = ''
       <Field label="Name" value={name} onChangeText={setName} placeholder="Ladakh in September" maxLength={60} />
       <Text variant="labelMedium">Starts</Text>
       <DatePicker value={startDate} onChange={setStartDate} />
+      <Text variant="labelMedium">Start time</Text>
+      <TimeStepper label="Start time" value={startTime} onChange={setStartTime} />
+      <Text variant="caption" tone="muted">{lead ? `You get a reminder ${leadLabel(lead)} before, to open the app and start the trip.` : 'Start reminders are off in Notifications.'} A trip you do not start records nothing. Change the reminder in Notifications.</Text>
       <Text variant="labelMedium">Days</Text>
       <View accessibilityRole="adjustable" accessibilityLabel={`${days} ${days === 1 ? 'day' : 'days'}`} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <IconButton icon={Minus} label="One day fewer" onPress={() => setDays((d) => Math.max(1, d - 1))} />

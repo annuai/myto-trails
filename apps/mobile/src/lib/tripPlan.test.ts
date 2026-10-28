@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayIndexOn, expiringBefore, rangeText, resizeDays, soonestTrip, tripStatus, whenText } from './tripPlan';
+import { DEFAULT_START_TIME, dayIndexOn, expiringBefore, rangeText, REMIND_BEFORE_MIN, resizeDays, soonestTrip, startTimeText, tripStatus, whenText } from './tripPlan';
 
 const trip = (startDate: string, days = 3, extra = {}) => ({ startDate, days: Array.from({ length: days }, (_, i) => ({ id: `d${i}` })), ...extra });
 
@@ -12,7 +12,11 @@ describe('tripStatus', () => {
   it('is active only once started, and done after the last day', () => {
     expect(tripStatus(trip('2026-11-10', 3, { startedAt: 1 }), '2026-11-11')).toBe('active');
     expect(tripStatus(trip('2026-11-10', 3, { startedAt: 1 }), '2026-11-13')).toBe('done');
-    expect(tripStatus(trip('2026-11-10'), '2026-11-13')).toBe('done');
+    expect(tripStatus(trip('2026-11-10'), '2026-11-13')).toBe('missed');
+  });
+  it('is missed when the last day passed without the rider starting it', () => {
+    expect(tripStatus(trip('2026-11-10', 1), '2026-11-11')).toBe('missed');
+    expect(tripStatus(trip('2026-11-10', 1), '2026-11-10')).toBe('ready');
   });
   it('is done when the rider ended it, and logged when it has no date', () => {
     expect(tripStatus(trip('2026-11-10', 3, { startedAt: 1, endedAt: 2 }), '2026-11-11')).toBe('done');
@@ -33,6 +37,8 @@ describe('days and wording', () => {
     expect(whenText(trip('2026-11-10'), '2026-11-09')).toBe('Tomorrow');
     expect(whenText(trip('2026-11-10'), '2026-11-05')).toBe('In 5 days');
     expect(whenText(trip('2026-11-10', 4, { startedAt: 1 }), '2026-11-11')).toBe('Day 2 of 4');
+    expect(whenText(trip('2026-11-10', 1), '2026-11-12')).toBe('Missed');
+    expect(whenText(trip('2026-11-10', 1, { startedAt: 1 }), '2026-11-12')).toBe('Finished');
   });
   it('writes the date range', () => {
     expect(rangeText(trip('2026-11-10', 1))).toBe('10 Nov');
@@ -45,11 +51,11 @@ describe('soonestTrip', () => {
   it('prefers a trip under way, then a ready one, then the nearest upcoming; never a finished or undated one', () => {
     const upcoming = { id: 'u', ...trip('2026-11-20') }, sooner = { id: 's', ...trip('2026-11-15') };
     const active = { id: 'a', ...trip('2026-11-09', 3, { startedAt: 1 }) }, ready = { id: 'r', ...trip('2026-11-10') };
-    const done = { id: 'd', ...trip('2026-10-01') }, logged: { id: string; startDate?: string } = { id: 'l' };
+    const done = { id: 'd', ...trip('2026-10-01', 3, { startedAt: 1 }) }, missed = { id: 'm', ...trip('2026-10-02') }, logged: { id: string; startDate?: string } = { id: 'l' };
     expect(soonestTrip([upcoming, sooner], today)?.id).toBe('s');
     expect(soonestTrip([upcoming, ready, sooner], today)?.id).toBe('r');
     expect(soonestTrip([upcoming, ready, active], today)?.id).toBe('a');
-    expect(soonestTrip([done, logged], today)).toBeUndefined();
+    expect(soonestTrip([done, missed, logged], today)).toBeUndefined();
   });
 });
 
@@ -63,5 +69,11 @@ describe('resizeDays and documents', () => {
   });
   it('lists documents that run out by the last day', () => {
     expect(expiringBefore([{ label: 'Insurance', validTill: '2026-11-12' }, { label: 'PUC', validTill: '2027-01-01' }, { label: 'Licence' }], '2026-11-13')).toEqual([{ label: 'Insurance', validTill: '2026-11-12' }]);
+  });
+
+  it('starts at seven unless the rider says otherwise, and reminds ten minutes ahead', () => {
+    expect(DEFAULT_START_TIME).toBe(420);
+    expect(REMIND_BEFORE_MIN).toBe(10);
+    expect(startTimeText(6 * 60 + 30)).toBe('6:30 AM');
   });
 });

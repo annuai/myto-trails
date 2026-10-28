@@ -1,8 +1,9 @@
 import { addDays, addMonths } from './dates';
 import type { Todo } from './todos';
+import { REMIND_BEFORE_MIN } from './tripPlan';
 
 /** What the rider has switched on. */
-export type ReminderPrefs = { todos: boolean; trips: boolean; paused: boolean };
+export type ReminderPrefs = { todos: boolean; trips: boolean; paused: boolean; /** Minutes before a trip starts to be reminded to start it; 0 is off. Ten when not set. */ tripLeadMin?: number };
 
 /** One notification the app wants to show. `title` and `body` are the full text; `lock` is what shows when details are hidden. */
 export type Reminder = { id: string; fireAt: number; title: string; body: string; lock: string; route: string; kind: 'todo' | 'trip' | 'ride' };
@@ -10,7 +11,7 @@ export type Reminder = { id: string; fireAt: number; title: string; body: string
 export type PlanInput = {
   now: number; todos: Todo[]; appKm: number; prefs: ReminderPrefs;
   /** The planned trip. `iso` is its date (YYYY-MM-DD); a trip with no date (the rider chose "Ride this trail") gets no reminders. */
-  trip?: { slug: string; name: string; iso?: string; /** Where a tap on its notification goes. Defaults to the trail page for `slug`. */ route?: string; /** Set for a planned trip: its pack to-dos are counted, and each of its days gets a morning reminder. */ tripId?: string; days?: { iso: string; title: string }[] };
+  trip?: { slug: string; name: string; iso?: string; /** Where a tap on its notification goes. Defaults to the trail page for `slug`. */ route?: string; /** Set for a planned trip: its pack to-dos are counted, and each of its days gets a morning reminder. */ tripId?: string; days?: { iso: string; title: string }[]; /** Minutes after midnight each day starts. With it, a reminder comes 10 minutes before, in place of the 7:30 morning one. */ startTime?: number; /** The rider has pressed Start trip: no "has not started" nudge. */ started?: boolean };
   /** Set while a ride recording is paused. */
   paused?: { since: number };
 };
@@ -40,16 +41,27 @@ function todoReminders(todos: Todo[]): Reminder[] {
   return out;
 }
 
-function tripReminders(trip: NonNullable<PlanInput['trip']>, todos: Todo[]): Reminder[] {
+function tripReminders(trip: NonNullable<PlanInput['trip']>, todos: Todo[], leadMin: number): Reminder[] {
   const route = trip.route ?? `/trail/${trip.slug}`;
   if (!trip.iso) return [];
   const packs = todos.filter((t) => t.category === 'pack' && (trip.tripId ? t.tripId === trip.tripId : !t.tripId));
   const left = packs.filter((t) => !t.done).length;
   const body = !packs.length ? 'Check your list before you go' : left ? `${left} of ${packs.length} things still to pack` : 'All packed';
   const eve: Reminder = { id: `trip:${trip.slug}:${trip.iso}:eve`, fireAt: at(addDays(trip.iso, -1), 21), title: `Tomorrow: ${trip.name}`, body, lock: 'You have a ride planned tomorrow', route, kind: 'trip' };
-  // One morning reminder for each day of a trip with days; a plain planned trail has just the one.
+  // A day of a trip with a start time is reminded 10 minutes before it, so the rider opens the app and starts recording; the first
+  // day also gets one nudge a quarter of an hour after if the trip has still not been started. Without a start time there is one
+  // 7:30 morning reminder per day (a plain planned trail has just the one).
+  const MIN = 60_000;
   const mornings: Reminder[] = trip.days?.length
-    ? trip.days.map((d, i) => ({ id: `trip:${trip.slug}:${trip.iso}:day${i}`, fireAt: at(d.iso, 7, 30), title: trip.days!.length > 1 ? `Day ${i + 1} of ${trip.days!.length}: ${trip.name}` : `Ride day: ${trip.name}`, body: d.title, lock: 'You have a ride planned today', route, kind: 'trip' as const }))
+    ? trip.days.flatMap((d, i): Reminder[] => {
+        if (trip.startTime === undefined) return [{ id: `trip:${trip.slug}:${trip.iso}:day${i}`, fireAt: at(d.iso, 7, 30), title: trip.days!.length > 1 ? `Day ${i + 1} of ${trip.days!.length}: ${trip.name}` : `Ride day: ${trip.name}`, body: d.title, lock: 'You have a ride planned today', route, kind: 'trip' }];
+        // The rider can turn this off in Notifications: no reminder to start, and so no nudge for not starting.
+        if (leadMin <= 0) return [];
+        const start = at(d.iso, Math.floor(trip.startTime / 60), trip.startTime % 60);
+        const pre: Reminder = { id: `trip:${trip.slug}:${trip.iso}:day${i}:pre`, fireAt: start - leadMin * MIN, title: `${trip.name} starts in ${leadMin === 60 ? 'an hour' : `${leadMin} minutes`}`, body: i === 0 ? 'Open Myto Moto and tap Start trip' : `Open Myto Moto and tap Record day ${i + 1}`, lock: 'Your ride starts soon', route, kind: 'trip' };
+        const late: Reminder = { id: `trip:${trip.slug}:${trip.iso}:late`, fireAt: start + 15 * MIN, title: `${trip.name} has not started`, body: 'Tap to start it now, or move it to another time', lock: 'Your ride has not started', route, kind: 'trip' };
+        return i === 0 && !trip.started ? [pre, late] : [pre];
+      })
     : [{ id: `trip:${trip.slug}:${trip.iso}:day`, fireAt: at(trip.iso, 7, 30), title: `Ride day: ${trip.name}`, body: 'Have a safe one', lock: 'You have a ride planned today', route, kind: 'trip' as const }];
   return [eve, ...mornings];
 }
@@ -58,7 +70,7 @@ function tripReminders(trip: NonNullable<PlanInput['trip']>, todos: Todo[]): Rem
 export function planReminders(i: PlanInput): Reminder[] {
   const all: Reminder[] = [];
   if (i.prefs.todos) all.push(...todoReminders(i.todos));
-  if (i.prefs.trips && i.trip) all.push(...tripReminders(i.trip, i.todos));
+  if (i.prefs.trips && i.trip) all.push(...tripReminders(i.trip, i.todos, i.prefs.tripLeadMin ?? REMIND_BEFORE_MIN));
   if (i.prefs.paused && i.paused) {
     const fireAt = i.paused.since + PAUSE_REMINDER_MS;
     if (!quiet(fireAt)) all.push({ id: `ride:paused:${i.paused.since}`, fireAt, title: 'Your ride is paused', body: 'Resume it or finish it so it is not lost', lock: 'Your ride is paused', route: '/ride/live', kind: 'ride' });

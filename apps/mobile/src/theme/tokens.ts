@@ -13,7 +13,8 @@ export const opacity = { overlay: 0.07, pressed: 0.85, disabled: 0.45 } as const
 export const radius = { control: 16, card: 24, chip: 999, thumb: 18 } as const;
 /** Fixed sizes of pictures: riders, club covers and bikes. */
 export const media = { avatarSm: 44, avatarMd: 52, avatarLg: 64, coverCard: 110, coverHero: 180, mapCard: 160, bikePhoto: 190, bikeThumbW: 72, bikeThumbH: 54 } as const;
-export const size = { target: 48, button: 56, ride: 88, screenX: 20, rule: 2 } as const;
+/** `dot` is the small unread marker on a bell. */
+export const size = { target: 48, button: 56, ride: 88, screenX: 20, rule: 2, dot: 10 } as const;
 /** The picture at the very end of the You page. `fadeHeight`: how much of its top melts into the page colour. `fadeEndAlpha`: the page colour's opacity where the fade ends. */
 export const footerPicture = { fadeHeight: '30%', fadeEndAlpha: 0 } as const;
 

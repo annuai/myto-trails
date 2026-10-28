@@ -6,7 +6,7 @@ import { postConditionReport } from '@/api/conditionReports';
 import { leaveGroupRide, syncGroupRide } from '@/api/groups';
 import { shouldPing, type LastPing } from '@/lib/checkinCore';
 import { markFailed, markSent, nextBatch } from '@/lib/conditions';
-import { pollIntervalMs } from '@/lib/groupCore';
+import { pollIntervalMs, signalChanges, signalNotice } from '@/lib/groupCore';
 import { notifier } from '@/lib/notifier';
 import { startAutoPause, stepAutoPause } from '@/lib/autoPause';
 import { startPrompt, stepPrompt } from '@/lib/stoppedPrompt';
@@ -14,6 +14,7 @@ import { useAuth } from '@/store/auth';
 import { useCompanion } from '@/store/companion';
 import { useLocation } from '@/store/location';
 import { useMotion } from '@/store/motion';
+import { useNotifications } from '@/store/notifications';
 import { useRecorder } from '@/store/recorder';
 
 const iso = (t: number) => new Date(t).toISOString();
@@ -48,6 +49,27 @@ async function flushOutbox() {
       useCompanion.getState().setOutbox(markFailed(useCompanion.getState().outbox, item.clientId, Date.now(), permanent(e)));
       if (e instanceof ApiFailure && e.status === 0) break; // no signal: the rest would fail too
     }
+  }
+}
+
+/**
+ * A rider in the group changed their signal: say so, with the rider's name ("Annuai is asking for help"). A call for help always shows
+ * its words, even when details are hidden on the lock screen; the others follow that setting. It is also kept in the history.
+ * Nothing is sent from the server: this runs when the phone next looks at the group, which is while a ride keeps the app alive.
+ */
+function tellAboutSignals(changes: ReturnType<typeof signalChanges>) {
+  const { prefs, push } = useNotifications.getState();
+  if (!prefs.groupSignals) return;
+  const now = Date.now();
+  const route = useRecorder.getState().status === 'running' ? '/ride/live' : '/ride';
+  for (const c of changes) {
+    const n = signalNotice(c);
+    if (!n) continue;
+    const id = `group:${c.rider.id}:${c.to}:${now}`;
+    const lock = 'A rider in your group sent a signal';
+    push({ id, fireAt: now, title: n.title, body: n.body, lock, route, kind: 'ride' }, now);
+    const show = prefs.showDetails || c.to === 'help';
+    void notifier.notifyNow({ id, fireAt: now, title: show ? n.title : 'Myto Moto', body: show ? n.body : lock, route }).catch(() => undefined);
   }
 }
 
@@ -87,7 +109,9 @@ export function CompanionHost() {
       const p = rec.status === 'running' && (!rec.paused || flags.autoPaused) ? rec.points[rec.points.length - 1] : undefined;
       try {
         const r = await syncGroupRide(token, group.id, { ...(p ? { lat: p.lat, lng: p.lng, at: iso(Date.now()) } : {}), status: live.myStatus });
+        const before = useCompanion.getState().live.riders;
         useCompanion.getState().setLive({ riders: r.riders, me: r.me, regroup: r.regroup, error: undefined });
+        tellAboutSignals(signalChanges(before, r.riders, r.me));
         if (r.ended) useCompanion.getState().setGroup(null);
       } catch (e) {
         useCompanion.getState().setLive({ error: e instanceof ApiFailure ? e.message : 'Cannot reach the group.' });

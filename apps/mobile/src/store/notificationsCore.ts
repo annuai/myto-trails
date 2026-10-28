@@ -1,12 +1,13 @@
 import type { StateCreator } from 'zustand';
 import type { Reminder, ReminderPrefs } from '@/lib/reminders';
+import { REMIND_BEFORE_MIN } from '@/lib/tripPlan';
 
 /** A reminder that has come due, kept so the rider can read it again and clear it. */
 export type InboxItem = { id: string; title: string; body: string; route: string; kind: Reminder['kind']; at: number; read: boolean };
-export type Prefs = ReminderPrefs & { showDetails: boolean };
+export type Prefs = ReminderPrefs & { showDetails: boolean; /** Tell me when someone in my group ride changes their signal (help, wait up, fuel, break). */ groupSignals: boolean };
 
 const MAX_INBOX = 100;
-const defaults = (): Prefs => ({ todos: true, trips: true, paused: true, showDetails: false });
+const defaults = (): Prefs => ({ todos: true, trips: true, paused: true, tripLeadMin: REMIND_BEFORE_MIN, showDetails: false, groupSignals: true });
 const toItem = (r: Reminder, at: number): InboxItem => ({ id: r.id, title: r.title, body: r.body, route: r.route, kind: r.kind, at, read: false });
 
 export type NotificationsState = {
@@ -18,7 +19,9 @@ export type NotificationsState = {
   kmNotified: Record<string, number>;
   /** The rider said "Not now" to turning reminders on. */
   asked: boolean;
-  setPref: (key: keyof Prefs, value: boolean) => void;
+  setPref: (key: Exclude<keyof Prefs, 'tripLeadMin'>, value: boolean) => void;
+  /** How long before a trip starts to be reminded to start it (0 is off). */
+  setTripLead: (minutes: number) => void;
   setScheduled: (list: Reminder[]) => void;
   /** Moves every scheduled reminder whose time has come into the history. */
   absorb: (now: number) => void;
@@ -40,6 +43,7 @@ const merge = (inbox: InboxItem[], add: InboxItem[]) => {
 export const notificationsSlice = (): StateCreator<NotificationsState> => (set) => ({
   prefs: defaults(), scheduled: [], inbox: [], kmNotified: {}, asked: false,
   setPref: (key, value) => set((s) => ({ prefs: { ...s.prefs, [key]: value } })),
+  setTripLead: (tripLeadMin) => set((s) => ({ prefs: { ...s.prefs, tripLeadMin } })),
   setScheduled: (list) => set({ scheduled: list }),
   absorb: (now) => set((s) => {
     const due = s.scheduled.filter((r) => r.fireAt <= now);

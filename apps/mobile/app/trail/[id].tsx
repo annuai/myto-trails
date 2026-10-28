@@ -28,6 +28,7 @@ import { ListCard, Row } from '@/ui/ListCard';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { RouteArt } from '@/ui/RouteArt';
 import { Screen } from '@/ui/Screen';
+import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/tokens';
 
@@ -43,6 +44,7 @@ export default function TrailDetail() {
   const saved = useSaved();
   const { offline, downloading, download, removeDownload, planTrip } = useTrailStore();
   const [planning, setPlanning] = useState(false);
+  const [rideChoice, setRideChoice] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
   const comments = useTrailCommentsSection(slug);
@@ -153,13 +155,18 @@ export default function TrailDetail() {
         <Button variant="soft" icon={Bookmark} label={isSaved ? 'Saved. Tap to remove' : token ? 'Save this trail' : 'Sign in to save'} disabled={busy} onPress={toggleSave} />
         <Button variant="soft" icon={Stamp} label={iRode ? "Ridden. Tap to undo" : token ? "I've ridden this" : 'Sign in to mark as ridden'} disabled={busy} onPress={() => void toggleRidden()} />
         <Button variant="soft" icon={CalendarPlus} label="Plan a trip" arrow onPress={() => setPlanning(true)} />
-        <Button label="Ride this trail" onPress={() => { planTrip(detail); router.push('/ride'); }} />
+        <Button label="Ride this trail" onPress={() => setRideChoice(true)} />
       </View>
       {problem ? <Text variant="label" tone="stop" style={{ marginTop: 16 }}>{problem}</Text> : null}
   </>);
 
   return (
     <Screen overlay={<>
+      <Sheet open={rideChoice} title="Ride this trail" onClose={() => setRideChoice(false)}>
+        <Text variant="label" tone="muted">Ride it now, or pick a day and a start time and you get a reminder before it starts.</Text>
+        <Button label="Ride now" onPress={() => { planTrip(detail); setRideChoice(false); router.push('/ride'); }} />
+        <Button variant="soft" label="Pick a date and time" onPress={() => { setRideChoice(false); setPlanning(true); }} />
+      </Sheet>
       <PlanTripSheet open={planning} onClose={() => setPlanning(false)} name={detail.name} route={{ kind: 'trail', slug, name: detail.name, status: h.status, statusLabel: h.label }} onCreated={(tripId) => router.push(`/trips/${tripId}`)} />
       {comments.overlay}
     </>}>

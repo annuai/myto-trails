@@ -32,3 +32,35 @@ export function pollIntervalMs(s: { moving: boolean; anyHelp: boolean; backgroun
   if (s.backgrounded) return s.moving ? 15_000 : 30_000;
   return s.moving ? 10_000 : 20_000;
 }
+
+export type SignalChange = { rider: GroupRiderView; from: GroupStatus; to: GroupStatus };
+
+/**
+ * Who changed their signal between two looks at the group, other than you. A rider who was not in the earlier look is new, not a
+ * change, so joining a group that already has signals up does not fire a notification for each of them.
+ */
+export function signalChanges(before: GroupRiderView[], after: GroupRiderView[], meId: string | undefined): SignalChange[] {
+  const was = new Map(before.map((r) => [r.id, r.status]));
+  return after.flatMap((rider) => {
+    const from = was.get(rider.id);
+    return from !== undefined && rider.id !== meId && from !== rider.status ? [{ rider, from, to: rider.status }] : [];
+  });
+}
+
+const SIGNAL_TEXT: Record<GroupStatus, string> = {
+  ok: 'is all good',
+  wait_up: 'says wait up',
+  fuel: 'needs a fuel stop',
+  break: 'is taking a break',
+  help: 'is asking for help',
+};
+
+/**
+ * What the notification says, for example "Annuai is asking for help". Going back to all good is only worth a message after help
+ * (it settles the worry); a change between the other signals is news by itself.
+ */
+export function signalNotice(c: SignalChange): { title: string; body: string } | null {
+  if (c.to === 'ok' && c.from !== 'help') return null;
+  const body = c.to === 'ok' ? `${c.rider.name} is OK now` : `${c.rider.name} ${SIGNAL_TEXT[c.to]}`;
+  return { title: c.to === 'help' ? 'Group ride: help needed' : 'Group ride', body };
+}

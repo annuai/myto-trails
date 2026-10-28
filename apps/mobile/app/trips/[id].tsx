@@ -5,7 +5,7 @@ import { ListPlus, Pencil, Play, Route as RouteIcon, Square, Trash2 } from 'luci
 import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
 import { startTodaysRide, startTrip } from '@/features/trip/startTrip';
 import { TripDaySheet } from '@/features/trip/TripDaySheet';
-import { dayIndexOn, dayDate, expiringBefore, lastDate, rangeText, tripStatus, whenText } from '@/lib/tripPlan';
+import { dayIndexOn, dayDate, expiringBefore, lastDate, rangeText, startTimeText, tripStatus, whenText } from '@/lib/tripPlan';
 import { formatDate, formatShort, todayISO } from '@/lib/dates';
 import { tripDays, tripTotals } from '@/lib/trips';
 import { asText, distanceKm, durationParts } from '@/lib/units';
@@ -56,7 +56,7 @@ export default function TripDetail() {
       <TripDaySheet trip={trip} index={dayOpen} onClose={() => setDayOpen(null)} />
     </>}>
       <BackHeader title="Trips" right={trip.startDate ? <IconButton icon={Pencil} label="Change the trip" onPress={() => setEditing(true)} plain /> : undefined} />
-      <PageTitle sub={trip.startDate ? [rangeText(trip), `${trip.days?.length ?? 1} ${(trip.days?.length ?? 1) === 1 ? 'day' : 'days'}`, whenText(trip, today)].filter(Boolean).join(' · ') : rides.length ? undefined : "Open a ride's story and choose Add to a trip."}>{trip.name}</PageTitle>
+      <PageTitle sub={trip.startDate ? [rangeText(trip), trip.startTime !== undefined ? startTimeText(trip.startTime) : '', `${trip.days?.length ?? 1} ${(trip.days?.length ?? 1) === 1 ? 'day' : 'days'}`, whenText(trip, today)].filter(Boolean).join(' · ') : rides.length ? undefined : "Open a ride's story and choose Add to a trip."}>{trip.name}</PageTitle>
 
       {status === 'ready' ? (
         <View style={{ gap: space[3] }}>
@@ -69,7 +69,13 @@ export default function TripDetail() {
           <Button variant="soft" icon={Square} label="End trip" onPress={() => useTrips.getState().end(trip.id)} />
         </View>
       ) : status === 'upcoming' ? (
-        <Text variant="label" tone="muted">{whenText(trip, today)}. On the first day, tap Start trip here to begin recording.</Text>
+        <Text variant="label" tone="muted">{whenText(trip, today)}{trip.startTime !== undefined ? ` at ${startTimeText(trip.startTime)}` : ''}. Tap Start trip here to begin recording. The reminder to start is set in Notifications.</Text>
+      ) : status === 'missed' ? (
+        <Card style={{ gap: space[3] }}>
+          <Text variant="bodyMedium">This trip was not started</Text>
+          <Text variant="label" tone="muted">Nothing was recorded: recording only begins when you press Start trip. The plan is still here, so move it to a new date and time, or delete it.</Text>
+          <Button label="Move it" onPress={() => setEditing(true)} />
+        </Card>
       ) : null}
 
       {expiring.length ? (

@@ -1,4 +1,9 @@
 import { useState } from 'react';
+import { View } from 'react-native';
+import { LEAD_CHOICES, leadLabel, REMIND_BEFORE_MIN } from '@/lib/tripPlan';
+import { space } from '@/theme/tokens';
+import { Card } from '@/ui/Card';
+import { ChoiceChip } from '@/ui/Chip';
 import { Button } from '@/ui/Button';
 import { Checkbox } from '@/ui/Checkbox';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
@@ -11,9 +16,10 @@ import { syncReminders } from '@/NotificationHost';
 import { useNotifications } from '@/store/notifications';
 import type { Prefs } from '@/store/notificationsCore';
 
-const toggles: { key: keyof Prefs; label: string; sub: string }[] = [
+const toggles: { key: Exclude<keyof Prefs, 'tripLeadMin'>; label: string; sub: string }[] = [
   { key: 'todos', label: 'To-dos and documents', sub: 'A week, a day and the day it is due, and once if it is overdue' },
-  { key: 'trips', label: 'Trip plans', sub: '9 pm the evening before, and 7:30 am on ride day' },
+  { key: 'trips', label: 'Trip plans', sub: '9 pm the evening before a trip, with what is still to pack' },
+  { key: 'groupSignals', label: 'Group ride signals', sub: 'When someone in your group asks for help, needs fuel or a break' },
   { key: 'paused', label: 'Ride paused', sub: 'After 30 minutes paused, so a ride is not forgotten' },
   { key: 'showDetails', label: 'Show details on the lock screen', sub: 'Off: a reminder only says "Myto Moto reminder"' },
 ];
@@ -53,9 +59,16 @@ export default function NotificationSettings() {
             right={<Checkbox checked={prefs[t.key]} label={t.label} onChange={(v) => useNotifications.getState().setPref(t.key, v)} />} />
         ))}
       </ListCard>
+      <SectionTitle>Trip start reminder</SectionTitle>
+      <Card style={{ gap: space[3] }}>
+        <Text variant="label" tone="muted">How long before a trip starts to be reminded to open the app and start it. A trip you do not start records nothing.</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
+          {LEAD_CHOICES.map((m) => <ChoiceChip key={m} label={leadLabel(m)} selected={(prefs.tripLeadMin ?? REMIND_BEFORE_MIN) === m} onPress={() => useNotifications.getState().setTripLead(m)} />)}
+        </View>
+      </Card>
       <SectionTitle>Check it works</SectionTitle>
       <Button variant="soft" label="Send a test notification" onPress={() => void test()} />
-      {note ? <Text variant="label" tone="stop" style={{ marginTop: 12 }}>{note}</Text> : null}
+      {note ? <Text variant="label" tone="stop" style={{ marginTop: space[3] }}>{note}</Text> : null}
     </Screen>
   );
 }
