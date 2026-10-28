@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Camera, ClipboardList, MoreHorizontal, Route as RouteIcon, Trash2 } from 'lucide-react-native';
 import { toTrailLike } from '@/api/status';
 import { useTrailSearch } from '@/api/useApi';
 import { useTrailStore } from '@/store/trails';
+import { finishRide } from '@/lib/finishRide';
+import { useRecorder } from '@/store/recorder';
 import { IconButton } from '@/ui/IconButton';
 import { Sheet } from '@/ui/Sheet';
 import { dueInfo, isDueSoon } from '@/lib/todos';
@@ -35,6 +37,13 @@ export default function Home() {
   const rides = useRides((s) => s.rides);
   const nextTrip = useTrailStore((s) => s.nextTrip);
   const [menu, setMenu] = useState(false);
+  const [recoverOpen, setRecoverOpen] = useState(false);
+  const recoverable = useRecorder((s) => s.recoverable);
+  // A ride left on disk by a crash or a kill is offered back, never dropped.
+  useEffect(() => { void useRecorder.getState().checkRecoverable(); }, []);
+  const saveRecovered = async () => { const id = await finishRide(); await useRecorder.getState().checkRecoverable(); setRecoverOpen(false); if (id) router.push(`/story/${id}`); };
+  const continueRecovered = async () => { await useRecorder.getState().recover(); setRecoverOpen(false); router.push('/ride/live'); };
+  const discardRecovered = async () => { await useRecorder.getState().discardRecovered(); setRecoverOpen(false); };
   const near = useTrailSearch('');
   const km_ = totalKm(rides);
   const todos = useTodos((s) => s.todos);
@@ -46,16 +55,27 @@ export default function Home() {
   const latest = rides[0];
 
   return (
-    <Screen tabs brand overlay={
+    <Screen tabs brand overlay={<>
       <Sheet open={menu} title="Next ride" onClose={() => setMenu(false)}>
         <Text variant="label" tone="muted">{trail ? `${trail.name}${trail.date ? `, ${trail.date}` : ''}` : ''}</Text>
         <Button variant="danger" icon={Trash2} label="Cancel this plan" onPress={() => { useTrailStore.getState().cancelPlan(); setMenu(false); }} />
         <Button variant="soft" label="Keep it" onPress={() => setMenu(false)} />
       </Sheet>
-    }>
+      <Sheet open={recoverOpen} title="Recovered ride" onClose={() => setRecoverOpen(false)}>
+        <Text variant="label" tone="muted">Myto closed while you were recording. {recoverable ? `${recoverable.points} GPS points were saved on this phone.` : ''}</Text>
+        <Button label="Save ride" onPress={() => void saveRecovered()} />
+        <Button variant="soft" label="Keep riding" onPress={() => void continueRecovered()} />
+        <Button variant="danger" icon={Trash2} label="Discard" onPress={() => void discardRecovered()} />
+      </Sheet>
+    </>}>
       <Columns
         rightStartsWithSection
         left={<>
+      {recoverable ? (
+        <View style={{ marginBottom: 12 }}>
+          <Banner eyebrow="Unsaved ride" title={`Recovered a ride from ${new Date(recoverable.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Save it or discard it.`} onPress={() => setRecoverOpen(true)} />
+        </View>
+      ) : null}
       {trail ? (
         <HeroCard eyebrow={trail.date ? `Next ride · ${trail.date}` : 'Next ride'} title={trail.name} action={<IconButton icon={MoreHorizontal} label="Next ride options" onPress={() => setMenu(true)} plain />}>
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>

@@ -77,3 +77,9 @@ export function segmentsOf(points: LatLng[], breaks: number[] = []): LatLng[][] 
   const starts = [0, ...breaks.filter((b) => b > 0 && b < points.length)];
   return starts.map((s, i) => points.slice(s, starts[i + 1]));
 }
+
+/** The inverse of `segmentsOf`: the index in the flat track where each segment after the first starts. */
+export function breaksOf(segments: LatLng[][]): number[] {
+  let at = 0;
+  return segments.slice(0, -1).map((s) => (at += s.length));
+}

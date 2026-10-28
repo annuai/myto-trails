@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Linking, View } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Flag, Phone, Square, Siren } from 'lucide-react-native';
+import { Banner } from '@/ui/Banner';
 import { clock } from '@/lib/format';
 import { finishRide } from '@/lib/finishRide';
 import { useProfile } from '@/store/profile';
@@ -63,8 +64,18 @@ function LiveBody() {
       </View>
     </Card>
   );
-  const status = r.source === 'gps' && !fix && gpsError ? <Text variant="label" tone="caution">{gpsError}</Text>
-    : <Text variant="label" tone="muted" style={{ textAlign: landscape ? 'left' : 'center' }}>{r.points.length ? `${r.points.length} points recorded${fix?.accuracy ? ` · GPS ±${Math.round(fix.accuracy)} m` : ''}` : 'Waiting for a GPS fix…'}</Text>;
+  const ageSec = r.lastFixAt ? Math.max(0, Math.round((Date.now() - r.lastFixAt) / 1000)) : 0;
+  const lostSignal = r.source === 'gps' && r.lastFixAt > 0 && ageSec >= 15;
+  // The background task is what keeps recording with the screen locked; tell the rider when it is not running.
+  const foregroundOnly = r.source === 'gps' && Platform.OS !== 'web' && !r.backgrounded && Date.now() - r.startedAt > 3000;
+  const status = (
+    <View style={{ gap: 8 }}>
+      {lostSignal ? <Banner eyebrow="GPS" title="Lost GPS signal, still recording" /> : null}
+      {foregroundOnly ? <Banner eyebrow="Heads up" title="Recording stops if you lock the phone. Tap to allow Always in Settings." onPress={() => void Linking.openSettings()} /> : null}
+      {r.source === 'gps' && !fix && gpsError ? <Text variant="label" tone="caution">{gpsError}</Text>
+        : <Text variant="label" tone="muted" style={{ textAlign: landscape ? 'left' : 'center' }}>{r.lastFixAt ? `Last fix ${ageSec} s ago${fix?.accuracy ? ` · GPS ±${Math.round(fix.accuracy)} m` : ''}` : 'Waiting for a GPS fix…'}</Text>}
+    </View>
+  );
   const waypointBtn = (h: number) => (
     <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => void useRecorder.getState().addWaypoint()} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: 6 })}>
       <Icon icon={Flag} size={h > 70 ? 26 : 22} /><Text variant="labelMedium">Waypoint{r.waypoints.length ? ` · ${r.waypoints.length}` : ''}</Text>

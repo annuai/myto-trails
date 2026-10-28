@@ -3,3 +3,4 @@ export const TASK_NAME = 'myto-ride-recording';
 export const requestRideLocationAccess = async (): Promise<'always' | 'foreground' | 'denied'> => 'foreground';
 export const startBackground = async (): Promise<boolean> => false;
 export const stopBackground = async (): Promise<void> => undefined;
+export const needsAlwaysExplainer = async (): Promise<boolean> => false;

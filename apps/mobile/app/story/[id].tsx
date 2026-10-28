@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Download, Trash2, Upload } from 'lucide-react-native';
 import { exportGpx } from '@/lib/exportGpx';
 import { buildGpx } from '@/lib/gpx';
+import { segmentsOf, trackStats } from '@/lib/track';
 import { asText, distanceKm, durationParts, speedKmh } from '@/lib/units';
 import { formatDate } from '@/lib/dates';
 import { useRides } from '@/store/rides';
@@ -31,6 +32,7 @@ function StoryBody() {
   const ride = useRides((s) => s.rides.find((r) => r.id === id));
   if (!ride) return <Screen><BackHeader /><Text>Ride not found.</Text></Screen>;
   const sub = ride.submission;
+  const gapM = trackStats(segmentsOf(ride.points, ride.breaks)).gapM;
   return (
     <Screen>
       <BackHeader title="Ride story" />
@@ -46,7 +48,7 @@ function StoryBody() {
       <Card style={{ flexDirection: 'row' }}>
         <Stat parts={speedKmh(ride.maxKmh)} label="Top speed" />
         <Stat value={`${ride.waypoints.length}`} label="Waypoints" />
-        <Stat value={`${ride.points.length}`} label="Points" />
+        {gapM > 0 ? <Stat parts={distanceKm(+(gapM / 1000).toFixed(1))} label="GPS gap" /> : <Stat value={`${ride.points.length}`} label="Points" />}
       </Card>
         </>}
         right={<>
@@ -60,7 +62,7 @@ function StoryBody() {
       ) : null}
       <View style={{ gap: 12, marginTop: sub ? 12 : 0 }}>
         <Button icon={Upload} label={sub ? 'Upload again' : 'Upload to Moto Trails'} arrow onPress={() => router.push(`/story/submit?id=${ride.id}`)} />
-        <Button variant="soft" icon={Download} label="Export GPX file" onPress={() => exportGpx(ride.name, buildGpx(ride.name, ride.points, ride.waypoints))} />
+        <Button variant="soft" icon={Download} label="Export GPX file" onPress={() => exportGpx(ride.name, buildGpx(ride.name, ride.points, ride.waypoints, ride.breaks))} />
         <Button variant="danger" icon={Trash2} label="Delete this ride" onPress={() => { useRides.getState().removeRide(ride.id); router.replace('/rides'); }} />
       </View>
         </>}

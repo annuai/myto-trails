@@ -25,6 +25,11 @@ export async function requestRideLocationAccess(): Promise<'always' | 'foregroun
   return bg.status === 'granted' ? 'always' : 'foreground';
 }
 
+/** True when background recording is not yet allowed, so the rider should be told why we ask before the system prompt. */
+export async function needsAlwaysExplainer(): Promise<boolean> {
+  try { return (await Location.getBackgroundPermissionsAsync()).status !== 'granted'; } catch { return false; }
+}
+
 /** Start background recording. Returns false when it cannot run (no Always permission), so the caller falls back to the foreground watch. */
 export async function startBackground(): Promise<boolean> {
   try {

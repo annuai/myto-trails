@@ -2,6 +2,7 @@ import { ApiFailure, api } from '@/api/client';
 import { SITE_BASE } from '@/api/config';
 import type { LatLng } from './geo';
 import { buildGpx } from './gpx';
+import { breaksOf, splitSegments } from './track';
 
 export type RideSubmission = {
   clientId: string; name: string; summary: string; state: string; district: string; nearestTown: string;
@@ -24,7 +25,7 @@ export async function submitRide(token: string, s: RideSubmission, progress: Pro
   const { id } = await call<{ id: string }>('/submissions', 'POST', { clientId: s.clientId });
 
   progress('Uploading the route');
-  const gpx = buildGpx(s.name, s.points, s.waypoints);
+  const gpx = buildGpx(s.name, s.points, s.waypoints, breaksOf(splitSegments(s.points)));
   const size = new TextEncoder().encode(gpx).byteLength;
   const up = await call<{ uploadId: string; target: { url: string; method: 'PUT'; headers: Record<string, string> } }>('/uploads', 'POST', { kind: 'gpx', contentType: 'application/gpx+xml', sizeBytes: size });
   // The development file store hands out a path on the website; the production store hands out a full address.
