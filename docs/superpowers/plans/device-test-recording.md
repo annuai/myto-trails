@@ -11,7 +11,7 @@ npx expo run:ios --device      # iPhone
 npx expo run:android --device  # Android 13 or later
 ```
 
-`prebuild` rewrites the tracked `apps/mobile/ios/` project (background mode, location strings). **Commit those changes**; until then the committed iOS project does not carry the new settings.
+The committed `apps/mobile/ios/Info.plist` already carries the background location mode and the location and microphone texts. Do **not** run `prebuild` without a pod install (it deletes `Podfile.lock` and other generated files): `npx expo run:ios` installs pods itself. Android has no native project yet; `npx expo run:android` generates it from `app.json` (background location, foreground service, microphone).
 
 Allow **Always** location when asked. On Android 13+, also allow notifications, or the "Recording your ride" notice stays hidden (recording still runs).
 
@@ -35,6 +35,18 @@ Before each ride, note the real distance from a trusted source (a second app, or
 | h | Export the GPX from a ride with a gap | The file has two `<trkseg>` blocks | | |
 | i | Android: check the notification shade during a ride | "Recording your ride" is shown for the whole ride and goes away on stop | | |
 | j | iOS: look at the status bar during a ride with the screen on | The blue location indicator is shown | | |
+
+## Pause, stopped detection and the journal
+
+| # | What you do | Pass when | iPhone | Android |
+|---|-------------|-----------|--------|---------|
+| k | Ride, tap **Pause** at a tea stop, walk around with the phone for 5 minutes, tap **Resume**, ride on | Timer froze while paused, the ride bar says "Paused", no GPS gap is shown, the saved duration excludes the break, no line crosses the break | | |
+| l | Pause, force-quit, reopen | Home offers the recovered ride; **Keep riding** comes back paused with the right time | | |
+| m | Stop at a light or tea stop with the bike on (screen on, live screen open), then open **Journal**, **Write a note** | Note editor unlocks within about 10 s of stopping, even if the phone shows 1 km/h. Record how long it took and whether the speed reading drifted | | |
+| n | Roll off in traffic at 3 to 5 km/h and try **Write a note** | Stays locked. If you start moving while typing, the draft is saved as a note and the editor closes | | |
+| o | While riding, tap Journal, **Record a voice note**, stop, **Take photo** | Both are saved; open the ride story, **Journal**: the voice note plays back and the photo shows | | |
+| p | **Export my data**, erase all data, **Import data** (replace) | Notes, photos and voice notes all come back and play. Repeat with merge on a phone that has other journals | | |
+| q | Delete a ride that has a journal | The prompt says the journal is deleted too, and its photos and voice files go with it | | |
 
 ## Also check the journal on a device
 

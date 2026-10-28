@@ -51,7 +51,7 @@
         }
       ],
       "expo-sqlite",
-      ["expo-audio", { "microphonePermission": "Myto records voice notes for your ride journal. They stay on this phone." }]
+      ["expo-audio", { "microphonePermission": "Myto records voice notes for your ride journal. They stay on this phone.", "enableBackgroundPlayback": false }]
     ],
     "experiments": {
       "typedRoutes": true
