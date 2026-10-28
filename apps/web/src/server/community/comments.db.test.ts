@@ -43,15 +43,11 @@ describe("postComment", () => {
     expect(list[0]!.replies.map((r) => [r.authorName, r.authorId])).toEqual([["Bob", null]]);
   });
 
-  it("holds a new member's first two comments for approval; the author sees them marked pending, nobody else does", async () => {
+  it("shows a new member's comments straight away, to everyone", async () => {
     const t = await insertTrailFixture(db.sql, {});
     const u = await member({ name: "Newbie" });
-    for (const body of ["My first comment here", "My second comment here"]) {
-      expect(await postComment(db.sql, { userId: u, slug: t.slug, body })).toMatchObject({ ok: true, status: "pending" });
-    }
-    expect((await listComments(db.sql, t.slug, u)).map((c) => [c.pending, c.mine])).toEqual([[true, true], [true, true]]);
-    expect(await listComments(db.sql, t.slug, null)).toEqual([]);
-    expect(await listComments(db.sql, t.slug, await member())).toEqual([]);
+    expect(await postComment(db.sql, { userId: u, slug: t.slug, body: "My first comment here" })).toMatchObject({ ok: true, status: "visible" });
+    expect((await listComments(db.sql, t.slug, null)).map((c) => c.body)).toEqual(["My first comment here"]);
   });
 
   it("lets moderators post straight away", async () => {

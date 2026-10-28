@@ -137,7 +137,11 @@ function mergeById<T extends { id: string } & Stamped>(local: T[], incoming: T[]
 }
 
 /** Copy of `incoming` as a Snapshot, without the photo files. */
-const plain = (p: Snapshot): Snapshot => ({ licence: p.licence, vehicle: p.vehicle, contacts: p.contacts, medical: p.medical, photos: p.photos, todos: p.todos, rides: p.rides, journal: p.journal, bike: p.bike });
+const plain = (p: Snapshot): Snapshot => ({ licence: p.licence, vehicle: p.vehicle, contacts: p.contacts, medical: p.medical, photos: p.photos, todos: p.todos, rides: p.rides, journal: p.journal, journalTitles: p.journalTitles, routes: p.routes, trips: p.trips, bike: p.bike });
+
+/** Both lists joined, the same id kept once (the phone's copy), and no list at all when neither side has one. */
+const union = <T extends { id: string }>(local: T[] | undefined, incoming: T[] | undefined): T[] | undefined =>
+  local || incoming ? [...new Map([...(incoming ?? []), ...(local ?? [])].map((x) => [x.id, x])).values()] : undefined;
 
 export function mergeSnapshots(local: Snapshot, incoming: Snapshot): Snapshot {
   const contacts = mergeById(local.contacts, incoming.contacts);
@@ -152,6 +156,8 @@ export function mergeSnapshots(local: Snapshot, incoming: Snapshot): Snapshot {
     todos: mergeById(local.todos, incoming.todos), rides: mergeById(local.rides, incoming.rides),
     // an entry with the same id is the same entry: the phone's copy stays
     journal: [...new Map([...incoming.journal, ...local.journal].map((e) => [e.id, e])).values()],
+    journalTitles: { ...incoming.journalTitles, ...local.journalTitles },
+    routes: union(local.routes, incoming.routes), trips: union(local.trips, incoming.trips),
     bike: incoming.bike !== undefined && local.bike === undefined ? incoming.bike : local.bike,
   };
 }

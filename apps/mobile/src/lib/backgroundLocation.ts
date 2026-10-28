@@ -43,7 +43,7 @@ async function startNow(): Promise<boolean> {
     await Location.startLocationUpdatesAsync(TASK_NAME, {
       accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 5, timeInterval: 1000,
       pausesUpdatesAutomatically: false, showsBackgroundLocationIndicator: true, activityType: Location.ActivityType.AutomotiveNavigation,
-      foregroundService: { notificationTitle: 'Recording your ride', notificationBody: 'Myto is recording your route.' },
+      foregroundService: { notificationTitle: 'Recording your ride', notificationBody: 'Myto Moto is recording your route.' },
     });
     return true;
   } catch {

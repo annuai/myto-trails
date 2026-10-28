@@ -10,7 +10,7 @@ export function VoiceHost() {
     useVoice.getState().attach({
       start: async () => {
         const perm = await requestRecordingPermissionsAsync();
-        if (!perm.granted) throw new UserFacingError('The microphone is turned off for Myto. Allow it in your phone settings.');
+        if (!perm.granted) throw new UserFacingError('The microphone is turned off for Myto Moto. Allow it in your phone settings.');
         await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
         await recorder.prepareToRecordAsync();
         recorder.record();

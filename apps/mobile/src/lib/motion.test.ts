@@ -26,16 +26,16 @@ describe('stopped detection', () => {
     expect(stoppedAt(run(7, wander), 6)).toBe(false);
     expect(stoppedAt(run(10, wander), 9)).toBe(true);
   });
-  it('is moving again at once on a fix of 6 km/h or more', () => {
+  it('is moving again after two fixes in a row of 6 km/h or more', () => {
     const parked = run(15, () => ({ speed: 0 }));
     expect(stoppedAt(parked, 14)).toBe(true);
-    const going = run(1, () => ({ speed: 8 * KMH, north: 3 }), parked, 15);
-    expect(stoppedAt(going, 15)).toBe(false);
+    const going = run(2, () => ({ speed: 8 * KMH, north: 3 }), parked, 15);
+    expect(stoppedAt(going, 16)).toBe(false);
   });
   it('is moving again when the position leaves the stopped radius, even if the speed reads low', () => {
     const parked = run(15, () => ({ speed: 0.5 * KMH }));
-    const drifted = run(1, () => ({ speed: 0.5 * KMH, north: 40 }), parked, 15);
-    expect(stoppedAt(drifted, 15)).toBe(false);
+    const drifted = run(2, () => ({ speed: 0.5 * KMH, north: 40 }), parked, 15);
+    expect(stoppedAt(drifted, 16)).toBe(false);
   });
   it('creeping at 3 km/h never becomes stopped', () => {
     const s = run(30, (i) => ({ north: i * 0.83, speed: 3 * KMH }));
@@ -91,5 +91,43 @@ describe('stopped detection', () => {
   });
   it('a fix worse than 25 m accuracy is never stopped even with speed 0', () => {
     expect(stoppedAt(run(30, () => ({ speed: 0, acc: 30 })), 29)).toBe(false);
+  });
+
+  // Jitter: a stopped rider must not look moving, and a moving rider must not look stopped.
+  describe('jitter tolerance', () => {
+    const parked = () => run(15, () => ({ speed: 0 }));
+    it('one speed spike while stopped does not flip it', () => {
+      const s = run(1, () => ({ speed: 9 * KMH }), parked(), 15);
+      expect(stoppedAt(s, 15)).toBe(true);
+      expect(stoppedAt(run(1, () => ({ speed: 0 }), s, 16), 16)).toBe(true);
+    });
+    it('alternating spike and still fixes never flips a stop', () => {
+      const s = run(10, (i) => ({ speed: i % 2 ? 0 : 9 * KMH }), parked(), 15);
+      expect(stoppedAt(s, 24)).toBe(true);
+    });
+    it('one position jump while stopped does not flip it', () => {
+      const s = run(1, () => ({ speed: 0, north: 15 }), parked(), 15);
+      expect(stoppedAt(s, 15)).toBe(true);
+    });
+    it('a poor-accuracy fix with a wild position does not flip a stop', () => {
+      const s = run(5, (i) => ({ speed: 3 * KMH, north: i * 20, acc: 60 }), parked(), 15);
+      expect(stoppedAt(s, 19)).toBe(true);
+    });
+    it('a stop survives a spell of poor fixes, but not a long one', () => {
+      expect(stoppedAt(run(10, () => ({ speed: 0, acc: 40 }), parked(), 15), 24)).toBe(true);
+      expect(stoppedAt(run(40, () => ({ speed: 0, acc: 40 }), parked(), 15), 54)).toBe(false);
+    });
+    it('poor fixes do not count toward the dwell of a stop that has not started', () => {
+      const s = run(10, (i) => ({ speed: 0, acc: i % 2 ? 5 : 40 }));
+      expect(stoppedAt(s, 9)).toBe(false);
+    });
+    it('a wide-accuracy fix gets a wider radius: 15 m of wander at 15 m accuracy is jitter', () => {
+      const s = run(10, (i) => ({ speed: 0, acc: 15, north: i % 2 ? 14 : 0 }), parked(), 15);
+      expect(stoppedAt(s, 24)).toBe(true);
+    });
+    it('real riding off still leaves the stop within two fixes, and at once when fast', () => {
+      expect(stoppedAt(run(2, (i) => ({ speed: 10 * KMH, north: (i - 14) * 3 })    , parked(), 15), 16)).toBe(false);
+      expect(stoppedAt(run(1, () => ({ speed: 20 * KMH, north: 6 }), parked(), 15), 15)).toBe(false);
+    });
   });
 });

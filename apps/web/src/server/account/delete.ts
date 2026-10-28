@@ -37,7 +37,8 @@ export async function soleAdminClubs(sql: Db, userId: string): Promise<string[]>
  * Deletes a rider's account and the personal data tied to it.
  *
  * Removed: the account, sessions and device tokens, saved trails, comments and club posts (with the replies under them),
- * memberships, join requests and the phone numbers in them, questions, avatar, bike, drafts, and every uploaded file that
+ * memberships, join requests and the phone numbers in them, questions, avatar, bike, drafts, check-ins (with their positions
+ * and emergency details), group rides they lead and their place in others, condition reports and votes, shared routes, and every uploaded file that
  * is not part of a published trail. Clubs the rider is the only member of go with them.
  * Kept: published trails and their photos and route files, with the contributor's name taken off; reports the rider filed
  * (shown as "Former rider"); the append-only moderation and audit records, which hold no personal details.

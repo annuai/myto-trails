@@ -40,6 +40,24 @@ describe('recorder over the journal', () => {
     expect(second.getState().waypoints).toHaveLength(1);
     expect(second.getState().recoverable).toBeNull();
   });
+  it('names the last waypoint by what it marks, counting each kind, and keeps that on disk', async () => {
+    const j = createMemoryJournal();
+    const rec = createRecorder(j);
+    await rec.getState().start('gps');
+    await rec.getState().ingest(pt(0, 0));
+    await rec.getState().addWaypoint();
+    await rec.getState().retypeLastWaypoint('fuel');
+    await rec.getState().addWaypoint();
+    await rec.getState().retypeLastWaypoint('fuel');
+    expect(rec.getState().waypoints.map((w) => [w.name, w.kind])).toEqual([['Fuel 1', 'fuel'], ['Fuel 2', 'fuel']]);
+    expect((await j.read())!.waypoints.map((w) => w.kind)).toEqual(['fuel', 'fuel']);
+  });
+  it('retyping with no waypoint does nothing', async () => {
+    const rec = createRecorder(createMemoryJournal());
+    await rec.getState().start('gps');
+    await expect(rec.getState().retypeLastWaypoint('water')).resolves.toBeUndefined();
+    expect(rec.getState().waypoints).toEqual([]);
+  });
   it('starting a ride while an unfinished one exists does not overwrite it', async () => {
     const j = createMemoryJournal();
     const first = createRecorder(j);
@@ -99,6 +117,17 @@ describe('recorder review fixes', () => {
     expect(rec.getState().moving).toBe(true);
     await rec.getState().ingest({ ...pt(0, 30), speed: 0 });
     expect(rec.getState().moving).toBe(false);
+  });
+  it('moving ignores jitter: a parked phone wandering 5 m a second is not moving, and a poor fix changes nothing', async () => {
+    const rec = createRecorder(createMemoryJournal());
+    await rec.getState().start('gps');
+    await rec.getState().ingest({ ...pt(0, 0, 5), speed: 10 });
+    await rec.getState().ingest({ ...pt(0, 1, 5), speed: 0 });
+    await rec.getState().ingest({ ...pt(5, 2, 5) });
+    expect(rec.getState().moving).toBe(false);
+    await rec.getState().ingest({ ...pt(0, 3, 5), speed: 10 });
+    await rec.getState().ingest({ ...pt(300, 4, 500) });
+    expect(rec.getState().moving).toBe(true);
   });
   it('a failed waypoint write sets an error and does not throw', async () => {
     const inner = createMemoryJournal();

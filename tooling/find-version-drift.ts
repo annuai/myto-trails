@@ -11,3 +11,8 @@ export function findVersionDrift(expected: string, files: { path: string; versio
     f.version === expected ? [] : [f.version === undefined ? `${f.path} has no version, expected ${expected}` : `${f.path} is ${f.version}, expected ${expected}`],
   );
 }
+
+/** The marketing version in an iOS Info.plist (`CFBundleShortVersionString`), not the build number. */
+export function plistVersion(plist: string): string | undefined {
+  return /<key>CFBundleShortVersionString<\/key>\s*<string>([^<]*)<\/string>/.exec(plist)?.[1];
+}

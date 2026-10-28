@@ -10,7 +10,8 @@
     "export:web": "npm run assets:maplibre && expo export --platform web",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "assets:maplibre": "node scripts/copy-maplibre-worker.mjs"
+    "assets:maplibre": "node scripts/copy-maplibre-worker.mjs",
+    "lint": "expo lint"
   },
   "dependencies": {
     "@expo-google-fonts/geist": "^0.4.2",
@@ -37,6 +38,7 @@
     "expo-linking": "~58.0.14",
     "expo-local-authentication": "~58.0.2",
     "expo-location": "~58.0.19",
+    "expo-notifications": "~58.1.6",
     "expo-router": "~58.0.26",
     "expo-secure-store": "~58.0.2",
     "expo-sharing": "~58.0.20",
@@ -54,11 +56,13 @@
     "react-native-safe-area-context": "~5.10.1",
     "react-native-screens": "~4.30.0",
     "react-native-svg": "15.16.0",
+    "react-native-view-shot": "6.1.1",
     "react-native-web": "^0.21.4",
     "zustand": "^5.0.16"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
+    "eslint-config-expo": "~58.0.4",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
   }

@@ -1,11 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AlertTriangle, Bookmark, CalendarPlus, CloudOff, Download, Trash2 } from 'lucide-react-native';
+import { AlertTriangle, Bookmark, CalendarPlus, CloudOff, Download, Stamp, Trash2 } from 'lucide-react-native';
 import { accessOf, conditionOf, dur, headline, verificationOf } from '@/api/status';
 import { toLatLng } from '@/api/types';
 import { setSaved, useSaved, useTrail } from '@/api/useApi';
 import { useTrailCommentsSection } from '@/features/community/useTrailCommentsSection';
+import { RiderReports } from '@/features/RiderReports';
+import { markRidden, unmarkRidden } from '@/api/ridden';
+import { useRidden } from '@/features/passport/useRidden';
+import { ElevationChart } from '@/ui/ElevationChart';
+import { RouteCheck } from '@/features/RouteCheck';
+import { deleteTiles, downloadTiles, hasTiles, tilesAvailable } from '@/lib/offlineTiles';
 import { formatDate, todayISO } from '@/lib/dates';
 import { asText, distanceKm, elevationM } from '@/lib/units';
 import { useAuth } from '@/store/auth';
@@ -41,6 +47,16 @@ export default function TrailDetail() {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
   const comments = useTrailCommentsSection(slug);
+  const ridden = useRidden();
+  const iRode = !!ridden.items?.some((r) => r.slug === slug);
+  const toggleRidden = async () => {
+    if (!token) return router.push('/you');
+    setBusy(true); setProblem(undefined);
+    try { await (iRode ? unmarkRidden(token, slug) : markRidden(token, slug)); ridden.reload(); } catch (e) { setProblem(e instanceof Error ? e.message : 'Could not update your list.'); } finally { setBusy(false); }
+  };
+  /** Map tiles saved for this trail: a percentage while they download, true once saved. */
+  const [tiles, setTiles] = useState<number | true>();
+  useEffect(() => { void hasTiles(slug).then((v) => v && setTiles(true)).catch(() => undefined); }, [slug]);
   const line = useMemo(() => (t.data?.route ? toLatLng(t.data.route.line) : undefined), [t.data?.route]);
 
   if (!t.data) {
@@ -61,7 +77,16 @@ export default function TrailDetail() {
     setBusy(true); setProblem(undefined);
     try { await setSaved(slug, !isSaved, token); saved.reload(); } catch (e) { setProblem(e instanceof Error ? e.message : 'Could not update Saved.'); } finally { setBusy(false); }
   };
-  const getPack = async () => { setProblem(undefined); try { await download(slug); } catch (e) { setProblem(e instanceof Error ? e.message : 'Download failed.'); } };
+  const getPack = async () => {
+    setProblem(undefined);
+    try {
+      await download(slug);
+      // The map itself, when the project has a tile provider that allows saving tiles (the public OpenStreetMap servers do not).
+      const saved = useTrailStore.getState().offline[slug]?.route;
+      if (tilesAvailable && saved) { setTiles(0); await downloadTiles(slug, toLatLng(saved.line), setTiles); setTiles(true); }
+    } catch (e) { setTiles(undefined); setProblem(e instanceof Error ? e.message : 'Download failed.'); }
+  };
+  const dropPack = () => { removeDownload(slug); void deleteTiles(slug).catch(() => undefined); setTiles(undefined); };
 
   const topEl = (<>
       <Card padded={false}>
@@ -76,7 +101,7 @@ export default function TrailDetail() {
       {needsCare ? (
         <Card style={{ marginTop: 20, flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
           <Icon icon={AlertTriangle} tone="caution" />
-          <Text variant="label" style={{ flex: 1 }}>{h.label}. Check access before you ride. Myto never calls an unverified or restricted trail open.</Text>
+          <Text variant="label" style={{ flex: 1 }}>{h.label}. Check access before you ride. Myto Moto never calls an unverified or restricted trail open.</Text>
         </Card>
       ) : null}
       <SectionTitle>Can I ride it</SectionTitle>
@@ -86,12 +111,15 @@ export default function TrailDetail() {
         <Row label="Verification" right={<StatusChip status={verificationOf(detail.verification.level).status} label={verificationOf(detail.verification.level).label} />} />
         {detail.verifiedAt ? <Row label="Verified" value={formatDate(detail.verifiedAt.slice(0, 10))} mono /> : null}
       </ListCard>
+      <RiderReports slug={slug} />
       {detail.permissionInstructions ? <><SectionTitle>Getting permission</SectionTitle><Card><Text variant="body">{detail.permissionInstructions}</Text></Card></> : null}
   </>);
   const routeEl = (<>
       <SectionTitle>Route</SectionTitle>
       {line ? <OsmMap height={260} line={line} radius={24} /> : <Card><Text variant="label" tone="muted">The route line is not published for this trail.</Text></Card>}
       {route ? <Text variant="data" tone="muted" style={{ marginTop: 10 }}>{asText(distanceKm(route.distanceKm))} · +{asText(elevationM(route.elevGainM))} / −{asText(elevationM(route.elevLossM))} · {route.minElevM}–{asText(elevationM(route.maxElevM))}</Text> : null}
+      {route?.profile?.length ? <View style={{ marginTop: 16 }}><ElevationChart samples={route.profile} /></View> : null}
+      {line ? <View style={{ marginTop: 16 }}><RouteCheck line={line} /></View> : null}
       {detail.hazards.length || detail.safetyNotes ? (
         <>
           <SectionTitle>Safety</SectionTitle>
@@ -119,11 +147,12 @@ export default function TrailDetail() {
   const actionsEl = (<>
       <View style={{ marginTop: 28, gap: 12 }}>
         {pack ? (
-          <Button variant="soft" icon={Trash2} label="Remove offline copy" trailing={mb(pack.bytes)} onPress={() => removeDownload(slug)} />
+          <Button variant="soft" icon={Trash2} label="Remove offline copy" trailing={mb(pack.bytes)} onPress={dropPack} />
         ) : (
-          <Button variant="soft" icon={Download} label={downloading[slug] ? 'Saving…' : 'Save for offline'} disabled={!!downloading[slug]} onPress={getPack} />
+          <Button variant="soft" icon={Download} label={downloading[slug] ? 'Saving…' : typeof tiles === 'number' ? `Saving map ${tiles}%` : 'Save for offline'} disabled={!!downloading[slug] || typeof tiles === 'number'} onPress={getPack} />
         )}
         <Button variant="soft" icon={Bookmark} label={isSaved ? 'Saved. Tap to remove' : token ? 'Save this trail' : 'Sign in to save'} disabled={busy} onPress={toggleSave} />
+        <Button variant="soft" icon={Stamp} label={iRode ? "Ridden. Tap to undo" : token ? "I've ridden this" : 'Sign in to mark as ridden'} disabled={busy} onPress={() => void toggleRidden()} />
         <Button variant="soft" icon={CalendarPlus} label="Plan a trip" arrow onPress={() => setPlanning(true)} />
         <Button label="Ride this trail" onPress={() => { planTrip(detail); router.push('/ride'); }} />
       </View>
@@ -140,7 +169,7 @@ export default function TrailDetail() {
       <BackHeader title="Trails" />
       {t.fromOffline ? <Card style={{ marginBottom: 12, flexDirection: 'row', gap: 12, alignItems: 'center' }}><Icon icon={CloudOff} tone="muted" /><Text variant="label" tone="muted" style={{ flex: 1 }}>Showing your downloaded copy, saved {formatDate(new Date(pack?.savedAt ?? Date.now()).toISOString().slice(0, 10))}. Access may have changed.</Text></Card> : null}
       {landscape ? <Columns left={<>{topEl}{actionsEl}</>} right={<>{routeEl}{comments.body}</>} /> : <>{topEl}{routeEl}{actionsEl}{comments.body}</>}
-      <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: 20 }}>Offline saves the details, access and route. Map tiles from OpenStreetMap still need a connection.</Text>
+      <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: 20 }}>{tiles === true ? 'Offline saves the details, access, route and map.' : 'Offline saves the details, access and route. Map tiles still need a connection.'}</Text>
     </Screen>
   );
 }

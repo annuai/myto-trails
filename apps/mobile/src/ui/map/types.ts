@@ -11,6 +11,12 @@ export type OsmMapProps = {
   /** Where the rider is now. */
   position?: LatLng;
   waypoints?: LatLng[];
+  /** Called with the spot the rider tapped, for building a route. */
+  onTap?: (p: LatLng) => void;
+  /** The other riders of a group ride. */
+  riders?: LatLng[];
+  /** The leader's regroup point. */
+  regroup?: LatLng;
   /** Keep the camera on `position` (live riding). Otherwise the map fits line and track. */
   follow?: boolean;
   dark?: boolean;

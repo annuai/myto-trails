@@ -69,7 +69,7 @@ export default function Contacts() {
         </View>
         <Field label="Allergies or conditions (optional)" value={medical.notes ?? ''} onChangeText={(notes) => setMedical({ ...medical, notes })} multiline />
       </Card>
-      <Text variant="caption" tone="muted" style={{ marginTop: 16 }}>Kept on this device. Myto does not replace emergency services.</Text>
+      <Text variant="caption" tone="muted" style={{ marginTop: 16 }}>Kept on this device. Myto Moto does not replace emergency services.</Text>
     </Screen>
   );
 }

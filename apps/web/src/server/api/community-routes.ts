@@ -1,5 +1,6 @@
 import { isValidSlug } from "@moto-trails/domain";
 import { clubAdminIds, createClub, decideJoinRequest, hidePost, leaveClub, listFeed, listJoinRequests, postToClub, removeMember, requestJoin, respondToRide, setMemberRole, withdrawJoinRequest } from "../community/clubs";
+import { listMyRidden, markRidden, unmarkRidden } from "../community/ridden";
 import { deleteComment, editComment, listComments, postComment, reportContent } from "../community/comments";
 import { joinDecisionEmail, joinRequestEmail } from "../community/emails";
 import { sendToUser } from "../moderation/notify";
@@ -68,6 +69,12 @@ const COMMENT: Reasons = {
   rate_limited: [429, "You are commenting too fast. Try again in a little while."],
   too_late: [409, "Comments can be edited for 10 minutes after posting."],
   forbidden: [403, "A moderator removed this comment, so it can't be edited."],
+};
+const RIDDEN: Reasons = {
+  not_member: NOT_MEMBER,
+  not_found: [404, "That isn't available any more."],
+  invalid: [422, "Use a past month like 2026-09, up to 60 characters for the bike and 200 for the note, and leave out web addresses."],
+  rate_limited: RATE,
 };
 const REPORT: Reasons = { ...COMMENT, invalid: [422, "Describe the problem in 5 to 500 characters."] };
 
@@ -192,13 +199,34 @@ export const communityRoutes: RouteDef[] = [
   },
 
   {
+    method: "PUT", path: "/trails/{slug}/ridden", access: "write:submission", summary: "Say you have ridden a trail (body, all optional: month YYYY-MM, bike, note). Saying it again replaces your record",
+    async handler(c) {
+      const b = await asObject(c);
+      const r = await markRidden(c.sql, { userId: c.userId, slug: trailSlug(c), month: str(b.month) || null, bike: str(b.bike) || null, note: str(b.note) || null, now: c.now });
+      return r.ok ? noContent() : failWith(RIDDEN, r.reason);
+    },
+  },
+  {
+    method: "DELETE", path: "/trails/{slug}/ridden", access: "write:submission", summary: "Take back \"I've ridden here\"",
+    async handler(c) {
+      await unmarkRidden(c.sql, { userId: c.userId, slug: trailSlug(c) });
+      return noContent();
+    },
+  },
+  {
+    method: "GET", path: "/me/ridden", access: "token", summary: "The trails the token owner says they have ridden, newest first",
+    async handler(c) {
+      return ok({ items: await listMyRidden(c.sql, c.userId) });
+    },
+  },
+  {
     method: "GET", path: "/trails/{slug}/comments", access: "public", cache: "none", /* not cached: with a token it includes the caller's own pending comments */ summary: "A trail's comments with replies, newest conversation first. With a token, your own comments waiting for a moderator are included",
     async handler(c) {
       return ok({ items: await listComments(c.sql, trailSlug(c), c.auth?.userId ?? null) });
     },
   },
   {
-    method: "POST", path: "/trails/{slug}/comments", access: "write:submission", summary: "Comment on a trail or reply to a comment (body: body, tag gate_closed|water_high|blocked|good_condition|tip, parentId). New riders' first comments wait for a moderator",
+    method: "POST", path: "/trails/{slug}/comments", access: "write:submission", summary: "Comment on a trail or reply to a comment (body: body, tag gate_closed|water_high|blocked|good_condition|tip, parentId). Comments show straight away",
     async handler(c) {
       const b = await asObject(c);
       const r = await postComment(c.sql, { userId: c.userId, slug: trailSlug(c), body: str(b.body), tag: str(b.tag) || null, parentId: str(b.parentId) || null });

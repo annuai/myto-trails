@@ -24,6 +24,13 @@ describe('journal (memory implementation)', () => {
     await j.appendWaypoint({ name: 'Waypoint 1', lat: 13, lng: 77.6 });
     expect((await j.read())?.waypoints).toEqual([{ name: 'Waypoint 1', lat: 13, lng: 77.6 }]);
   });
+  it('retypes a waypoint by position', async () => {
+    await j.begin({ startedAt: 1, source: 'gps' });
+    await j.appendWaypoint({ name: 'Waypoint 1', lat: 13, lng: 77.6 });
+    await j.appendWaypoint({ name: 'Waypoint 2', lat: 13.1, lng: 77.6 });
+    await j.retypeWaypoint(1, 'water', 'Water 1');
+    expect((await j.read())?.waypoints).toEqual([{ name: 'Waypoint 1', lat: 13, lng: 77.6 }, { name: 'Water 1', lat: 13.1, lng: 77.6, kind: 'water' }]);
+  });
   it('is null again after clear', async () => {
     await j.begin({ startedAt: 1, source: 'gps' });
     await j.append(fix(0));

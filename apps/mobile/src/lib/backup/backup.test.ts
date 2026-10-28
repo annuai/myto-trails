@@ -226,6 +226,35 @@ describe('journal in the backup', () => {
     expect(ids).toEqual(['mine', 'n1', 'ph1', 'v1']);
     expect(p.state.snap.journal.find((e) => e.id === 'n1')?.text).toBe('phone copy');
   });
+  it('journal titles round trip, replace brings them back, and merge keeps the phone\'s title over the file\'s', async () => {
+    const titled = snapshot({ journal: entries, journalTitles: { 100: 'Tea at Nandi', 200: 'From file' } });
+    expect((await openAll(await file(titled))).journalTitles).toEqual({ 100: 'Tea at Nandi', 200: 'From file' });
+    const r = phone(snapshot({ journalTitles: { 5: 'Old' } }));
+    await applyBackup(await open(await file(titled)), 'replace', r.target);
+    expect(r.state.snap.journalTitles).toEqual({ 100: 'Tea at Nandi', 200: 'From file' });
+    const m = phone(snapshot({ journalTitles: { 100: 'Phone title', 7: 'Mine' } }));
+    await applyBackup(await open(await file(titled)), 'merge', m.target);
+    expect(m.state.snap.journalTitles).toEqual({ 100: 'Phone title', 200: 'From file', 7: 'Mine' });
+  });
+  it('routes and trips round trip; replace brings them back, merge keeps the phone\'s copy of the same id and adds the rest', async () => {
+    const route = (id: string, name: string) => ({ id, name, points: [{ lat: 13, lng: 77 }, { lat: 13.1, lng: 77 }], distanceKm: 11, createdAt: 1 });
+    const trip = (id: string, name: string) => ({ id, name, rideIds: ['r1'], createdAt: 1 });
+    const withThem = snapshot({ routes: [route('a', 'From file'), route('b', 'Only in file')], trips: [trip('t', 'Ladakh')] });
+    const opened = await openAll(await file(withThem));
+    expect(opened.routes?.map((r) => r.id)).toEqual(['a', 'b']);
+    expect(opened.trips).toEqual([trip('t', 'Ladakh')]);
+    const r = phone(snapshot());
+    await applyBackup(await open(await file(withThem)), 'replace', r.target);
+    expect(r.state.snap.routes?.length).toBe(2);
+    const m = phone(snapshot({ routes: [route('a', 'Phone copy'), route('c', 'Mine')] }));
+    await applyBackup(await open(await file(withThem)), 'merge', m.target);
+    expect(m.state.snap.routes?.map((x) => [x.id, x.name]).sort()).toEqual([['a', 'Phone copy'], ['b', 'Only in file'], ['c', 'Mine']]);
+  });
+  it('a backup made before routes existed leaves no routes in a merge', async () => {
+    const m = phone(snapshot());
+    await applyBackup(await open(await file()), 'merge', m.target);
+    expect(m.state.snap.routes).toBeUndefined();
+  });
   it('an import interrupted while writing journal files leaves the phone untouched and clears both staging folders', async () => {
     const p = phone(snapshot(), 'ph1');
     const before = p.state.snap;

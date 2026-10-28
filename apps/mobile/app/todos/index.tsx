@@ -34,7 +34,7 @@ export default function Todos() {
       {later.length ? <><SectionTitle>Later</SectionTitle>{list(later)}</> : null}
       {done.length ? <><SectionTitle>Done</SectionTitle>{list(done)}</> : null}
       <Text variant="caption" tone="muted" style={{ marginTop: 24 }}>
-        Kilometre limits only count rides recorded in Myto. Rides made without the app are not counted, so the date limit is the safer one. Tap the circular arrow when you have done the job to restart the count.
+        Kilometre limits only count rides recorded in Myto Moto. Rides made without the app are not counted, so the date limit is the safer one. Tap the circular arrow when you have done the job to restart the count.
       </Text>
     </Screen>
   );
