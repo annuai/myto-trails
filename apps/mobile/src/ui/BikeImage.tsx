@@ -17,7 +17,8 @@ export function BikeImage({ own, preset, want, label, style }: { own?: Source; p
   const { c } = useTheme();
   const { url, own: isOwn } = resolveBikeImage(own, preset, want);
   return (
-    <View accessibilityLabel={url ? label : `${label}, no picture yet`} style={[{ width: '100%', aspectRatio: bikeImage.aspect, borderRadius: radius.control, overflow: 'hidden', backgroundColor: c.raised, alignItems: 'center', justifyContent: 'center' }, style]}>
+    // Catalogue pictures are transparent cut-outs: no fill behind them. Only the placeholder has a background; a rider's photo covers the frame.
+    <View accessibilityLabel={url ? label : `${label}, no picture yet`} style={[{ width: '100%', aspectRatio: bikeImage.aspect, borderRadius: radius.control, overflow: 'hidden', backgroundColor: url ? undefined : c.raised, alignItems: 'center', justifyContent: 'center' }, style]}>
       {url ? (
         // The rider's photo fills the frame; catalogue pictures are transparent cut-outs and must not be cropped.
         <Image source={{ uri: url }} accessibilityLabel={label} style={{ width: '100%', height: '100%' }} resizeMode={isOwn ? 'cover' : 'contain'} />
