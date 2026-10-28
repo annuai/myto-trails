@@ -1,5 +1,7 @@
-import type { Sql } from "postgres";
+import type { Sql, TransactionSql } from "postgres";
 import type { StorageBucket, StorageProvider } from "../storage";
+
+type Db = Sql | TransactionSql;
 
 /** The word a person types to confirm, on the website and in the app. */
 export const DELETE_CONFIRMATION = "delete";
@@ -15,6 +17,20 @@ export function publicVariantKeys(uploadId: string, webp: Record<string, unknown
   const keys = (format: "webp" | "avif", widths: Record<string, unknown>) =>
     Object.keys(widths).filter((w) => /^\d{1,5}$/.test(w)).map((w) => `image/${uploadId}-${w}.${format}`);
   return [...keys("webp", webp), ...keys("avif", avif)];
+}
+
+/** Names of the clubs this rider is the only admin of while other riders still belong to them. */
+export async function soleAdminClubs(sql: Db, userId: string): Promise<string[]> {
+  const rows = await sql`
+    select c.name from club c
+    join club_member me on me.club_id = c.id and me.user_id = ${userId} and me.role = 'admin'
+    where c.archived_at is null
+      and exists (select 1 from club_member o where o.club_id = c.id and o.user_id <> ${userId})
+      and not exists (
+        select 1 from club_member a join app_user au on au.id = a.user_id
+        where a.club_id = c.id and a.user_id <> ${userId} and a.role = 'admin' and au.status = 'active')
+    order by c.name`;
+  return rows.map((r) => r.name as string);
 }
 
 /**
@@ -34,16 +50,8 @@ export async function deleteAccount(sql: Sql, storage: StorageProvider, userId: 
     const [user] = await tx`select email, display_name from app_user where id = ${userId} for update`;
     if (!user) return { ok: true };
 
-    const blocking = await tx`
-      select c.name from club c
-      join club_member me on me.club_id = c.id and me.user_id = ${userId} and me.role = 'admin'
-      where c.archived_at is null
-        and exists (select 1 from club_member o where o.club_id = c.id and o.user_id <> ${userId})
-        and not exists (
-          select 1 from club_member a join app_user au on au.id = a.user_id
-          where a.club_id = c.id and a.user_id <> ${userId} and a.role = 'admin' and au.status = 'active')
-      order by c.name`;
-    if (blocking.length > 0) return { ok: false, reason: "club_admin", clubs: blocking.map((r) => r.name as string) };
+    const blocking = await soleAdminClubs(tx, userId);
+    if (blocking.length > 0) return { ok: false, reason: "club_admin", clubs: blocking };
 
     await tx`
       delete from club where id in (
