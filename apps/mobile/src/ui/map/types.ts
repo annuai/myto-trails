@@ -13,4 +13,6 @@ export type OsmMapProps = {
   follow?: boolean;
   dark?: boolean;
   radius?: number;
+  /** False for a picture of the route: no gestures and no zoom buttons. Defaults to true. */
+  interactive?: boolean;
 };

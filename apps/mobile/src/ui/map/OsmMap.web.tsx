@@ -13,7 +13,7 @@ const lineFeature = (pts?: LatLng[]) => ({ type: 'Feature' as const, properties:
 const pointsFeature = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 
 /** OpenStreetMap through MapLibre GL, the same stack as the website. Two-finger or Ctrl+scroll to move, so it never traps page scrolling. */
-export function OsmMap({ height, line, track, position, waypoints, follow, dark, radius = 0 }: OsmMapProps) {
+export function OsmMap({ height, line, track, position, waypoints, follow, dark, radius = 0, interactive = true }: OsmMapProps) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | null>(null);
   const [ready, setReady] = useState(false);
@@ -29,13 +29,13 @@ export function OsmMap({ height, line, track, position, waypoints, follow, dark,
         if (cancelled || !box.current) return;
         const m = new ml.Map({
           container: box.current, style: (MAP_STYLE_URL || OSM_STYLE) as never, center: INDIA_CENTER, zoom: 3.5,
-          attributionControl: { compact: true }, cooperativeGestures: !follow,
+          attributionControl: { compact: true }, cooperativeGestures: !follow, interactive,
         });
         map.current = m;
         // The map handles its own touches. Keeping them from reaching React Native Web's responder system stops its
         // "Cannot find single active touch" warning when two fingers pinch or pan the map.
         for (const type of ['touchstart', 'touchmove', 'touchend', 'touchcancel'] as const) box.current.addEventListener(type, (e) => e.stopPropagation(), { passive: true });
-        m.addControl(new ml.NavigationControl({ showCompass: false }), 'top-right');
+        if (interactive) m.addControl(new ml.NavigationControl({ showCompass: false }), 'top-right');
         m.on('error', (e) => setProblem(e.error?.message?.slice(0, 120) ?? 'The map reported an error.'));
         m.on('load', () => {
           m.addSource('line', { type: 'geojson', data: lineFeature() });
@@ -56,7 +56,7 @@ export function OsmMap({ height, line, track, position, waypoints, follow, dark,
       }
     })();
     return () => { cancelled = true; map.current?.remove(); map.current = null; };
-  }, [follow]);
+  }, [follow, interactive]);
 
   // Push data in as it changes (the live track grows every few seconds).
   useEffect(() => {

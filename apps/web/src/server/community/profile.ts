@@ -1,18 +1,17 @@
 import type { Sql, TransactionSql } from "postgres";
-import type { Bike } from "@moto-trails/domain";
+import { pickVariant, resolveBikeImage, type Bike, type BikeImageVariants } from "@moto-trails/domain";
 import { cleanBody } from "./comments";
 
 type Db = Sql | TransactionSql;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export { pickVariant };
 export type { Bike };
 
-/** Smallest WebP variant at least `width` wide, else the largest one. Variants are { "400": url, ... }. */
-export function pickVariant(variants: unknown, width: number): string | null {
-  if (typeof variants !== "object" || variants === null) return null;
-  const sizes = Object.entries(variants as Record<string, string>).map(([w, url]) => [Number(w), url] as const).filter(([w]) => Number.isFinite(w)).sort((a, b) => a[0] - b[0]);
-  if (!sizes.length) return null;
-  return (sizes.find(([w]) => w >= width) ?? sizes[sizes.length - 1]!)[1];
+/** The shape every place that shows a bike uses, from a row with name, model_year, bike_model_id, own and catalogue variants. */
+export function bikeFromRow(r: { name: string; model_year: number | null; bike_model_id: string | null; own_variants: BikeImageVariants | null; catalogue_variants: BikeImageVariants | null }, width: number): Bike {
+  const image = resolveBikeImage(r.own_variants, r.catalogue_variants, width);
+  return { name: r.name, modelYear: r.model_year, photoUrl: image.url, ownPhoto: image.own, bikeModelId: r.bike_model_id };
 }
 
 /** A media row the user uploaded themselves and that no trail uses. Anyone else's photo is refused. */
@@ -36,24 +35,33 @@ export async function getAvatarUrl(sql: Db, userId: string): Promise<string | nu
 
 export async function getBike(sql: Db, userId: string): Promise<Bike | null> {
   if (!UUID.test(userId)) return null;
-  const [r] = await sql`select b.name, b.model_year, m.variants from rider_bike b left join media m on m.id = b.photo_media_id where b.user_id = ${userId}`;
-  return r ? { name: r.name, modelYear: r.model_year, photoUrl: pickVariant(r.variants, 400) } : null;
+  const [r] = await sql`
+    select b.name, b.model_year, b.bike_model_id, m.variants as own_variants, bm.image_variants as catalogue_variants
+    from rider_bike b left join media m on m.id = b.photo_media_id left join bike_model bm on bm.id = b.bike_model_id
+    where b.user_id = ${userId}`;
+  return r ? bikeFromRow(r as never, 400) : null;
 }
 
-/** `photoMediaId`: undefined keeps the current photo, null removes it, an id replaces it. */
+/** `photoMediaId` and `bikeModelId`: undefined keeps the current one, null removes it, an id replaces it (a model must exist and be active). */
 export async function saveBike(
   sql: Sql,
-  i: { userId: string; name: unknown; modelYear: unknown; photoMediaId?: string | null },
+  i: { userId: string; name: unknown; modelYear: unknown; photoMediaId?: string | null; bikeModelId?: string | null },
 ): Promise<{ ok: true } | { ok: false; reason: "invalid" }> {
   const name = cleanBody(i.name).replace(/\s*\n\s*/g, " ");
   const raw = i.modelYear === "" || i.modelYear === null || i.modelYear === undefined ? null : Number(i.modelYear);
   const year = raw !== null && Number.isInteger(raw) && raw >= 1900 && raw <= 2100 ? raw : null;
   if (name.length < 2 || name.length > 60 || (raw !== null && year === null)) return { ok: false, reason: "invalid" };
   if (i.photoMediaId && !(await ownsMedia(sql, i.userId, i.photoMediaId))) return { ok: false, reason: "invalid" };
+  if (i.bikeModelId && !UUID.test(i.bikeModelId)) return { ok: false, reason: "invalid" };
+  if (i.bikeModelId) {
+    const [m] = await sql`select 1 as ok from bike_model where id = ${i.bikeModelId} and active`;
+    if (!m) return { ok: false, reason: "invalid" };
+  }
   const photo = i.photoMediaId === undefined ? sql`rider_bike.photo_media_id` : sql`${i.photoMediaId}`;
+  const model = i.bikeModelId === undefined ? sql`rider_bike.bike_model_id` : sql`${i.bikeModelId}`;
   await sql`
-    insert into rider_bike (user_id, name, model_year, photo_media_id) values (${i.userId}, ${name}, ${year}, ${i.photoMediaId ?? null})
-    on conflict (user_id) do update set name = excluded.name, model_year = excluded.model_year, photo_media_id = ${photo}, updated_at = now()`;
+    insert into rider_bike (user_id, name, model_year, photo_media_id, bike_model_id) values (${i.userId}, ${name}, ${year}, ${i.photoMediaId ?? null}, ${i.bikeModelId ?? null})
+    on conflict (user_id) do update set name = excluded.name, model_year = excluded.model_year, photo_media_id = ${photo}, bike_model_id = ${model}, updated_at = now()`;
   return { ok: true };
 }
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BikeImage } from "@/features/bikes/BikeImage";
 import { connection } from "next/server";
 import {
   decideJoinAction, hidePostAction, leaveClubAction, postAction, removeMemberAction, requestJoinAction, respondAction, setCoverAction, setRoleAction, withdrawJoinAction,
@@ -145,10 +146,7 @@ export default async function ClubDetailPage({ params, searchParams }: PageProps
                     <span>{m.name}{m.role === "admin" ? <span className="ml-2 text-sm text-muted">Admin</span> : null}</span>
                     {m.bike ? <span className="text-sm text-muted">{m.bike.name}{m.bike.modelYear ? ` · ${m.bike.modelYear}` : ""}</span> : null}
                   </span>
-                  {m.bike?.photoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={m.bike.photoUrl} alt={`${m.name}'s ${m.bike.name}`} className="h-12 w-16 rounded-lg object-cover" />
-                  ) : null}
+                  {m.bike?.photoUrl ? <BikeImage own={m.bike.ownPhoto ? m.bike.photoUrl : null} preset={m.bike.ownPhoto ? null : m.bike.photoUrl} want={400} alt={`${m.name}'s ${m.bike.name}`} className="w-20 shrink-0" /> : null}
                 </span>
                 {isAdmin && m.handle !== club.myHandle ? (
                   <span className="flex gap-2">

@@ -23,7 +23,7 @@ import { SectionTitle } from '@/ui/Header';
 import { HeroCard, ProgressBar } from '@/ui/HeroCard';
 import { ListCard } from '@/ui/ListCard';
 import { Row } from '@/ui/ListCard';
-import { RouteArt } from '@/ui/RouteArt';
+import { RideMap } from '@/ui/RideMap';
 import { Screen } from '@/ui/Screen';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
@@ -103,7 +103,7 @@ export default function Home() {
       <SectionTitle>Your latest ride</SectionTitle>
       {latest ? (
         <Card padded={false}>
-          <RouteArt points={latest.points} tint="sky" height={160} />
+          <RideMap points={latest.points} />
           <View style={{ padding: 20, gap: 16 }}>
             <Text variant="bodyMedium">{latest.name}{latest.sample ? ' (sample)' : ''}</Text>
             <View style={{ flexDirection: 'row' }}>

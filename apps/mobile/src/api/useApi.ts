@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '@/lib/geo';
 import { ApiFailure, api } from './client';
-import { toLatLng, type ClubDetail, type ClubSummary, type Me, type RouteDto, type SavedItem, type SearchResult, type TrailDetail } from './types';
+import { toLatLng, type BikeMakeList, type BikeModelPage, type ClubDetail, type ClubSummary, type Me, type RouteDto, type SavedItem, type SearchResult, type TrailDetail } from './types';
 import { useAuth } from '@/store/auth';
 import { useTrailStore } from '@/store/trails';
 
@@ -80,4 +80,18 @@ export function useClub(id: string): Async<ClubDetail> {
 /** Forget cached profile and club screens after an edit, so they reload. */
 export function forgetProfile() {
   for (const k of [...cache.keys()]) if (k === 'me' || k === 'clubs' || k.startsWith('club:')) cache.delete(k);
+}
+
+/** One page of the bike catalogue (only models that have a picture). Public, so no token. */
+export function useBikeModels(o: { q: string; make: string | null; category: string | null; page: number }): Async<BikeModelPage> {
+  const params = new URLSearchParams();
+  if (o.q.trim()) params.set('q', o.q.trim());
+  if (o.make) params.set('make', o.make);
+  if (o.category) params.set('category', o.category);
+  if (o.page > 1) params.set('page', String(o.page));
+  return useFetch(`bikes:${params}`, (signal) => api<BikeModelPage>(`/bikes?${params}`, { signal }));
+}
+
+export function useBikeMakes(): Async<BikeMakeList['items']> {
+  return useFetch('bikes:makes', async (signal) => (await api<BikeMakeList>('/bikes/makes', { signal })).items);
 }

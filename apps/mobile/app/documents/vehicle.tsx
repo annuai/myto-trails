@@ -6,8 +6,10 @@ import { useProfile, type Vehicle } from '@/store/profile';
 import { useTodos } from '@/store/todos';
 import { Button } from '@/ui/Button';
 import { DateField, DatePickSheet } from '@/ui/DateField';
+import { DocumentPhotoField } from '@/ui/DocumentPhotoField';
 import { Field } from '@/ui/Field';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
+import { Stack } from '@/ui/layout';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 
@@ -47,15 +49,20 @@ export default function VehicleForm() {
         <Field label="Make and model" value={f.model} onChangeText={(model) => setF({ ...f, model })} />
         <Field label="Owner name (optional)" value={f.ownerName} onChangeText={(ownerName) => setF({ ...f, ownerName })} />
         <DateField label={dates[0].label} value={f.rcValidTill} onPress={() => setPicking('rcValidTill')} />
+        <DocumentPhotoField docKind="rc" label="Registration certificate (RC)" />
       </View>
       <SectionTitle>Insurance</SectionTitle>
       <View style={{ gap: 20 }}>
         <Field label="Insurer (optional)" value={f.insurer ?? ''} onChangeText={(insurer) => setF({ ...f, insurer })} />
         <Field label="Policy number (optional)" value={f.policyNo ?? ''} onChangeText={(policyNo) => setF({ ...f, policyNo })} autoCapitalize="characters" autoCorrect={false} />
         <DateField label={dates[1].label} value={f.insuranceValidTill} onPress={() => setPicking('insuranceValidTill')} />
+        <DocumentPhotoField docKind="insurance" label="Insurance policy" />
       </View>
       <SectionTitle>Pollution certificate</SectionTitle>
-      <DateField label={dates[2].label} value={f.pucValidTill} onPress={() => setPicking('pucValidTill')} hint="Dates become reminders in your to-do list" />
+      <Stack gap={5}>
+        <DateField label={dates[2].label} value={f.pucValidTill} onPress={() => setPicking('pucValidTill')} hint="Dates become reminders in your to-do list" />
+        <DocumentPhotoField docKind="puc" label="PUC certificate" />
+      </Stack>
       {error ? <Text variant="label" tone="stop" style={{ marginTop: 16 }}>{error}</Text> : null}
       {vehicle ? <View style={{ marginTop: 24 }}><Button variant="danger" icon={Trash2} label="Remove vehicle" onPress={remove} /></View> : null}
     </Screen>

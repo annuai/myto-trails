@@ -11,7 +11,7 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { StatusChip } from '@/ui/Chip';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
-import { OsmMap } from '@/ui/map/OsmMap';
+import { RideMap } from '@/ui/RideMap';
 import { Columns } from '@/ui/Columns';
 import { Screen } from '@/ui/Screen';
 import { Measure } from '@/ui/Measure';
@@ -50,7 +50,7 @@ function StoryBody() {
       </Card>
         </>}
         right={<>
-      <View style={{ marginTop: 0 }}><OsmMap height={240} radius={radius.card} dark track={ride.points} waypoints={ride.waypoints} /></View>
+      <View style={{ marginTop: 0 }}><RideMap radius={radius.card} dark points={ride.points} waypoints={ride.waypoints} /></View>
       <SectionTitle>Share it</SectionTitle>
       {sub ? (
         <Card style={{ gap: 10 }}>

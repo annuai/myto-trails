@@ -4,7 +4,7 @@ import { cleanBody, LINK } from "./comments";
 import { decryptSecret, encryptSecret } from "./crypto-box";
 import { isMember } from "./members";
 import type { ClubMember, ClubSummary, ClubView } from "@moto-trails/domain";
-import { ownsMedia, pickVariant } from "./profile";
+import { bikeFromRow, ownsMedia, pickVariant } from "./profile";
 import { normalizePhone } from "./questions";
 
 type Db = Sql | TransactionSql;
@@ -101,15 +101,16 @@ export async function listMembers(sql: Sql, i: { userId: string; clubId: string 
   if (!club || !(await roleIn(sql, club.id, i.userId))) return null;
   // Bikes are shown to members of this club only: this function has already checked that the caller is one.
   const rows = await sql`
-    select u.public_id, u.display_name, m.role, av.variants as avatar, b.name as bike_name, b.model_year, bp.variants as bike_photo
+    select u.public_id, u.display_name, m.role, av.variants as avatar, b.name as bike_name, b.model_year, b.bike_model_id, bp.variants as own_variants, bm.image_variants as catalogue_variants
     from club_member m join app_user u on u.id = m.user_id
     left join media av on av.id = u.avatar_media_id
     left join rider_bike b on b.user_id = u.id
     left join media bp on bp.id = b.photo_media_id
+    left join bike_model bm on bm.id = b.bike_model_id
     where m.club_id = ${club.id} and u.status = 'active' order by m.role, m.joined_at`;
   return rows.map((r) => ({
     handle: r.public_id, name: r.display_name, role: r.role, avatarUrl: pickVariant(r.avatar, 200),
-    bike: r.bike_name ? { name: r.bike_name, modelYear: r.model_year, photoUrl: pickVariant(r.bike_photo, 400) } : null,
+    bike: r.bike_name ? bikeFromRow({ name: r.bike_name, model_year: r.model_year, bike_model_id: r.bike_model_id, own_variants: r.own_variants, catalogue_variants: r.catalogue_variants }, 400) : null,
   }));
 }
 

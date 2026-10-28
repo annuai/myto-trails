@@ -4,6 +4,7 @@ import { requireUser } from "@/server/auth/session";
 import { getMemberState } from "@/server/community/members";
 import { getAvatarUrl, getBike } from "@/server/community/profile";
 import { getSql } from "@/server/db/client";
+import { BikeFields } from "@/features/bikes/BikeFields";
 import { ImagePicker } from "@/features/media/ImagePicker";
 import { Avatar } from "@/ui/Avatar/Avatar";
 import { saveBikeAction, setAvatarAction, signOutAction, signOutEverywhereAction, updateNameAction, updatePrivacyAction } from "./actions";
@@ -48,18 +49,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       <form action={saveBikeAction} className="flex max-w-md flex-col gap-3">
         <h2 className="text-xl font-semibold">Your bike</h2>
         <p className="text-sm text-muted">Shown to the members of your clubs, and no one else.</p>
-        <label htmlFor="bike-name" className="text-sm font-medium">Bike name</label>
-        <input id="bike-name" name="name" defaultValue={bike?.name ?? ""} minLength={2} maxLength={60} required className="min-h-12 rounded-lg border border-foreground/40 bg-background px-3" />
-        <label htmlFor="bike-year" className="text-sm font-medium">Model year <span className="text-muted">(optional)</span></label>
-        <input id="bike-year" name="modelYear" type="number" inputMode="numeric" min={1900} max={2100} defaultValue={bike?.modelYear ?? ""} className="min-h-12 rounded-lg border border-foreground/40 bg-background px-3" />
-        {bike?.photoUrl ? (
-          <div className="flex flex-col gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={bike.photoUrl} alt="Your bike" className="h-28 w-auto max-w-full self-start rounded-2xl object-cover" />
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="removePhoto" /> Remove this photo</label>
-          </div>
-        ) : null}
-        <ImagePicker name="photoMediaId" label={bike?.photoUrl ? "Replace the photo" : "Bike photo"} />
+        <BikeFields bike={bike} />
+        {bike?.ownPhoto ? <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="removePhoto" /> Remove my own photo</label> : null}
+        <ImagePicker name="photoMediaId" label={bike?.ownPhoto ? "Replace my own photo" : "Upload my own photo"} hint="Shown instead of the picture above. JPEG, PNG, WebP or AVIF, up to 10 MB." />
         {sp.bike === "saved" ? <p role="status" className="text-sm font-medium text-status-good">Saved.</p> : null}
         {sp.bike === "error" ? <p role="status" className="text-sm font-medium text-status-stop">Give the bike a name of 2 to 60 characters and a year between 1900 and 2100, or leave the year blank.</p> : null}
         <div className="flex flex-wrap gap-3">
