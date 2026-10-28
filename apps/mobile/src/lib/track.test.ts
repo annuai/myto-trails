@@ -46,6 +46,21 @@ describe('splitSegments', () => {
   });
 });
 
+describe('splitSegments with pauses', () => {
+  it('a pause between two fixes starts a new segment even with 5 s and 3 m between them', () => {
+    const pts = [pt(0, 0), pt(20, 10), pt(23, 15), pt(43, 25)];
+    const pause = { from: 1_700_000_000_000 + 12_000, to: 1_700_000_000_000 + 14_000 };
+    expect(splitSegments(pts, [pause]).map((s) => s.length)).toEqual([2, 2]);
+  });
+  it('a pause that has not ended still splits later fixes', () => {
+    const pts = [pt(0, 0), pt(20, 10), pt(40, 20)];
+    expect(splitSegments(pts, [{ from: 1_700_000_000_000 + 15_000 }]).map((s) => s.length)).toEqual([2, 1]);
+  });
+  it('no pauses behaves as before', () => {
+    expect(splitSegments([pt(0, 0), pt(20, 10)], [])).toHaveLength(1);
+  });
+});
+
 describe('trackStats', () => {
   it('counts the straight-line distance across a break as gap, not distance', () => {
     const segs = splitSegments([pt(0, 0), pt(100, 10), pt(2100, 100), pt(2200, 110)]);

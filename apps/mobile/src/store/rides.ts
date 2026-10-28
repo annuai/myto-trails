@@ -9,7 +9,7 @@ export type Waypoint = { name: string; lat: number; lng: number };
 export type SubmissionState = { status: 'submitted'; at: number; trailName: string; slug: string; clientId: string };
 
 export type Ride = {
-  id: string; name: string; startedAt: number; durationSec: number; distanceKm: number; maxKmh: number; points: LatLng[]; /** Indices into `points` where a new GPS segment starts. Absent on rides saved before gaps were tracked. */ breaks?: number[];
+  id: string; name: string; startedAt: number; durationSec: number; /** Time the rider spent paused, already left out of durationSec. */ pausedSec?: number; distanceKm: number; maxKmh: number; points: LatLng[]; /** Indices into `points` where a new GPS segment starts. Absent on rides saved before gaps were tracked. */ breaks?: number[];
   waypoints: Waypoint[]; sample?: boolean; updatedAt?: number; submission?: SubmissionState; /** Stays the same across upload attempts so a retry continues the same draft. */ clientId?: string;
 };
 

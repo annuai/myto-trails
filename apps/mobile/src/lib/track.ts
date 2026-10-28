@@ -1,4 +1,5 @@
 import { haversine, type LatLng } from './geo';
+import type { Pause } from './journal';
 
 const MAX_ACCURACY_M = 100;
 const MAX_KMH = 250;
@@ -36,17 +37,17 @@ export function cleanTrack(points: LatLng[]): LatLng[] {
 }
 
 /**
- * Split at real GPS gaps: more than 60 s and more than 150 m since the last fix. A long stop in one place
- * (a tea break) has no distance, so it stays one segment.
+ * Split at real GPS gaps (more than 60 s and more than 150 m since the last fix) and wherever the rider paused. A long
+ * stop in one place (a tea break) has no distance, so it stays one segment unless the rider paused.
  */
-export function splitSegments(points: LatLng[]): LatLng[][] {
+export function splitSegments(points: LatLng[], pauses: Pause[] = []): LatLng[][] {
   const segments: LatLng[][] = [];
   for (const p of points) {
     const seg = segments[segments.length - 1];
     const last = seg?.[seg.length - 1];
-    if (!seg || !last || !(seconds(last, p) > GAP_SEC && haversine(last, p) > GAP_M)) {
-      if (seg) seg.push(p); else segments.push([p]);
-    } else segments.push([p]);
+    const gap = !!last && seconds(last, p) > GAP_SEC && haversine(last, p) > GAP_M;
+    const paused = !!last && last.t != null && p.t != null && pauses.some((x) => x.from > last.t! && x.from <= p.t!);
+    if (!seg || gap || paused) segments.push([p]); else seg.push(p);
   }
   return segments;
 }

@@ -44,4 +44,26 @@ describe('journal (memory implementation)', () => {
     (await j.read())!.points.push(fix(9));
     expect((await j.read())!.points).toHaveLength(1);
   });
+
+  it('records a pause and its resume, and an open pause has no end', async () => {
+    await j.begin({ startedAt: 1, source: 'gps' });
+    await j.pause(1000);
+    await j.resume(5000);
+    await j.pause(9000);
+    expect((await j.read())?.pauses).toEqual([{ from: 1000, to: 5000 }, { from: 9000 }]);
+  });
+  it('ignores a second pause while paused and a resume while running', async () => {
+    await j.begin({ startedAt: 1, source: 'gps' });
+    await j.resume(10);
+    await j.pause(20);
+    await j.pause(30);
+    await j.resume(40);
+    expect((await j.read())?.pauses).toEqual([{ from: 20, to: 40 }]);
+  });
+  it('begin clears pauses', async () => {
+    await j.begin({ startedAt: 1, source: 'gps' });
+    await j.pause(1);
+    await j.begin({ startedAt: 2, source: 'gps' });
+    expect((await j.read())?.pauses).toEqual([]);
+  });
 });
