@@ -1,10 +1,10 @@
+import { DELETE_CONFIRMATION } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
 import type { StorageBucket, StorageProvider } from "../storage";
 
 type Db = Sql | TransactionSql;
 
-/** The word a person types to confirm, on the website and in the app. */
-export const DELETE_CONFIRMATION = "delete";
+export { DELETE_CONFIRMATION };
 
 export function isDeleteConfirmed(value: unknown): boolean {
   return typeof value === "string" && value.trim().toLowerCase() === DELETE_CONFIRMATION;
