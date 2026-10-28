@@ -23,4 +23,4 @@ export type SavedItem = { addedAt: string; trail: TrailSummary | null; unavailab
 export const toLatLng = (line: [number, number][]): LatLng[] => line.map(([lng, lat]) => ({ lat, lng }));
 
 // Community and profile shapes are shared with the website (packages/domain), so they cannot drift.
-export type { Bike, ClubDetail, ClubMember, ClubSummary, MeProfile as Me } from '@moto-trails/domain';
+export type { Bike, BikeImageVariants, BikeMake, BikeMakeList, BikeModel, BikeModelPage, ClubDetail, ClubMember, ClubSummary, MeProfile as Me } from '@moto-trails/domain';
