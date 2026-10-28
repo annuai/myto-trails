@@ -10,6 +10,7 @@ import { STEPS, validateStep, type Step } from "../submissions/schema";
 import { attachRoute, createDraft, getMine, listMine, saveStep, submit } from "../submissions/service";
 import { completeUpload, getUploadStatus, requestUpload } from "../uploads/service";
 import { exchangeAppCode } from "../auth/app-auth";
+import { listBikeMakes, listBikeModels } from "../community/bikes";
 import { getClub, listClubs, listMembers, setClubCover } from "../community/clubs";
 import { getAvatarUrl, getBike, removeBike, saveBike, setAvatar } from "../community/profile";
 import { revokeToken } from "./tokens";
@@ -27,11 +28,13 @@ const asObject = async (c: Ctx): Promise<Record<string, unknown>> => {
   if (typeof b !== "object" || b === null || Array.isArray(b)) throw new ApiError(400, "invalid_request", "The body must be a JSON object.");
   return b as Record<string, unknown>;
 };
-const mediaIdOf = (v: unknown): string | null => {
+const mediaIdOf = (v: unknown, field = "mediaId"): string | null => {
   if (v === null) return null;
-  if (typeof v !== "string") throw new ApiError(400, "invalid_request", "mediaId must be a string or null.");
+  if (typeof v !== "string") throw new ApiError(400, "invalid_request", `${field} must be a string or null.`);
   return v;
 };
+/** Public reference data that changes rarely: caches at the edge for an hour and may be served stale for a day. */
+const cacheable = (body: unknown) => new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400" } });
 const noContent = () => new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 
 function searchRaw(url: URL) {
@@ -112,6 +115,19 @@ export const routes: RouteDef[] = [
     async handler(c) {
       await revokeToken(c.sql, { userId: c.userId, tokenId: c.auth!.tokenId });
       return noContent();
+    },
+  },
+  {
+    method: "GET", path: "/bikes", access: "public", summary: "The bike catalogue (query: q, make, category, page; only models that have a picture, unless all=1)",
+    async handler(c) {
+      const p = c.url.searchParams;
+      return cacheable(await listBikeModels(c.sql, { q: p.get("q") ?? undefined, make: p.get("make") ?? undefined, category: p.get("category") ?? undefined, page: num(p.get("page")), all: p.get("all") === "1" }));
+    },
+  },
+  {
+    method: "GET", path: "/bikes/makes", access: "public", summary: "Bike makes with their model counts (all=1 counts models without a picture too)",
+    async handler(c) {
+      return cacheable(await listBikeMakes(c.sql, { all: c.url.searchParams.get("all") === "1" }));
     },
   },
   {
@@ -246,11 +262,11 @@ export const routes: RouteDef[] = [
     },
   },
   {
-    method: "PUT", path: "/me/bike", access: "write:submission", summary: "Set your bike, shown to your club members (body: name, modelYear, photoMediaId; leave photoMediaId out to keep the photo, null to remove it)",
+    method: "PUT", path: "/me/bike", access: "write:submission", summary: "Set your bike, shown to your club members (body: name, modelYear, bikeModelId from GET /bikes, photoMediaId; leave bikeModelId or photoMediaId out to keep it, null to remove it)",
     async handler(c) {
       const b = await asObject(c);
-      const r = await saveBike(c.sql, { userId: c.userId, name: b.name, modelYear: b.modelYear, photoMediaId: "photoMediaId" in b ? mediaIdOf(b.photoMediaId) : undefined });
-      if (!r.ok) return fail(422, "validation_failed", "Give the bike a name (2 to 60 characters), a model year between 1900 and 2100 or none, and a photo you uploaded.");
+      const r = await saveBike(c.sql, { userId: c.userId, name: b.name, modelYear: b.modelYear, photoMediaId: "photoMediaId" in b ? mediaIdOf(b.photoMediaId) : undefined, bikeModelId: "bikeModelId" in b ? mediaIdOf(b.bikeModelId, "bikeModelId") : undefined });
+      if (!r.ok) return fail(422, "validation_failed", "Give the bike a name (2 to 60 characters), a model year between 1900 and 2100 or none, a bike from the catalogue, and a photo you uploaded.");
       return ok(await getBike(c.sql, c.userId));
     },
   },

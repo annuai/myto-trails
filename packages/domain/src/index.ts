@@ -8,3 +8,4 @@ export * from "./regions";
 export * from "./geo";
 export * from "./reports";
 export * from "./api";
+export * from "./bikes";
