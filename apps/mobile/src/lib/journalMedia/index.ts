@@ -60,10 +60,16 @@ export function discardStaged() { remove(stageDir()); }
  * Replace: existing files are set aside, the staged ones moved in, and the old ones put back if anything fails.
  * Merge: staged files are added; ones already on the phone are kept (same id means same file).
  */
-export function commitStaged(mode: 'replace' | 'merge') {
+export function commitStaged(mode: 'replace' | 'merge'): { finalize: () => void; rollback: () => void } {
   const target = ensure(dir());
   const aside = new Map<string, File>();
   const moved: File[] = [];
+  const rollback = () => {
+    for (const f of moved) if (f.exists) f.delete();
+    for (const [n, f] of aside) f.moveSync(new File(target, n), { overwrite: true });
+    remove(oldDir());
+    remove(stageDir());
+  };
   try {
     if (mode === 'replace') {
       ensure(oldDir());
@@ -76,11 +82,9 @@ export function commitStaged(mode: 'replace' | 'merge') {
       moved.push(to);
     }
   } catch (e) {
-    for (const f of moved) if (f.exists) f.delete();
-    for (const [n, f] of aside) f.moveSync(new File(target, n), { overwrite: true });
-    remove(oldDir());
+    rollback();
     throw e;
   }
-  remove(oldDir());
-  remove(stageDir());
+  // The old files stay in the set-aside folder until `finalize`, so the swap can still be undone.
+  return { finalize: () => { remove(oldDir()); remove(stageDir()); }, rollback };
 }

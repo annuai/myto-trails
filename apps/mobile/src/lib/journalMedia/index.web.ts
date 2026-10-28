@@ -26,8 +26,10 @@ export const removeMedia = (id: string, kind: MediaKind) => { files.delete(key(i
 export const removeAllMedia = () => { files.clear(); staged.clear(); };
 export async function stageMedia(id: string, kind: MediaKind, base64: string) { staged.set(key(id, kind), `data:${kind === 'photo' ? 'image/jpeg' : 'audio/mp4'};base64,${base64}`); }
 export const discardStaged = () => staged.clear();
-export function commitStaged(mode: 'replace' | 'merge') {
+export function commitStaged(mode: 'replace' | 'merge'): { finalize: () => void; rollback: () => void } {
+  const before = new Map(files);
   if (mode === 'replace') files.clear();
   for (const [k, v] of staged) if (!files.has(k)) files.set(k, v);
   staged.clear();
+  return { finalize: () => undefined, rollback: () => { files.clear(); for (const [k, v] of before) files.set(k, v); } };
 }

@@ -104,11 +104,13 @@ Why it is hard: phone GPS speed drifts. You have seen about 1 km/h persist after
 - the speed the phone reports (Doppler based, much steadier than speed worked out from positions), when it is valid;
 - how far the position has moved from where it was when the slow period began, compared with the fix's own accuracy radius.
 
-**Rule (a small state machine, pure and tested):**
-- **Stopped** only after **8 seconds in a row** where every fix is slow (reported speed under **2 km/h**, or if the phone gives no speed, no displacement beyond the radius) **and** every position stays within `max(8 m, 1.5 x accuracy)` of the position at the start of that period, **and** fix accuracy is **50 m or better**.
-- **Moving again immediately** on any fix with speed of **6 km/h or more**, or a position outside that radius. Speeds between 2 and 6 km/h change nothing, which is the hysteresis that stops flicker at a crawl.
-- **Fails safe to moving:** no fix for **5 seconds**, poor accuracy, or no fixes yet all mean "not stopped", so typing stays locked.
-- The 1 km/h case: 1 km/h is under 2 km/h, so a parked phone that keeps reporting 1 km/h still becomes Stopped after 8 seconds, and a rider creeping at 3 km/h is correctly not stopped.
+**Rule (a small state machine, pure and tested; corrected after review):**
+- **Stopped** only after **8 seconds in a row** where every fix is slow and stays within a small radius of the position at the start of that period.
+  - **When the phone reports a speed:** slow means under **2 km/h**; the radius is the fix's accuracy clamped to **8 to 12 m**; accuracy must be **25 m or better**.
+  - **When it reports no speed** (iOS sends -1, some Android phones send nothing): the position is all there is, so accuracy must be **10 m or better** and the radius is a fixed **6 m**. Without this, a bike at 20 km/h on a poor fix could read as stopped.
+- **Moving again immediately** on any fix with speed of **6 km/h or more**, or a position outside that radius. Speeds between 2 and 6 km/h change nothing once stopped, which is the hysteresis that stops flicker at a crawl.
+- **Fails safe to moving:** no fix for **5 seconds**, poor accuracy, or no fixes yet all mean "not stopped", so typing stays locked. A ride left unfinished (app killed, waiting to be recovered) also keeps typing locked.
+- The 1 km/h case: 1 km/h is under 2 km/h, so a parked phone that keeps reporting 1 km/h still becomes Stopped after 8 seconds, and a rider creeping at 3 to 5 km/h is correctly not stopped, whatever speed the phone claims, because the position leaves the small radius within 8 seconds.
 
 **Behaviour:**
 - The note field is disabled with "Available when you have stopped" until Stopped. If you start moving while a note is open, the draft is saved as a note and the editor closes.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LatLng } from './geo';
-import { breaksOf, cleanTrack, segmentsOf, splitSegments, trackStats } from './track';
+import { breaksOf, cleanTrack, mergeBreaks, segmentsOf, splitSegments, trackStats } from './track';
 
 const M = 1 / 111_320; // one metre of latitude, in degrees
 /** A fix `north` metres north of the origin, `tSec` seconds after the start. */
@@ -107,5 +107,13 @@ describe('breaksOf', () => {
   it('is empty for one segment or none', () => {
     expect(breaksOf([[pt(0, 0), pt(20, 10)]])).toEqual([]);
     expect(breaksOf([])).toEqual([]);
+  });
+});
+
+describe('mergeBreaks', () => {
+  it('combines two lists of break indices, sorted, without duplicates', () => {
+    expect(mergeBreaks([2, 5], [3, 5])).toEqual([2, 3, 5]);
+    expect(mergeBreaks([], [])).toEqual([]);
+    expect(mergeBreaks([4], undefined)).toEqual([4]);
   });
 });

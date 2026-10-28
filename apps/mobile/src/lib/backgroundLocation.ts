@@ -1,6 +1,10 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
+import { createSerial } from './serial';
 import { useRecorder } from '@/store/recorder';
+
+// Start and stop are queued so a quick pause then resume cannot start while the stop is still running.
+const inOrder = createSerial();
 
 export const TASK_NAME = 'myto-ride-recording';
 
@@ -31,7 +35,8 @@ export async function needsAlwaysExplainer(): Promise<boolean> {
 }
 
 /** Start background recording. Returns false when it cannot run (no Always permission), so the caller falls back to the foreground watch. */
-export async function startBackground(): Promise<boolean> {
+export const startBackground = (): Promise<boolean> => inOrder(startNow);
+async function startNow(): Promise<boolean> {
   try {
     if ((await Location.getBackgroundPermissionsAsync()).status !== 'granted') return false;
     if (await Location.hasStartedLocationUpdatesAsync(TASK_NAME)) return true;
@@ -46,7 +51,8 @@ export async function startBackground(): Promise<boolean> {
   }
 }
 
-export async function stopBackground(): Promise<void> {
+export const stopBackground = (): Promise<void> => inOrder(stopNow);
+async function stopNow(): Promise<void> {
   try {
     if (await Location.hasStartedLocationUpdatesAsync(TASK_NAME)) await Location.stopLocationUpdatesAsync(TASK_NAME);
   } catch { /* already stopped */ }

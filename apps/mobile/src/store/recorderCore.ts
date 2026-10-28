@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { haversine, type LatLng } from '@/lib/geo';
 import type { Journal } from '@/lib/journal';
-import { cleanTrack, driftRadius, splitSegments, trackStats } from '@/lib/track';
+import { breaksOf, cleanTrack, driftRadius, splitSegments, trackStats } from '@/lib/track';
 import type { Waypoint } from './rides';
 
 // The live track and distance leave out the same fixes the saved ride will (poor accuracy, impossible jumps, jitter);
@@ -21,6 +21,10 @@ type State = {
   speedKmh: number;
   maxKmh: number;
   notes: number;
+  /** Indices into `points` where the live track starts again after a pause, so no line is drawn across one. */
+  pauseBreaks: number[];
+  /** The first fix after a resume starts a new stretch: the distance from before the pause is not counted. */
+  skipStep: boolean;
   /** The rider paused the ride (a tea break): nothing is recorded until they resume. */
   paused: boolean;
   /** When the current pause began. */
@@ -55,7 +59,7 @@ type State = {
   reset: () => void;
 };
 
-const blank = { status: 'idle' as const, startedAt: 0, points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0, moving: false, paused: false, pausedAt: 0, pausedMs: 0 };
+const blank = { status: 'idle' as const, startedAt: 0, points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0, moving: false, paused: false, pausedAt: 0, pausedMs: 0, pauseBreaks: [] as number[], skipStep: false };
 
 /** The live recorder. Every fix goes to the journal first; the store only shows what the screen needs. */
 export function createRecorder(journal: Journal, hooks: { stopBackground?: () => Promise<void> } = {}) {
@@ -72,7 +76,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
     resume: async () => {
       if (!get().paused) return;
       const t = Date.now();
-      set({ paused: false, pausedMs: get().pausedMs + (t - get().pausedAt) });
+      set({ paused: false, pausedMs: get().pausedMs + (t - get().pausedAt), skipStep: true });
       await journal.resume(t);
     },
     elapsedMs: (now) => Math.max(0, (get().paused ? get().pausedAt : now) - get().startedAt - get().pausedMs),
@@ -99,6 +103,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       set({ lastFixAt: Date.now(), moving: kmh >= 3.6 });
       if (p.acc != null && p.acc > MAX_ACCURACY_M) return queue as Promise<void>;
       if (!last) { set({ points: [p] }); return queue as Promise<void>; }
+      if (get().skipStep) { set({ points: [...points, p], pauseBreaks: [...get().pauseBreaks, points.length], skipStep: false }); return queue as Promise<void>; }
       if (derived > MAX_KMH || step < driftRadius(p.acc)) return queue as Promise<void>;
       set({ points: [...points, p], meters: meters + step, speedKmh: kmh, maxKmh: Math.max(maxKmh, kmh) });
       return queue as Promise<void>;
@@ -123,7 +128,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       const stats = trackStats(splitSegments(points, r.pauses));
       const open = r.pauses.find((x) => x.to === undefined);
       const pausedMs = r.pauses.reduce((n, x) => n + (x.to !== undefined ? x.to - x.from : 0), 0);
-      set({ ...blank, status: 'running', source: r.meta.source, startedAt: r.meta.startedAt, points, waypoints: r.waypoints, meters: stats.distanceM, maxKmh: stats.maxKmh, lastFixAt: Date.now(), recoverable: null, paused: !!open, pausedAt: open?.from ?? 0, pausedMs });
+      set({ ...blank, status: 'running', source: r.meta.source, startedAt: r.meta.startedAt, points, waypoints: r.waypoints, meters: stats.distanceM, maxKmh: stats.maxKmh, lastFixAt: Date.now(), recoverable: null, paused: !!open, pausedAt: open?.from ?? 0, pausedMs, pauseBreaks: breaksOf(splitSegments(points, r.pauses)) });
     },
     discardRecovered: async () => { await hooks.stopBackground?.(); await journal.clear(); set({ recoverable: null }); },
     setError: (error) => set({ error }),

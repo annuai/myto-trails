@@ -11,6 +11,7 @@ import { Michroma_400Regular } from '@expo-google-fonts/michroma';
 import { Theme } from '@/theme/ThemeProvider';
 import { fixed, light } from '@/theme/tokens';
 import { RecorderHost } from '@/RecorderHost';
+import { VoiceHost } from '@/VoiceHost';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -41,6 +42,7 @@ export default function Root() {
   const app = (
     <Theme mode="light">
       <RecorderHost />
+          <VoiceHost />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: light.paper }, animation: 'slide_from_right' }}>
         <Stack.Screen name="ride/live" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
       </Stack>

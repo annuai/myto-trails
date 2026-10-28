@@ -1,41 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { uid } from './id';
-import { saveVoice, savePhoto } from './journalMedia';
-import { useVoiceRecorder } from './useVoiceRecorder';
+import { canTypeNow } from './typingGate';
+import { savePhoto } from './journalMedia';
 import { useJournal } from '@/store/journal';
 import { useMotion } from '@/store/motion';
 import { useRecorder } from '@/store/recorder';
+import { useVoice } from '@/store/voice';
 
 /**
  * Add a note, a voice note or a photo to one ride's journal. Voice and photos are always available. Typing is allowed
  * while no ride is recording, or while the vehicle is reliably stopped (lib/motion); when unsure it stays locked.
  */
 export function useJournalActions(rideKey: number) {
-  const voice = useVoiceRecorder();
+  const recording = useVoice((v) => v.recording);
+  const startedAt = useVoice((v) => v.startedAt);
+  const voiceError = useVoice((v) => v.error);
+  const [, tick] = useState(0);
+  useEffect(() => { if (!recording) return; const id = setInterval(() => tick((n) => n + 1), 500); return () => clearInterval(id); }, [recording]);
   const add = useJournal((s) => s.add);
   const riding = useRecorder((s) => s.status === 'running');
+  const unfinished = useRecorder((s) => s.recoverable !== null);
   const stopped = useMotion((s) => s.stopped);
   const [problem, setProblem] = useState<string>();
-  const canType = !riding || stopped;
+  const canType = canTypeNow({ riding, unfinished, stopped });
 
   const addNote = (text: string) => {
     const t = text.trim();
     if (t) add({ id: uid(), rideKey, at: Date.now(), kind: 'note', text: t });
   };
-  const toggleVoice = async () => {
-    setProblem(undefined);
-    if (!voice.recording) return voice.start();
-    const r = await voice.stop();
-    if (!r) return;
-    try {
-      const id = uid();
-      await saveVoice(r.uri, id);
-      add({ id, rideKey, at: Date.now(), kind: 'voice', durationSec: r.durationSec });
-    } catch {
-      setProblem('Could not save the voice note.');
-    }
-  };
+  const toggleVoice = async () => { setProblem(undefined); await useVoice.getState().toggle(rideKey); };
   const addPhoto = async (from: 'camera' | 'library') => {
     setProblem(undefined);
     try {
@@ -51,5 +45,5 @@ export function useJournalActions(rideKey: number) {
       setProblem('Could not save the photo.');
     }
   };
-  return { canType, addNote, toggleVoice, addPhoto, recording: voice.recording, seconds: voice.seconds, problem: problem ?? voice.error };
+  return { canType, addNote, toggleVoice, addPhoto, recording, seconds: recording ? Math.round((Date.now() - startedAt) / 1000) : 0, problem: problem ?? voiceError };
 }

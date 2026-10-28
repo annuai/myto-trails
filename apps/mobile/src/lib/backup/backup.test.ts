@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createBackup } from './export';
+import { buildPayload, createBackup } from './export';
 import { encrypt } from './crypto';
 import { BackupError, CURRENT_VERSION, FORMAT, fromBase64, toBase64, type BackupPayload, type Snapshot } from './format';
 import { applyBackup, mergeSnapshots, openBackup, summarize, type ImportMode, type Target } from './import';
@@ -25,18 +25,18 @@ const source = { read: async (id: string) => { if (!(id in files)) throw new Err
 
 /** Phone in memory: state plus a photo folder, so an interrupted import can be checked. */
 function phone(initial: Snapshot, failOn?: string) {
-  const state = { snap: initial, folder: new Map<string, string>(), staged: new Map<string, string>(), discarded: 0, jfolder: new Map<string, string>(), jstaged: new Map<string, string>(), jdiscarded: 0 };
+  const state = { snap: initial, folder: new Map<string, string>(), staged: new Map<string, string>(), discarded: 0, jfolder: new Map<string, string>(), jstaged: new Map<string, string>(), jdiscarded: 0, rolledBack: [] as string[], finalized: [] as string[] };
   const target: Target = {
     get: () => state.snap,
     set: (s) => { state.snap = s; },
     photos: {
       stage: async (id, b64) => { if (id === failOn) throw new Error('disk full'); state.staged.set(id, b64); },
-      commit: (mode: ImportMode) => { if (mode === 'replace') state.folder.clear(); for (const [k, v] of state.staged) state.folder.set(k, v); state.staged.clear(); },
+      commit: (mode: ImportMode) => { if (mode === 'replace') state.folder.clear(); for (const [k, v] of state.staged) state.folder.set(k, v); state.staged.clear(); return { finalize: () => { state.finalized.push('photos'); }, rollback: () => { state.rolledBack.push('photos'); } }; },
       discard: () => { state.staged.clear(); state.discarded++; },
     },
     journal: {
       stage: async (kind, id, b64) => { if (id === failOn) throw new Error('disk full'); state.jstaged.set(`${kind}:${id}`, b64); },
-      commit: (mode: ImportMode) => { if (mode === 'replace') state.jfolder.clear(); for (const [k, v] of state.jstaged) if (!state.jfolder.has(k)) state.jfolder.set(k, v); state.jstaged.clear(); },
+      commit: (mode: ImportMode) => { if (mode === 'replace') state.jfolder.clear(); for (const [k, v] of state.jstaged) if (!state.jfolder.has(k)) state.jfolder.set(k, v); state.jstaged.clear(); return { finalize: () => { state.finalized.push('journal'); }, rollback: () => { state.rolledBack.push('journal'); } }; },
       discard: () => { state.jstaged.clear(); state.jdiscarded++; },
     },
   };
@@ -237,5 +237,43 @@ describe('journal in the backup', () => {
     expect(p.state.jstaged.size).toBe(0);
     expect(p.state.staged.size).toBe(0);
     expect(p.state.jdiscarded + p.state.discarded).toBeGreaterThanOrEqual(2);
+  });
+
+  it('if the journal files cannot be swapped in after the document photos were, the photos are rolled back and the stores stay as they were', async () => {
+    const p = phone(snapshot()); const before = p.state.snap;
+    p.target.journal.commit = () => { throw new Error('boom'); };
+    await expect(applyBackup(await openBackup(await file(), PASS), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
+    expect(p.state.rolledBack).toEqual(['photos']);
+    expect(p.state.finalized).toEqual([]);
+    expect(p.state.snap).toBe(before);
+  });
+  it('the old files are only given up once the stores have been updated', async () => {
+    const p = phone(snapshot());
+    await applyBackup(await openBackup(await file(), PASS), 'replace', p.target);
+    expect(p.state.finalized.sort()).toEqual(['journal', 'photos']);
+    expect(p.state.rolledBack).toEqual([]);
+  });
+  it('if updating the stores fails, both swaps are rolled back', async () => {
+    const p = phone(snapshot());
+    p.target.set = () => { throw new Error('store'); };
+    await expect(applyBackup(await openBackup(await file(), PASS), 'replace', p.target)).rejects.toMatchObject({ code: 'apply-failed' });
+    expect(p.state.rolledBack.sort()).toEqual(['journal', 'photos']);
+    expect(p.state.finalized).toEqual([]);
+  });
+
+  it('refuses to build a backup larger than the limit, with a message the rider can act on, before reading more files', async () => {
+    const big = toBase64(new Uint8Array(3000));
+    let reads = 0;
+    const bigMedia = { read: async () => { reads++; return big; } };
+    const s = snapshot({ journal: Array.from({ length: 10 }, (_, i) => ({ id: `p${i}`, rideKey: 1, at: i, kind: 'photo' as const })) });
+    const err = await buildPayload(s, source, bigMedia, 10_000).catch((e) => e);
+    expect(err).toBeInstanceOf(BackupError);
+    expect(err.code).toBe('too-large');
+    expect(err.message).toMatch(/too large/i);
+    expect(reads).toBeLessThan(10);
+  });
+  it('counts document photos toward the limit too', async () => {
+    const err = await buildPayload(snapshot(), { read: async () => toBase64(new Uint8Array(3000)) }, undefined, 100).catch((e) => e);
+    expect(err.code).toBe('too-large');
   });
 });

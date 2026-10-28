@@ -68,4 +68,28 @@ describe('stopped detection', () => {
     s = stepMotion(s, { t: T0, lat: 13, lng: 77.6, speed: 0, acc: 5 });
     expect(stoppedAt(s, 14)).toBe(true);
   });
+
+  // Review finding C1: a moving vehicle must never read as stopped, whatever the GPS reports.
+  it('20 km/h with no speed reading and 35 m accuracy is never stopped', () => {
+    for (const speed of [null, -1]) {
+      const s = run(40, (i) => ({ north: i * 5.6, speed, acc: 35 }));
+      for (let sec = 8; sec < 40; sec++) expect(stoppedAt(run(sec + 1, (i) => ({ north: i * 5.6, speed, acc: 35 })), sec)).toBe(false);
+      expect(stoppedAt(s, 39)).toBe(false);
+    }
+  });
+  it('5 km/h with no speed reading and 10 m accuracy is never stopped', () => {
+    for (let n = 9; n < 40; n++) expect(stoppedAt(run(n, (i) => ({ north: i * 1.39, speed: -1, acc: 10 })), n - 1)).toBe(false);
+  });
+  it('a phone that reports speed 0 while moving at 4 km/h with 8 m accuracy is not stopped', () => {
+    for (let n = 9; n < 40; n++) expect(stoppedAt(run(n, (i) => ({ north: i * 1.11, speed: 0, acc: 8 })), n - 1)).toBe(false);
+  });
+  it('3 km/h with no speed reading is not stopped', () => {
+    for (let n = 9; n < 40; n++) expect(stoppedAt(run(n, (i) => ({ north: i * 0.83, speed: null, acc: 5 })), n - 1)).toBe(false);
+  });
+  it('with no speed reading, a fix worse than 10 m accuracy never starts a stop', () => {
+    expect(stoppedAt(run(30, () => ({ speed: null, acc: 20 })), 29)).toBe(false);
+  });
+  it('a fix worse than 25 m accuracy is never stopped even with speed 0', () => {
+    expect(stoppedAt(run(30, () => ({ speed: 0, acc: 30 })), 29)).toBe(false);
+  });
 });

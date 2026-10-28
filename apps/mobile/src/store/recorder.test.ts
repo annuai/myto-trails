@@ -208,3 +208,41 @@ describe('pause', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('moving while paused', () => {
+  const T = 1_700_000_000_000;
+  const clock = (start: number) => { let now = start; vi.spyOn(Date, 'now').mockImplementation(() => now); return (t: number) => { now = t; }; };
+
+  it('does not add the jump across a pause to the live distance, and breaks the live track there', async () => {
+    const set = clock(T);
+    const rec = createRecorder(createMemoryJournal());
+    await rec.getState().start('gps');
+    await rec.getState().ingest(pt(0, 0));
+    await rec.getState().ingest(pt(30, 5));
+    set(T + 10_000); await rec.getState().pause();
+    set(T + 600_000); await rec.getState().resume();
+    await rec.getState().ingest(pt(5000, 605));
+    await rec.getState().ingest(pt(5030, 610));
+    expect(rec.getState().meters).toBeGreaterThan(55);
+    expect(rec.getState().meters).toBeLessThan(65);
+    expect(rec.getState().pauseBreaks).toEqual([2]);
+    expect(rec.getState().points).toHaveLength(4);
+    vi.restoreAllMocks();
+  });
+  it('a recovered ride rebuilds the breaks at its pauses', async () => {
+    const set = clock(T);
+    const j = createMemoryJournal();
+    const first = createRecorder(j);
+    await first.getState().start('gps');
+    await first.getState().ingest(pt(0, 0));
+    await first.getState().ingest(pt(30, 5));
+    set(T + 10_000); await first.getState().pause();
+    set(T + 20_000); await first.getState().resume();
+    await first.getState().ingest(pt(31, 25));
+    await first.getState().ingest(pt(80, 30));
+    const second = createRecorder(j);
+    await second.getState().recover();
+    expect(second.getState().pauseBreaks).toEqual([2]);
+    vi.restoreAllMocks();
+  });
+});

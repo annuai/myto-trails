@@ -88,3 +88,8 @@ export function breaksOf(segments: LatLng[][]): number[] {
   let at = 0;
   return segments.slice(0, -1).map((s) => (at += s.length));
 }
+
+/** Two lists of break indices as one sorted list without duplicates. */
+export function mergeBreaks(a: number[] = [], b: number[] = []): number[] {
+  return [...new Set([...a, ...b])].sort((x, y) => x - y);
+}

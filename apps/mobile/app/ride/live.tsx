@@ -7,7 +7,7 @@ import { useJournalActions } from '@/lib/useJournalActions';
 import { Banner } from '@/ui/Banner';
 import { clock } from '@/lib/format';
 import { finishRide } from '@/lib/finishRide';
-import { breaksOf, splitSegments } from '@/lib/track';
+import { breaksOf, mergeBreaks, splitSegments } from '@/lib/track';
 import { useProfile } from '@/store/profile';
 import { useRecorder } from '@/store/recorder';
 import { Theme } from '@/theme/ThemeProvider';
@@ -43,7 +43,7 @@ function LiveBody() {
   const fix = useLocation((s) => s.fix);
   const gpsError = useLocation((s) => s.error);
   const lastPoint = r.points[r.points.length - 1];
-  const breaks = useMemo(() => breaksOf(splitSegments(r.points)), [r.points.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  const breaks = useMemo(() => mergeBreaks(breaksOf(splitSegments(r.points)), r.pauseBreaks), [r.points.length, r.pauseBreaks]); // eslint-disable-line react-hooks/exhaustive-deps
   // The dot follows the live GPS fix straight away; on a simulated ride it follows the simulated track.
   const last = r.source === 'sim' ? lastPoint : fix ? { lat: fix.lat, lng: fix.lng } : lastPoint;
   const [, tick] = useState(0);
@@ -77,7 +77,7 @@ function LiveBody() {
     </Card>
   );
   const ageSec = r.lastFixAt ? Math.max(0, Math.round((Date.now() - r.lastFixAt) / 1000)) : 0;
-  // A stopped phone gets no fixes (5 m distance filter), so only a rider who was moving can have lost the signal.
+  // The background recorder sends no fixes while the phone is still (5 m distance filter), so only a rider who was moving can have lost the signal.
   const lostSignal = r.source === 'gps' && !r.paused && r.moving && r.lastFixAt > 0 && ageSec >= 15;
   // The background task is what keeps recording with the screen locked; tell the rider when it is not running.
   const foregroundOnly = r.source === 'gps' && !r.paused && Platform.OS !== 'web' && !r.backgrounded && Date.now() - r.startedAt > 3000;

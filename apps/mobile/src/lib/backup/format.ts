@@ -25,7 +25,7 @@ export type Snapshot = {
 /** Plaintext inside the ciphertext. `photoFiles` maps a photo id to its JPEG as base64; `journalFiles` maps `photo:<id>` or `voice:<id>` to the file as base64. */
 export type BackupPayload = Snapshot & { photoFiles: Record<string, string>; journalFiles: Record<string, string> };
 
-export type BackupErrorCode = 'not-a-backup' | 'newer-version' | 'wrong-passphrase' | 'corrupt' | 'apply-failed' | 'weak-passphrase';
+export type BackupErrorCode = 'not-a-backup' | 'newer-version' | 'wrong-passphrase' | 'corrupt' | 'apply-failed' | 'weak-passphrase' | 'too-large';
 
 const messages: Record<BackupErrorCode, string> = {
   'not-a-backup': 'This is not a Myto backup file.',
@@ -33,6 +33,7 @@ const messages: Record<BackupErrorCode, string> = {
   'wrong-passphrase': 'Wrong passphrase, or the file is damaged.',
   corrupt: 'The backup file is damaged and cannot be read.',
   'apply-failed': 'Nothing was changed on this phone: the backup could not be applied.',
+  'too-large': 'Your photos and voice notes are too large to export as one file yet. Delete some you no longer need, then try again.',
   'weak-passphrase': `Use a passphrase of at least ${MIN_PASSPHRASE_LENGTH} characters.`,
 };
 
