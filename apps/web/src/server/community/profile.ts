@@ -1,10 +1,11 @@
 import type { Sql, TransactionSql } from "postgres";
+import type { Bike } from "@moto-trails/domain";
 import { cleanBody } from "./comments";
 
 type Db = Sql | TransactionSql;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type Bike = { name: string; modelYear: number | null; photoUrl: string | null };
+export type { Bike };
 
 /** Smallest WebP variant at least `width` wide, else the largest one. Variants are { "400": url, ... }. */
 export function pickVariant(variants: unknown, width: number): string | null {

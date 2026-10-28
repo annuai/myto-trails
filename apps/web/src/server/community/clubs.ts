@@ -3,7 +3,8 @@ import { CLUB_CREATES_PER_DAY, CLUB_POSTS_PER_HOUR, JOIN_PHONE_RETENTION_DAYS, J
 import { cleanBody, LINK } from "./comments";
 import { decryptSecret, encryptSecret } from "./crypto-box";
 import { isMember } from "./members";
-import { ownsMedia, pickVariant, type Bike } from "./profile";
+import type { ClubMember, ClubSummary, ClubView } from "@moto-trails/domain";
+import { ownsMedia, pickVariant } from "./profile";
 import { normalizePhone } from "./questions";
 
 type Db = Sql | TransactionSql;
@@ -65,7 +66,7 @@ export async function createClub(
   }
 }
 
-export type ClubSummary = { clubId: string; name: string; description: string; womenOnly: boolean; memberCount: number; role: "admin" | "member" | null; requested: boolean; coverUrl: string | null };
+export type { ClubSummary };
 
 /** Every club, for declared members only; anyone else gets nothing. */
 export async function listClubs(sql: Sql, userId: string): Promise<ClubSummary[]> {
@@ -80,7 +81,7 @@ export async function listClubs(sql: Sql, userId: string): Promise<ClubSummary[]
   return rows.map((r) => ({ clubId: r.public_id, name: r.name, description: r.description, womenOnly: r.women_only, memberCount: r.members, role: r.role, requested: r.requested, coverUrl: pickVariant(r.cover, 800) }));
 }
 
-export type ClubView = ClubSummary & { myHandle: string };
+export type { ClubView };
 
 export async function getClub(sql: Sql, i: { userId: string; clubId: string }): Promise<ClubView | null> {
   if (!(await isMember(sql, i.userId)) || !UUID.test(i.clubId)) return null;
@@ -94,7 +95,7 @@ export async function getClub(sql: Sql, i: { userId: string; clubId: string }): 
   return r ? { clubId: r.public_id, name: r.name, description: r.description, womenOnly: r.women_only, memberCount: r.members, role: r.role, requested: r.requested, coverUrl: pickVariant(r.cover, 1200), myHandle: r.my_handle } : null;
 }
 
-export type ClubMember = { handle: string; name: string; role: "admin" | "member"; avatarUrl: string | null; bike: Bike | null };
+export type { ClubMember };
 export async function listMembers(sql: Sql, i: { userId: string; clubId: string }): Promise<ClubMember[] | null> {
   const club = await findClub(sql, i.clubId);
   if (!club || !(await roleIn(sql, club.id, i.userId))) return null;
