@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Motorbike, Route, User, Users, type LucideIcon } from 'lucide-react-native';
@@ -10,6 +10,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { EASE, ScalePressable } from './motion';
+import { tabBarFade } from './tabBarFade';
 
 const items: Record<string, { label: string; icon: LucideIcon }> = {
   index: { label: 'Dash', icon: Motorbike }, trails: { label: 'Trails', icon: Route }, clubs: { label: 'Clubs', icon: Users }, you: { label: 'You', icon: User },
@@ -28,10 +29,16 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   const order = ['index', 'trails', 'REC', 'clubs', 'you'];
   const active = state.routes[state.index]?.name;
   // Same shape as the website's top nav: a white, fully rounded bar floating clear of the edges with a soft shadow.
+  // Faded out near the end of a page: no longer catches touches once it is almost gone.
+  const [touchable, setTouchable] = useState(true);
+  useEffect(() => {
+    const id = tabBarFade.addListener(({ value }) => setTouchable(value > 0.15));
+    return () => tabBarFade.removeListener(id);
+  }, []);
   const bar = c.bar;
   if (sheetOpen) return null;
   return (
-    <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingLeft: Math.max(16, insets.left), paddingRight: Math.max(16, insets.right), paddingBottom: Math.max(insets.bottom, landscape ? 6 : 12) + (landscape ? 2 : 4) }}>
+    <Animated.View pointerEvents={touchable ? 'box-none' : 'none'} style={{ opacity: tabBarFade, position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingLeft: Math.max(16, insets.left), paddingRight: Math.max(16, insets.right), paddingBottom: Math.max(insets.bottom, landscape ? 6 : 12) + (landscape ? 2 : 4) }}>
       <View style={{ height: h, width: '100%', maxWidth: landscape ? 560 : 520, borderRadius: h / 2, backgroundColor: bar, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, shadowColor: fixed.shadow, shadowOpacity: 0.1, shadowRadius: 24, shadowOffset: { width: 0, height: 4 }, elevation: 8 }}>
       {order.map((name) => {
         if (name === 'REC') {
@@ -57,7 +64,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
         );
       })}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

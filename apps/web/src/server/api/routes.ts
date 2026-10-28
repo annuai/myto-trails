@@ -1,4 +1,5 @@
 import { isValidSlug } from "@moto-trails/domain";
+import { deleteAccount, isDeleteConfirmed } from "../account/delete";
 import { parseSearchParams } from "@/features/discovery/search-params";
 import { withPublicRole } from "../db/client";
 import { buildGpxExport } from "../gpx/export";
@@ -34,8 +35,6 @@ const mediaIdOf = (v: unknown, field = "mediaId"): string | null => {
   if (typeof v !== "string") throw new ApiError(400, "invalid_request", `${field} must be a string or null.`);
   return v;
 };
-/** Public reference data that changes rarely: caches at the edge for an hour and may be served stale for a day. */
-const cacheable = (body: unknown) => new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400" } });
 const noContent = () => new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 
 function searchRaw(url: URL) {
@@ -50,21 +49,23 @@ const num = (v: string | null) => (v === null || v.trim() === "" ? undefined : N
 
 export const routes: RouteDef[] = [
   {
-    method: "GET", path: "/openapi.json", access: "public", summary: "This description of the API",
+    method: "GET", path: "/openapi.json", access: "public", cache: "day", summary: "This description of the API",
     handler: async () => ok((await import("./openapi")).buildOpenApi(routes)),
   },
   {
-    method: "GET", path: "/trails", access: "public", summary: "Search published trails (query: q, near, radius, state, terrain, difficulty, access, page, ...; lat and lon give your own position when near=me)",
+    method: "GET", path: "/trails", access: "public", cache: "day", summary: "Search published trails (query: q, near, radius, state, terrain, difficulty, access, page, ...; lat and lon give your own position when near=me)",
     async handler(c) {
       const p = parseSearchParams(searchRaw(c.url));
       const lat = num(c.url.searchParams.get("lat"));
       const lon = num(c.url.searchParams.get("lon"));
       const point = lat !== undefined && lon !== undefined ? { lat, lon } : undefined;
-      return ok(await withPublicRole(c.sql, (tx) => searchTrails(tx, p, c.now, { point })));
+      const res = ok(await withPublicRole(c.sql, (tx) => searchTrails(tx, p, c.now, { point })));
+      if (p.near === "me") res.headers.set("Cache-Control", "private, no-store"); // the rider's position is in the URL: never shared
+      return res;
     },
   },
   {
-    method: "GET", path: "/trails/{slug}", access: "public", summary: "One published trail, with its photos (media: role, position, caption, altText, credit, variants by pixel width)",
+    method: "GET", path: "/trails/{slug}", access: "public", cache: "day", summary: "One published trail, with its photos (media: role, position, caption, altText, credit, variants by pixel width)",
     async handler(c) {
       const slug = slugOf(c);
       const t = await withPublicRole(c.sql, (tx) => queryTrailBySlug(tx, slug, c.now));
@@ -74,14 +75,14 @@ export const routes: RouteDef[] = [
     },
   },
   {
-    method: "GET", path: "/trails/{slug}/route", access: "public", summary: "Simplified route line, statistics and elevation profile (standard-sensitivity trails only)",
+    method: "GET", path: "/trails/{slug}/route", access: "public", cache: "day", summary: "Simplified route line, statistics and elevation profile (standard-sensitivity trails only)",
     async handler(c) {
       const r = await withPublicRole(c.sql, (tx) => queryTrailRoute(tx, slugOf(c)));
       return r ? ok(r) : fail(404, "not_found", "No route is published for this trail.");
     },
   },
   {
-    method: "GET", path: "/trails/{slug}/gpx", access: "public", summary: "GPX download (same rules as the website)",
+    method: "GET", path: "/trails/{slug}/gpx", access: "public", cache: "none", /* not cached: the handler enforces a per-address download limit that a CDN hit would skip */ summary: "GPX download (same rules as the website)",
     async handler(c) {
       const r = await buildGpxExport({ sql: c.sql, storage: c.storage, slug: slugOf(c), now: c.now, siteUrl: c.siteUrl, ipHash: hashIp(clientIp(c.req.headers)) });
       if (r.ok) return new Response(r.xml, { headers: { "Content-Type": "application/gpx+xml; charset=utf-8", "Content-Disposition": `attachment; filename="${r.filename}"`, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
@@ -119,16 +120,16 @@ export const routes: RouteDef[] = [
     },
   },
   {
-    method: "GET", path: "/bikes", access: "public", summary: "The bike catalogue (query: q, make, category, page; only models that have a picture, unless all=1)",
+    method: "GET", path: "/bikes", access: "public", cache: "day", summary: "The bike catalogue (query: q, make, category, page; only models that have a picture, unless all=1)",
     async handler(c) {
       const p = c.url.searchParams;
-      return cacheable(await listBikeModels(c.sql, { q: p.get("q") ?? undefined, make: p.get("make") ?? undefined, category: p.get("category") ?? undefined, page: num(p.get("page")), all: p.get("all") === "1" }));
+      return ok(await listBikeModels(c.sql, { q: p.get("q") ?? undefined, make: p.get("make") ?? undefined, category: p.get("category") ?? undefined, page: num(p.get("page")), all: p.get("all") === "1" }));
     },
   },
   {
-    method: "GET", path: "/bikes/makes", access: "public", summary: "Bike makes with their model counts (all=1 counts models without a picture too)",
+    method: "GET", path: "/bikes/makes", access: "public", cache: "day", summary: "Bike makes with their model counts (all=1 counts models without a picture too)",
     async handler(c) {
-      return cacheable(await listBikeMakes(c.sql, { all: c.url.searchParams.get("all") === "1" }));
+      return ok(await listBikeMakes(c.sql, { all: c.url.searchParams.get("all") === "1" }));
     },
   },
   {
@@ -139,6 +140,16 @@ export const routes: RouteDef[] = [
     },
   },
 
+  {
+    method: "DELETE", path: "/me", access: "token", summary: "Delete your account and your personal data (body: confirm, the word delete). Published trails stay without your name. 409 club_admin while you are the only admin of a club other riders belong to",
+    async handler(c) {
+      const b = await asObject(c);
+      if (!isDeleteConfirmed(b.confirm)) return fail(422, "validation_failed", 'Type "delete" to confirm.');
+      const r = await deleteAccount(c.sql, c.storage, c.userId);
+      if (r.ok) return noContent();
+      return fail(409, "club_admin", `You are the only admin of ${r.clubs.join(", ")}. Make another member an admin, or leave the club, first.`, { clubs: r.clubs });
+    },
+  },
   {
     method: "GET", path: "/me/saved", access: "saved", summary: "The token owner's Saved trails with changes since they last looked",
     async handler(c) {

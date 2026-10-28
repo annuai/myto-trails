@@ -1,8 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import { MADE_IN_INDIA, MYTO_URL, versionLabel } from "@moto-trails/domain";
 import { Suspense } from "react";
 import { FooterClock } from "./FooterClock";
 import { FooterLocation } from "./FooterLocation";
+import pkg from "../../package.json";
 
 // Sizes follow myto-moto's footer: small type, compact columns.
 const link = "inline-block py-1 text-sm text-muted transition-opacity hover:opacity-50";
@@ -68,13 +70,17 @@ export function SiteFooter() {
           <div className="flex flex-col gap-4 border-t border-black/[0.07] pt-6 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-muted">
               Moto Trails is a project by{" "}
-              <a href="https://myto-moto.com" className="text-foreground underline underline-offset-4">
+              <a href={MYTO_URL} className="text-foreground underline underline-offset-4">
                 myto-moto
               </a>
               .
             </p>
             <p className="flex items-center gap-4 text-xs text-muted">
               <span>© myto-moto</span>
+              <span aria-hidden="true" className="text-black/20">·</span>
+              <span>{MADE_IN_INDIA}</span>
+              <span aria-hidden="true" className="text-black/20">·</span>
+              <span>{versionLabel(pkg.version)}</span>
               <span aria-hidden="true" className="text-black/20">·</span>
               <Link href="/privacy" className="transition-opacity hover:opacity-50">Privacy</Link>
               <Link href="/terms" className="transition-opacity hover:opacity-50">Terms</Link>

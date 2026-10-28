@@ -3,8 +3,9 @@ import { cacheLife, cacheTag } from "next/cache";
 import { connection } from "next/server";
 import { getSql, withPublicRole } from "../db/client";
 import { applyNow } from "./effective";
-import { parseSearchParams } from "@/features/discovery/search-params";
-import { searchTrails, type SearchItem } from "./search.sql";
+import { parseSearchParams, type SearchParams } from "@/features/discovery/search-params";
+import type { MapPoint } from "@/features/map/geojson";
+import { searchMapPoints, searchTrails, type SearchItem, type SearchResult } from "./search.sql";
 import { queryTrailBySlug, queryTrailMedia, queryTrailRoute, queryTrailVideos, queryTrailsInRegion, querySitemapEntries } from "./trails.sql";
 import type { MediaDto, RouteDto, VideoDto, TrailDetailDto, TrailSummaryDto } from "./types";
 
@@ -97,4 +98,20 @@ export async function getFeaturedTrails(): Promise<SearchItem[]> {
   await connection();
   const now = new Date();
   return items.map((t) => applyNow(t, now));
+}
+
+// Search that does not use the rider's position is the same for everyone, so it is cached. The time is read inside
+// (never passed in) so it is not part of the cache key.
+export async function getCachedSearch(p: SearchParams): Promise<SearchResult> {
+  "use cache";
+  cacheTag("trails");
+  cacheLife("hours");
+  return withPublicRole(getSql(), (tx) => searchTrails(tx, p, new Date()));
+}
+
+export async function getCachedMapPoints(p: SearchParams): Promise<MapPoint[]> {
+  "use cache";
+  cacheTag("trails");
+  cacheLife("hours");
+  return withPublicRole(getSql(), (tx) => searchMapPoints(tx, p, {}));
 }
