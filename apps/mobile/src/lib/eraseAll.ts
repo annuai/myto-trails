@@ -1,5 +1,6 @@
 import { arriveCheckin } from '@/api/checkins';
 import { deleteSharedRoute } from '@/api/sharedRoutes';
+import { traceDelete } from '@/lib/motionTraceFile';
 import { eraseDocumentPhotos } from '@/lib/backup/device';
 import { sharedIdOf } from '@/lib/shareRoute';
 import { signOut } from '@/lib/signIn';
@@ -29,6 +30,7 @@ export function eraseEverything(token: string | null) {
   useMyRoutes.getState().wipe();
   useTrips.getState().wipe();
   useFuel.getState().wipe();
+  traceDelete();
   useProfile.getState().wipe();
   useTodos.setState({ todos: [] });
   useRides.setState({ rides: [] });

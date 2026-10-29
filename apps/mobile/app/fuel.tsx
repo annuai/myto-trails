@@ -35,7 +35,7 @@ export default function FuelCosts() {
   const hasRange = preset !== 'custom' || !!custom.start;
 
   return (
-    <Screen>
+    <Screen overlay={<FuelSettingsSheet key={String(settings)} open={settings} onClose={() => setSettings(false)} />}>
       <BackHeader title="You" />
       <PageTitle>Fuel costs</PageTitle>
       {!history.length ? (
@@ -75,7 +75,6 @@ export default function FuelCosts() {
           <Text variant="caption" tone="muted">Worked out from each ride's distance, at the mileage and price in force the day it started. Real use varies with load, traffic and riding.</Text>
         </View>
       )}
-      <FuelSettingsSheet key={String(settings)} open={settings} onClose={() => setSettings(false)} />
     </Screen>
   );
 }

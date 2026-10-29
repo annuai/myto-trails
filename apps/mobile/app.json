@@ -26,6 +26,7 @@
       "expo-secure-store",
       ["expo-notifications", { "enableRemoteNotifications": false }],
       "expo-web-browser",
+      ["expo-sensors", { "motionPermission": "Myto Moto uses motion data to tell riding from walking, so stops and break reminders are accurate." }],
       [
         "expo-image-picker",
         {

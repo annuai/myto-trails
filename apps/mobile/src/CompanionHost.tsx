@@ -190,7 +190,8 @@ export function CompanionHost() {
       const everyMin = prefs.breakEveryMin ?? DEFAULT_BREAK_MIN;
       const b = stepBreak(brk, { now, running, paused: rec.paused, stopped: useMotion.getState().stopped, afterMs: everyMin * 60_000 });
       brk = b.state;
-      if (b.remind) announce('break', 'Time for a break', `You have been riding for ${breakLabel(everyMin).toLowerCase()}. Stop, drink some water and stretch.`, 'Time for a break', '/ride/live', true);
+      // When the detector cannot tell what the rider is doing, stay quiet rather than risk a reminder at a stop.
+      if (b.remind && useMotion.getState().activity !== 'unknown') announce('break', 'Time for a break', `You have been riding for ${breakLabel(everyMin).toLowerCase()}. Stop, drink some water and stretch.`, 'Time for a break', '/ride/live', true);
       if (!running) { sunsetAt = undefined; sunsetTold = false; sunsetTries = 0; return; }
       const p = rec.points[rec.points.length - 1];
       if (prefs.daylightAlert && sunsetAt === undefined && p && !looking && sunsetTries < 3) {

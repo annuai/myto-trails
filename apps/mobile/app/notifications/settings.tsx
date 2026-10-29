@@ -14,6 +14,8 @@ import { Text } from '@/ui/Text';
 import { notifier } from '@/lib/notifier';
 import { usePermission } from '@/lib/usePermission';
 import { syncReminders } from '@/NotificationHost';
+import { traceExists, traceShare } from '@/lib/motionTraceFile';
+import { useTraceSetting } from '@/store/trace';
 import { useNotifications } from '@/store/notifications';
 import type { Prefs } from '@/store/notificationsCore';
 
@@ -29,6 +31,7 @@ const toggles: { key: Exclude<keyof Prefs, 'tripLeadMin' | 'breakEveryMin'>; lab
 /** Which reminders to send, and whether the phone allows them. */
 export default function NotificationSettings() {
   const prefs = useNotifications((s) => s.prefs);
+  const trace = useTraceSetting((s) => s.on);
   const { permission, refresh } = usePermission();
   const [note, setNote] = useState<string>();
 
@@ -74,6 +77,12 @@ export default function NotificationSettings() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
           {BREAK_CHOICES.map((m) => <ChoiceChip key={m} label={breakLabel(m)} selected={(prefs.breakEveryMin ?? DEFAULT_BREAK_MIN) === m} onPress={() => useNotifications.getState().setBreakEvery(m)} />)}
         </View>
+      </Card>
+      <SectionTitle>Stop detection</SectionTitle>
+      <Card padded={false} style={{ gap: space[3] }}>
+        <Row label="Save a motion trace of each ride" sub="Keeps the last ride's GPS and shaking readings on this phone, to tune how stops are detected. Off by default." chevron={false}
+          right={<Checkbox checked={trace} label="Save a motion trace of each ride" onChange={(v) => useTraceSetting.getState().set(v)} />} />
+        {trace && traceExists() ? <View style={{ padding: space[4], paddingTop: 0 }}><Button variant="soft" label="Share the last trace" onPress={() => void traceShare()} /></View> : null}
       </Card>
       <SectionTitle>Check it works</SectionTitle>
       <Button variant="soft" label="Send a test notification" onPress={() => void test()} />

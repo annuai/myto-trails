@@ -5,6 +5,8 @@ import { startBackground, stopBackground } from '@/lib/backgroundLocation';
 import type { Fix } from '@/lib/location';
 import { simPoint } from '@/lib/sim';
 import { useLocation } from '@/store/location';
+import { startShakeSensor } from '@/lib/shakeSensor';
+import { traceBegin, traceEnd } from '@/lib/motionTraceFile';
 import { useMotion } from '@/store/motion';
 import { useRecorder } from '@/store/recorder';
 
@@ -39,7 +41,10 @@ export function RecorderHost() {
     // Stopped detection runs on every fix and on a clock tick, whether or not the ride is paused.
     const unsubMotion = useLocation.subscribe((s, prev) => { const f = s.fix; if (f && f !== prev.fix) useMotion.getState().feed({ t: f.t, lat: f.lat, lng: f.lng, speed: f.speed, acc: f.accuracy }); });
     const tick = setInterval(() => useMotion.getState().refresh(Date.now()), 1000);
-    const stopMotion = () => { unsubMotion(); clearInterval(tick); useMotion.getState().reset(); };
+    // The phone's shaking tells riding from standing when GPS is poor, and walking from riding.
+    const stopShake = startShakeSensor((t, vib, stepHz) => useMotion.getState().feedShake(t, vib, stepHz), (t) => useMotion.getState().feedOs(t, 'walking'));
+    traceBegin();
+    const stopMotion = () => { unsubMotion(); clearInterval(tick); stopShake(); traceEnd(); useMotion.getState().reset(); };
     let cancelled = false;
     let unsub: (() => void) | undefined;
     // Paused: the map dot keeps moving, but nothing is recorded and the background task is not running.
