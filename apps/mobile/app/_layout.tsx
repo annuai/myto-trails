@@ -13,6 +13,7 @@ import { fixed, light } from '@/theme/tokens';
 import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
+import { RideNotificationHost } from '@/RideNotificationHost';
 import { VoiceHost } from '@/VoiceHost';
 
 void SplashScreen.preventAutoHideAsync();
@@ -46,6 +47,7 @@ export default function Root() {
       <RecorderHost />
       <NotificationHost />
       <CompanionHost />
+      <RideNotificationHost />
           <VoiceHost />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: light.paper }, animation: 'slide_from_right' }}>
         <Stack.Screen name="ride/live" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />

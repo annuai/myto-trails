@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Myto</string>
+	<string>Myto Moto</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -56,28 +56,28 @@
 		<string>_expo._tcp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Myto uses the camera to photograph your licence, registration, insurance and PUC. The photos stay on this phone.</string>
+	<string>Myto Moto uses the camera to photograph your licence, registration, insurance and PUC. The photos stay on this phone.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Myto asks for Face ID before it shows a photo of your documents.</string>
+	<string>Myto Moto asks for Face ID before it shows a photo of your documents.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Expo Dev Launcher uses the local network to discover and connect to development servers running on your computer.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Myto records your ride's route in the background, so it keeps recording when your screen is locked or another app is open.</string>
+	<string>Myto Moto records your ride's route in the background, so it keeps recording when your screen is locked or another app is open.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Myto records your ride's route in the background, so it keeps recording when your screen is locked or another app is open.</string>
+	<string>Allow $(PRODUCT_NAME) to access your location</string>
 	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
 	<dict>
 		<key>ExpoLocationFullAccuracy</key>
 		<string>Allow $(PRODUCT_NAME) to access your precise location</string>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Myto records your ride's route while you ride.</string>
+	<string>Myto Moto records your ride's route while you ride.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Myto records voice notes for your ride journal. They stay on this phone.</string>
+	<string>Myto Moto records voice notes for your ride journal. They stay on this phone.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>Allow $(PRODUCT_NAME) to detect your current motion activity</string>
+	<string>Myto Moto uses motion data to tell riding from walking, so stops and break reminders are accurate.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Myto uses your photos for your profile picture, your bike, club covers and the photos of your documents.</string>
+	<string>Myto Moto uses your photos for your profile picture, your bike, club covers and the photos of your documents.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
@@ -105,6 +105,7 @@
 	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>fetch</string>
 		<string>location</string>
 	</array>
 	<key>UILaunchStoryboardName</key>

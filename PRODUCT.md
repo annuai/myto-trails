@@ -16,6 +16,8 @@ Detail: [docs/02](docs/02-product-requirements.md), [docs/03](docs/03-informatio
 
 **Companion stage (after the web MVP):** public API; Trails app that records rides in the background and posts GPX and details to Trails; Myto Navi (Android hardware with SIM) integration with offline sync ([docs/14](docs/14-platform-contract.md)).
 
+**The Myto Moto app now (built, in testing):** records rides and keeps a ride journal; plans routes from searched places along roads; follows a saved route; group rides with live status and Help; check-ins and condition reports; to-dos, documents and service reminders; fuel costs; offline maps; year recap. Details: [app README](apps/mobile/README.md), [docs/16 §13](docs/16-myto-app-ui.md), [feature designs](docs/superpowers/specs/).
+
 **Later:** collections and completed trails, notifications, corrections, reputation, richer elevation; then planning, device formats, riding stats.
 
 **Success metrics (proposed):** discovery completion ≥ 45%; wishlist adoption ≥ 40% in 7 days; first-pass valid submissions ≥ 70%; median moderation ≤ 5 days; closure reflected ≤ 48 h; access accuracy ≥ 95% on audit sample; verification freshness ≥ 80%.

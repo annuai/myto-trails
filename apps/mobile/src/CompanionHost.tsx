@@ -69,6 +69,10 @@ function followedRouteEnd(): LatLng | undefined {
   return end ? { lat: end[1], lng: end[0] } : undefined;
 }
 
+/** Sends the rider's signal to the group now rather than at the next poll. Set while the host is mounted. */
+let pollGroupNow: (() => void) | undefined;
+export const syncGroupNow = () => pollGroupNow?.();
+
 /** What auto-arrive has seen for the open check-in. It starts afresh for each check-in. */
 const arriveWatch = { id: '', state: startArrive };
 
@@ -152,6 +156,7 @@ export function CompanionHost() {
         if (e instanceof ApiFailure && (e.status === 403 || e.status === 404)) useCompanion.getState().setGroup(null);
       }
     };
+    pollGroupNow = () => { void pollGroup(); };
     const loop = () => {
       void pollGroup().finally(() => {
         const { group, live } = useCompanion.getState();
@@ -218,7 +223,7 @@ export function CompanionHost() {
       if (r.action === 'resume') void rec.resume();
     }, 5000);
 
-    return () => { unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); clearInterval(watchTimer); app.remove(); flags.autoPaused = false; };
+    return () => { pollGroupNow = undefined; unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); clearInterval(watchTimer); app.remove(); flags.autoPaused = false; };
   }, []);
   return null;
 }

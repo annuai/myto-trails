@@ -1,6 +1,6 @@
 # Motion detection ("is the rider moving?"): architecture
 
-Status: **proposal, nothing built.** Needs the decisions at the end.
+Status: **first version built (commit e4319d4): GPS, shake and step signals fused in `lib/motionFusion.ts`, a motion trace recorder, and a replay harness (`motionTrace*.ts`, `motionReplay.ts`).** Covered by unit tests only. It has not been tuned on real rides, so the P0 trace-collection work and the decisions at the end are still open. The phases below were written before the build and are kept as the plan.
 
 ## Why the current one fails
 `apps/mobile/src/lib/motion.ts` decides from GPS speed and position alone. In the real world GPS is the weakest signal exactly when the answer matters:

@@ -6,7 +6,8 @@ const CHANNEL = 'reminders';
 
 // While the app is open a reminder still shows as a banner, so a rider looking at the app is not left guessing.
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
+  // The ride controls are updated while the rider is in the app, where a banner for them would only be in the way.
+  handleNotification: async (n) => ({ shouldShowBanner: n.request.content.categoryIdentifier?.startsWith('ride') !== true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
 });
 
 let channel: Promise<unknown> | undefined;
@@ -40,5 +41,6 @@ export const notifier: Notifier = {
 export function useTappedRoute(): { route: string; key: string } | null {
   const last = Notifications.useLastNotificationResponse();
   const route = last?.notification.request.content.data?.route;
-  return last && typeof route === 'string' ? { route, key: last.notification.request.identifier + last.notification.date } : null;
+  // A press on one of a notification's buttons is not a tap: it must not open the screen.
+  return last && last.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER && typeof route === 'string' ? { route, key: last.notification.request.identifier + last.notification.date } : null;
 }
