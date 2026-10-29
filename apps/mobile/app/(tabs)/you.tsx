@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Share, View } from 'react-native';
+import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, BookOpen, CalendarDays, ClipboardList, Download, Fuel, IdCard, LogIn, LogOut, Luggage, ShieldAlert, Stamp, Route as RouteIcon, Share2, TriangleAlert, Upload } from 'lucide-react-native';
-import { MYTO_URL } from '@moto-trails/domain';
+import { Bell, BookOpen, CalendarDays, ClipboardList, Download, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, ShieldAlert, Stamp, Route as RouteIcon, Share2, TriangleAlert, Upload } from 'lucide-react-native';
+import Constants from 'expo-constants';
+import { CONTACT_EMAIL, MYTO_URL, versionLabel } from '@moto-trails/domain';
 import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import { signOut, startSignIn } from '@/lib/signIn';
@@ -57,6 +58,11 @@ export default function You() {
     } catch (e) { setAuthError(e instanceof ApiFailure ? e.message : 'Something went wrong.'); } finally { setAvatarBusy(false); }
   };
 
+  const reportProblem = () => {
+    const body = `\n\n---\nMyto Moto ${versionLabel(Constants.expoConfig?.version)}\n${Platform.OS} ${Platform.Version}`;
+    void Linking.openURL(`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Myto Moto: a problem')}&body=${encodeURIComponent(body)}`);
+  };
+
   return (
     <Screen tabs brand fadeTabs endCap={<RiderBanner />}>
       <PageTitle>You</PageTitle>
@@ -104,6 +110,7 @@ export default function You() {
       <ListCard>
         <Row icon={ShieldAlert} label="Crash detection" sub="Beta. Asks if you are OK after a crash" onPress={() => router.push('/safety')} />
         <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
+        <Row icon={LifeBuoy} label="Report a problem" sub="Opens an email with your app version" onPress={reportProblem} />
       </ListCard>
       <SectionTitle>Backup</SectionTitle>
       <ListCard>

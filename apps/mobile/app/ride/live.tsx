@@ -26,6 +26,7 @@ import { useRecorder } from '@/store/recorder';
 import { Theme } from '@/theme/ThemeProvider';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { buzz } from '@/lib/haptics';
 import { HoldButton } from '@/ui/HoldButton';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { useRouteLine } from '@/api/useApi';
@@ -97,6 +98,7 @@ function LiveBody() {
   const shareHere = () => last && Share.share({ message: `I need help. My position: https://maps.google.com/?q=${last.lat.toFixed(5)},${last.lng.toFixed(5)}` });
 
   const stop = async () => {
+    buzz.stop();
     stopping.current = true;
     // If the ride could not be written, it stays on the phone and Home offers it back for saving.
     const id = await finishRide().catch(() => undefined);
@@ -144,18 +146,18 @@ function LiveBody() {
   // The other riders of the group ride, with how far they are and a way to navigate to them (once stopped).
   const groupTiles = group && live.riders.length > 1 ? <RiderTiles tiles={riderTiles(live.riders, live.me, last, Date.now())} canNavigate={canNavigate} /> : null;
   const pauseBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel={r.paused ? 'Resume ride' : 'Pause ride'} onPress={() => void (r.paused ? r.resume() : r.pause())} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: r.paused ? c.accent : pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
+    <Pressable accessibilityRole="button" accessibilityLabel={r.paused ? 'Resume ride' : 'Pause ride'} onPress={() => { (r.paused ? buzz.resume : buzz.pause)(); void (r.paused ? r.resume() : r.pause()); }} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: r.paused ? c.accent : pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
       <Icon icon={r.paused ? Play : Pause} size={h > 70 ? 26 : 22} />
       <Text variant="labelMedium" style={r.paused ? { color: c.accentInk } : undefined}>{r.paused ? 'Resume' : 'Pause'}</Text>
     </Pressable>
   );
   const waypointBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => void useRecorder.getState().addWaypoint().then(() => setDropAt(Date.now()))} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => { buzz.waypoint(); void useRecorder.getState().addWaypoint().then(() => setDropAt(Date.now())); }} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
       <Icon icon={Flag} size={h > 70 ? 26 : 22} /><Text variant="labelMedium">Waypoint{r.waypoints.length ? ` · ${r.waypoints.length}` : ''}</Text>
     </Pressable>
   );
   const sosBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => setSos(true)} style={{ flex: 1, minHeight: h, borderRadius: radius.control, borderWidth: 1.5, borderColor: c.stop, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
+    <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => { buzz.help(); setSos(true); }} style={{ flex: 1, minHeight: h, borderRadius: radius.control, borderWidth: 1.5, borderColor: c.stop, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
       <Icon icon={Siren} tone="stop" size={22} /><Text variant="bodyMedium" tone="stop">SOS</Text>
     </Pressable>
   );
