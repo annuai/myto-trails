@@ -11,3 +11,10 @@ export function getSiteUrl(env: SiteEnv): string {
   }
   return raw.replace(/\/+$/, "");
 }
+
+/** Where to get the phone app (a TestFlight or App Store page), shown on the group invite page. Optional: none until the app is listed. */
+export function getAppDownloadUrl(env: Record<string, string | undefined>): string | undefined {
+  const raw = env.APP_DOWNLOAD_URL?.trim();
+  if (!raw) return undefined;
+  try { return new URL(raw).protocol === "https:" ? raw : undefined; } catch { return undefined; }
+}

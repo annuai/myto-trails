@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getSiteUrl } from "./site";
+import { getAppDownloadUrl, getSiteUrl } from "./site";
 
 describe("getSiteUrl", () => {
   it("strips the trailing slash", () => {
@@ -26,5 +26,15 @@ describe("getSiteUrl", () => {
   });
   it("does not fall back to the deployment host in a Vercel production deploy", () => {
     expect(() => getSiteUrl({ NODE_ENV: "production", VERCEL_ENV: "production", VERCEL_URL: "x.vercel.app" })).toThrow(/SITE_URL/);
+  });
+});
+
+describe("getAppDownloadUrl", () => {
+  it("is the https address when set, and nothing when unset, blank, or not https", () => {
+    expect(getAppDownloadUrl({ APP_DOWNLOAD_URL: " https://testflight.apple.com/join/abc " })).toBe("https://testflight.apple.com/join/abc");
+    expect(getAppDownloadUrl({})).toBeUndefined();
+    expect(getAppDownloadUrl({ APP_DOWNLOAD_URL: "  " })).toBeUndefined();
+    expect(getAppDownloadUrl({ APP_DOWNLOAD_URL: "http://example.com/app" })).toBeUndefined();
+    expect(getAppDownloadUrl({ APP_DOWNLOAD_URL: "javascript:alert(1)" })).toBeUndefined();
   });
 });

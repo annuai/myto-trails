@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { getAppDownloadUrl } from "@/lib/site";
 import { normalizeCode } from "@/server/rides/group-rides";
 
 export const instant = false;
@@ -21,12 +22,14 @@ export default async function JoinPage({ params }: PageProps<"/join/[code]">) {
       </section>
     );
   }
+  const download = getAppDownloadUrl(process.env);
   return (
     <section className="flex max-w-2xl flex-col gap-6 py-(--space-section)">
       <h1 className="display-md">Join a group ride on Myto Moto</h1>
       <p className="max-w-prose text-muted">A rider invited you to ride together. Everyone in the group sees each other on the map while the ride is on.</p>
       <p aria-label={`Code ${code.split("").join(" ")}`} className="font-mono text-4xl font-semibold tracking-widest">{code}</p>
       <a href={`myto://join/${code}`} className={`${button} bg-accent text-white hover:bg-accent-hover`}>Open in Myto Moto</a>
+      {download ? <a href={download} className={`${button} border border-foreground`}>Get the Myto Moto app</a> : null}
       <div className="flex max-w-prose flex-col gap-2">
         <h2 className="text-xl font-semibold">If the button does nothing</h2>
         <p className="text-muted">Open Myto Moto, tap Ride, then Group ride, then type the code above. You need the app and an account to join.</p>

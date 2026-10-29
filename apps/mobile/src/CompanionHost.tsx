@@ -6,6 +6,7 @@ import { postConditionReport } from '@/api/conditionReports';
 import { leaveGroupRide, syncGroupRide } from '@/api/groups';
 import { startArrive, stepArrive } from '@/lib/autoArrive';
 import { startBreak, stepBreak } from '@/lib/breakReminder';
+import { buzzThrice } from '@/lib/buzz';
 import { daylightAlertDue, fetchSunsetMs, sunsetClock } from '@/lib/daylight';
 import type { LatLng } from '@/lib/geo';
 import { shouldPing, type LastPing } from '@/lib/checkinCore';
@@ -72,11 +73,12 @@ function followedRouteEnd(): LatLng | undefined {
 const arriveWatch = { id: '', state: startArrive };
 
 /** A message from the app itself (a break, sunset, arrival): shown now and kept in the history. Details follow the lock-screen setting. */
-function announce(id: string, title: string, body: string, lock: string, route: string) {
+function announce(id: string, title: string, body: string, lock: string, route: string, loud = false) {
   const { prefs, push } = useNotifications.getState();
   const now = Date.now();
   push({ id: `${id}:${now}`, fireAt: now, title, body, lock, route, kind: 'ride' }, now);
-  void notifier.notifyNow({ id: `${id}:${now}`, fireAt: now, title: prefs.showDetails ? title : 'Myto Moto', body: prefs.showDetails ? body : lock, route }).catch(() => undefined);
+  void notifier.notifyNow({ id: `${id}:${now}`, fireAt: now, title: prefs.showDetails ? title : 'Myto Moto', body: prefs.showDetails ? body : lock, route, ...(loud ? { loud } : {}) }).catch(() => undefined);
+  if (loud) buzzThrice();
 }
 
 /**
@@ -187,7 +189,7 @@ export function CompanionHost() {
       const running = rec.status === 'running';
       const b = stepBreak(brk, { now, running, paused: rec.paused, stopped: useMotion.getState().stopped });
       brk = b.state;
-      if (b.remind && prefs.breakReminder) announce('break', 'Time for a break', 'You have been riding for 2 hours. Stop, drink some water and stretch.', 'Time for a break', '/ride/live');
+      if (b.remind && prefs.breakReminder) announce('break', 'Time for a break', 'You have been riding for 2 hours. Stop, drink some water and stretch.', 'Time for a break', '/ride/live', true);
       if (!running) { sunsetAt = undefined; sunsetTold = false; sunsetTries = 0; return; }
       const p = rec.points[rec.points.length - 1];
       if (prefs.daylightAlert && sunsetAt === undefined && p && !looking && sunsetTries < 3) {

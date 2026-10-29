@@ -52,6 +52,7 @@ Copy `.env.example` to `apps/web/.env.local` and fill it in yourself. Never past
 | `R2_BUCKET` | The bucket you created in R2 |
 | `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | R2 → Manage API tokens → create a token with Object Read & Write limited to that bucket |
 | `R2_PUBLIC_BASE_URL` | Public URL of the bucket (custom domain or the r2.dev URL) for the `public/` prefix |
+| `APP_DOWNLOAD_URL` | Optional. The TestFlight or App Store page for the phone app (https). When set, the group invite page `/join/CODE` shows a "Get the Myto Moto app" button |
 
 ## Switching storage provider
 Set `STORAGE_PROVIDER` to `memory`, `r2` or `supabase` in `.env.local` (and in Vercel). Then:
