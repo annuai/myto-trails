@@ -32,7 +32,7 @@ export function OsmMap({ height, line, track, trackBreaks, position, waypoints, 
         if (cancelled || !box.current) return;
         const m = new ml.Map({
           container: box.current, style: mapStyleUrl(dark), center: INDIA_CENTER, zoom: 3.5,
-          attributionControl: { compact: true }, cooperativeGestures: !follow, interactive,
+          attributionControl: interactive ? { compact: true } : false, cooperativeGestures: !follow, interactive,
         });
         map.current = m;
         // The map handles its own touches. Keeping them from reaching React Native Web's responder system stops its

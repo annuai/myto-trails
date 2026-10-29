@@ -67,7 +67,7 @@ export default function Contacts() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {blood.map((b) => <ChoiceChip raised key={b} label={b} selected={medical.bloodGroup === b} onPress={() => setMedical({ ...medical, bloodGroup: medical.bloodGroup === b ? undefined : b })} />)}
         </View>
-        <Field label="Allergies or conditions (optional)" value={medical.notes ?? ''} onChangeText={(notes) => setMedical({ ...medical, notes })} multiline />
+        <Field onCard label="Allergies or conditions (optional)" value={medical.notes ?? ''} onChangeText={(notes) => setMedical({ ...medical, notes })} multiline />
       </Card>
       <Text variant="caption" tone="muted" style={{ marginTop: 16 }}>Kept on this device. Myto Moto does not replace emergency services.</Text>
     </Screen>

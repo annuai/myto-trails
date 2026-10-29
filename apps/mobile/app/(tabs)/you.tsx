@@ -24,6 +24,7 @@ import { Measure } from '@/ui/Measure';
 import { PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Columns } from '@/ui/Columns';
+import { Pronunciation } from '@/ui/Pronunciation';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { media, opacity, space } from '@/theme/tokens';
@@ -116,6 +117,7 @@ export default function You() {
       <View style={{ marginTop: space[6], gap: space[4] }}>
         <Text variant="caption" tone="muted" style={{ textAlign: 'center' }}>Your rides, journal and documents stay on this device. Myto Moto does not replace emergency services.</Text>
         <LegalFooter />
+        <Pronunciation />
       </View>
     </Screen>
   );

@@ -4,13 +4,14 @@ import { useEffect, useMemo, useRef } from 'react';
 import { View } from 'react-native';
 import { Camera, GeoJSONSource, Layer, Map, type CameraRef } from '@maplibre/maplibre-react-native';
 import type { LatLng } from '@/lib/geo';
-import { fixed } from '@/theme/tokens';
+import { fixed, space } from '@/theme/tokens';
 import { mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
 import { trackFeature } from './geojson';
 import type { OsmMapProps } from './types';
 
 const line = (pts: LatLng[] = []) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'LineString' as const, coordinates: pts.map((p) => [p.lng, p.lat]) } });
 const points = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
+const FIT_PADDING = { top: space[8], bottom: space[8], left: space[8], right: space[8] };
 const round = { 'line-cap': 'round', 'line-join': 'round' } as const;
 
 export function OsmMap({ height, line: route, track, trackBreaks, position, waypoints, riders, regroup, onTap, follow, focus, dark, radius = 0, interactive = true }: OsmMapProps) {
@@ -22,10 +23,13 @@ export function OsmMap({ height, line: route, track, trackBreaks, position, wayp
     const lngs = all.map((p) => p.lng), lats = all.map((p) => p.lat);
     return [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)] as [number, number, number, number];
   }, [route, track]);
+  // The camera's first view can be set before the map has its size, which leaves it on the wrong spot with no line in sight. Fit again once the map is drawn, and whenever the route changes.
+  const fit = () => { if (bounds && !follow) camera.current?.fitBounds(bounds, { padding: FIT_PADDING, duration: 0 }); };
+  useEffect(fit, [bounds, follow]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <View style={{ height, borderRadius: radius, overflow: 'hidden' }}>
-      <Map mapStyle={mapStyleUrl(dark)} attribution style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive} onPress={onTap ? (e) => onTap({ lat: e.nativeEvent.lngLat[1], lng: e.nativeEvent.lngLat[0] }) : undefined}>
-        {follow && position ? <Camera ref={camera} center={[position.lng, position.lat]} zoom={15} /> : <Camera ref={camera} initialViewState={bounds ? { bounds, padding: { top: 32, bottom: 32, left: 32, right: 32 } } : { center: [78.9, 21], zoom: 3.5 }} />}
+      <Map mapStyle={mapStyleUrl(dark)} attribution={interactive} logo={interactive} onDidFinishLoadingMap={fit} style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive} onPress={onTap ? (e) => onTap({ lat: e.nativeEvent.lngLat[1], lng: e.nativeEvent.lngLat[0] }) : undefined}>
+        {follow && position ? <Camera ref={camera} center={[position.lng, position.lat]} zoom={15} /> : <Camera ref={camera} initialViewState={bounds ? { bounds, padding: FIT_PADDING } : { center: [78.9, 21], zoom: 3.5 }} />}
         <GeoJSONSource id="route" data={line(route)}><Layer id="route-line" type="line" layout={round} paint={{ 'line-color': ROUTE_COLOR, 'line-width': 4 }} /></GeoJSONSource>
         <GeoJSONSource id="track" data={trackFeature(track, trackBreaks)}><Layer id="track-line" type="line" layout={round} paint={{ 'line-color': TRACK_COLOR, 'line-width': 5 }} /></GeoJSONSource>
         <GeoJSONSource id="wpts" data={points(waypoints)}><Layer id="wpts-dot" type="circle" paint={{ 'circle-radius': 7, 'circle-color': fixed.white, 'circle-stroke-color': fixed.ink, 'circle-stroke-width': 3 }} /></GeoJSONSource>

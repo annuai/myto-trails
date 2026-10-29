@@ -4,9 +4,9 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radius, font } from '@/theme/tokens';
 import { Text } from './Text';
 
-type Props = Omit<TextInputProps, 'style'> & { label: string; hint?: string; error?: string };
+type Props = Omit<TextInputProps, 'style'> & { label: string; hint?: string; error?: string; /** Set when the box sits on a Card, so its fill differs from the card's. */ onCard?: boolean };
 
-export function Field({ label, hint, error, multiline, ...rest }: Props) {
+export function Field({ label, hint, error, multiline, onCard, ...rest }: Props) {
   const { c } = useTheme();
   const [focus, setFocus] = useState(false);
   return (
@@ -21,7 +21,7 @@ export function Field({ label, hint, error, multiline, ...rest }: Props) {
         onBlur={() => setFocus(false)}
         style={{
           minHeight: multiline ? 112 : 56, borderRadius: radius.control, paddingHorizontal: 18, paddingVertical: multiline ? 16 : 0,
-          backgroundColor: c.card, color: c.ink, fontFamily: font.regular, fontSize: 17,
+          backgroundColor: onCard ? c.field : c.card, color: c.ink, fontFamily: font.regular, fontSize: 17,
           borderWidth: 2, borderColor: error ? c.stop : focus ? c.accent : 'transparent', textAlignVertical: multiline ? 'top' : 'center',
           // web only: drop the browser's default outline, the border shows focus
           outlineStyle: 'none' as unknown as 'solid',

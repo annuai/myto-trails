@@ -118,7 +118,7 @@ export default function TrailDetail() {
   const routeEl = (<>
       <SectionTitle>Route</SectionTitle>
       {line ? <OsmMap height={260} line={line} radius={24} /> : <Card><Text variant="label" tone="muted">The route line is not published for this trail.</Text></Card>}
-      {route ? <Text variant="data" tone="muted" style={{ marginTop: 10 }}>{asText(distanceKm(route.distanceKm))} · +{asText(elevationM(route.elevGainM))} / −{asText(elevationM(route.elevLossM))} · {route.minElevM}–{asText(elevationM(route.maxElevM))}</Text> : null}
+      {route ? <Text variant="data" tone="muted" style={{ marginTop: space[3] }}>{asText(distanceKm(route.distanceKm))} · +{asText(elevationM(route.elevGainM))} / −{asText(elevationM(route.elevLossM))} · {route.minElevM}–{asText(elevationM(route.maxElevM))}</Text> : null}
       {route?.profile?.length ? <View style={{ marginTop: space[4] }}><ElevationChart samples={route.profile} /></View> : null}
       {line ? <View style={{ marginTop: space[4] }}><RouteCheck line={line} /></View> : null}
       {detail.hazards.length || detail.safetyNotes ? (
