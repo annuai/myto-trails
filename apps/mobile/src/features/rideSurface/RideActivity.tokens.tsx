@@ -1,5 +1,5 @@
 import { Button, HStack, Image, Link, Spacer, Text, VStack } from '@expo/ui/swift-ui';
-import { buttonStyle, font, foregroundStyle, monospacedDigit, padding } from '@expo/ui/swift-ui/modifiers';
+import { activityBackgroundTint, buttonStyle, font, foregroundStyle, monospacedDigit, padding, tint } from '@expo/ui/swift-ui/modifiers';
 import { createLiveActivity } from 'expo-widgets';
 import type { RideSurfaceProps } from '@/lib/rideActions';
 
@@ -10,7 +10,10 @@ import type { RideSurfaceProps } from '@/lib/rideActions';
  */
 const RideActivity = (props: RideSurfaceProps) => {
   'widget';
-  const accent = '#ec8272';
+  // The lock screen card is the brand red with white elements. The Dynamic Island itself is always black (the system draws it), so its icons are white too.
+  const card = '#af442e';
+  const white = '#ffffff';
+  const soft = '#f3d9d3';
   const time = props.paused
     ? <Text modifiers={[font({ size: 28, weight: 'bold' }), monospacedDigit()]}>{props.clock}</Text>
     : <Text date={new Date(props.since)} dateStyle="timer" modifiers={[font({ size: 28, weight: 'bold' }), monospacedDigit()]} />;
@@ -19,28 +22,28 @@ const RideActivity = (props: RideSurfaceProps) => {
   // solo it opens the app on the SOS sheet.
   const controls = (
     <HStack spacing={12}>
-      <Button label={props.primaryLabel} systemImage={props.paused ? 'play.fill' : 'pause.fill'} target={props.primaryId} modifiers={[buttonStyle('borderedProminent')]} />
+      <Button label={props.primaryLabel} systemImage={props.paused ? 'play.fill' : 'pause.fill'} target={props.primaryId} modifiers={[buttonStyle('borderedProminent'), tint(white)]} />
       {props.group
-        ? <Button label="Help" systemImage="exclamationmark.triangle.fill" role="destructive" target="ride.help" modifiers={[buttonStyle('bordered')]} />
-        : <Link label="Help" destination="myto://ride/live?sos=1" modifiers={[buttonStyle('bordered')]} />}
+        ? <Button label="Help" systemImage="exclamationmark.triangle.fill" role="destructive" target="ride.help" modifiers={[buttonStyle('bordered'), tint(white)]} />
+        : <Link label="Help" destination="myto://ride/live?sos=1" modifiers={[buttonStyle('bordered'), tint(white)]} />}
     </HStack>
   );
   return {
     banner: (
-      <VStack spacing={8} modifiers={[padding({ all: 16 })]}>
+      <VStack spacing={8} modifiers={[padding({ all: 16 }), foregroundStyle(white), activityBackgroundTint(card)]}>
         <HStack>
-          <Image systemName={icon} color={accent} />
+          <Image systemName={icon} color={white} />
           <Text modifiers={[font({ size: 15, weight: 'semibold' })]}>{props.title}</Text>
           <Spacer />
-          <Text modifiers={[font({ size: 15 }), foregroundStyle('#8E8E93')]}>{props.km} km</Text>
+          <Text modifiers={[font({ size: 15 }), foregroundStyle(soft)]}>{props.km} km</Text>
         </HStack>
         {time}
         {controls}
       </VStack>
     ),
-    compactLeading: <Image systemName={icon} color={accent} />,
+    compactLeading: <Image systemName={icon} color={white} />,
     compactTrailing: props.paused ? <Text>{props.clock}</Text> : <Text date={new Date(props.since)} dateStyle="timer" />,
-    minimal: <Image systemName={icon} color={accent} />,
+    minimal: <Image systemName={icon} color={white} />,
     expandedLeading: (
       <VStack modifiers={[padding({ all: 12 })]}>
         <Text modifiers={[font({ size: 12 }), foregroundStyle('#8E8E93')]}>{props.paused ? 'Paused' : 'Riding'}</Text>
