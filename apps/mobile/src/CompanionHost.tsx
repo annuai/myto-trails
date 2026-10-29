@@ -5,7 +5,7 @@ import { arriveCheckin, pingCheckin } from '@/api/checkins';
 import { postConditionReport } from '@/api/conditionReports';
 import { leaveGroupRide, syncGroupRide } from '@/api/groups';
 import { startArrive, stepArrive } from '@/lib/autoArrive';
-import { startBreak, stepBreak } from '@/lib/breakReminder';
+import { breakLabel, DEFAULT_BREAK_MIN, startBreak, stepBreak } from '@/lib/breakReminder';
 import { buzzThrice } from '@/lib/buzz';
 import { daylightAlertDue, fetchSunsetMs, sunsetClock } from '@/lib/daylight';
 import type { LatLng } from '@/lib/geo';
@@ -187,9 +187,10 @@ export function CompanionHost() {
       const { prefs } = useNotifications.getState();
       const now = Date.now();
       const running = rec.status === 'running';
-      const b = stepBreak(brk, { now, running, paused: rec.paused, stopped: useMotion.getState().stopped });
+      const everyMin = prefs.breakEveryMin ?? DEFAULT_BREAK_MIN;
+      const b = stepBreak(brk, { now, running, paused: rec.paused, stopped: useMotion.getState().stopped, afterMs: everyMin * 60_000 });
       brk = b.state;
-      if (b.remind && prefs.breakReminder) announce('break', 'Time for a break', 'You have been riding for 2 hours. Stop, drink some water and stretch.', 'Time for a break', '/ride/live', true);
+      if (b.remind) announce('break', 'Time for a break', `You have been riding for ${breakLabel(everyMin).toLowerCase()}. Stop, drink some water and stretch.`, 'Time for a break', '/ride/live', true);
       if (!running) { sunsetAt = undefined; sunsetTold = false; sunsetTries = 0; return; }
       const p = rec.points[rec.points.length - 1];
       if (prefs.daylightAlert && sunsetAt === undefined && p && !looking && sunsetTries < 3) {

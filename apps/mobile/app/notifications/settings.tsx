@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
+import { BREAK_CHOICES, breakLabel, DEFAULT_BREAK_MIN } from '@/lib/breakReminder';
 import { LEAD_CHOICES, leadLabel, REMIND_BEFORE_MIN } from '@/lib/tripPlan';
 import { space } from '@/theme/tokens';
 import { Card } from '@/ui/Card';
@@ -16,11 +17,10 @@ import { syncReminders } from '@/NotificationHost';
 import { useNotifications } from '@/store/notifications';
 import type { Prefs } from '@/store/notificationsCore';
 
-const toggles: { key: Exclude<keyof Prefs, 'tripLeadMin'>; label: string; sub: string }[] = [
+const toggles: { key: Exclude<keyof Prefs, 'tripLeadMin' | 'breakEveryMin'>; label: string; sub: string }[] = [
   { key: 'todos', label: 'To-dos and documents', sub: 'A week, a day and the day it is due, and once if it is overdue' },
   { key: 'trips', label: 'Trip plans', sub: '9 pm the evening before a trip, with what is still to pack' },
   { key: 'groupSignals', label: 'Group ride signals', sub: 'When someone in your group asks for help, needs fuel or a break' },
-  { key: 'breakReminder', label: 'Break reminder', sub: 'After 2 hours of riding without a stop of 10 minutes' },
   { key: 'daylightAlert', label: 'Daylight alert', sub: 'About 45 minutes before sunset while you ride' },
   { key: 'paused', label: 'Ride paused', sub: 'After 30 minutes paused, so a ride is not forgotten' },
   { key: 'showDetails', label: 'Show details on the lock screen', sub: 'Off: a reminder only says "Myto Moto reminder"' },
@@ -66,6 +66,13 @@ export default function NotificationSettings() {
         <Text variant="label" tone="muted">How long before a trip starts to be reminded to open the app and start it. A trip you do not start records nothing.</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
           {LEAD_CHOICES.map((m) => <ChoiceChip key={m} label={leadLabel(m)} selected={(prefs.tripLeadMin ?? REMIND_BEFORE_MIN) === m} onPress={() => useNotifications.getState().setTripLead(m)} />)}
+        </View>
+      </Card>
+      <SectionTitle>Break reminder</SectionTitle>
+      <Card style={{ gap: space[3] }}>
+        <Text variant="label" tone="muted">How long you can ride without a stop of 10 minutes before you are reminded to take a break. A buzz and a sound come with it.</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
+          {BREAK_CHOICES.map((m) => <ChoiceChip key={m} label={breakLabel(m)} selected={(prefs.breakEveryMin ?? DEFAULT_BREAK_MIN) === m} onPress={() => useNotifications.getState().setBreakEvery(m)} />)}
         </View>
       </Card>
       <SectionTitle>Check it works</SectionTitle>

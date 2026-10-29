@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BREAK_AFTER_MS, BREAK_COUNTS_MS, startBreak, stepBreak, type BreakState } from './breakReminder';
 
 const MIN = 60_000;
-const base = { running: true, paused: false, stopped: false };
+const base = { running: true, paused: false, stopped: false, afterMs: BREAK_AFTER_MS };
 const run = (steps: { at: number; over?: Partial<typeof base> }[], from: BreakState = startBreak) => {
   let s = from; const out: boolean[] = [];
   for (const { at, over } of steps) { const r = stepBreak(s, { now: at, ...base, ...over }); s = r.state; out.push(r.remind); }
@@ -29,6 +29,11 @@ describe('break reminder', () => {
     const r = run([{ at: 0 }, { at: 30 * MIN, over: { paused: true } }, { at: 41 * MIN, over: { paused: true } }, { at: 50 * MIN }, { at: 50 * MIN + BREAK_AFTER_MS }]);
     expect(r.out[4]).toBe(true);
     expect(r.out[3]).toBe(false);
+  });
+  it('uses the interval the rider chose, and is off at zero', () => {
+    const hour = { afterMs: 60 * MIN };
+    expect(run([{ at: 0, over: hour }, { at: 60 * MIN - 1, over: hour }, { at: 60 * MIN, over: hour }]).out).toEqual([false, false, true]);
+    expect(run([{ at: 0, over: { afterMs: 0 } }, { at: BREAK_AFTER_MS, over: { afterMs: 0 } }]).out).toEqual([false, false]);
   });
   it('does nothing while no ride is recording', () => {
     expect(run([{ at: 0, over: { running: false } }, { at: BREAK_AFTER_MS, over: { running: false } }]).out).toEqual([false, false]);
