@@ -8,8 +8,8 @@ While a ride is recording, a notification carries its controls so a rider can us
 
 | Situation | Title | Buttons |
 |---|---|---|
-| Solo, recording | Recording your ride | Pause |
-| Solo, paused | Ride paused | Resume |
+| Solo, recording | Recording your ride | Pause, Help (opens the SOS sheet) |
+| Solo, paused | Ride paused | Resume, Help (opens the SOS sheet) |
 | Group ride, recording | Recording your ride | Pause, Help |
 | Group ride, paused | Ride paused | Resume, Help |
 | After Help is pressed | Help sent to your group | Undo |

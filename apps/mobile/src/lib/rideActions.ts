@@ -1,18 +1,20 @@
 /** The buttons on the ride notification, and what the notification says. No phone code here, so it is tested on its own (see rideNotification.ts). */
 export type RideActionId = 'ride.pause' | 'ride.resume' | 'ride.help' | 'ride.undo-help' | 'crash.ok';
-export type RideAction = { id: RideActionId; label: string; /** Red on iOS. */ destructive?: boolean };
+export type RideAction = { id: RideActionId; label: string; /** Red on iOS. */ destructive?: boolean; /** Pressing it brings the app to the front. */ opensApp?: boolean };
 export type RideCategory = 'ride' | 'ride-paused' | 'ride-group' | 'ride-group-paused' | 'help-sent' | 'crash';
 
 const PAUSE: RideAction = { id: 'ride.pause', label: 'Pause' };
 const RESUME: RideAction = { id: 'ride.resume', label: 'Resume' };
 const HELP: RideAction = { id: 'ride.help', label: 'Help', destructive: true };
+/** On a solo ride there is no group to tell, so Help opens the app on the SOS sheet (call 112, share position). */
+const HELP_SOLO: RideAction = { ...HELP, opensApp: true };
 const UNDO: RideAction = { id: 'ride.undo-help', label: 'Undo' };
 const CRASH_OK: RideAction = { id: 'crash.ok', label: "I'm OK" };
 
-/** Android shows at most three buttons, so a group ride has two and leaves room. */
+/** Every ride has Pause or Resume and Help. Android shows at most three buttons, so that leaves room. */
 export const CATEGORIES: Record<RideCategory, RideAction[]> = {
-  ride: [PAUSE],
-  'ride-paused': [RESUME],
+  ride: [PAUSE, HELP_SOLO],
+  'ride-paused': [RESUME, HELP_SOLO],
   'ride-group': [PAUSE, HELP],
   'ride-group-paused': [RESUME, HELP],
   'help-sent': [UNDO],
@@ -75,7 +77,7 @@ export function clockShortText(ms: number): string {
   return m >= 60 ? `${Math.floor(m / 60)} h ${pad(m % 60)} min` : `${m} min`;
 }
 
-/** The card for a ride in progress. Solo or group, trip or not, Pause (or Resume) is always its first button. */
+/** The card for a ride in progress. Solo or group, trip or not, Pause (or Resume) is its first button and Help its second. */
 export function rideSurfaceProps(i: { paused: boolean; group: boolean; elapsedMs: number; meters: number; now: number }): RideSurfaceProps {
   const first = i.paused ? RESUME : PAUSE;
   return {

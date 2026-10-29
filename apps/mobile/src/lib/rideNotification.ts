@@ -10,7 +10,7 @@ const ROUTE = '/ride/live';
 let ready: Promise<unknown> | undefined;
 /** The buttons are registered once; on Android the notification also needs a quiet channel, so updating it never beeps or pops up. */
 const setup = () => (ready ??= Promise.all([
-  ...Object.entries(CATEGORIES).map(([id, actions]) => Notifications.setNotificationCategoryAsync(id, actions.map((a) => ({ identifier: a.id, buttonTitle: a.label, options: { opensAppToForeground: false, isDestructive: !!a.destructive } })))),
+  ...Object.entries(CATEGORIES).map(([id, actions]) => Notifications.setNotificationCategoryAsync(id, actions.map((a) => ({ identifier: a.id, buttonTitle: a.label, options: { opensAppToForeground: !!a.opensApp, isDestructive: !!a.destructive } })))),
   Platform.OS === 'android' ? Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Ride controls', importance: Notifications.AndroidImportance.LOW }) : Promise.resolve(),
   Platform.OS === 'android' ? Notifications.setNotificationChannelAsync(LOUD_CHANNEL, { name: 'Crash alert', importance: Notifications.AndroidImportance.MAX }) : Promise.resolve(),
 ]));

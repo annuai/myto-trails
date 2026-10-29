@@ -2,15 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { CATEGORIES, clockShortText, clockText, helpSentNotice, isRideAction, rideNotice, rideSurfaceProps } from './rideActions';
 
 describe('rideNotice', () => {
-  it('offers Pause alone on a solo ride', () => {
+  it('offers Pause and Help on a solo ride', () => {
     const n = rideNotice({ paused: false, group: false });
     expect(n.category).toBe('ride');
-    expect(CATEGORIES[n.category].map((a) => a.label)).toEqual(['Pause']);
+    expect(CATEGORIES[n.category].map((a) => a.label)).toEqual(['Pause', 'Help']);
   });
-  it('offers Resume once paused', () => {
-    expect(CATEGORIES[rideNotice({ paused: true, group: false }).category].map((a) => a.label)).toEqual(['Resume']);
+  it('offers Resume and Help once paused', () => {
+    expect(CATEGORIES[rideNotice({ paused: true, group: false }).category].map((a) => a.label)).toEqual(['Resume', 'Help']);
   });
-  it('adds Help on a group ride, with Pause or Resume first', () => {
+  it('a solo Help opens the app (there is no group to tell); a group Help does not', () => {
+    expect(CATEGORIES.ride.find((a) => a.id === 'ride.help')?.opensApp).toBe(true);
+    expect(CATEGORIES['ride-group'].find((a) => a.id === 'ride.help')?.opensApp).toBeFalsy();
+  });
+  it('keeps Help on a group ride, with Pause or Resume first', () => {
     expect(CATEGORIES[rideNotice({ paused: false, group: true }).category].map((a) => a.label)).toEqual(['Pause', 'Help']);
     expect(CATEGORIES[rideNotice({ paused: true, group: true }).category].map((a) => a.label)).toEqual(['Resume', 'Help']);
   });

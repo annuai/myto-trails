@@ -10,11 +10,11 @@ The ride notification works through iOS's and Android's ordinary notification bu
 
 | Platform | Surface | Always visible | Buttons |
 |---|---|---|---|
-| iOS 16.2+ | Live Activity: lock screen card and Dynamic Island (compact, expanded, minimal) | Yes | Pause / Resume, and Help on a group ride |
-| Android | One ongoing notification with a custom layout, expanded by default | Yes | Pause / Resume, and Help on a group ride |
+| iOS 16.2+ | Live Activity: lock screen card and Dynamic Island (compact, expanded, minimal) | Yes | Pause / Resume (filled, the main button) and Help, on every ride |
+| Android | One ongoing notification with a custom layout, expanded by default | Yes | Pause / Resume (filled, the main button) and Help, on every ride |
 | Either, when the surface is unavailable (Live Activities off, old OS, permission refused) | The ordinary notification we have now | Buttons behind a pull-down on iOS | Same actions |
 
-Shown while a ride is recording and for as long as it is paused. Gone when the ride ends. It shows: state (Recording or Paused), elapsed time, distance, and on a group ride the number of riders. Solo or group, trip or no trip, the same card: a trip never removes a button.
+Shown while a ride is recording and for as long as it is paused. Gone when the ride ends. It shows: state (Recording or Paused), elapsed time, distance, and on a group ride the number of riders. Solo or group, trip or no trip, the same card: a trip never removes a button. Help on a group ride tells the group at once; on a solo ride it opens the app on the SOS sheet (call 112, share position) through `myto://ride/live?sos=1`. Android's solo Help relies on the OS letting the press open the app, which is untested.
 
 ## 3. Library
 

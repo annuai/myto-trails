@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Platform, Share, Vibration, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, Flag, Megaphone, Mic, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { GroupSheet } from '@/features/GroupSheet';
@@ -70,6 +70,9 @@ function LiveBody() {
   const last = r.source === 'sim' ? lastPoint : fix ? { lat: fix.lat, lng: fix.lng } : lastPoint;
   const [, tick] = useState(0);
   const [sos, setSos] = useState(false);
+  // Help on a solo ride's lock screen card opens this screen with the SOS sheet up.
+  const { sos: sosParam } = useLocalSearchParams<{ sos?: string }>();
+  useEffect(() => { if (sosParam) setSos(true); }, [sosParam]);
   const [journalOpen, setJournalOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);

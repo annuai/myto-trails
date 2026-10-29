@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Linking } from 'react-native';
 import { syncGroupNow } from '@/CompanionHost';
 import { HELP_NOTICE_ID, helpSentNotice, helpUndoneNotice, rideNotice, rideSurfaceProps, RIDE_NOTICE_ID, type RideActionId } from '@/lib/rideActions';
 import { clearRideNotice, onRideAction, showRideNotice } from '@/lib/rideNotification';
@@ -8,6 +9,8 @@ import { useCrash } from '@/store/crash';
 import { useRecorder } from '@/store/recorder';
 
 const quietly = () => undefined;
+/** The ride screen with its SOS sheet open. */
+const SOS_URL = 'myto://ride/live?sos=1';
 /** How often the distance on the card is refreshed. The clock needs no refresh on iPhone; Android shows whole minutes. */
 const CARD_REFRESH_MS = 30_000;
 
@@ -58,6 +61,9 @@ export function RideNotificationHost() {
         helpShown = true;
         syncGroupNow();
         void showRideNotice(HELP_NOTICE_ID, helpSentNotice, false).catch(quietly);
+      } else if (id === 'ride.help') {
+        // Solo: no group to tell, so the rider gets the SOS sheet.
+        void Linking.openURL(SOS_URL).catch(quietly);
       } else if (id === 'ride.undo-help') {
         helpShown = false; // the notice is replaced below, not cleared
         companion.setLive({ myStatus: 'ok' });

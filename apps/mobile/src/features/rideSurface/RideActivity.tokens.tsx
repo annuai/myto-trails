@@ -1,5 +1,5 @@
-import { Button, HStack, Image, Spacer, Text, VStack } from '@expo/ui/swift-ui';
-import { font, foregroundStyle, monospacedDigit, padding } from '@expo/ui/swift-ui/modifiers';
+import { Button, HStack, Image, Link, Spacer, Text, VStack } from '@expo/ui/swift-ui';
+import { buttonStyle, font, foregroundStyle, monospacedDigit, padding } from '@expo/ui/swift-ui/modifiers';
 import { createLiveActivity } from 'expo-widgets';
 import type { RideSurfaceProps } from '@/lib/rideActions';
 
@@ -15,10 +15,14 @@ const RideActivity = (props: RideSurfaceProps) => {
     ? <Text modifiers={[font({ size: 28, weight: 'bold' }), monospacedDigit()]}>{props.clock}</Text>
     : <Text date={new Date(props.since)} dateStyle="timer" modifiers={[font({ size: 28, weight: 'bold' }), monospacedDigit()]} />;
   const icon = props.paused ? 'pause.circle.fill' : 'record.circle.fill';
+  // Pause (Resume once paused) is the filled main button. Help is always there: on a group ride it tells the group at once,
+  // solo it opens the app on the SOS sheet.
   const controls = (
     <HStack spacing={12}>
-      <Button label={props.primaryLabel} systemImage={props.paused ? 'play.fill' : 'pause.fill'} target={props.primaryId} />
-      {props.group ? <Button label="Help" systemImage="exclamationmark.triangle.fill" role="destructive" target="ride.help" /> : null}
+      <Button label={props.primaryLabel} systemImage={props.paused ? 'play.fill' : 'pause.fill'} target={props.primaryId} modifiers={[buttonStyle('borderedProminent')]} />
+      {props.group
+        ? <Button label="Help" systemImage="exclamationmark.triangle.fill" role="destructive" target="ride.help" modifiers={[buttonStyle('bordered')]} />
+        : <Link label="Help" destination="myto://ride/live?sos=1" modifiers={[buttonStyle('bordered')]} />}
     </HStack>
   );
   return {

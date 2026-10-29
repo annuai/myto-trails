@@ -1,4 +1,4 @@
-import { Button, Column, Row, Text } from '@expo/ui/jetpack-compose';
+import { Button, Column, OutlinedButton, Row, Text } from '@expo/ui/jetpack-compose';
 import { createCustomNotification } from 'expo-widgets';
 import type { RideSurfaceProps } from '@/lib/rideActions';
 
@@ -11,7 +11,8 @@ const RideCard = createCustomNotification('RideCard', (props: RideSurfaceProps) 
   'widget';
   // `target` names the button in the press event; the types do not list it for Compose buttons.
   const primary = <Button {...({ target: props.primaryId } as object)}><Text>{props.primaryLabel}</Text></Button>;
-  const help = props.group ? <Button {...({ target: 'ride.help' } as object)}><Text>Help</Text></Button> : null;
+  // Help is always there: it tells the group on a group ride, and opens the SOS sheet solo.
+  const help = <OutlinedButton {...({ target: 'ride.help' } as object)}><Text>Help</Text></OutlinedButton>;
   const line = `${props.clockShort} · ${props.km} km`;
   return {
     collapsed: (
@@ -20,7 +21,10 @@ const RideCard = createCustomNotification('RideCard', (props: RideSurfaceProps) 
           <Text style={{ fontWeight: 'bold', fontSize: 15 }}>{props.title}</Text>
           <Text style={{ fontSize: 13 }}>{line}</Text>
         </Column>
-        {primary}
+        <Row horizontalArrangement={{ spacedBy: 8 }}>
+          {primary}
+          {help}
+        </Row>
       </Row>
     ),
     expanded: (
