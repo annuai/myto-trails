@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, BookOpen, CalendarDays, ClipboardList, Download, Fuel, IdCard, LogIn, LogOut, Luggage, Stamp, Route as RouteIcon, TriangleAlert, Upload } from 'lucide-react-native';
+import { Bell, BookOpen, CalendarDays, ClipboardList, Download, Fuel, IdCard, LogIn, LogOut, Luggage, ShieldAlert, Stamp, Route as RouteIcon, TriangleAlert, Upload } from 'lucide-react-native';
 import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import { signOut, startSignIn } from '@/lib/signIn';
@@ -99,6 +99,7 @@ export default function You() {
       </ListCard>
       <SectionTitle>Settings</SectionTitle>
       <ListCard>
+        <Row icon={ShieldAlert} label="Crash detection" sub="Beta. Asks if you are OK after a crash" onPress={() => router.push('/safety')} />
         <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
       </ListCard>
       <SectionTitle>Backup</SectionTitle>

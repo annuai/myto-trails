@@ -7,6 +7,7 @@ import { simPoint } from '@/lib/sim';
 import { useLocation } from '@/store/location';
 import { startShakeSensor } from '@/lib/shakeSensor';
 import { traceBegin, traceEnd } from '@/lib/motionTraceFile';
+import { useCrash } from '@/store/crash';
 import { useMotion } from '@/store/motion';
 import { useRecorder } from '@/store/recorder';
 
@@ -39,12 +40,12 @@ export function RecorderHost() {
     // The shared watch always runs: it moves the dot on the map. It records only when the background task cannot.
     const release = useLocation.getState().acquire();
     // Stopped detection runs on every fix and on a clock tick, whether or not the ride is paused.
-    const unsubMotion = useLocation.subscribe((s, prev) => { const f = s.fix; if (f && f !== prev.fix) useMotion.getState().feed({ t: f.t, lat: f.lat, lng: f.lng, speed: f.speed, acc: f.accuracy }); });
-    const tick = setInterval(() => useMotion.getState().refresh(Date.now()), 1000);
+    const unsubMotion = useLocation.subscribe((s, prev) => { const f = s.fix; if (f && f !== prev.fix) { useMotion.getState().feed({ t: f.t, lat: f.lat, lng: f.lng, speed: f.speed, acc: f.accuracy }); if (f.speed != null && f.speed >= 0) useCrash.getState().feed({ k: 'gps', t: f.t, kmh: f.speed * 3.6 }); } });
+    const tick = setInterval(() => { useMotion.getState().refresh(Date.now()); useCrash.getState().feed({ k: 'tick', t: Date.now() }); }, 1000);
     // The phone's shaking tells riding from standing when GPS is poor, and walking from riding.
-    const stopShake = startShakeSensor((t, vib, stepHz) => useMotion.getState().feedShake(t, vib, stepHz), (t) => useMotion.getState().feedOs(t, 'walking'));
+    const stopShake = startShakeSensor((t, vib, stepHz, peak) => { useMotion.getState().feedShake(t, vib, stepHz); useCrash.getState().feed({ k: 'window', t, peak, stepHz }); }, (t) => useMotion.getState().feedOs(t, 'walking'));
     traceBegin();
-    const stopMotion = () => { unsubMotion(); clearInterval(tick); stopShake(); traceEnd(); useMotion.getState().reset(); };
+    const stopMotion = () => { unsubMotion(); clearInterval(tick); stopShake(); traceEnd(); useMotion.getState().reset(); useCrash.getState().resetDetector(); };
     let cancelled = false;
     let unsub: (() => void) | undefined;
     // Paused: the map dot keeps moving, but nothing is recorded and the background task is not running.

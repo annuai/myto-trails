@@ -4,6 +4,8 @@ One phone app, **Myto**, that holds everything a rider does around a ride: find 
 
 > **Update (25 Oct 2026):** the navigation in §1 and §4.2 (five tabs) and the framework detail in §4.1 are superseded by [16 — The Myto app: UI, navigation and tech stack](16-myto-app-ui.md): four tabs (Home, Trails, Clubs, You) plus a raised Record button. The rest of this document still stands.
 
+> **Status (29 Oct 2026):** this is the original plan and it is no longer "nothing here is built". The app exists as `apps/mobile` (named Myto Moto). For what is actually built, read [16 §11 to §13](16-myto-app-ui.md) and the specs in [superpowers/specs/](superpowers/specs/). Where this document and those disagree, they win.
+
 ## 1. What the app is for
 
 A rider's day has five phases. The app has one tab for each, so nothing needs a second app.

@@ -5,6 +5,7 @@ import { eraseDocumentPhotos } from '@/lib/backup/device';
 import { sharedIdOf } from '@/lib/shareRoute';
 import { signOut } from '@/lib/signIn';
 import { useCompanion } from '@/store/companion';
+import { useCrash } from '@/store/crash';
 import { useFuel } from '@/store/fuel';
 import { useJournal } from '@/store/journal';
 import { useMyRoutes } from '@/store/myRoutes';
@@ -27,6 +28,7 @@ export function eraseEverything(token: string | null) {
   useJournal.getState().wipe();
   useNotifications.getState().wipe();
   useCompanion.getState().wipe();
+  useCrash.getState().setEnabled(false);
   useMyRoutes.getState().wipe();
   useTrips.getState().wipe();
   useFuel.getState().wipe();

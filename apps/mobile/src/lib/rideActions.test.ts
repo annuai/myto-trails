@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CATEGORIES, helpSentNotice, isRideAction, rideNotice } from './rideActions';
+import { CATEGORIES, clockShortText, clockText, helpSentNotice, isRideAction, rideNotice, rideSurfaceProps } from './rideActions';
 
 describe('rideNotice', () => {
   it('offers Pause alone on a solo ride', () => {
@@ -29,5 +29,35 @@ describe('help', () => {
   it('recognises only its own actions', () => {
     expect(isRideAction('ride.help')).toBe(true);
     expect(isRideAction('expo.modules.notifications.actions.DEFAULT')).toBe(false);
+  });
+});
+
+describe('rideSurfaceProps', () => {
+  const base = { group: false, elapsedMs: 65_000, meters: 12_345, now: 1_000_000 };
+  it('leads with Pause while riding, solo or group, and the clock counts from when the ride would have started', () => {
+    for (const group of [false, true]) {
+      const p = rideSurfaceProps({ ...base, paused: false, group });
+      expect(p.primaryId).toBe('ride.pause');
+      expect(p.primaryLabel).toBe('Pause');
+      expect(p.since).toBe(1_000_000 - 65_000);
+    }
+  });
+  it('leads with Resume while paused and stops the clock', () => {
+    const p = rideSurfaceProps({ ...base, paused: true });
+    expect(p).toMatchObject({ primaryId: 'ride.resume', primaryLabel: 'Resume', since: 0, title: 'Ride paused', clock: '1:05' });
+  });
+  it('shows distance to one decimal', () => { expect(rideSurfaceProps({ ...base, paused: false }).km).toBe('12.3'); });
+  it('uses a button id the action handler accepts', () => { expect(isRideAction(rideSurfaceProps({ ...base, paused: false }).primaryId)).toBe(true); });
+});
+
+describe('clock text', () => {
+  it('writes hours only when there are some', () => {
+    expect(clockText(5_000)).toBe('0:05');
+    expect(clockText(3_725_000)).toBe('1:02:05');
+    expect(clockText(-5)).toBe('0:00');
+  });
+  it('writes whole minutes for Android', () => {
+    expect(clockShortText(59_000)).toBe('0 min');
+    expect(clockShortText(3_900_000)).toBe('1 h 05 min');
   });
 });

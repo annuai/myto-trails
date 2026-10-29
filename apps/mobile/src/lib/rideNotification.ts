@@ -3,6 +3,8 @@ import * as Notifications from 'expo-notifications';
 import { CATEGORIES, isRideAction, type RideActionId, type RideCategory, type RideNotice } from './rideActions';
 
 const CHANNEL = 'ride-controls';
+/** The crash countdown has to be heard, so it gets its own channel that is allowed to make a sound and pop up. */
+const LOUD_CHANNEL = 'crash-alert';
 const ROUTE = '/ride/live';
 
 let ready: Promise<unknown> | undefined;
@@ -10,15 +12,24 @@ let ready: Promise<unknown> | undefined;
 const setup = () => (ready ??= Promise.all([
   ...Object.entries(CATEGORIES).map(([id, actions]) => Notifications.setNotificationCategoryAsync(id, actions.map((a) => ({ identifier: a.id, buttonTitle: a.label, options: { opensAppToForeground: false, isDestructive: !!a.destructive } })))),
   Platform.OS === 'android' ? Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Ride controls', importance: Notifications.AndroidImportance.LOW }) : Promise.resolve(),
+  Platform.OS === 'android' ? Notifications.setNotificationChannelAsync(LOUD_CHANNEL, { name: 'Crash alert', importance: Notifications.AndroidImportance.MAX }) : Promise.resolve(),
 ]));
 
+/** Without permission iOS drops a notification without a word, so ask the first time a ride needs one. A refusal is final: the rider can allow it later in the phone's settings. */
+export async function allowed(): Promise<boolean> {
+  const p = await Notifications.getPermissionsAsync();
+  if (p.granted) return true;
+  return p.canAskAgain ? (await Notifications.requestPermissionsAsync()).granted : false;
+}
+
 /** Shows or replaces the notification with this id. It is not removed by a swipe on Android while the ride runs. */
-export async function showRideNotice(id: string, n: RideNotice & { category?: RideCategory }, ongoing: boolean): Promise<void> {
+export async function showRideNotice(id: string, n: RideNotice & { category?: RideCategory }, ongoing: boolean, loud = false): Promise<void> {
   await setup();
+  if (!(await allowed())) return;
   await Notifications.scheduleNotificationAsync({
     identifier: id,
-    content: { title: n.title, body: n.body, data: { route: ROUTE }, ...(n.category ? { categoryIdentifier: n.category } : {}), ...(ongoing ? { sticky: true, autoDismiss: false } : {}) },
-    trigger: { channelId: CHANNEL },
+    content: { title: n.title, body: n.body, data: { route: ROUTE }, ...(n.category ? { categoryIdentifier: n.category } : {}), ...(ongoing ? { sticky: true, autoDismiss: false } : {}), ...(loud ? { sound: 'default' } : {}) },
+    trigger: { channelId: loud ? LOUD_CHANNEL : CHANNEL },
   });
 }
 

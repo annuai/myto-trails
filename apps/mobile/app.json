@@ -24,9 +24,19 @@
       ],
       "expo-font",
       "expo-secure-store",
-      ["expo-notifications", { "enableRemoteNotifications": false }],
+      [
+        "expo-notifications",
+        {
+          "enableRemoteNotifications": false
+        }
+      ],
       "expo-web-browser",
-      ["expo-sensors", { "motionPermission": "Myto Moto uses motion data to tell riding from walking, so stops and break reminders are accurate." }],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Myto Moto uses motion data to tell riding from walking, so stops and break reminders are accurate."
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -53,7 +63,14 @@
         }
       ],
       "expo-sqlite",
-      ["expo-audio", { "microphonePermission": "Myto Moto records voice notes for your ride journal. They stay on this phone.", "enableBackgroundPlayback": false }]
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Myto Moto records voice notes for your ride journal. They stay on this phone.",
+          "enableBackgroundPlayback": false
+        }
+      ],
+      ["expo-widgets", { "frequentUpdates": true, "enableAndroid": true }]
     ],
     "experiments": {
       "typedRoutes": true
