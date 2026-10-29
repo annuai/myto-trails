@@ -1,8 +1,8 @@
 // Phone version (Android and iOS) on MapLibre Native. NOT yet run on a device: it needs a development build
 // (not Expo Go) and is covered by the S0 spike. The web version, OsmMap.web.tsx, is the one tested so far.
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { View } from 'react-native';
-import { Camera, GeoJSONSource, Layer, Map } from '@maplibre/maplibre-react-native';
+import { Camera, GeoJSONSource, Layer, Map, type CameraRef } from '@maplibre/maplibre-react-native';
 import type { LatLng } from '@/lib/geo';
 import { fixed } from '@/theme/tokens';
 import { mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
@@ -13,7 +13,9 @@ const line = (pts: LatLng[] = []) => ({ type: 'Feature' as const, properties: {}
 const points = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 const round = { 'line-cap': 'round', 'line-join': 'round' } as const;
 
-export function OsmMap({ height, line: route, track, trackBreaks, position, waypoints, riders, regroup, onTap, follow, dark, radius = 0, interactive = true }: OsmMapProps) {
+export function OsmMap({ height, line: route, track, trackBreaks, position, waypoints, riders, regroup, onTap, follow, focus, dark, radius = 0, interactive = true }: OsmMapProps) {
+  const camera = useRef<CameraRef>(null);
+  useEffect(() => { if (focus) camera.current?.flyTo({ center: [focus.lng, focus.lat], zoom: 12 }); }, [focus]);
   const bounds = useMemo(() => {
     const all = [...(route ?? []), ...(track ?? [])];
     if (!all.length) return undefined;
@@ -23,7 +25,7 @@ export function OsmMap({ height, line: route, track, trackBreaks, position, wayp
   return (
     <View style={{ height, borderRadius: radius, overflow: 'hidden' }}>
       <Map mapStyle={mapStyleUrl(dark)} attribution style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive} onPress={onTap ? (e) => onTap({ lat: e.nativeEvent.lngLat[1], lng: e.nativeEvent.lngLat[0] }) : undefined}>
-        {follow && position ? <Camera center={[position.lng, position.lat]} zoom={15} /> : <Camera initialViewState={bounds ? { bounds, padding: { top: 32, bottom: 32, left: 32, right: 32 } } : { center: [78.9, 21], zoom: 3.5 }} />}
+        {follow && position ? <Camera ref={camera} center={[position.lng, position.lat]} zoom={15} /> : <Camera ref={camera} initialViewState={bounds ? { bounds, padding: { top: 32, bottom: 32, left: 32, right: 32 } } : { center: [78.9, 21], zoom: 3.5 }} />}
         <GeoJSONSource id="route" data={line(route)}><Layer id="route-line" type="line" layout={round} paint={{ 'line-color': ROUTE_COLOR, 'line-width': 4 }} /></GeoJSONSource>
         <GeoJSONSource id="track" data={trackFeature(track, trackBreaks)}><Layer id="track-line" type="line" layout={round} paint={{ 'line-color': TRACK_COLOR, 'line-width': 5 }} /></GeoJSONSource>
         <GeoJSONSource id="wpts" data={points(waypoints)}><Layer id="wpts-dot" type="circle" paint={{ 'circle-radius': 7, 'circle-color': fixed.white, 'circle-stroke-color': fixed.ink, 'circle-stroke-width': 3 }} /></GeoJSONSource>

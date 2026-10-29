@@ -45,7 +45,7 @@ export function TripDaySheet({ trip, index, onClose }: { trip: Trip; index: numb
               return <Button key={t.slug} variant="soft" label={t.name} onPress={() => pick({ kind: 'trail', slug: t.slug, name: t.name, status: h.status, statusLabel: h.label })} />;
             })}
           </View>
-          <Button variant="soft" label="Make a new route" onPress={() => { onClose(); router.push('/plan'); }} />
+          <Button label="Make a new route" onPress={() => { onClose(); router.push('/plan'); }} />
         </>
       ) : null}
     </Sheet>

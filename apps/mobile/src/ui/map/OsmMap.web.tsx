@@ -14,7 +14,7 @@ const lineFeature = (pts?: LatLng[]) => ({ type: 'Feature' as const, properties:
 const pointsFeature = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 
 /** OpenStreetMap through MapLibre GL, the same stack as the website. Two-finger or Ctrl+scroll to move, so it never traps page scrolling. */
-export function OsmMap({ height, line, track, trackBreaks, position, waypoints, riders, regroup, onTap, follow, dark, radius = 0, interactive = true }: OsmMapProps) {
+export function OsmMap({ height, line, track, trackBreaks, position, waypoints, riders, regroup, onTap, follow, focus, dark, radius = 0, interactive = true }: OsmMapProps) {
   const box = useRef<HTMLDivElement>(null);
   const tap = useRef(onTap);
   tap.current = onTap;
@@ -65,6 +65,10 @@ export function OsmMap({ height, line, track, trackBreaks, position, waypoints, 
     })();
     return () => { cancelled = true; map.current?.remove(); map.current = null; };
   }, [follow, interactive, dark]);
+
+  useEffect(() => {
+    if (focus && ready) map.current?.flyTo({ center: [focus.lng, focus.lat], zoom: Math.max(map.current.getZoom(), 12) });
+  }, [focus, ready]);
 
   // Push data in as it changes (the live track grows every few seconds).
   useEffect(() => {

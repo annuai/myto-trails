@@ -65,7 +65,7 @@ export default function You() {
       </Card>
       {signedIn ? (
         <>
-          <SectionTitle action="Edit" onAction={() => router.push('/bike')}>Your bike</SectionTitle>
+          <SectionTitle>Your bike</SectionTitle>
           <BikeCard bike={me.data?.bike} onPress={() => router.push('/bike')} />
         </>
       ) : null}
@@ -94,9 +94,12 @@ export default function You() {
         <Row icon={Stamp} label="Trails ridden" onPress={() => router.push('/passport')} />
         <Row icon={Luggage} label="Trips" value={`${tripCount}`} mono onPress={() => router.push('/trips')} />
         <Row icon={BookOpen} label="Journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />
-        <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
         <Row icon={ClipboardList} label="To-do list" value={`${openTodos} open`} onPress={() => router.push('/todos')} />
         <Row icon={IdCard} label="Documents and emergency" sub={docs || 'Licence, vehicle, emergency contacts'} onPress={() => router.push('/documents')} />
+      </ListCard>
+      <SectionTitle>Settings</SectionTitle>
+      <ListCard>
+        <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
       </ListCard>
       <SectionTitle>Backup</SectionTitle>
       <ListCard>

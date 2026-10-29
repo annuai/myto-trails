@@ -19,6 +19,8 @@ export type OsmMapProps = {
   regroup?: LatLng;
   /** Keep the camera on `position` (live riding). Otherwise the map fits line and track. */
   follow?: boolean;
+  /** Fly the camera here when it changes (a place the rider searched for). */
+  focus?: LatLng;
   dark?: boolean;
   radius?: number;
   /** False for a picture of the route: no gestures and no zoom buttons. Defaults to true. */
