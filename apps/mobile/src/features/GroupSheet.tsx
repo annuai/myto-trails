@@ -3,20 +3,25 @@ import { Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Flag, LogOut, Share2 } from 'lucide-react-native';
 import { createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup } from '@/api/groups';
+import { SITE_BASE } from '@/api/config';
 import type { LatLng } from '@/lib/geo';
-import { distanceToLeaderM, isStale, sortRiders, STATUS_LABEL, type GroupStatus } from '@/lib/groupCore';
+import { distanceToLeaderM, riderTiles, STATUS_LABEL, type GroupStatus } from '@/lib/groupCore';
+import { codeFromInvite, inviteUrl } from '@/lib/inviteLink';
 import { useAction } from '@/lib/useAction';
+import { RiderTiles } from '@/features/group/RiderTiles';
+import { useCanNavigate } from '@/features/group/useCanNavigate';
 import { useAuth } from '@/store/auth';
 import { useCompanion } from '@/store/companion';
 import { Button } from '@/ui/Button';
-import { ChoiceChip, StatusChip } from '@/ui/Chip';
+import { ChoiceChip } from '@/ui/Chip';
 import { Field } from '@/ui/Field';
-import { ListCard, Row } from '@/ui/ListCard';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/tokens';
 
 const SIGNALS: GroupStatus[] = ['ok', 'wait_up', 'fuel', 'break', 'help'];
+/** Long enough to paste a whole invite link into the code field; a link is turned into its code as it lands. */
+const MAX_PASTE = 300;
 const km = (m: number) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
 
 /**
@@ -33,18 +38,21 @@ export function GroupSheet({ open, onClose, position }: { open: boolean; onClose
   const [code, setCode] = useState('');
   const { busy, problem, run } = useAction();
   const leader = group?.role === 'leader';
+  const canNavigate = useCanNavigate();
 
   const start = async () => {
     if (!token) return;
     const r = await run(() => createGroupRide(token, { name: name.trim() || 'Group ride' }));
     if (r) useCompanion.getState().setGroup({ id: r.value.id, code: r.value.code, name: r.value.name, role: 'leader' });
   };
+  const typedCode = codeFromInvite(code);
   const join = async () => {
-    if (!token) return;
-    const r = await run(() => joinGroupRide(token, { code: code.trim(), displayName: user?.displayName ?? 'Rider' }));
-    if (r) useCompanion.getState().setGroup({ id: r.value.id, code: code.trim().toUpperCase(), name: r.value.name, role: r.value.role });
+    if (!token || !typedCode) return;
+    const r = await run(() => joinGroupRide(token, { code: typedCode, displayName: user?.displayName ?? 'Rider' }));
+    if (r) useCompanion.getState().setGroup({ id: r.value.id, code: typedCode, name: r.value.name, role: r.value.role });
   };
-  const invite = () => group && Share.share({ message: `Join my group ride "${group.name}" on Myto Moto. Open Ride, tap Group, then Join with code ${group.code}.` });
+  // An https link, so WhatsApp and SMS make it tappable; the page it opens points at the app. The code is repeated for riders who type it.
+  const invite = () => group && Share.share({ message: `Join my group ride "${group.name}" on Myto Moto: ${inviteUrl(SITE_BASE, group.code)}  (or open Ride, then Group ride, and enter code ${group.code})` });
   const signal = (s: GroupStatus) => useCompanion.getState().setLive({ myStatus: s });
   const leave = async () => {
     if (!token || !group) return;
@@ -67,8 +75,8 @@ export function GroupSheet({ open, onClose, position }: { open: boolean; onClose
         <>
           <Field label="Name your ride" value={name} onChangeText={setName} placeholder="Sunday to Nandi Hills" maxLength={60} />
           <Button label="Start a group ride" disabled={busy} onPress={() => void start()} />
-          <Field label="Or join with a code" value={code} onChangeText={(t) => setCode(t.toUpperCase())} placeholder="ABC234" autoCapitalize="characters" maxLength={6} />
-          <Button variant="soft" label="Join" disabled={busy || code.trim().length < 6} onPress={() => void join()} />
+          <Field label="Or join with a code or invite link" value={code} onChangeText={(t) => setCode(codeFromInvite(t) ?? t.toUpperCase())} placeholder="ABC234" autoCapitalize="characters" autoCorrect={false} maxLength={MAX_PASTE} />
+          <Button variant="soft" label="Join" disabled={busy || !typedCode} onPress={() => void join()} />
         </>
       ) : (
         <>
@@ -81,14 +89,7 @@ export function GroupSheet({ open, onClose, position }: { open: boolean; onClose
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
             {SIGNALS.map((s) => <ChoiceChip key={s} label={STATUS_LABEL[s]} selected={live.myStatus === s} onPress={() => signal(s)} />)}
           </View>
-          {live.riders.length ? (
-            <ListCard>
-              {sortRiders(live.riders, me ?? '').map((r) => (
-                <Row key={r.id} label={`${r.name}${r.id === me ? ' (you)' : ''}${r.role === 'leader' ? ' · leader' : ''}`} sub={isStale(r, now) ? 'Not seen for a while' : undefined}
-                  right={r.status !== 'ok' ? <StatusChip status={r.status === 'help' ? 'stop' : 'caution'} label={STATUS_LABEL[r.status]} /> : undefined} chevron={false} />
-              ))}
-            </ListCard>
-          ) : null}
+          {live.riders.length ? <RiderTiles tiles={riderTiles(live.riders, me, position, now)} canNavigate={canNavigate} /> : null}
           {leader ? (
             <>
               <Button variant="soft" icon={Flag} label={live.regroup ? 'Move the regroup pin here' : 'Drop a regroup pin here'} disabled={!position || busy} onPress={() => position && void pin(position)} />

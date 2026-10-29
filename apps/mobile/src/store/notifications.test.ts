@@ -7,8 +7,15 @@ const r = (id: string, fireAt: number): Reminder => ({ id, fireAt, title: `T ${i
 const setup = () => create(notificationsSlice());
 
 describe('notifications store', () => {
-  it('starts with everything on and details hidden on the lock screen', () => {
-    expect(setup().getState().prefs).toEqual({ todos: true, trips: true, paused: true, showDetails: false });
+  it('starts with everything on, the trip start reminder 10 minutes ahead, and details hidden on the lock screen', () => {
+    expect(setup().getState().prefs).toEqual({ todos: true, trips: true, paused: true, tripLeadMin: 10, showDetails: false, groupSignals: true, breakReminder: true, daylightAlert: true });
+  });
+  it('changes how long before a trip starts the rider is reminded, or turns it off', () => {
+    const s = setup();
+    s.getState().setTripLead(30);
+    expect(s.getState().prefs.tripLeadMin).toBe(30);
+    s.getState().setTripLead(0);
+    expect(s.getState().prefs.tripLeadMin).toBe(0);
   });
   it('absorb moves reminders whose time has come into the history, newest first, unread, leaving the rest scheduled', () => {
     const s = setup();

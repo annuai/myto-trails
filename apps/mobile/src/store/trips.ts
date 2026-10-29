@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { todayISO } from '@/lib/dates';
 import { uid } from '@/lib/id';
 import { newItems, STARTER_ITEMS, type ChecklistItem } from '@/lib/tripChecklist';
-import { resizeDays, tripStatus, type TripDay, type TripRoute } from '@/lib/tripPlan';
+import { DEFAULT_START_TIME, resizeDays, tripStatus, type TripDay, type TripRoute } from '@/lib/tripPlan';
 import { storage } from './persist';
 import { useTodos } from './todos';
 
@@ -14,19 +14,21 @@ import { useTodos } from './todos';
 export type Trip = {
   id: string; name: string; rideIds: string[]; createdAt: number;
   startDate?: string; days?: TripDay[];
+  /** Minutes after midnight that each day starts: the rider is reminded 10 minutes before. */
+  startTime?: number;
   /** Set when the rider pressed Start trip. A trip only runs once they do. */
   startedAt?: number; endedAt?: number;
   /** An older pack list, from before pack items became to-dos. Nothing reads it. */
   items?: ChecklistItem[];
 };
 
-export type NewTrip = { name: string; startDate?: string; dayCount?: number; route?: TripRoute };
+export type NewTrip = { name: string; startDate?: string; startTime?: number; dayCount?: number; route?: TripRoute };
 
 type State = {
   trips: Trip[];
   create: (t: NewTrip) => string;
   /** Rename, move the start date (its pack to-dos move with it) or change how many days it has. */
-  update: (id: string, patch: { name?: string; startDate?: string; dayCount?: number }) => void;
+  update: (id: string, patch: { name?: string; startDate?: string; startTime?: number; dayCount?: number }) => void;
   setDay: (id: string, dayId: string, patch: Partial<Pick<TripDay, 'note' | 'route'>>) => void;
   addTodos: (id: string, titles: string[]) => void;
   addStarterTodos: (id: string) => void;
@@ -48,11 +50,11 @@ export const useTrips = create<State>()(
   persist(
     (set, get) => ({
       trips: [],
-      create: ({ name, startDate, dayCount = 1, route }) => {
+      create: ({ name, startDate, startTime, dayCount = 1, route }) => {
         const id = uid();
         const days = resizeDays(undefined, dayCount, uid);
         if (route) days[0] = { ...days[0]!, route };
-        set((s) => ({ trips: [{ id, name: name.trim() || 'My trip', rideIds: [], createdAt: Date.now(), ...(startDate ? { startDate, days } : {}) }, ...s.trips] }));
+        set((s) => ({ trips: [{ id, name: name.trim() || 'My trip', rideIds: [], createdAt: Date.now(), ...(startDate ? { startDate, startTime: startTime ?? DEFAULT_START_TIME, days } : {}) }, ...s.trips] }));
         return id;
       },
       update: (id, patch) => {
@@ -60,6 +62,7 @@ export const useTrips = create<State>()(
           ...t,
           ...(patch.name?.trim() ? { name: patch.name.trim() } : {}),
           ...(patch.startDate ? { startDate: patch.startDate } : {}),
+          ...(patch.startTime !== undefined ? { startTime: patch.startTime } : {}),
           ...(patch.dayCount ? { days: resizeDays(t.days, patch.dayCount, uid) } : {}),
         })));
         // The pack to-dos are due on the start date wherever it moves to.

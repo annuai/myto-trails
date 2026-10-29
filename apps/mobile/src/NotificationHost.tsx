@@ -20,7 +20,7 @@ const syncer = createSyncer({
     const planned = soonestTrip(useTrips.getState().trips);
     const plannedTrail = useTrailStore.getState().nextTrip;
     const trip = planned?.startDate
-      ? { slug: planned.id, name: planned.name, iso: planned.startDate, route: `/trips/${planned.id}`, tripId: planned.id, days: (planned.days ?? []).map((d, i) => ({ iso: dayDate(planned.startDate!, i), title: d.route?.name ?? d.note ?? 'Have a safe one' })) }
+      ? { slug: planned.id, name: planned.name, iso: planned.startDate, route: `/trips/${planned.id}`, tripId: planned.id, startTime: planned.startTime, started: !!planned.startedAt, days: (planned.days ?? []).map((d, i) => ({ iso: dayDate(planned.startDate!, i), title: d.route?.name ?? d.note ?? 'Have a safe one' })) }
       : plannedTrail ? { slug: plannedTrail.slug, name: plannedTrail.name, iso: plannedTrail.iso } : undefined;
     const rec = useRecorder.getState();
     return {

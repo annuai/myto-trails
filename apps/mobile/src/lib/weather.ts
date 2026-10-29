@@ -1,23 +1,31 @@
-export type DayForecast = { date: string; maxC: number; minC: number; rainMm: number; rainPct: number; windKmh: number; snowCm: number };
+export type DayForecast = { date: string; maxC: number; minC: number; rainMm: number; rainPct: number; windKmh: number; snowCm: number; /** When the sun rises and sets there that day, as instants. Missing when the answer has no times. */ sunriseMs?: number; sunsetMs?: number };
 export type Rideability = { level: 'good' | 'caution' | 'avoid'; reasons: string[] };
 
 /** Open-Meteo, which needs no key. `days` is how many days from today (1 to 16). */
 export function forecastUrl(lat: number, lng: number, days: number = 7): string {
-  const daily = 'temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,snowfall_sum';
+  const daily = 'temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,snowfall_sum,sunrise,sunset';
   return `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lng.toFixed(3)}&daily=${daily}&timezone=auto&forecast_days=${Math.max(1, Math.min(16, Math.round(days)))}`;
 }
 
-type Daily = { time?: string[]; temperature_2m_max?: (number | null)[]; temperature_2m_min?: (number | null)[]; precipitation_sum?: (number | null)[]; precipitation_probability_max?: (number | null)[]; wind_speed_10m_max?: (number | null)[]; snowfall_sum?: (number | null)[] };
+type Daily = { time?: string[]; temperature_2m_max?: (number | null)[]; temperature_2m_min?: (number | null)[]; precipitation_sum?: (number | null)[]; precipitation_probability_max?: (number | null)[]; wind_speed_10m_max?: (number | null)[]; snowfall_sum?: (number | null)[]; sunrise?: (string | null)[]; sunset?: (string | null)[] };
+
+/** Open-Meteo gives local clock times like 2026-11-01T17:52 and the zone's offset from UTC; this is that instant. */
+const instant = (local: string | null | undefined, offsetSec: number): number | undefined => {
+  if (!local) return undefined;
+  const t = Date.parse(`${local}:00Z`) - offsetSec * 1000;
+  return Number.isFinite(t) ? t : undefined;
+};
 
 /** One entry per day from an Open-Meteo answer. A missing number is 0 (rain, wind, snow) rather than a guess at a temperature: a day with no temperatures is dropped. */
 export function parseForecast(json: unknown): DayForecast[] {
   const d = (json as { daily?: Daily } | null)?.daily;
+  const offset = (json as { utc_offset_seconds?: number } | null)?.utc_offset_seconds ?? 0;
   if (!d?.time) return [];
   const out: DayForecast[] = [];
   d.time.forEach((date, i) => {
     const maxC = d.temperature_2m_max?.[i], minC = d.temperature_2m_min?.[i];
     if (typeof maxC !== 'number' || typeof minC !== 'number') return;
-    out.push({ date, maxC, minC, rainMm: d.precipitation_sum?.[i] ?? 0, rainPct: d.precipitation_probability_max?.[i] ?? 0, windKmh: d.wind_speed_10m_max?.[i] ?? 0, snowCm: d.snowfall_sum?.[i] ?? 0 });
+    out.push({ date, maxC, minC, rainMm: d.precipitation_sum?.[i] ?? 0, rainPct: d.precipitation_probability_max?.[i] ?? 0, windKmh: d.wind_speed_10m_max?.[i] ?? 0, snowCm: d.snowfall_sum?.[i] ?? 0, ...(instant(d.sunrise?.[i], offset) !== undefined ? { sunriseMs: instant(d.sunrise?.[i], offset) } : {}), ...(instant(d.sunset?.[i], offset) !== undefined ? { sunsetMs: instant(d.sunset?.[i], offset) } : {}) });
   });
   return out;
 }

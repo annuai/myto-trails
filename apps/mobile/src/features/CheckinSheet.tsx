@@ -52,7 +52,7 @@ export function CheckinSheet({ open, onClose }: { open: boolean; onClose: () => 
       emergency: { ...(riderName ? { riderName } : {}), ...(medical.bloodGroup ? { bloodGroup: medical.bloodGroup } : {}), ...(medical.notes ? { allergies: medical.notes } : {}), ...(vehicle?.model ? { bikeName: vehicle.model } : {}) },
     }));
     if (!r) return;
-    useCompanion.getState().setCheckin({ id: r.value.id, expectedAt, contactName: contact.name, url: r.value.url });
+    useCompanion.getState().setCheckin({ id: r.value.id, expectedAt, contactName: contact.name, url: r.value.url, ...(fix ? { home: { lat: fix.lat, lng: fix.lng } } : {}) });
     await shareLink(riderName ?? 'A rider', expectedAt, r.value.url).catch(() => undefined);
   };
   const extend = async (ms: number) => {
@@ -92,7 +92,7 @@ export function CheckinSheet({ open, onClose }: { open: boolean; onClose: () => 
         </>
       ) : (
         <>
-          <Text variant="label" tone="muted">If you have not ended your ride by this time, the person you choose can see where you were last seen. Your position stays private until then.</Text>
+          <Text variant="label" tone="muted">If you have not ended your ride by this time, the person you choose can see where you were last seen. Your position stays private until then. It closes by itself when you get back here, or to the end of your route.</Text>
           <Text variant="labelMedium">Tell</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
             {contacts.map((c) => <ChoiceChip key={c.id} label={c.name} selected={c.id === contactId} onPress={() => setContactId(c.id)} />)}

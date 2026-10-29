@@ -3,7 +3,7 @@ import { planReminders, serviceKmReminders, type PlanInput, type Reminder } from
 import { createSerial } from './serial';
 
 /** What the phone is told to show. */
-export type Shown = { id: string; fireAt: number; title: string; body: string; route: string };
+export type Shown = { id: string; fireAt: number; title: string; body: string; route: string; /** Play the phone's notification sound (and so its vibration): for something the rider must notice while riding. */ loud?: boolean };
 export type Permission = 'granted' | 'denied' | 'undetermined';
 
 /** The phone's notification service. The only part that touches the native module (see notifier.ts). */

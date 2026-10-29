@@ -6,7 +6,7 @@ import { mediaUri } from '@/lib/journalMedia';
 import { Card } from '@/ui/Card';
 import { IconButton } from '@/ui/IconButton';
 import { Text } from '@/ui/Text';
-import { space } from '@/theme/tokens';
+import { radius, space } from '@/theme/tokens';
 
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
 const timeOf = (at: number) => new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -28,15 +28,18 @@ function VoiceRow({ entry }: { entry: JournalEntry }) {
 }
 
 /** One entry on a ride's timeline: a note, a photo with its caption, or a voice note you can play. */
+/** The shape given to a photo whose size is not known. */
+const FALLBACK_RATIO = 4 / 3;
+
 export function JournalEntryCard({ entry, onDelete }: { entry: JournalEntry; onDelete: () => void }) {
-  const ratio = entry.width && entry.height ? entry.width / entry.height : 4 / 3;
+  const ratio = entry.width && entry.height ? entry.width / entry.height : FALLBACK_RATIO;
   return (
     <Card style={{ gap: space[3] }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text variant="label" tone="muted">{timeOf(entry.at)} · {entry.kind === 'note' ? 'Note' : entry.kind === 'voice' ? 'Voice' : 'Photo'}</Text>
         <IconButton icon={Trash2} label="Delete this entry" onPress={onDelete} plain tone="muted" />
       </View>
-      {entry.kind === 'photo' ? <Image source={{ uri: mediaUri(entry.id, 'photo') }} accessibilityLabel={entry.text || 'Ride photo'} style={{ width: '100%', aspectRatio: ratio, borderRadius: 16 }} resizeMode="cover" /> : null}
+      {entry.kind === 'photo' ? <Image source={{ uri: mediaUri(entry.id, 'photo') }} accessibilityLabel={entry.text || 'Ride photo'} style={{ width: '100%', aspectRatio: ratio, borderRadius: radius.control }} resizeMode="cover" /> : null}
       {entry.kind === 'voice' ? <VoiceRow entry={entry} /> : null}
       {entry.text ? <Text variant="body">{entry.text}</Text> : null}
     </Card>

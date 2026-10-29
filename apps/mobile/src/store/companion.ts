@@ -8,7 +8,7 @@ import { DEFAULT_STATS } from '@/lib/rideCard';
 import { storage } from './persist';
 
 /** The timer the server watches. The link is kept so it can be shared again; the server holds only its hash. */
-export type Checkin = { id: string; expectedAt: number; contactName: string; url: string };
+export type Checkin = { id: string; expectedAt: number; contactName: string; url: string; /** Where the check-in was set: getting back here closes it by itself. */ home?: { lat: number; lng: number } };
 /** The group ride this phone is in. `role` is "leader" for whoever started it. */
 export type GroupSession = { id: string; code: string; name: string; role: string };
 

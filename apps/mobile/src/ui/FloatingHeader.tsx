@@ -4,7 +4,7 @@ import { Bell } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNotifications } from '@/store/notifications';
 import { useTheme } from '@/theme/ThemeProvider';
-import { fixed, size } from '@/theme/tokens';
+import { fixed, size, space } from '@/theme/tokens';
 import { IconButton } from './IconButton';
 import { Logo } from './Logo';
 import { ScalePressable } from './motion';
@@ -34,15 +34,15 @@ export function FloatingHeader({ scrollY }: { scrollY: Animated.Value }) {
           width: '100%', maxWidth: CONTENT_MAX, height: HEADER_HEIGHT, borderRadius: HEADER_HEIGHT / 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
           paddingLeft: edge(0, 20), paddingRight: edge(0, 4),
           backgroundColor: p.interpolate({ inputRange: [0, 1], outputRange: ['rgba(255,255,255,0)', pill] }),
-          shadowColor: fixed.shadow, shadowRadius: 24, shadowOffset: { width: 0, height: 4 }, shadowOpacity: p.interpolate({ inputRange: [0, 1], outputRange: [0, 0.1] }),
+          shadowColor: fixed.shadow, shadowRadius: 24, shadowOffset: { width: 0, height: space[1] }, shadowOpacity: p.interpolate({ inputRange: [0, 1], outputRange: [0, 0.1] }),
         }}
       >
-        <ScalePressable accessibilityRole="link" accessibilityLabel="Go to Dash" onPress={() => router.replace('/')} style={{ minHeight: 48, justifyContent: 'center', paddingRight: 16 }}>
+        <ScalePressable accessibilityRole="link" accessibilityLabel="Go to Dash" onPress={() => router.replace('/')} style={{ minHeight: size.target, justifyContent: 'center', paddingRight: space[4] }}>
           <Logo height={30} />
         </ScalePressable>
         <View>
           <IconButton icon={Bell} label={unread ? 'Notifications, new' : 'Notifications'} onPress={() => router.push('/notifications')} />
-          {unread ? <View pointerEvents="none" style={{ position: 'absolute', top: 11, right: 12, width: 10, height: 10, borderRadius: 5, backgroundColor: c.accent, borderWidth: 2, borderColor: c.card }} /> : null}
+          {unread ? <View pointerEvents="none" style={{ position: 'absolute', top: space[3], right: space[3], width: size.dot, height: size.dot, borderRadius: size.dot / 2, backgroundColor: c.accent, borderWidth: size.rule, borderColor: c.card }} /> : null}
         </View>
       </Animated.View>
     </Animated.View>

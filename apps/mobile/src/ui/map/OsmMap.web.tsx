@@ -5,7 +5,7 @@ import type { GeoJSONSource, Map as MlMap } from 'maplibre-gl';
 import type { LatLng } from '@/lib/geo';
 import { fixed } from '@/theme/tokens';
 import { Text } from '../Text';
-import { INDIA_CENTER, MAP_STYLE_URL, OSM_STYLE, ROUTE_COLOR, TRACK_COLOR } from './style';
+import { INDIA_CENTER, mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
 import { trackFeature } from './geojson';
 import type { OsmMapProps } from './types';
 
@@ -31,7 +31,7 @@ export function OsmMap({ height, line, track, trackBreaks, position, waypoints, 
         ml.setWorkerUrl('/vendor/maplibre/maplibre-gl-worker.mjs');
         if (cancelled || !box.current) return;
         const m = new ml.Map({
-          container: box.current, style: (MAP_STYLE_URL || OSM_STYLE) as never, center: INDIA_CENTER, zoom: 3.5,
+          container: box.current, style: mapStyleUrl(dark), center: INDIA_CENTER, zoom: 3.5,
           attributionControl: { compact: true }, cooperativeGestures: !follow, interactive,
         });
         map.current = m;
@@ -64,7 +64,7 @@ export function OsmMap({ height, line, track, trackBreaks, position, waypoints, 
       }
     })();
     return () => { cancelled = true; map.current?.remove(); map.current = null; };
-  }, [follow, interactive]);
+  }, [follow, interactive, dark]);
 
   // Push data in as it changes (the live track grows every few seconds).
   useEffect(() => {

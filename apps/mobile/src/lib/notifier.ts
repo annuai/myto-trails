@@ -13,7 +13,7 @@ let channel: Promise<unknown> | undefined;
 /** Android needs a channel to show anything. */
 const ensureChannel = () => (Platform.OS === 'android' ? (channel ??= Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: Notifications.AndroidImportance.DEFAULT })) : Promise.resolve());
 
-const content = (n: Shown): Notifications.NotificationContentInput => ({ title: n.title, body: n.body, data: { route: n.route } });
+const content = (n: Shown): Notifications.NotificationContentInput => ({ title: n.title, body: n.body, data: { route: n.route }, ...(n.loud ? { sound: 'default' } : {}) });
 
 export const notifier: Notifier = {
   async permission(): Promise<Permission> {

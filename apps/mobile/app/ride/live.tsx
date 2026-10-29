@@ -9,6 +9,9 @@ import { ReportSheet } from '@/features/ReportSheet';
 import { clockLabel } from '@/lib/community';
 import { distanceToLine, startFollow, stepFollow } from '@/lib/routeFollow';
 import { WAYPOINT_KINDS, WAYPOINT_LABEL } from '@/lib/waypointKinds';
+import { RiderTiles } from '@/features/group/RiderTiles';
+import { useCanNavigate } from '@/features/group/useCanNavigate';
+import { riderTiles } from '@/lib/groupCore';
 import { useCompanion } from '@/store/companion';
 import { useMyRoutes } from '@/store/myRoutes';
 import { useTrips } from '@/store/trips';
@@ -57,6 +60,7 @@ function LiveBody() {
   const checkin = useCompanion((s) => s.checkin);
   const group = useCompanion((s) => s.group);
   const live = useCompanion((s) => s.live);
+  const canNavigate = useCanNavigate();
   const others = useMemo(() => live.riders.filter((x) => x.id !== live.me && x.lat != null && x.lng != null).map((x) => ({ lat: x.lat!, lng: x.lng! })), [live.riders, live.me]);
   const fix = useLocation((s) => s.fix);
   const gpsError = useLocation((s) => s.error);
@@ -134,6 +138,8 @@ function LiveBody() {
         : <Text variant="label" tone="muted" style={{ textAlign: landscape ? 'left' : 'center' }}>{r.paused ? 'Paused. Nothing is recorded until you resume.' : r.lastFixAt ? `Last fix ${ageSec} s ago${fix?.accuracy ? ` · GPS ±${Math.round(fix.accuracy)} m` : ''}` : 'Waiting for a GPS fix…'}</Text>}
     </View>
   );
+  // The other riders of the group ride, with how far they are and a way to navigate to them (once stopped).
+  const groupTiles = group && live.riders.length > 1 ? <RiderTiles tiles={riderTiles(live.riders, live.me, last, Date.now())} canNavigate={canNavigate} /> : null;
   const pauseBtn = (h: number) => (
     <Pressable accessibilityRole="button" accessibilityLabel={r.paused ? 'Resume ride' : 'Pause ride'} onPress={() => void (r.paused ? r.resume() : r.pause())} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: r.paused ? c.accent : pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
       <Icon icon={r.paused ? Play : Pause} size={h > 70 ? 26 : 22} />
@@ -193,7 +199,7 @@ function LiveBody() {
       {landscape ? (
         // Turned on its side (a handlebar mount): numbers on the left, map and big buttons on the right, no scrolling.
         <View style={{ flex: 1, flexDirection: 'row', gap: 16 }}>
-          <View style={{ flex: 1, gap: 12 }}>{stats}{status}</View>
+          <View style={{ flex: 1, gap: space[3] }}>{stats}{status}{groupTiles}</View>
           <View style={{ flex: 1.25, gap: 12 }}>
             <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
             <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(64)}{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
@@ -205,7 +211,7 @@ function LiveBody() {
           <View style={{ marginTop: 12 }}>
             <OsmMap height={200} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
           </View>
-          <View style={{ marginTop: 12 }}>{status}</View>
+          <View style={{ marginTop: space[3], gap: space[3] }}>{status}{groupTiles}</View>
           <View style={{ flex: 1 }} />
           <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(88)}{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} onComplete={stop} /></View>
           <View style={{ marginTop: space[3], flexDirection: 'row', gap: space[3] }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn(group ? 'Group' : 'Group ride', Users, () => setGroupOpen(true), 56)}</View>

@@ -1,3 +1,4 @@
+import { clockLabel } from './community';
 import { addDays, daysUntil, formatShort, todayISO } from './dates';
 
 /** Where a day of a trip goes: a published trail (kept as it was when chosen) or a route the rider made. */
@@ -6,9 +7,21 @@ export type TripRoute =
   | { kind: 'mine'; id: string; name: string };
 export type TripDay = { id: string; note?: string; route?: TripRoute };
 
-/** A trip with a start date is planned ahead; one without (made before dates existed) is only a record of rides. */
-export type TripStatus = 'logged' | 'upcoming' | 'ready' | 'active' | 'done';
-export type Schedule = { startDate?: string; days?: unknown[]; startedAt?: number; endedAt?: number };
+/**
+ * A trip with a start date is planned ahead; one without (made before dates existed) is only a record of rides. A trip that was
+ * never started has nothing recorded: it ends as `missed`, with its plan still there to move to another day.
+ */
+export type TripStatus = 'logged' | 'upcoming' | 'ready' | 'active' | 'done' | 'missed';
+export type Schedule = { startDate?: string; days?: unknown[]; startedAt?: number; endedAt?: number; /** Minutes after midnight that each day starts. */ startTime?: number };
+
+/** The time a trip starts unless the rider chooses another: early, as most rides begin. */
+export const DEFAULT_START_TIME = 7 * 60;
+/** How long before the start time the rider is reminded to open the app and start recording. */
+export const REMIND_BEFORE_MIN = 10;
+export const startTimeText = (minutes: number) => clockLabel(minutes);
+/** What the rider can choose in Notifications: how long before a trip starts to be reminded. 0 is off. */
+export const LEAD_CHOICES = [0, 5, 10, 15, 30, 60] as const;
+export const leadLabel = (min: number) => (min === 0 ? 'Off' : min === 60 ? '1 hour' : `${min} min`);
 
 export const MAX_TRIP_DAYS = 30;
 const count = (t: Schedule) => Math.max(1, t.days?.length ?? 1);
@@ -18,13 +31,14 @@ export const lastDate = (t: Schedule & { startDate: string }) => addDays(t.start
 
 /**
  * Where a trip stands. It starts only when the rider says so: from its first day on it is `ready` (the Start trip button
- * shows), not `active`. A trip that was never started and whose last day has passed is `done`, as is one the rider ended.
+ * shows), not `active`. A trip the rider ended, or one that ran past its last day, is `done`; one that was never started and whose
+ * last day has passed is `missed`.
  */
 export function tripStatus(t: Schedule, today: string = todayISO()): TripStatus {
   if (!t.startDate) return 'logged';
   if (t.endedAt) return 'done';
   const end = lastDate({ ...t, startDate: t.startDate });
-  if (today > end) return 'done';
+  if (today > end) return t.startedAt ? 'done' : 'missed';
   if (t.startedAt) return 'active';
   return today >= t.startDate ? 'ready' : 'upcoming';
 }
@@ -35,7 +49,7 @@ export function dayIndexOn(t: Schedule, date: string = todayISO()): number | nul
   return Math.max(0, Math.min(count(t) - 1, daysUntil(date, t.startDate)));
 }
 
-const RANK: Record<TripStatus, number> = { active: 0, ready: 1, upcoming: 2, done: 3, logged: 4 };
+const RANK: Record<TripStatus, number> = { active: 0, ready: 1, upcoming: 2, done: 3, missed: 3, logged: 4 };
 
 /** The trip to show first: one under way, then one ready to start, then the nearest coming up. Finished and undated trips never. */
 export function soonestTrip<T extends Schedule>(trips: T[], today: string = todayISO()): T | undefined {
@@ -44,12 +58,13 @@ export function soonestTrip<T extends Schedule>(trips: T[], today: string = toda
     .sort((a, b) => RANK[tripStatus(a, today)] - RANK[tripStatus(b, today)] || (a.startDate ?? '').localeCompare(b.startDate ?? ''))[0];
 }
 
-/** "Today", "Tomorrow", "In 5 days", or "Day 2 of 4" for a trip under way. */
+/** "Today", "Tomorrow", "In 5 days", "Day 2 of 4" for a trip under way, "Finished" or "Missed". */
 export function whenText(t: Schedule, today: string = todayISO()): string {
   const s = tripStatus(t, today);
   if (!t.startDate || s === 'logged') return '';
   if (s === 'active') return `Day ${(dayIndexOn(t, today) ?? 0) + 1} of ${count(t)}`;
   if (s === 'done') return 'Finished';
+  if (s === 'missed') return 'Missed';
   const d = daysUntil(t.startDate, today);
   return d <= 0 ? 'Today' : d === 1 ? 'Tomorrow' : `In ${d} days`;
 }
