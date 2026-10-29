@@ -22,7 +22,13 @@ const RideActivity = (props: RideSurfaceProps) => {
   // solo it opens the app on the SOS sheet.
   const controls = (
     <HStack spacing={12}>
-      <Button label={props.primaryLabel} systemImage={props.paused ? 'play.fill' : 'pause.fill'} target={props.primaryId} modifiers={[buttonStyle('borderedProminent'), tint(white)]} />
+      {/* A white button on the red card, so its icon and words are the card's red. */}
+      <Button target={props.primaryId} modifiers={[buttonStyle('borderedProminent'), tint(white)]}>
+        <HStack spacing={6}>
+          <Image systemName={props.paused ? 'play.fill' : 'pause.fill'} color={card} />
+          <Text modifiers={[font({ size: 17, weight: 'semibold' }), foregroundStyle(card)]}>{props.primaryLabel}</Text>
+        </HStack>
+      </Button>
       {props.group
         ? <Button label="Help" systemImage="exclamationmark.triangle.fill" role="destructive" target="ride.help" modifiers={[buttonStyle('bordered'), tint(white)]} />
         : <Link label="Help" destination="myto://ride/live?sos=1" modifiers={[buttonStyle('bordered'), tint(white)]} />}
