@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, BookOpen, CalendarDays, ClipboardList, Download, Fuel, IdCard, LogIn, LogOut, Luggage, ShieldAlert, Stamp, Route as RouteIcon, TriangleAlert, Upload } from 'lucide-react-native';
+import { Bell, BookOpen, CalendarDays, ClipboardList, Download, Fuel, IdCard, LogIn, LogOut, Luggage, ShieldAlert, Stamp, Route as RouteIcon, Share2, TriangleAlert, Upload } from 'lucide-react-native';
+import { MYTO_URL } from '@moto-trails/domain';
 import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import { signOut, startSignIn } from '@/lib/signIn';
@@ -116,6 +117,7 @@ export default function You() {
       </>} />
       {signedIn ? <View style={{ marginTop: space[8] }}><Button variant="soft" icon={LogOut} label="Sign out" onPress={() => void signOut()} /></View> : null}
       <View style={{ marginTop: space[6], gap: space[4] }}>
+        <Button variant="soft" icon={Share2} label="Share Myto Moto" onPress={() => void Share.share({ message: `Myto Moto, the motorcycle trails app: ${MYTO_URL}`, url: MYTO_URL })} />
         <Text variant="caption" tone="muted" style={{ textAlign: 'center' }}>Your rides, journal and documents stay on this device. Myto Moto does not replace emergency services.</Text>
         <LegalFooter />
         <SocialLinks />
