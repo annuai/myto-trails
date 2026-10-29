@@ -8,6 +8,7 @@ describe('forecastUrl', () => {
     const u = forecastUrl(34.1526, 77.5771, 40);
     expect(u).toContain('https://api.open-meteo.com/v1/forecast?latitude=34.153&longitude=77.577');
     expect(u).toContain('precipitation_sum');
+    expect(u).toContain('sunset');
     expect(u).toContain('forecast_days=16');
     expect(forecastUrl(12, 77, 0)).toContain('forecast_days=1');
   });
@@ -20,6 +21,11 @@ describe('parseForecast', () => {
       { date: '2026-11-01', maxC: 30, minC: 20, rainMm: 0, rainPct: 5, windKmh: 10, snowCm: 0 },
       { date: '2026-11-02', maxC: 20, minC: 8, rainMm: 12.4, rainPct: 80, windKmh: 45, snowCm: 0 },
     ]);
+  });
+  it('reads sunrise and sunset as instants, using the zone offset the answer gives', () => {
+    const out = parseForecast({ utc_offset_seconds: 19_800, daily: { time: ['2026-11-01'], temperature_2m_max: [30], temperature_2m_min: [20], sunrise: ['2026-11-01T06:10'], sunset: ['2026-11-01T17:52'] } });
+    expect(out[0]!.sunsetMs).toBe(Date.parse('2026-11-01T12:22:00Z'));
+    expect(out[0]!.sunriseMs).toBe(Date.parse('2026-11-01T00:40:00Z'));
   });
   it('drops a day with no temperatures and copes with a bad answer', () => {
     expect(parseForecast({ daily: { time: ['2026-11-01'], temperature_2m_max: [null], temperature_2m_min: [null] } })).toEqual([]);

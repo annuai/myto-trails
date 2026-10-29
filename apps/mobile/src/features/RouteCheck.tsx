@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { Fuel } from 'lucide-react-native';
-import type { LatLng } from '@/lib/geo';
+import { daylightAdvice, daylightText } from '@/lib/daylight';
+import { pathLength, type LatLng } from '@/lib/geo';
 import { checkRoute, type RouteCheck as Result } from '@/lib/routeCheck';
 import { rideability, rideabilityText } from '@/lib/weather';
 import { useAction } from '@/lib/useAction';
@@ -25,7 +26,7 @@ export function RouteCheck({ line }: { line: LatLng[] }) {
   };
   return (
     <View style={{ gap: space[3] }}>
-      <Button variant="soft" icon={Fuel} label={busy ? 'Checking…' : result ? 'Check again' : 'Check fuel stops and weather'} disabled={busy || line.length < 2} onPress={() => void go()} />
+      <Button variant="soft" icon={Fuel} label={busy ? 'Checking…' : result ? 'Check again' : 'Check fuel, daylight and weather'} disabled={busy || line.length < 2} onPress={() => void go()} />
       {problem ? <Text variant="label" tone="stop">{problem}</Text> : null}
       {result ? (
         <Card style={{ gap: space[3] }}>
@@ -39,6 +40,12 @@ export function RouteCheck({ line }: { line: LatLng[] }) {
                 <Text variant="label" tone="muted">{result.fuel.stops.length ? `${result.fuel.stops.length} fuel stops found on the map` : 'No fuel stops found on the map along this route'}, from km {Math.round(result.fuel.longestGap.fromKm)} to km {Math.round(result.fuel.longestGap.toKm)}. Fill up before it. Stops come from OpenStreetMap and may be out of date.</Text>
               </View>
             ) : <Text variant="label" tone="muted">Could not check fuel stops right now. Try again with a signal.</Text>}
+          {result.days[0]?.sunsetMs ? (
+            <View style={{ gap: space[2] }}>
+              <Text variant="labelMedium">Daylight</Text>
+              <Text variant="label" tone="muted">{daylightText(daylightAdvice({ distanceKm: pathLength(line) / 1000, sunsetMs: result.days[0].sunsetMs, now: Date.now() }), Date.now())}</Text>
+            </View>
+          ) : null}
           {result.days.length ? (
             <View style={{ gap: space[2] }}>
               <Text variant="labelMedium">Weather where it starts</Text>

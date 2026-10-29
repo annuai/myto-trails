@@ -4,10 +4,10 @@ import { REMIND_BEFORE_MIN } from '@/lib/tripPlan';
 
 /** A reminder that has come due, kept so the rider can read it again and clear it. */
 export type InboxItem = { id: string; title: string; body: string; route: string; kind: Reminder['kind']; at: number; read: boolean };
-export type Prefs = ReminderPrefs & { showDetails: boolean; /** Tell me when someone in my group ride changes their signal (help, wait up, fuel, break). */ groupSignals: boolean };
+export type Prefs = ReminderPrefs & { showDetails: boolean; /** Tell me when someone in my group ride changes their signal (help, wait up, fuel, break). */ groupSignals: boolean; /** A reminder after two hours of riding without a stop of ten minutes. */ breakReminder: boolean; /** An alert about 45 minutes before sunset while riding. */ daylightAlert: boolean };
 
 const MAX_INBOX = 100;
-const defaults = (): Prefs => ({ todos: true, trips: true, paused: true, tripLeadMin: REMIND_BEFORE_MIN, showDetails: false, groupSignals: true });
+const defaults = (): Prefs => ({ todos: true, trips: true, paused: true, tripLeadMin: REMIND_BEFORE_MIN, showDetails: false, groupSignals: true, breakReminder: true, daylightAlert: true });
 const toItem = (r: Reminder, at: number): InboxItem => ({ id: r.id, title: r.title, body: r.body, route: r.route, kind: r.kind, at, read: false });
 
 export type NotificationsState = {

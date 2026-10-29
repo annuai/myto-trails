@@ -5,7 +5,7 @@ import { View } from 'react-native';
 import { Camera, GeoJSONSource, Layer, Map } from '@maplibre/maplibre-react-native';
 import type { LatLng } from '@/lib/geo';
 import { fixed } from '@/theme/tokens';
-import { MAP_STYLE_URL, OSM_STYLE, ROUTE_COLOR, TRACK_COLOR } from './style';
+import { mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
 import { trackFeature } from './geojson';
 import type { OsmMapProps } from './types';
 
@@ -13,7 +13,7 @@ const line = (pts: LatLng[] = []) => ({ type: 'Feature' as const, properties: {}
 const points = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 const round = { 'line-cap': 'round', 'line-join': 'round' } as const;
 
-export function OsmMap({ height, line: route, track, trackBreaks, position, waypoints, riders, regroup, onTap, follow, radius = 0, interactive = true }: OsmMapProps) {
+export function OsmMap({ height, line: route, track, trackBreaks, position, waypoints, riders, regroup, onTap, follow, dark, radius = 0, interactive = true }: OsmMapProps) {
   const bounds = useMemo(() => {
     const all = [...(route ?? []), ...(track ?? [])];
     if (!all.length) return undefined;
@@ -22,7 +22,7 @@ export function OsmMap({ height, line: route, track, trackBreaks, position, wayp
   }, [route, track]);
   return (
     <View style={{ height, borderRadius: radius, overflow: 'hidden' }}>
-      <Map mapStyle={(MAP_STYLE_URL || OSM_STYLE) as never} attribution style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive} onPress={onTap ? (e) => onTap({ lat: e.nativeEvent.lngLat[1], lng: e.nativeEvent.lngLat[0] }) : undefined}>
+      <Map mapStyle={mapStyleUrl(dark)} attribution style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive} onPress={onTap ? (e) => onTap({ lat: e.nativeEvent.lngLat[1], lng: e.nativeEvent.lngLat[0] }) : undefined}>
         {follow && position ? <Camera center={[position.lng, position.lat]} zoom={15} /> : <Camera initialViewState={bounds ? { bounds, padding: { top: 32, bottom: 32, left: 32, right: 32 } } : { center: [78.9, 21], zoom: 3.5 }} />}
         <GeoJSONSource id="route" data={line(route)}><Layer id="route-line" type="line" layout={round} paint={{ 'line-color': ROUTE_COLOR, 'line-width': 4 }} /></GeoJSONSource>
         <GeoJSONSource id="track" data={trackFeature(track, trackBreaks)}><Layer id="track-line" type="line" layout={round} paint={{ 'line-color': TRACK_COLOR, 'line-width': 5 }} /></GeoJSONSource>

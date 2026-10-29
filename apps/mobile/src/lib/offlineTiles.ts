@@ -1,26 +1,29 @@
 import { OfflineManager } from '@maplibre/maplibre-react-native';
-import { MAP_STYLE_URL } from '@/ui/map/style';
+import { mapStyleUrl } from '@/ui/map/style';
 import type { LatLng } from './geo';
 import { bboxOf } from './fuel';
+import { planPack } from './tileMath';
 
 /**
- * Map tiles for one trail, saved on the phone so the map works with no signal. OpenStreetMap's own tile servers forbid bulk
- * downloads, so this only runs against a tile provider the project set up (EXPO_PUBLIC_MAP_STYLE_URL).
+ * Map tiles for one trail or route, saved on the phone so the map works with no signal. They come from OpenFreeMap, which allows an
+ * app to download an area for offline use up to 3,000 tiles (or 50 MB) at a time: the area is the route with a margin, and a long
+ * route gets less detail rather than more tiles (see tileMath). It needs a connection to download, and nothing to use afterwards.
  */
-export const tilesAvailable = Boolean(MAP_STYLE_URL);
+export const tilesAvailable = true;
 
 const PACK_PREFIX = 'myto-trail:';
 const PAD_M = 3000;
 
-/** Downloads the tiles around a route. Resolves when every tile is saved; `onProgress` gets 0 to 100. */
+/** Downloads the map around a route. Resolves when it is saved; `onProgress` gets 0 to 100. Throws in plain words when it cannot. */
 export async function downloadTiles(slug: string, line: LatLng[], onProgress: (pct: number) => void): Promise<void> {
   const box = bboxOf(line, PAD_M);
-  const mapStyle = MAP_STYLE_URL;
-  if (!mapStyle || !box) throw new Error('Offline maps need a map provider, which is not set up yet.');
+  if (!box) throw new Error('There is no route to save a map for.');
+  const plan = planPack(box);
+  if (!plan) throw new Error('This route covers too much ground to save at once. Save it in sections.');
   await deleteTiles(slug);
   await new Promise<void>((resolve, reject) => {
     OfflineManager.createPack(
-      { mapStyle, bounds: [box.west, box.south, box.east, box.north], minZoom: 8, maxZoom: 15, metadata: { name: `${PACK_PREFIX}${slug}` } },
+      { mapStyle: mapStyleUrl(false), bounds: [box.west, box.south, box.east, box.north], minZoom: plan.minZoom, maxZoom: plan.maxZoom, metadata: { name: `${PACK_PREFIX}${slug}` } },
       (_pack, status) => { onProgress(Math.round(status.percentage)); if (status.state === 'complete') resolve(); },
       (_pack, err) => reject(new Error(err.message)),
     ).catch(reject);

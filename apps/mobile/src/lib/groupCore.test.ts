@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { distanceToLeaderM, isStale, pollIntervalMs, signalChanges, signalNotice, sortRiders, type GroupRiderView } from './groupCore';
+import { distanceToLeaderM, isStale, pollIntervalMs, riderTiles, signalChanges, signalNotice, sortRiders, type GroupRiderView } from './groupCore';
 
 const now = Date.parse('2026-11-01T06:00:00Z');
 const rider = (o: Partial<GroupRiderView> & { id: string }): GroupRiderView => ({ name: o.id, role: 'member', lat: 12, lng: 77, at: '2026-11-01T05:59:30Z', status: 'ok', ...o });
@@ -43,10 +43,10 @@ describe('distanceToLeaderM', () => {
 describe('pollIntervalMs', () => {
   it('is quickest when someone needs help, then moving, then stopped, and slower in the background', () => {
     expect(pollIntervalMs({ moving: false, anyHelp: true })).toBe(5_000);
-    expect(pollIntervalMs({ moving: true, anyHelp: false })).toBe(10_000);
-    expect(pollIntervalMs({ moving: false, anyHelp: false })).toBe(20_000);
-    expect(pollIntervalMs({ moving: true, anyHelp: false, backgrounded: true })).toBe(15_000);
-    expect(pollIntervalMs({ moving: false, anyHelp: false, backgrounded: true })).toBe(30_000);
+    expect(pollIntervalMs({ moving: true, anyHelp: false })).toBe(20_000);
+    expect(pollIntervalMs({ moving: false, anyHelp: false })).toBe(30_000);
+    expect(pollIntervalMs({ moving: true, anyHelp: false, backgrounded: true })).toBe(30_000);
+    expect(pollIntervalMs({ moving: false, anyHelp: false, backgrounded: true })).toBe(60_000);
   });
 });
 
@@ -72,5 +72,20 @@ describe('signalChanges and signalNotice', () => {
   it('tells you when help is over, but says nothing when another signal simply clears', () => {
     expect(signalNotice({ rider: rider('a', 'ok', 'Annuai'), from: 'help', to: 'ok' })?.body).toBe('Annuai is OK now');
     expect(signalNotice({ rider: rider('a', 'ok', 'Annuai'), from: 'fuel', to: 'ok' })).toBeNull();
+  });
+});
+
+describe('riderTiles', () => {
+  it('shows distance from you, how fresh each position is, and puts help first and you last', () => {
+    const riders = [rider({ id: 'me', name: 'Me' }), rider({ id: 'a', name: 'Annuai', lat: 12.01, lng: 77, at: '2026-11-01T05:59:45Z', status: 'help' }), rider({ id: 'b', name: 'Bala', lat: 12.002, lng: 77, at: '2026-11-01T05:57:30Z' }), rider({ id: 'c', name: 'Chitra', lat: null, lng: null, at: null })];
+    const tiles = riderTiles(riders, 'me', { lat: 12, lng: 77 }, now);
+    expect(tiles.map((t) => t.id)).toEqual(['a', 'b', 'c', 'me']);
+    expect(tiles[0]).toMatchObject({ name: 'Annuai', status: 'help', distance: '1.1 km', seen: 'just now', stale: false });
+    expect(tiles[1]).toMatchObject({ distance: '220 m', seen: '3 min ago', stale: true });
+    expect(tiles[2]).toMatchObject({ distance: null, seen: 'not seen yet', stale: true, position: null });
+    expect(tiles[3]).toMatchObject({ isMe: true, distance: null });
+  });
+  it('has no distances without your own position', () => {
+    expect(riderTiles([rider({ id: 'a' })], 'me', undefined, now)[0]!.distance).toBeNull();
   });
 });

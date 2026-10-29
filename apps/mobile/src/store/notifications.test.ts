@@ -8,7 +8,7 @@ const setup = () => create(notificationsSlice());
 
 describe('notifications store', () => {
   it('starts with everything on, the trip start reminder 10 minutes ahead, and details hidden on the lock screen', () => {
-    expect(setup().getState().prefs).toEqual({ todos: true, trips: true, paused: true, tripLeadMin: 10, showDetails: false, groupSignals: true });
+    expect(setup().getState().prefs).toEqual({ todos: true, trips: true, paused: true, tripLeadMin: 10, showDetails: false, groupSignals: true, breakReminder: true, daylightAlert: true });
   });
   it('changes how long before a trip starts the rider is reminded, or turns it off', () => {
     const s = setup();

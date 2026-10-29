@@ -1,18 +1,13 @@
 import { fixed } from '@/theme/tokens';
 
-export const OSM_ATTRIBUTION = '© OpenStreetMap contributors';
-
-// OpenStreetMap's public tile servers allow light use only (https://operations.osmfoundation.org/policies/tiles/):
-// no bulk downloading, a real attribution, and a valid Referer or User-Agent. Fine for development and a small beta.
-// For launch set EXPO_PUBLIC_MAP_STYLE_URL to a tile provider or our own tiles (docs/15 §6), like the website does.
+// The maps come from OpenFreeMap (https://openfreemap.org): free, no key, no limit on views, and it allows an app to download an area
+// for offline use (at most 3,000 tiles or 50 MB at a time, 4 requests in parallel). Its attribution is added by MapLibre.
+// OpenStreetMap's own tile servers are not used for the app's maps: they forbid bulk downloads and heavy use.
+// Set EXPO_PUBLIC_MAP_STYLE_URL to use another provider or our own tiles (docs/runbooks/self-hosted-map-tiles.md).
 export const MAP_STYLE_URL = process.env.EXPO_PUBLIC_MAP_STYLE_URL;
-
-export const OSM_STYLE = {
-  version: 8 as const,
-  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
-  sources: { osm: { type: 'raster' as const, tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, maxzoom: 19, attribution: OSM_ATTRIBUTION } },
-  layers: [{ id: 'osm', type: 'raster' as const, source: 'osm' }],
-};
+export const OPENFREEMAP = 'https://tiles.openfreemap.org/styles';
+/** The map style for light screens and for the dark live-ride screen. */
+export const mapStyleUrl = (dark?: boolean): string => MAP_STYLE_URL || `${OPENFREEMAP}/${dark ? 'dark' : 'liberty'}`;
 
 export const INDIA_CENTER: [number, number] = [78.9, 21];
 export const ROUTE_COLOR = fixed.route;

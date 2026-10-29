@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, BookOpen, ClipboardList, Download, IdCard, LogIn, LogOut, Luggage, Stamp, Route as RouteIcon, TriangleAlert, Upload } from 'lucide-react-native';
+import { Bell, BookOpen, CalendarDays, ClipboardList, Download, IdCard, LogIn, LogOut, Luggage, Stamp, Route as RouteIcon, TriangleAlert, Upload } from 'lucide-react-native';
 import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import { signOut, startSignIn } from '@/lib/signIn';
 import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAuth } from '@/store/auth';
-import { distanceKm } from '@/lib/units';
+import { asText, distanceKm } from '@/lib/units';
+import { yearRecap } from '@/lib/yearRecap';
 import { useProfile } from '@/store/profile';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
@@ -88,6 +89,7 @@ export default function You() {
       <SectionTitle>Keep track</SectionTitle>
       <ListCard>
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
+        <Row icon={CalendarDays} label="Your year" value={asText(distanceKm(yearRecap(rides, new Date().getFullYear()).distanceKm))} mono onPress={() => router.push('/recap')} />
         <Row icon={Stamp} label="Trails ridden" onPress={() => router.push('/passport')} />
         <Row icon={Luggage} label="Trips" value={`${tripCount}`} mono onPress={() => router.push('/trips')} />
         <Row icon={BookOpen} label="Journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />

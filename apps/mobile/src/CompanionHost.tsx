@@ -4,6 +4,10 @@ import { ApiFailure } from '@/api/client';
 import { arriveCheckin, pingCheckin } from '@/api/checkins';
 import { postConditionReport } from '@/api/conditionReports';
 import { leaveGroupRide, syncGroupRide } from '@/api/groups';
+import { startArrive, stepArrive } from '@/lib/autoArrive';
+import { startBreak, stepBreak } from '@/lib/breakReminder';
+import { daylightAlertDue, fetchSunsetMs, sunsetClock } from '@/lib/daylight';
+import type { LatLng } from '@/lib/geo';
 import { shouldPing, type LastPing } from '@/lib/checkinCore';
 import { markFailed, markSent, nextBatch } from '@/lib/conditions';
 import { pollIntervalMs, signalChanges, signalNotice } from '@/lib/groupCore';
@@ -14,6 +18,8 @@ import { useAuth } from '@/store/auth';
 import { useCompanion } from '@/store/companion';
 import { useLocation } from '@/store/location';
 import { useMotion } from '@/store/motion';
+import { useMyRoutes } from '@/store/myRoutes';
+import { useTrailStore } from '@/store/trails';
 import { useNotifications } from '@/store/notifications';
 import { useRecorder } from '@/store/recorder';
 
@@ -50,6 +56,27 @@ async function flushOutbox() {
       if (e instanceof ApiFailure && e.status === 0) break; // no signal: the rest would fail too
     }
   }
+}
+
+/** The end of the route the rider is following: one of their own, or a published trail whose route is saved on the phone. */
+function followedRouteEnd(): LatLng | undefined {
+  const mine = useMyRoutes.getState();
+  const own = mine.routes.find((r) => r.id === mine.followId)?.points;
+  if (own?.length) return own[own.length - 1];
+  const trip = useTrailStore.getState().nextTrip;
+  const end = trip ? useTrailStore.getState().offline[trip.slug]?.route?.line.at(-1) : undefined;
+  return end ? { lat: end[1], lng: end[0] } : undefined;
+}
+
+/** What auto-arrive has seen for the open check-in. It starts afresh for each check-in. */
+const arriveWatch = { id: '', state: startArrive };
+
+/** A message from the app itself (a break, sunset, arrival): shown now and kept in the history. Details follow the lock-screen setting. */
+function announce(id: string, title: string, body: string, lock: string, route: string) {
+  const { prefs, push } = useNotifications.getState();
+  const now = Date.now();
+  push({ id: `${id}:${now}`, fireAt: now, title, body, lock, route, kind: 'ride' }, now);
+  void notifier.notifyNow({ id: `${id}:${now}`, fireAt: now, title: prefs.showDetails ? title : 'Myto Moto', body: prefs.showDetails ? body : lock, route }).catch(() => undefined);
 }
 
 /**
@@ -94,6 +121,11 @@ export function CompanionHost() {
       if (s.status !== 'running' || s.paused || s.points.length === prev.points.length || !checkin || !token) return;
       const p = s.points[s.points.length - 1];
       const now = Date.now();
+      // Back home, or at the end of the route, after being away: the check-in closes itself.
+      if (arriveWatch.id !== checkin.id) { arriveWatch.id = checkin.id; arriveWatch.state = startArrive; }
+      const reached = stepArrive(arriveWatch.state, p, { home: checkin.home, routeEnd: followedRouteEnd() });
+      arriveWatch.state = reached.state;
+      if (reached.arrived) { void arrive().then(() => announce('arrived', 'You have arrived', 'Your check-in is closed. Nobody will be told you are overdue.', 'Your check-in is closed', '/')); return; }
       if (!shouldPing(now, p, last)) return;
       last = { at: now, position: p };
       void pingCheckin(token, checkin.id, { lat: p.lat, lng: p.lng, at: iso(now) }).catch(() => undefined);
@@ -142,6 +174,32 @@ export function CompanionHost() {
       if (r.ask) void notifier.notifyNow({ id: 'are-you-ok', fireAt: Date.now(), title: 'Are you OK?', body: 'You have been stopped for 10 minutes. Tap to open your ride.', route: '/ride/live' }).catch(() => undefined);
     }, 30_000);
 
+    // While riding: a break reminder after two hours without a stop, and a sunset alert (the sunset is looked up once, from where the rider is).
+    let brk = startBreak;
+    let sunsetAt: number | undefined;
+    let sunsetTold = false;
+    let sunsetTries = 0;
+    let looking = false;
+    const watchTimer = setInterval(() => {
+      const rec = useRecorder.getState();
+      const { prefs } = useNotifications.getState();
+      const now = Date.now();
+      const running = rec.status === 'running';
+      const b = stepBreak(brk, { now, running, paused: rec.paused, stopped: useMotion.getState().stopped });
+      brk = b.state;
+      if (b.remind && prefs.breakReminder) announce('break', 'Time for a break', 'You have been riding for 2 hours. Stop, drink some water and stretch.', 'Time for a break', '/ride/live');
+      if (!running) { sunsetAt = undefined; sunsetTold = false; sunsetTries = 0; return; }
+      const p = rec.points[rec.points.length - 1];
+      if (prefs.daylightAlert && sunsetAt === undefined && p && !looking && sunsetTries < 3) {
+        looking = true; sunsetTries++;
+        void fetchSunsetMs(p.lat, p.lng).then((ms) => { sunsetAt = ms; }).finally(() => { looking = false; });
+      }
+      if (prefs.daylightAlert && sunsetAt !== undefined && daylightAlertDue(now, sunsetAt, sunsetTold)) {
+        sunsetTold = true;
+        announce('daylight', 'Sunset soon', `Sunset is at ${sunsetClock(sunsetAt)}, in about ${Math.max(1, Math.round((sunsetAt - now) / 60_000))} minutes. Plan where you will stop.`, 'Sunset is coming up', '/ride/live');
+      }
+    }, 30_000);
+
     // Opt-in: pause after five minutes still (saves battery and keeps a tea break out of the time), and carry on when the bike moves.
     let auto = startAutoPause;
     const autoTimer = setInterval(() => {
@@ -156,7 +214,7 @@ export function CompanionHost() {
       if (r.action === 'resume') void rec.resume();
     }, 5000);
 
-    return () => { unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); app.remove(); flags.autoPaused = false; };
+    return () => { unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); clearInterval(watchTimer); app.remove(); flags.autoPaused = false; };
   }, []);
   return null;
 }

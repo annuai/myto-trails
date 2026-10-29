@@ -26,11 +26,16 @@ export function distanceToLeaderM(riders: GroupRiderView[], meId: string): numbe
   return haversine({ lat: me.lat, lng: me.lng }, { lat: leader.lat, lng: leader.lng });
 }
 
-/** How often to call `sync`: quickly when someone needs help or the rider is moving, slowly while everyone is stopped. The server takes a write every 5 s. */
+/**
+ * How often to call `sync`: every 20 seconds while riding, a little slower when stopped or with the app in the background, and
+ * quickly (5 s) when someone has called for help. The server takes a write every 5 s, so this is well inside it. A 10-rider group
+ * costs about 1,800 requests an hour: enough for a few hundred group-hours a month on a free hosting plan.
+ */
+export const POLL_MOVING_MS = 20_000;
 export function pollIntervalMs(s: { moving: boolean; anyHelp: boolean; backgrounded?: boolean }): number {
   if (s.anyHelp) return 5_000;
-  if (s.backgrounded) return s.moving ? 15_000 : 30_000;
-  return s.moving ? 10_000 : 20_000;
+  if (s.backgrounded) return s.moving ? 30_000 : 60_000;
+  return s.moving ? POLL_MOVING_MS : 30_000;
 }
 
 export type SignalChange = { rider: GroupRiderView; from: GroupStatus; to: GroupStatus };
@@ -63,4 +68,21 @@ export function signalNotice(c: SignalChange): { title: string; body: string } |
   if (c.to === 'ok' && c.from !== 'help') return null;
   const body = c.to === 'ok' ? `${c.rider.name} is OK now` : `${c.rider.name} ${SIGNAL_TEXT[c.to]}`;
   return { title: c.to === 'help' ? 'Group ride: help needed' : 'Group ride', body };
+}
+
+export type RiderTile = { id: string; name: string; isMe: boolean; role: string; status: GroupStatus; /** "350 m" or "1.2 km" from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
+
+const distanceText = (m: number) => (m < 1000 ? `${Math.max(10, Math.round(m / 10) * 10)} m` : `${(m / 1000).toFixed(1)} km`);
+const seenText = (r: GroupRiderView, now: number) => {
+  if (r.lat == null || r.lng == null || !r.at) return 'not seen yet';
+  const s = Math.max(0, Math.round((now - Date.parse(r.at)) / 1000));
+  return s < 30 ? 'just now' : s < 60 ? `${s} s ago` : `${Math.round(s / 60)} min ago`;
+};
+
+/** What each rider's tile shows: who, how far from you, whether they asked for anything, and how fresh the position is. You come last, and a rider who needs help comes first. */
+export function riderTiles(riders: GroupRiderView[], meId: string | undefined, here: { lat: number; lng: number } | undefined, now: number): RiderTile[] {
+  return sortRiders(riders, meId ?? '').map((r) => {
+    const position = r.lat != null && r.lng != null ? { lat: r.lat, lng: r.lng } : null;
+    return { id: r.id, name: r.name, isMe: r.id === meId, role: r.role, status: r.status, distance: position && here && r.id !== meId ? distanceText(haversine(here, position)) : null, seen: seenText(r, now), stale: isStale(r, now), position };
+  }).sort((a, b) => Number(a.isMe) - Number(b.isMe));
 }

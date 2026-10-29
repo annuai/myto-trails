@@ -20,6 +20,8 @@ const toggles: { key: Exclude<keyof Prefs, 'tripLeadMin'>; label: string; sub: s
   { key: 'todos', label: 'To-dos and documents', sub: 'A week, a day and the day it is due, and once if it is overdue' },
   { key: 'trips', label: 'Trip plans', sub: '9 pm the evening before a trip, with what is still to pack' },
   { key: 'groupSignals', label: 'Group ride signals', sub: 'When someone in your group asks for help, needs fuel or a break' },
+  { key: 'breakReminder', label: 'Break reminder', sub: 'After 2 hours of riding without a stop of 10 minutes' },
+  { key: 'daylightAlert', label: 'Daylight alert', sub: 'About 45 minutes before sunset while you ride' },
   { key: 'paused', label: 'Ride paused', sub: 'After 30 minutes paused, so a ride is not forgotten' },
   { key: 'showDetails', label: 'Show details on the lock screen', sub: 'Off: a reminder only says "Myto Moto reminder"' },
 ];
