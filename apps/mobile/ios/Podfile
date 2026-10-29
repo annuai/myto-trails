@@ -26,6 +26,9 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '16.4'
 
 prepare_react_native_project!
 
+# Warnings from third-party pods (Expo and React Native modules) are theirs to fix; hiding them keeps ours visible.
+inhibit_all_warnings!
+
 target 'MytoMoto' do
   use_expo_modules!
 
