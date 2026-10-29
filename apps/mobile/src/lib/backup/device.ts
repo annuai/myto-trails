@@ -6,6 +6,7 @@ import { commitStaged as commitJournalMedia, discardStaged as discardJournalMedi
 import { useJournal } from '@/store/journal';
 import { useProfile } from '@/store/profile';
 import { useMyRoutes } from '@/store/myRoutes';
+import { useFuel } from '@/store/fuel';
 import { useRides } from '@/store/rides';
 import { useTrips } from '@/store/trips';
 import { useTodos } from '@/store/todos';
@@ -16,7 +17,7 @@ import { openBackupFile, type Target } from './import';
 /** Reads the phone's data. The sign-in token, trail packs and the quote queue are not part of it. */
 export function currentSnapshot(): Snapshot {
   const { licence, vehicle, contacts, medical, photos } = useProfile.getState();
-  return { licence, vehicle, contacts, medical, photos, todos: useTodos.getState().todos, rides: useRides.getState().rides, journal: useJournal.getState().entries, journalTitles: useJournal.getState().titles, routes: useMyRoutes.getState().routes, trips: useTrips.getState().trips };
+  return { licence, vehicle, contacts, medical, photos, todos: useTodos.getState().todos, rides: useRides.getState().rides, journal: useJournal.getState().entries, journalTitles: useJournal.getState().titles, routes: useMyRoutes.getState().routes, trips: useTrips.getState().trips, fuel: useFuel.getState().history };
 }
 
 export const phoneTarget: Target = {
@@ -29,6 +30,7 @@ export const phoneTarget: Target = {
     // A backup made before routes and trips existed leaves the phone's own alone.
     if (s.routes) useMyRoutes.setState({ routes: s.routes });
     if (s.trips) useTrips.setState({ trips: s.trips });
+    if (s.fuel) useFuel.getState().restore(s.fuel);
   },
   photos: { stage: stagePhoto, commit: commitStaged, discard: discardStaged },
   journal: { stage: (kind, id, b64) => stageMedia(id, kind, b64), commit: commitJournalMedia, discard: discardJournalMedia },
