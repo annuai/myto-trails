@@ -3,7 +3,6 @@ import { useAudioPlayer } from 'expo-audio';
 import { IconButton } from './IconButton';
 import { Text } from './Text';
 import { View } from 'react-native';
-import { space } from '@/theme/tokens';
 
 // The recording of the name: replace assets/pronounce-myto.m4a to change it.
 const SOUND = require('../../assets/pronounce-myto.m4a') as number;
@@ -13,9 +12,9 @@ export function Pronunciation() {
   const player = useAudioPlayer(SOUND);
   const play = () => { void player.seekTo(0); player.play(); };
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[2] }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
       <Text variant="caption" tone="muted">Pronounced as my-toh</Text>
-      <IconButton plain size={44} icon={Volume2} label="Play how Myto is pronounced" onPress={play} tone="muted" />
+      <IconButton plain size={32} icon={Volume2} label="Play how Myto is pronounced" onPress={play} tone="muted" />
     </View>
   );
 }
