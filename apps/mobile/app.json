@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.myto-moto.myto"
+      "bundleIdentifier": "com.myto-moto.myto",
+      "appleTeamId": "42XYUS7TVE"
     },
     "plugins": [
       "expo-router",

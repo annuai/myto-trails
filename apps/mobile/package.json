@@ -6,7 +6,7 @@
   "scripts": {
     "start": "expo start",
     "web": "npm run assets:maplibre && expo start --web",
-    "android": "expo start --android",
+    "android": "expo run:android",
     "export:web": "npm run assets:maplibre && expo export --platform web",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

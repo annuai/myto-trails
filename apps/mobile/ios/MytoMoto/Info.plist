@@ -40,6 +40,10 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>ExpoWidgetsAppGroupIdentifier</key>
+	<string>group.com.myto-moto.myto</string>
+	<key>ExpoWidgets_EnablePushNotifications</key>
+	<false/>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -78,6 +82,10 @@
 	<string>Myto Moto uses motion data to tell riding from walking, so stops and break reminders are accurate.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Myto Moto uses your photos for your profile picture, your bike, club covers and the photos of your documents.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
+	<true/>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
