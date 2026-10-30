@@ -12,7 +12,10 @@ import { useLocation } from '@/store/location';
 import { useRecorder } from '@/store/recorder';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { dueInfo } from '@/lib/todos';
-import { daysUntil } from '@/lib/dates';
+import { daysUntil, todayISO } from '@/lib/dates';
+import { dayIndexOn, tripStatus } from '@/lib/tripPlan';
+import { tripChecks } from '@/lib/tripReadiness';
+import { useTrips } from '@/store/trips';
 import { useProfile } from '@/store/profile';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
@@ -53,6 +56,9 @@ export default function RideReady() {
   const todos = useTodos((s) => s.todos);
   const overdue = todos.filter((t) => dueInfo(t, totalKm(rides)).state === 'overdue').length;
   const trail = nextTrip;
+  // The trip under way (or ready to start) adds its own rows: today's route and how much of the pack list is done.
+  const trip = useTrips((s) => s.trips.find((t) => { const st = tripStatus(t, todayISO()); return st === 'active' || st === 'ready'; }));
+  const pack = todos.filter((t) => !!trip && t.tripId === trip.id);
   const fix = useLocation((s) => s.fix);
   const gpsError = useLocation((s) => s.error);
   // Start looking for the rider as soon as this screen opens, so a fix is ready by the time the ride starts.
@@ -70,6 +76,10 @@ export default function RideReady() {
     contacts.length ? { label: 'Emergency contact', status: 'good', word: 'Set', go: '/documents/contacts' } : { label: 'Emergency contact', status: 'caution', word: 'Add one', go: '/documents/contacts' },
     overdue ? { label: 'To-dos', status: 'caution', word: `${overdue} overdue`, go: '/todos' } : { label: 'To-dos', status: 'good', word: 'Up to date' },
   ];
+  if (trip) {
+    const day = trip.days?.[dayIndexOn(trip, todayISO()) ?? 0];
+    for (const c of tripChecks({ route: day?.route, pack: { total: pack.length, done: pack.filter((t) => t.done).length } })) checks.push({ ...c, go: `/trips/${trip.id}` });
+  }
   if (trail) checks.push(offline[trail.slug] ? { label: `Offline pack: ${trail.name}`, status: 'good', word: 'Ready' } : { label: `Offline pack: ${trail.name}`, status: 'caution', word: 'Not downloaded', go: `/trail/${trail.slug}` });
 
   const begin = async () => {

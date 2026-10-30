@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Motorbike, Route, User, Users, type LucideIcon } from 'lucide-react-native';
+import { Luggage, Motorbike, Route, User, Users, type LucideIcon } from 'lucide-react-native';
+import { RIDER_OS } from '@/lib/flags';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChrome } from '@/store/chrome';
 import { fixed } from '@/theme/tokens';
@@ -13,7 +14,7 @@ import { EASE, ScalePressable } from './motion';
 import { tabBarFade } from './tabBarFade';
 
 const items: Record<string, { label: string; icon: LucideIcon }> = {
-  index: { label: 'Dash', icon: Motorbike }, trails: { label: 'Trails', icon: Route }, clubs: { label: 'Clubs', icon: Users }, you: { label: 'You', icon: User },
+  index: { label: RIDER_OS ? 'Home' : 'Dash', icon: Motorbike }, trails: { label: RIDER_OS ? 'Explore' : 'Trails', icon: Route }, 'my-rides': { label: 'Rides', icon: Luggage }, clubs: { label: RIDER_OS ? 'Community' : 'Clubs', icon: Users }, you: { label: 'You', icon: User },
 };
 
 type BottomTabBarProps = { state: { index: number; routes: { key: string; name: string }[] }; navigateToTab: (routeKey: string) => void };
@@ -26,7 +27,9 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   const { landscape } = useLayout();
   const sheetOpen = useChrome((s) => s.sheets > 0);
   const h = landscape ? 60 : 68;
-  const order = ['index', 'trails', 'REC', 'clubs', 'you'];
+  // The Rider OS bar swaps You for Rides (Profile is opened from the header) and names the centre button for what it does.
+  const order = RIDER_OS ? ['index', 'trails', 'REC', 'my-rides', 'clubs'] : ['index', 'trails', 'REC', 'clubs', 'you'];
+  const recLabel = RIDER_OS ? 'Record' : 'Ride';
   const active = state.routes[state.index]?.name;
   // Same shape as the website's top nav: a white, fully rounded bar floating clear of the edges with a soft shadow.
   // Faded out near the end of a page: no longer catches touches once it is almost gone.
@@ -44,11 +47,11 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
         if (name === 'REC') {
           return (
             <View key={name} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <ScalePressable scaleTo={0.92} accessibilityRole="button" accessibilityLabel="Ride" onPress={() => router.push('/ride')}
+              <ScalePressable scaleTo={0.92} accessibilityRole="button" accessibilityLabel={recLabel} onPress={() => router.push('/ride')}
                 style={({ pressed }) => ({ marginTop: landscape ? -22 : -30, width: landscape ? 60 : 72, height: landscape ? 60 : 72, borderRadius: 36, backgroundColor: c.record, alignItems: 'center', justifyContent: 'center', borderWidth: 6, borderColor: bar, opacity: pressed ? 0.9 : 1, shadowColor: fixed.shadow, shadowOpacity: 0.18, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } })}>
                 <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: fixed.white }} />
               </ScalePressable>
-              <Text variant="caption" style={{ marginTop: 2, fontFamily: 'Geist_500Medium' }}>Ride</Text>
+              <Text variant="caption" style={{ marginTop: 2, fontFamily: 'Geist_500Medium' }}>{recLabel}</Text>
             </View>
           );
         }

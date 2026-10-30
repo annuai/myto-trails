@@ -1,6 +1,7 @@
 import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell } from 'lucide-react-native';
+import { Bell, User } from 'lucide-react-native';
+import { RIDER_OS } from '@/lib/flags';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNotifications } from '@/store/notifications';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -37,12 +38,15 @@ export function FloatingHeader({ scrollY }: { scrollY: Animated.Value }) {
           shadowColor: fixed.shadow, shadowRadius: 24, shadowOffset: { width: 0, height: space[1] }, shadowOpacity: p.interpolate({ inputRange: [0, 1], outputRange: [0, 0.1] }),
         }}
       >
-        <ScalePressable accessibilityRole="link" accessibilityLabel="Go to Dash" onPress={() => router.replace('/')} style={{ minHeight: size.target, justifyContent: 'center', paddingRight: space[4] }}>
+        <ScalePressable accessibilityRole="link" accessibilityLabel={RIDER_OS ? 'Go to Home' : 'Go to Dash'} onPress={() => router.replace('/')} style={{ minHeight: size.target, justifyContent: 'center', paddingRight: space[4] }}>
           <Logo height={30} />
         </ScalePressable>
-        <View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {RIDER_OS ? <IconButton icon={User} label="Profile" onPress={() => router.push('/you')} /> : null}
+          <View>
           <IconButton icon={Bell} label={unread ? 'Notifications, new' : 'Notifications'} onPress={() => router.push('/notifications')} />
           {unread ? <View pointerEvents="none" style={{ position: 'absolute', top: space[3], right: space[3], width: size.dot, height: size.dot, borderRadius: size.dot / 2, backgroundColor: c.accent, borderWidth: size.rule, borderColor: c.card }} /> : null}
+          </View>
         </View>
       </Animated.View>
     </Animated.View>

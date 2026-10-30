@@ -18,6 +18,8 @@ import { clockLabel } from '@/lib/community';
 import { useCompanion } from '@/store/companion';
 import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
 import { startTodaysRide, startTrip } from '@/features/trip/startTrip';
+import { HomeFocusCard } from '@/features/HomeFocusCard';
+import { RIDER_OS } from '@/lib/flags';
 import { TripCard } from '@/features/trip/TripCard';
 import { dayIndexOn, soonestTrip, tripStatus } from '@/lib/tripPlan';
 import { todayISO } from '@/lib/dates';
@@ -86,7 +88,8 @@ export default function Home() {
       return mine.length ? [{ key: tr.id, sort: mine[0]!.d.sortKey, icon: Luggage, label: tr.name, sub: `${mine.length} to pack`, value: mine[0]!.d.text.replace('Due in ', 'in ').replace('Due ', ''), go: `/trips/${tr.id}` }] : [];
     }),
   ].sort((a, b) => a.sort - b.sort);
-  const latest = rides[0];
+  // A new rider has only the seeded sample ride; under the Rider OS flag it is not shown as theirs.
+  const latest = RIDER_OS ? rides.find((r) => !r.sample) : rides[0];
   const journals = groupByRide(useJournal((s) => s.entries)).slice(0, 3);
   const journalTitles = useJournal((s) => s.titles);
   const { permission, refresh } = usePermission();
@@ -143,6 +146,19 @@ export default function Home() {
           <Banner eyebrow="Reminders" title="Get a nudge before a to-do is due or a ride starts" onPress={() => setRemindOpen(true)} />
         </View>
       ) : null}
+      {RIDER_OS ? (
+        <>
+          <HomeFocusCard />
+          <View style={{ marginTop: space[3] }}>
+        {overdue.length ? (
+          <Banner eyebrow="Needs attention" title={overdue.length === 1 ? `${overdue[0].t.title}: ${overdue[0].d.text.toLowerCase()}` : `${overdue.length} things are overdue`} onPress={() => router.push('/todos')} />
+        ) : contacts.length === 0 ? (
+          <Banner eyebrow="Safety" title="Add an emergency contact so SOS can reach someone" onPress={() => router.push('/documents/contacts')} />
+        ) : null}
+          </View>
+        </>
+      ) : (
+        <>
       {nextTripPlan ? (
         <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} />
       ) : trail ? (
@@ -173,6 +189,8 @@ export default function Home() {
           <Banner eyebrow="Safety" title="Add an emergency contact so SOS can reach someone" onPress={() => router.push('/documents/contacts')} />
         ) : null}
       </View>
+        </>
+      )}
 
       <SectionTitle onAdd={() => router.push(`/journal/${Date.now()}`)} addLabel="Start a journal">Recent journals</SectionTitle>
       {journals.length ? (

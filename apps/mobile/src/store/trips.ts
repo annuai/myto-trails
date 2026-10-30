@@ -4,6 +4,7 @@ import { todayISO } from '@/lib/dates';
 import { uid } from '@/lib/id';
 import { newItems, STARTER_ITEMS, type ChecklistItem } from '@/lib/tripChecklist';
 import { DEFAULT_START_TIME, resizeDays, tripStatus, type TripDay, type TripRoute } from '@/lib/tripPlan';
+import { copyDays } from '@/lib/tripStops';
 import { storage } from './persist';
 import { useTodos } from './todos';
 
@@ -29,7 +30,9 @@ type State = {
   create: (t: NewTrip) => string;
   /** Rename, move the start date (its pack to-dos move with it) or change how many days it has. */
   update: (id: string, patch: { name?: string; startDate?: string; startTime?: number; dayCount?: number }) => void;
-  setDay: (id: string, dayId: string, patch: Partial<Pick<TripDay, 'note' | 'route'>>) => void;
+  setDay: (id: string, dayId: string, patch: Partial<Pick<TripDay, 'note' | 'route' | 'stops'>>) => void;
+  /** A new trip with the same days (routes, stops, notes) and pack list, on a new start date. Rides and progress are not copied. Returns its id. */
+  duplicate: (id: string, startDate: string) => string | undefined;
   addTodos: (id: string, titles: string[]) => void;
   addStarterTodos: (id: string) => void;
   start: (id: string) => void;
@@ -69,6 +72,14 @@ export const useTrips = create<State>()(
         if (patch.startDate) useTodos.setState((s) => ({ todos: s.todos.map((x) => (x.tripId === id ? { ...x, due: patch.startDate, updatedAt: Date.now() } : x)) }));
       },
       setDay: (id, dayId, patch) => set(mapTrip(id, (t) => ({ ...t, days: t.days?.map((d) => (d.id === dayId ? { ...d, ...patch } : d)) }))),
+      duplicate: (id, startDate) => {
+        const t = get().trips.find((x) => x.id === id);
+        if (!t) return undefined;
+        const copy = uid();
+        set((s) => ({ trips: [{ id: copy, name: `${t.name} (copy)`.slice(0, 80), rideIds: [], createdAt: Date.now(), startDate, startTime: t.startTime ?? DEFAULT_START_TIME, days: copyDays(t.days ?? resizeDays(undefined, 1, uid), uid) }, ...s.trips] }));
+        get().addTodos(copy, useTodos.getState().todos.filter((x) => x.tripId === id).map((x) => x.title));
+        return copy;
+      },
       addTodos: (id, titles) => {
         const trip = get().trips.find((t) => t.id === id);
         if (!trip) return;
