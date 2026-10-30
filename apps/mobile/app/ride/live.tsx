@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, Share, Vibration, View } from 'react-native';
+import { asText, distanceKm, shortDistanceM, speedKmh, withUnit } from '@/lib/units';
+import { isWeak, startGpsHealth, stepGpsHealth } from '@/lib/gpsHealth';
+import { shownSpeedKmh } from '@/lib/liveSpeed';
+import { AppState, Linking, Platform, Share, Vibration, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, Flag, Megaphone, Mic, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
@@ -9,7 +12,9 @@ import { NoteSheet } from '@/features/NoteSheet';
 import { ReportSheet } from '@/features/ReportSheet';
 import { clockLabel } from '@/lib/community';
 import { telUrl } from '@/lib/crashAlert';
-import { distanceToLine, startFollow, stepFollow } from '@/lib/routeFollow';
+import { startFollow, stepFollow } from '@/lib/routeFollow';
+import { compassWord, prepareTrail, startGuide, stepGuide, type Guide } from '@/lib/trailGuide';
+import { mapsDirectionsUrl } from '@/lib/navigate';
 import { WAYPOINT_KINDS, WAYPOINT_LABEL } from '@/lib/waypointKinds';
 import { RiderTiles } from '@/features/group/RiderTiles';
 import { useCanNavigate } from '@/features/group/useCanNavigate';
@@ -41,7 +46,7 @@ import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { Pressable } from 'react-native';
 import { Icon } from '@/ui/Icon';
-import { fixed, radius, size, space } from '@/theme/tokens';
+import { fixed, opacity, radius, size, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 
 /** Live riding: dark, no tab bar, big numbers, nothing that needs text input. */
@@ -89,12 +94,24 @@ function LiveBody() {
   const follow = useRef(startFollow);
   const j = useJournalActions(r.startedAt);
   const stopping = useRef(false);
+  const health = useRef(startGpsHealth);
+  const resumedAt = useRef(0);
+  useEffect(() => { const sub = AppState.addEventListener('change', (st) => { if (st === 'active') resumedAt.current = Date.now(); }); return () => sub.remove(); }, []);
   useEffect(() => { const id = setInterval(() => tick((n) => n + 1), 1000); return () => clearInterval(id); }, []);
   useEffect(() => { if (r.status === 'idle' && !stopping.current) router.replace('/'); }, [r.status, router]);
-  // Off the route for 20 seconds: buzz and say so. Back within 60 m: clear it.
+  // Heading to the start, then along the trail. Off the route for 20 seconds (only once on the trail): buzz and say so. Back within 60 m: clear it.
+  const trail = useMemo(() => (routeLine ? prepareTrail(routeLine) : undefined), [routeLine]);
+  const guideState = useRef(startGuide);
+  const [guide, setGuide] = useState<Guide>();
   useEffect(() => {
-    if (!routeLine || !last || r.paused) return;
-    const step = stepFollow(follow.current, distanceToLine(routeLine, last), Date.now());
+    if (!trail || !last || r.paused) return;
+    const before = guideState.current.phase;
+    const g = stepGuide(guideState.current, trail, last);
+    guideState.current = g.state;
+    setGuide(g.guide);
+    if (g.state.phase === 'finished' && before !== 'finished') Vibration.vibrate([0, 300, 150, 300]);
+    if (g.state.phase !== 'on_trail') { follow.current = startFollow; setOff(false); return; }
+    const step = stepFollow(follow.current, g.guide.offM, Date.now());
     follow.current = step.state;
     if (step.wentOff) { setOff(true); Vibration.vibrate([0, 400, 200, 400]); }
     if (step.backOn) setOff(false);
@@ -111,29 +128,40 @@ function LiveBody() {
     router.replace(id ? `/story/${id}` : '/');
   };
 
+  const distance = distanceKm(r.meters / 1000);
+  const shown = r.paused ? 0 : r.source === 'sim' ? r.speedKmh : shownSpeedKmh(r.speedKmh, r.lastFixAt, Date.now());
+  const speed = shown === null ? { value: '–', unit: speedKmh(0).unit } : speedKmh(shown);
   const stats = (
     <Card style={{ gap: landscape ? 12 : 20, paddingVertical: landscape ? 16 : 20 }}>
       <View style={{ gap: 4 }}>
         <Text variant="label" tone="muted">Distance</Text>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-          <Text variant="live" style={landscape ? { fontSize: 56, lineHeight: 60 } : undefined}>{(r.meters / 1000).toFixed(1)}</Text><Text variant="bodyMedium" tone="muted">km</Text>
+          <Text variant="live" style={landscape ? { fontSize: 56, lineHeight: 60 } : undefined}>{distance.value}</Text><Text variant="bodyMedium" tone="muted">{distance.unit}</Text>
         </View>
       </View>
       <View style={{ flexDirection: 'row' }}>
         <View style={{ flex: 1 }}><Text variant="label" tone="muted">{r.paused ? 'Paused' : 'Time'}</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{clock(r.elapsedMs(Date.now()))}</Text></View>
-        <View style={{ flex: 1 }}><Text variant="label" tone="muted">Speed</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{r.paused ? 0 : Math.round(r.speedKmh)}</Text></View>
+        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{`Speed (${speed.unit})`}</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{speed.value}</Text></View>
       </View>
     </Card>
   );
   const ageSec = r.lastFixAt ? Math.max(0, Math.round((Date.now() - r.lastFixAt) / 1000)) : 0;
-  // The background recorder sends no fixes while the phone is still (5 m distance filter), so only a rider who was moving can have lost the signal.
-  const lostSignal = r.source === 'gps' && !r.paused && r.moving && r.lastFixAt > 0 && ageSec >= 15;
+  // Fixes keep coming while stopped, so a long silence is a real loss; the warning needs one to raise and a steady run of fixes to clear.
+  health.current = r.source === 'gps' && !r.paused ? stepGpsHealth(health.current, { now: Date.now(), lastFixAt: r.lastFixAt, resumedAt: resumedAt.current }) : startGpsHealth;
+  const lostSignal = health.current.lost;
+  const weakSignal = !lostSignal && r.source === 'gps' && !r.paused && isWeak(fix?.accuracy);
   // The background task is what keeps recording with the screen locked; tell the rider when it is not running.
   const foregroundOnly = r.source === 'gps' && !r.paused && Platform.OS !== 'web' && !r.backgrounded && Date.now() - r.startedAt > 3000;
+  const start = routeLine?.[0];
+  const guideBanner = !guide || !start ? null
+    : guide.phase === 'to_start' ? <Banner eyebrow="To the start" title={`${withUnit(shortDistanceM(guide.toStartM))} ${last ? compassWord(last, start) : ''} · tap for the road`} onPress={() => void Linking.openURL(mapsDirectionsUrl(start))} />
+    : guide.phase === 'finished' ? <Banner eyebrow="Trail" title="You reached the end of the trail" />
+    : <Banner eyebrow="Trail" title={`${asText(distanceKm(guide.remainingM / 1000))} to go${guide.next ? ` · ${guide.next.dir} in ${withUnit(shortDistanceM(guide.next.distM))}` : ''}`} />;
   const status = (
     <View style={{ gap: 8 }}>
       {r.error ? <Banner eyebrow="Storage" title={r.error} /> : null}
-      {lostSignal ? <Banner eyebrow="GPS" title="Lost GPS signal, still recording" /> : null}
+      {lostSignal ? <Banner eyebrow="GPS" title="Lost GPS signal, still recording" /> : weakSignal ? <Banner eyebrow="GPS" title="Weak GPS signal. The route may be rough here." /> : null}
+      {guideBanner}
       {off ? <Banner eyebrow="Route" title="You are off the route" /> : null}
       {dropAt && Date.now() - dropAt < 6000 && r.waypoints.length ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
@@ -161,8 +189,8 @@ function LiveBody() {
     </Pressable>
   );
   const sosBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => { buzz.help(); setSos(true); }} style={{ flex: 1, minHeight: h, borderRadius: radius.control, borderWidth: 1.5, borderColor: c.stop, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
-      <Icon icon={Siren} tone="stop" size={22} /><Text variant="bodyMedium" tone="stop">SOS</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => { buzz.help(); setSos(true); }} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: fixed.stopFill, opacity: pressed ? opacity.pressed : 1, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' })}>
+      <Icon icon={Siren} color={fixed.white} size={22} /><Text variant="bodyMedium" style={{ color: fixed.white }}>SOS</Text>
     </Pressable>
   );
 
@@ -186,7 +214,7 @@ function LiveBody() {
       </Sheet>
       <Sheet open={sos} title="SOS" onClose={() => setSos(false)}>
         <Text variant="label" tone="muted">Call for help. This does not replace emergency services.</Text>
-        <Button label={`Call ${emergency.number} (emergency)`} variant="danger" icon={Phone} onPress={() => Linking.openURL(telUrl(emergency.number))} />
+        <Button label={`Call ${emergency.number} (emergency)`} variant="emergency" icon={Phone} onPress={() => Linking.openURL(telUrl(emergency.number))} />
         <EmergencyEditor choice={emergency} />
         <Button variant="soft" icon={Share2} label="Share my position" onPress={() => void shareHere()} />
         {medical.bloodGroup || medical.notes ? <Text variant="label" tone="muted">Emergency card: {[medical.bloodGroup && `blood group ${medical.bloodGroup}`, medical.notes].filter(Boolean).join(' · ')}</Text> : null}
@@ -201,7 +229,7 @@ function LiveBody() {
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
-          {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">{group ? 'Group' : 'Group ride'}</Text></Pressable> : null}
+          {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Group</Text></Pressable> : null}
           <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Journal</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
         </View>
@@ -211,7 +239,7 @@ function LiveBody() {
         <View style={{ flex: 1, flexDirection: 'row', gap: 16 }}>
           <View style={{ flex: 1, gap: space[3] }}>{stats}{status}{groupTiles}</View>
           <View style={{ flex: 1.25, gap: 12 }}>
-            <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
+            <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
             <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(64)}{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
           </View>
         </View>
@@ -219,12 +247,12 @@ function LiveBody() {
         <>
           <View style={{ marginTop: 8 }}>{stats}</View>
           <View style={{ marginTop: 12 }}>
-            <OsmMap height={200} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
+            <OsmMap height={200} radius={radius.card} follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
           </View>
           <View style={{ marginTop: space[3], gap: space[3] }}>{status}{groupTiles}</View>
           <View style={{ flex: 1 }} />
           <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(88)}{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} onComplete={stop} /></View>
-          <View style={{ marginTop: space[3], flexDirection: 'row', gap: space[3] }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn(group ? 'Group' : 'Group ride', Users, () => setGroupOpen(true), 56)}</View>
+          <View style={{ marginTop: space[3], flexDirection: 'row', gap: space[3] }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn('Group', Users, () => setGroupOpen(true), 56)}</View>
         </>
       )}
     </Screen>

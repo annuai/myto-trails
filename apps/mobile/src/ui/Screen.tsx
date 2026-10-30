@@ -16,10 +16,10 @@ export const TAB_BAR_HEIGHT = 100;
 export const TAB_BAR_HEIGHT_LANDSCAPE = 84;
 export { CONTENT_MAX };
 
-type Props = { children: ReactNode; overlay?: ReactNode; tabs?: boolean; scroll?: boolean; footer?: ReactNode; /** Fixed logo and notifications bar that floats as a pill once the page scrolls. */ brand?: boolean; /** The floating tab bar fades away near the end of the page and returns on scrolling up or a tap. */ fadeTabs?: boolean; /** A full-width picture fixed to the bottom edge of the screen. It stays put while the page scrolls; at the very end the content slides up and uncovers it. */ endCap?: ReactNode };
+type Props = { children: ReactNode; overlay?: ReactNode; tabs?: boolean; scroll?: boolean; footer?: ReactNode; /** Fixed logo and notifications bar that floats as a pill once the page scrolls. */ brand?: boolean; /** The floating tab bar fades away near the end of the page and returns on scrolling up or a tap. */ fadeTabs?: boolean; /** Called when the page is scrolled to within a screen of its end, or is shorter than two screens: the cue to load more of a long list. It may be called again before the list has grown, so the caller must ignore it while it is already loading. */ onNearEnd?: () => void; /** A full-width picture fixed to the bottom edge of the screen. It stays put while the page scrolls; at the very end the content slides up and uncovers it. */ endCap?: ReactNode };
 
 /** Page frame: safe-area top, 20 px side margins, scrolls, leaves room for the tab bar. */
-export function Screen({ children, overlay, tabs = false, scroll = true, footer, brand = false, fadeTabs = false, endCap }: Props) {
+export function Screen({ children, overlay, tabs = false, scroll = true, footer, brand = false, fadeTabs = false, endCap, onNearEnd }: Props) {
   const scrollY = useRef(new Animated.Value(0)).current;
   const bar = useRef({ prevY: 0, content: 0, layout: 0, value: 1, touch: null as { x: number; y: number } | null }).current;
   /** Height of the fixed end picture, and the page's own size: together they say how much of the picture the content has uncovered. */
@@ -51,7 +51,9 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
       scrollEventThrottle={16}
       onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
         useNativeDriver: false,
-        listener: (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+        listener: (e: { nativeEvent: { contentOffset: { y: number }; contentSize: { height: number }; layoutMeasurement: { height: number } } }) => {
+          const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+          if (onNearEnd && contentSize.height - (contentOffset.y + layoutMeasurement.height) < layoutMeasurement.height) onNearEnd();
           if (!fadeTabs) return;
           const y = e.nativeEvent.contentOffset.y;
           const next = fadeTarget({ y, prevY: bar.prevY, maxY: Math.max(0, bar.content - bar.layout), current: bar.value });
@@ -59,8 +61,8 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
           if (next !== bar.value) setBar(next, next > bar.value);
         },
       })}
-      onLayout={fadeTabs || endCap ? (e) => { const h = e.nativeEvent.layout.height; bar.layout = h; if (endCap) setPage((p) => ({ ...p, layout: h })); } : undefined}
-      onContentSizeChange={fadeTabs || endCap ? (_w, h) => { bar.content = h; if (endCap) setPage((p) => ({ ...p, content: h })); } : undefined}
+      onLayout={fadeTabs || endCap || onNearEnd ? (e) => { const h = e.nativeEvent.layout.height; bar.layout = h; if (endCap) setPage((p) => ({ ...p, layout: h })); } : undefined}
+      onContentSizeChange={fadeTabs || endCap || onNearEnd ? (_w, h) => { bar.content = h; if (endCap) setPage((p) => ({ ...p, content: h })); if (onNearEnd && bar.layout > 0 && h < bar.layout * 2) onNearEnd(); } : undefined}
       onTouchStart={fadeTabs ? (e) => { bar.touch = touchPoint(e.nativeEvent); } : undefined}
       onTouchEnd={fadeTabs ? (e) => { if (bar.value < 1 && bar.touch && isTap(bar.touch, touchPoint(e.nativeEvent))) setBar(1, true); } : undefined}
       contentContainerStyle={{ paddingTop: top, paddingBottom: endCap ? 0 : bottom, paddingLeft: padL, paddingRight: padR }}

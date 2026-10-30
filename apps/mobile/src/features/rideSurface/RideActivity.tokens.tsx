@@ -43,7 +43,7 @@ const RideActivity = (props: RideSurfaceProps) => {
           <Image systemName={icon} color={white} />
           <Text modifiers={[font({ size: 15, weight: 'semibold' })]}>{props.title}</Text>
           <Spacer />
-          <Text modifiers={[font({ size: 15 }), foregroundStyle(soft)]}>{props.km} km</Text>
+          <Text modifiers={[font({ size: 15 }), foregroundStyle(soft)]}>{props.km} {props.unit ?? 'km'}</Text>
         </HStack>
         {time}
         {controls}
@@ -65,7 +65,7 @@ const RideActivity = (props: RideSurfaceProps) => {
     expandedTrailing: (
       <VStack modifiers={[padding({ all: 12 })]}>
         <Text modifiers={[font({ size: 12 }), foregroundStyle('#8E8E93')]}>Distance</Text>
-        <Text modifiers={[font({ size: 20, weight: 'bold' })]}>{props.km} km</Text>
+        <Text modifiers={[font({ size: 20, weight: 'bold' })]}>{props.km} {props.unit ?? 'km'}</Text>
       </VStack>
     ),
     expandedBottom: <VStack modifiers={[padding({ all: 12 })]}>{controls}</VStack>,

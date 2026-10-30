@@ -34,14 +34,18 @@ export async function needsAlwaysExplainer(): Promise<boolean> {
   try { return (await Location.getBackgroundPermissionsAsync()).status !== 'granted'; } catch { return false; }
 }
 
-/** Start background recording. Returns false when it cannot run (no Always permission), so the caller falls back to the foreground watch. */
+/**
+ * Start background recording. Returns false when it cannot run (no Always permission), so the caller falls back to the foreground watch.
+ * The distance filter is 0 on purpose: at 5 m the phone sent nothing while the bike stood, so a long red light read as a lost signal
+ * and the speed was never brought back to zero. The recorder drops the standing-still jitter.
+ */
 export const startBackground = (): Promise<boolean> => inOrder(startNow);
 async function startNow(): Promise<boolean> {
   try {
     if ((await Location.getBackgroundPermissionsAsync()).status !== 'granted') return false;
     if (await Location.hasStartedLocationUpdatesAsync(TASK_NAME)) return true;
     await Location.startLocationUpdatesAsync(TASK_NAME, {
-      accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 5, timeInterval: 1000,
+      accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 0, timeInterval: 1000,
       pausesUpdatesAutomatically: false, showsBackgroundLocationIndicator: true, activityType: Location.ActivityType.AutomotiveNavigation,
       foregroundService: { notificationTitle: 'Recording your ride', notificationBody: 'Myto Moto is recording your route.' },
     });

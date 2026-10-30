@@ -45,7 +45,7 @@ export default function RideLog() {
             <Row key={r.id} icon={RouteIcon} label={r.name} sub={`${formatDate(new Date(r.startedAt).toISOString().slice(0, 10))} · ${asText(durationParts(r.durationSec))}${r.submission ? ' · uploaded' : ''}${r.sample ? ' · sample' : ''}`} value={asText(distanceKm(r.distanceKm))} mono onPress={() => router.push(`/story/${r.id}`)} />
           ))}
         </ListCard>
-      ) : <EmptyState icon={RouteIcon} title="No rides yet" body="Tap Ride to log your first ride." />}
+      ) : <EmptyState icon={RouteIcon} title="Your first ride starts here" body="Tap Ride and go. Every ride you record is kept here, with its route and what it cost." />}
       <View style={{ marginTop: space[6], gap: space[2] }}>
         <Button variant="soft" icon={FileUp} label="Import a GPX file" onPress={() => void importGpx()} />
         <Text variant="caption" tone="muted">Add a ride recorded in another app. A file with no times gets an estimated time.</Text>

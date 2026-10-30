@@ -125,7 +125,7 @@ describe('recorder review fixes', () => {
     await rec.getState().ingest({ ...pt(0, 1, 5), speed: 0 });
     await rec.getState().ingest({ ...pt(5, 2, 5) });
     expect(rec.getState().moving).toBe(false);
-    await rec.getState().ingest({ ...pt(0, 3, 5), speed: 10 });
+    await rec.getState().ingest({ ...pt(20, 3, 5), speed: 10 });
     await rec.getState().ingest({ ...pt(300, 4, 500) });
     expect(rec.getState().moving).toBe(true);
   });
@@ -273,5 +273,40 @@ describe('moving while paused', () => {
     await second.getState().recover();
     expect(second.getState().pauseBreaks).toEqual([2]);
     vi.restoreAllMocks();
+  });
+
+  describe('speed while standing still', () => {
+    const at = (north: number, tSec: number, speed: number | null, acc = 5): LatLng => ({ ...pt(north, tSec, acc), speed });
+    const rideThenStop = async () => {
+      const rec = createRecorder(createMemoryJournal());
+      await rec.getState().start('gps');
+      for (let i = 0; i < 6; i++) await rec.getState().ingest(at(i * 10, i, 10)); // 36 km/h
+      return rec;
+    };
+    it('drops to zero when the fixes stop moving, even if the phone keeps reporting a small speed', async () => {
+      const rec = await rideThenStop();
+      for (let i = 0; i < 6; i++) await rec.getState().ingest(at(50 + (i % 2), 6 + i, 1.6)); // parked, jittering 1 m, Doppler says 5.8 km/h
+      expect(rec.getState().speedKmh).toBe(0);
+    });
+    it('is not left at the last riding speed when a stopped phone reports no speed at all', async () => {
+      const rec = await rideThenStop();
+      for (let i = 0; i < 6; i++) await rec.getState().ingest(at(50, 6 + i, null));
+      expect(rec.getState().speedKmh).toBe(0);
+    });
+    it('still reads a real crawl of 6 km/h', async () => {
+      const rec = await rideThenStop();
+      for (let i = 0; i < 10; i++) await rec.getState().ingest(at(50 + i * 1.7, 6 + i, 1.7));
+      expect(rec.getState().speedKmh).toBeGreaterThan(4);
+    });
+  });
+});
+
+describe('live top speed', () => {
+  it('is not set by one fix whose speed reading is a glitch', async () => {
+    const rec = createRecorder(createMemoryJournal());
+    await rec.getState().start('gps');
+    for (let i = 0; i < 12; i++) await rec.getState().ingest({ ...pt(i * 10, i, 5), speed: i === 6 ? 45 : 10 });
+    expect(rec.getState().maxKmh).toBeLessThan(40);
+    expect(rec.getState().maxKmh).toBeGreaterThan(30);
   });
 });

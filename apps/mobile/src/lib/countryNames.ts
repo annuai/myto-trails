@@ -1,11 +1,20 @@
+import { countryEntry } from './countryList';
 import { deviceLocale } from './locale';
 
-/** The country's name in the rider's language ("India", "Deutschland"), or the code when the phone does not know it. */
+/**
+ * The country's full name in the rider's language ("India", "Deutschland") when the phone can say it, else its English name from the
+ * country list, else the code. Not every phone's JavaScript engine has Intl.DisplayNames, which used to leave the bare code ("IN") on screen.
+ */
 export function countryName(iso2: string | null | undefined, locale: string = deviceLocale()): string {
   if (!iso2) return '';
+  const code = iso2.toUpperCase();
+  const known = countryEntry(code);
+  if (!known) return code; // not a country we list: Intl answers "Unknown Region", which is worse than the code
   try {
-    return new Intl.DisplayNames([locale], { type: 'region' }).of(iso2.toUpperCase()) ?? iso2.toUpperCase();
+    const name = new Intl.DisplayNames([locale], { type: 'region' }).of(code);
+    if (name && name !== code) return name;
   } catch {
-    return iso2.toUpperCase();
+    // no Intl.DisplayNames here: use the table below
   }
+  return known.name;
 }

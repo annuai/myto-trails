@@ -1,12 +1,13 @@
 import { View } from 'react-native';
 import { ArrowRight, type LucideIcon } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
-import { opacity, radius } from '@/theme/tokens';
+import { fixed, opacity, radius } from '@/theme/tokens';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { ScalePressable } from './motion';
 
-type Variant = 'primary' | 'accent' | 'soft' | 'danger';
+/** `emergency` is a solid red with white text, for calling for help: it must not take the dark theme's near-black card colour. */
+type Variant = 'primary' | 'accent' | 'soft' | 'danger' | 'emergency';
 type Props = {
   label: string; onPress?: () => void; variant?: Variant; icon?: LucideIcon; arrow?: boolean;
   big?: boolean; disabled?: boolean; align?: 'center' | 'between'; trailing?: string; flex?: boolean;
@@ -14,9 +15,9 @@ type Props = {
 
 export function Button({ label, onPress, variant = 'primary', icon, arrow, big, disabled, align, trailing, flex }: Props) {
   const { c } = useTheme();
-  const bg = { primary: c.ink, accent: c.accent, soft: c.card, danger: c.card }[variant];
+  const bg = { primary: c.ink, accent: c.accent, soft: c.card, danger: c.card, emergency: fixed.stopFill }[variant];
   const fg = (variant === 'primary' ? 'onInk' : variant === 'accent' ? 'onInk' : variant === 'danger' ? 'stop' : 'ink') as 'onInk' | 'ink' | 'stop';
-  const fgColor = variant === 'accent' ? c.accentInk : undefined;
+  const fgColor = variant === 'accent' ? c.accentInk : variant === 'emergency' ? fixed.white : undefined;
   const between = (align ?? (arrow || trailing ? 'between' : 'center')) === 'between';
   return (
     <ScalePressable scaleTo={0.97}
@@ -31,7 +32,7 @@ export function Button({ label, onPress, variant = 'primary', icon, arrow, big, 
       })}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        {icon ? <Icon icon={icon} size={22} tone={fg} /> : null}
+        {icon ? <Icon icon={icon} size={22} tone={fg} color={fgColor} /> : null}
         <Text variant="bodyMedium" tone={fg} style={[big && { fontSize: 20 }, fgColor ? { color: fgColor } : null]}>{label}</Text>
       </View>
       {trailing ? <Text variant="data" tone="muted">{trailing}</Text> : null}

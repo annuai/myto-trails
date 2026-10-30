@@ -24,7 +24,7 @@ export default function Passport() {
       {!token ? <EmptyState icon={Stamp} title="Sign in to keep your list" body="Mark a trail as ridden from its page and it appears here, on any phone you sign in on." />
         : error && !items ? <><Text variant="label" tone="stop">{error}</Text><Button variant="soft" label="Try again" onPress={reload} /></>
         : !items ? <Text variant="label" tone="muted">Loading…</Text>
-        : items.length === 0 ? <EmptyState icon={Stamp} title="No trails yet" body="Open a trail you have ridden and tap I've ridden this." />
+        : items.length === 0 ? <EmptyState icon={Stamp} title="Your trail list starts here" body="Open a trail you have ridden and tap I've ridden this." />
         : (
           <ListCard>
             {items.map((t) => <Row key={t.slug} icon={Stamp} label={t.name} sub={[t.riddenMonth && month(t.riddenMonth), t.bike].filter(Boolean).join(' · ') || undefined} onPress={() => router.push(`/trail/${t.slug}`)} />)}

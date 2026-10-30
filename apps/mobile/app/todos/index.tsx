@@ -29,7 +29,7 @@ export default function Todos() {
     <Screen footer={<Button icon={Plus} label="Add a to-do" onPress={() => router.push('/todos/new')} />}>
       <BackHeader title="You" right={<IconButton icon={Plus} label="Add a to-do" onPress={() => router.push('/todos/new')} />} />
       <PageTitle>To-do list</PageTitle>
-      {rows.length === 0 ? <EmptyState icon={ClipboardList} title="Nothing here" body="Add your PUC, insurance, or a chain lube reminder." /> : null}
+      {rows.length === 0 ? <EmptyState icon={ClipboardList} title="Nothing to remember yet" body="Add your PUC, insurance or a chain lube reminder and we'll nudge you before it's due." action={{ label: 'Add a reminder', onPress: () => router.push('/todos/new') }} /> : null}
       {attention.length ? <><SectionTitle>Needs attention</SectionTitle>{list(attention)}</> : null}
       {later.length ? <><SectionTitle>Later</SectionTitle>{list(later)}</> : null}
       {done.length ? <><SectionTitle>Done</SectionTitle>{list(done)}</> : null}

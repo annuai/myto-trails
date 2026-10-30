@@ -1,4 +1,5 @@
 import { countryConfig } from '@moto-trails/domain';
+import { countryEntry } from './countryList';
 
 /** The phone's language and region as a BCP 47 tag ("en-IN"). Hermes and every browser have Intl, so no native module is needed. */
 export const deviceLocale = (): string => {
@@ -29,10 +30,6 @@ const MILE_REGIONS = new Set(['US', 'GB', 'LR', 'MM']);
 export const defaultDistanceUnit = (region: string | null | undefined): 'km' | 'mi' =>
   countryConfig(region)?.distanceUnit ?? (region && MILE_REGIONS.has(region.toUpperCase()) ? 'mi' : 'km');
 
-/** Currencies for places we have no country setting for yet. Unknown regions get null, and amounts are shown as plain numbers. */
-const CURRENCY: Record<string, string> = {
-  US: 'USD', CA: 'CAD', GB: 'GBP', AU: 'AUD', NZ: 'NZD', NP: 'NPR', LK: 'LKR', BT: 'BTN', BD: 'BDT', PK: 'PKR', TH: 'THB', VN: 'VND', ID: 'IDR', MY: 'MYR', SG: 'SGD', JP: 'JPY', ZA: 'ZAR', AE: 'AED', CH: 'CHF',
-  AT: 'EUR', BE: 'EUR', DE: 'EUR', ES: 'EUR', FI: 'EUR', FR: 'EUR', GR: 'EUR', IE: 'EUR', IT: 'EUR', NL: 'EUR', PT: 'EUR',
-};
+/** The currency for a region: the country's own setting when the app has one, else the country list's, else null (amounts are then plain numbers). */
 export const currencyFor = (region: string | null | undefined): string | null =>
-  countryConfig(region)?.currency ?? (region ? CURRENCY[region.toUpperCase()] ?? null : null);
+  countryConfig(region)?.currency ?? countryEntry(region)?.currency ?? null;

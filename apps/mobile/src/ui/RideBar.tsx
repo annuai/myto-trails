@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useDistanceUnit } from '@/store/region';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Theme } from '@/theme/ThemeProvider';
@@ -12,6 +13,7 @@ import { useLayout } from './useLayout';
 
 /** Shown above the tab bar while a ride is recording; opens the live screen. */
 export function RideBar() {
+  useDistanceUnit(); // re-draws the distance when the unit changes
   const running = useRecorder((s) => s.status === 'running');
   const sheetOpen = useChrome((s) => s.sheets > 0);
   const paused = useRecorder((s) => s.paused);

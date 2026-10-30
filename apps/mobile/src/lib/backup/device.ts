@@ -3,6 +3,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { File, FileMode, Paths } from 'expo-file-system';
 import { commitStaged, deleteAllPhotos, discardStaged, hasPhoto, readPhotoBase64, stagePhoto } from '../localMedia';
 import { commitStaged as commitJournalMedia, discardStaged as discardJournalMedia, hasMedia, readBase64 as readJournalMedia, stageMedia } from '../journalMedia';
+import { withCorrectTopSpeeds } from '../fixTopSpeeds';
 import { useJournal } from '@/store/journal';
 import { useProfile } from '@/store/profile';
 import { useMyRoutes } from '@/store/myRoutes';
@@ -25,7 +26,7 @@ export const phoneTarget: Target = {
   set: (s) => {
     useProfile.getState().restore({ licence: s.licence, vehicle: s.vehicle, contacts: s.contacts, medical: s.medical, photos: s.photos });
     useTodos.setState({ todos: s.todos });
-    useRides.setState({ rides: s.rides });
+    useRides.setState({ rides: withCorrectTopSpeeds(s.rides) });
     useJournal.getState().restore(s.journal, s.journalTitles);
     // A backup made before routes and trips existed leaves the phone's own alone.
     if (s.routes) useMyRoutes.setState({ routes: s.routes });

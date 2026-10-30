@@ -13,7 +13,7 @@ const RideCard = createCustomNotification('RideCard', (props: RideSurfaceProps) 
   const primary = <Button {...({ target: props.primaryId } as object)}><Text>{props.primaryLabel}</Text></Button>;
   // Help is always there: it tells the group on a group ride, and opens the SOS sheet solo.
   const help = <OutlinedButton {...({ target: 'ride.help' } as object)}><Text>Help</Text></OutlinedButton>;
-  const line = `${props.clockShort} · ${props.km} km`;
+  const line = `${props.clockShort} · ${props.km} ${props.unit ?? 'km'}`;
   return {
     collapsed: (
       <Row verticalAlignment="center" horizontalArrangement="spaceBetween">
@@ -31,7 +31,7 @@ const RideCard = createCustomNotification('RideCard', (props: RideSurfaceProps) 
       <Column verticalArrangement={{ spacedBy: 8 }}>
         <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{props.title}</Text>
         <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{props.clockShort}</Text>
-        <Text style={{ fontSize: 14 }}>{`${props.km} km`}</Text>
+        <Text style={{ fontSize: 14 }}>{`${props.km} ${props.unit ?? 'km'}`}</Text>
         <Row horizontalArrangement={{ spacedBy: 12 }}>
           {primary}
           {help}

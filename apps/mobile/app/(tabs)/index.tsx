@@ -46,6 +46,7 @@ import { HeroCard, ProgressBar } from '@/ui/HeroCard';
 import { ListCard } from '@/ui/ListCard';
 import { Row } from '@/ui/ListCard';
 import { RideMap } from '@/ui/RideMap';
+import { ScalePressable } from '@/ui/motion';
 import { Screen } from '@/ui/Screen';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
@@ -193,7 +194,7 @@ export default function Home() {
             <Row key={r.key} icon={r.icon} label={r.label} sub={r.sub} value={r.value} onPress={() => router.push(r.go as never)} chevron={false} />
           ))}
         </ListCard>
-      ) : <EmptyState icon={ClipboardList} title="Nothing due" body="Add your PUC, insurance or a chain lube reminder." />}
+      ) : <EmptyState icon={ClipboardList} title="You're all caught up" body="Add a reminder for your PUC, insurance or a chain lube and we'll nudge you in time." />}
       <View style={{ marginTop: 12 }}><Button variant="soft" label="See all" arrow onPress={() => router.push('/todos')} /></View>
 
         </>}
@@ -201,11 +202,12 @@ export default function Home() {
       <SectionTitle>Near you</SectionTitle>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }} style={landscape ? undefined : { marginHorizontal: -20, paddingLeft: 20 }}>
         {(near.data?.items ?? []).slice(0, 8).map((t) => <TrailTile key={t.slug} trail={toTrailLike(t)} onPress={() => router.push(`/trail/${t.slug}`)} />)}
-        {!near.data ? <Text variant="label" tone="muted">{near.error ?? 'Loading trails…'}</Text> : null}
+        {!near.data ? <Text variant="label" tone="muted">{near.error ?? 'Finding trails near you…'}</Text> : near.data.items.length === 0 ? <Text variant="label" tone="muted">No trails near you yet. Browse them all in the Trails tab.</Text> : null}
       </ScrollView>
 
       <SectionTitle>Your latest ride</SectionTitle>
       {latest ? (
+        <ScalePressable accessibilityRole="button" accessibilityLabel={`Open ride story: ${latest.name}`} onPress={() => router.push(`/story/${latest.id}`)}>
         <Card padded={false}>
           <RideMap points={latest.points} breaks={latest.breaks} />
           <View style={{ padding: 20, gap: 16 }}>
@@ -215,9 +217,9 @@ export default function Home() {
             </View>
           </View>
         </Card>
-      ) : <EmptyState icon={RouteIcon} title="No rides yet" body="Tap Ride to log your first ride." />}
+        </ScalePressable>
+      ) : <EmptyState icon={RouteIcon} title="Your first ride starts here" body="Tap Ride below and go. We keep the route, the distance and what it cost." />}
       {latest ? <View style={{ marginTop: 12, gap: 12 }}>
-        <Button variant="soft" label="View ride story" arrow onPress={() => router.push(`/story/${latest.id}`)} />
         <Button variant="soft" label="All rides" arrow onPress={() => router.push('/rides')} />
       </View> : null}
         </>}

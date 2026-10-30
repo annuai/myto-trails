@@ -103,7 +103,7 @@ export default function RideReady() {
       <SectionTitle>Options</SectionTitle>
       <ListCard>
         <Row icon={RouteIcon} label="Route" value={myRoute?.name ?? trail?.name ?? 'None'} onPress={() => router.push('/plan')} />
-        <Row icon={Users} label="Group ride" value={group ? `Code ${group.code}` : 'Off'} onPress={() => setGroupOpen(true)} />
+        <Row icon={Users} label="Group" value={group ? `Code ${group.code}` : 'Off'} onPress={() => setGroupOpen(true)} />
         <Row icon={Pause} label="Pause when stopped" sub="After 5 minutes still. It carries on when you move." value={autoPause ? 'On' : 'Off'} onPress={() => useCompanion.getState().setAutoPause(!autoPause)} chevron={false} />
         <Row icon={BellRing} label="I haven't arrived" value={checkin ? `Back by ${clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}` : 'Off'} onPress={() => setCheckinOpen(true)} />
       </ListCard>

@@ -1,3 +1,4 @@
+import { distanceKm } from './units';
 /** The buttons on the ride notification, and what the notification says. No phone code here, so it is tested on its own (see rideNotification.ts). */
 export type RideActionId = 'ride.pause' | 'ride.resume' | 'ride.help' | 'ride.undo-help' | 'crash.ok';
 export type RideAction = { id: RideActionId; label: string; /** Red on iOS. */ destructive?: boolean; /** Pressing it brings the app to the front. */ opensApp?: boolean };
@@ -56,6 +57,8 @@ export type RideSurfaceProps = {
   /** The time riding as "1 h 05 min", for Android, which cannot tick by itself. */
   clockShort: string;
   km: string;
+  /** The unit `km` is in: 'km' or 'mi'. Absent on an activity started before this existed, which means km. */
+  unit?: string;
   group: boolean;
   /** The first button: Pause, or Resume once paused. */
   primaryId: RideActionId;
@@ -86,7 +89,8 @@ export function rideSurfaceProps(i: { paused: boolean; group: boolean; elapsedMs
     since: i.paused ? 0 : i.now - i.elapsedMs,
     clock: clockText(i.elapsedMs),
     clockShort: clockShortText(i.elapsedMs),
-    km: (i.meters / 1000).toFixed(1),
+    km: distanceKm(i.meters / 1000).value,
+    unit: distanceKm(0).unit,
     group: i.group,
     primaryId: first.id,
     primaryLabel: first.label,
