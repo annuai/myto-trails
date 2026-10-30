@@ -39,7 +39,7 @@ export default function RegionSettings() {
       </Sheet>
     }>
       <BackHeader title="You" />
-      <PageTitle sub="Sets your currency and how distances are shown. It does not change which trails you see.">Country and units</PageTitle>
+      <PageTitle sub="Sets your currency and how distances are shown. Once you have set a country and a unit, Trails and Clubs show that country and stop asking.">Country and units</PageTitle>
       <ListCard>
         <Row icon={Globe} label="Home country" sub={chosenHome ? undefined : 'Following your phone'} value={home ? countryName(home) : 'Not set'} onPress={() => setPicking(true)} />
       </ListCard>

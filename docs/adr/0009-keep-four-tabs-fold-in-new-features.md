@@ -17,7 +17,7 @@
 | Group ride and check-in noted on a finished ride | Stored on the ride; no screen change |
 | Moderators' answer on a ride sent for review | Ride story, in the "Share it" card |
 | Repeat a club ride plan a week later | Club screen, on a ride plan |
-| Just-finished ride | Dash's first card shows the latest ride (name, time, distance, top speed, View ride story) for 24 hours after a ride. Before that, and after, it is the 0.8 card: planned trip, next ride or Plan your next ride. The Start trip / Start ride / Plan a trip buttons below it never change |
+| Just-finished ride | Dash's first card shows the latest ride (name, time, distance, top speed; no button, the ride story is reached from "Your latest ride" lower on Dash) for 24 hours after a ride. Before that, and after, it is the 0.8 card: planned trip, next ride or Plan your next ride. The Start trip / Start ride / Plan a trip buttons below it never change |
 | SOS hold, keep-awake, request timeout, offline cache | Behaviour only |
 | Rider reports on trail pages, "Open in the app" | Website |
 
@@ -29,3 +29,7 @@
 - The exit rule in ADR 0008 about finding Profile and Garage unaided no longer applies; the others still do.
 - Reversibility is the snapshot (`snapshot/pre-rider-os`, `legacy/0.8-companion`) and the additive data design, not a flag.
 - If a Rides tab is wanted later, the removed screen is in the git history of `feat/rider-os` (commit `122efa5`).
+
+## Addendum: one place to set the country
+
+The country picker on Trails and Clubs and the "Country and units" screen in settings did overlapping jobs. Once the rider has chosen both a home country and a unit in settings, the picker is hidden and the Trails and Clubs lists follow that country (if it is open; a coming-soon country never filters a list to nothing). Before both are chosen nothing changes: the picker shows and the lists follow it. The settings text no longer says the country does not affect which trails are shown. Logic: `countrySettled` and `browsingChoice` in `src/lib/browsing.ts`.

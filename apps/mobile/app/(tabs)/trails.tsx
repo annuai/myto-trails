@@ -6,7 +6,7 @@ import { toTrailLike } from '@/api/status';
 import type { TrailSummary } from '@/api/types';
 import { useSaved, useTrailSearch } from '@/api/useApi';
 import { useAuth } from '@/store/auth';
-import { useDistanceUnit } from '@/store/region';
+import { useCountrySettled, useDistanceUnit } from '@/store/region';
 import { useTrailStore } from '@/store/trails';
 import { space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
@@ -33,6 +33,7 @@ export default function Trails() {
   const [f, setF] = useState<(typeof filters)[number]>('All');
   const [picking, setPicking] = useState(false);
   useDistanceUnit(); // re-draws the list when the unit changes
+  const settled = useCountrySettled(); // country and unit chosen in settings: no picker here
   useEffect(() => { const id = setTimeout(() => setQ(text), 350); return () => clearTimeout(id); }, [text]);
   const search = useTrailSearch(q);
   const saved = useSaved();
@@ -48,7 +49,7 @@ export default function Trails() {
   return (
     <Screen tabs brand overlay={<CountrySheet open={picking} onClose={() => setPicking(false)} />}>
       <PageTitle>Trails</PageTitle>
-      <View style={{ alignSelf: 'flex-start', marginBottom: space[4] }}><CountryChip onPress={() => setPicking(true)} /></View>
+      {settled ? null : <View style={{ alignSelf: 'flex-start', marginBottom: space[4] }}><CountryChip onPress={() => setPicking(true)} /></View>}
       <Field label="Search" placeholder="Trail, town or place" value={text} onChangeText={setText} returnKeyType="search" />
       <View style={{ flexDirection: 'row', gap: 8, marginVertical: 20, flexWrap: 'wrap' }}>
         {filters.map((x) => <ChoiceChip key={x} label={x} selected={f === x} onPress={() => setF(x)} />)}

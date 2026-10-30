@@ -146,13 +146,15 @@ export default function Home() {
         </View>
       ) : null}
       {finished ? (
+        <View style={{ marginBottom: space[3] }}>
         <HeroCard eyebrow="Just finished" title={finished.name}>
           <View style={{ flexDirection: 'row' }}>
             <Stat parts={durationParts(finished.durationSec)} label="Duration" /><Stat parts={distanceKm(finished.distanceKm)} label="Distance" /><Stat parts={speedKmh(finished.maxKmh)} label="Top speed" />
           </View>
-          <Button variant="accent" label="View ride story" arrow onPress={() => router.push(`/story/${finished.id}`)} />
         </HeroCard>
-      ) : nextTripPlan ? (
+        </View>
+      ) : null}
+      {nextTripPlan ? (
         <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} />
       ) : trail ? (
         <HeroCard eyebrow={trail.date ? `Next ride · ${trail.date}` : 'Next ride'} title={trail.name} action={<IconButton icon={MoreHorizontal} label="Next ride options" onPress={() => setMenu(true)} plain />}>

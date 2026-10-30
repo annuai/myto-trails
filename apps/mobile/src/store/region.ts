@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { countrySettled } from '@/lib/browsing';
 import { currencyFor, deviceRegion } from '@/lib/locale';
 import { setDistanceUnit, type DistanceUnit } from '@/lib/units';
 import { storage } from './persist';
@@ -39,6 +40,8 @@ export const homeCountry = (s: Pick<State, 'home'>): string | null => s.home ?? 
 export const effectiveUnit = (s: Pick<State, 'unit'>): DistanceUnit => s.unit ?? 'km';
 export const useHomeCountry = (): string | null => useRegion(homeCountry);
 export const useDistanceUnit = (): DistanceUnit => useRegion(effectiveUnit);
+/** Both country and unit were chosen in settings: the country picker on Trails and Clubs is hidden. */
+export const useCountrySettled = (): boolean => useRegion((s) => countrySettled(s));
 /** The currency amounts are shown in, or null when we do not know one for the home country. */
 export const useCurrency = (): string | null => currencyFor(useHomeCountry());
 

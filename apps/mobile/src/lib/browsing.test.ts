@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Country } from '@/api/countries';
-import { chipLabel, countryQuery, pickerOrder, resolveBrowsing, validEmail } from './browsing';
+import { browsingChoice, chipLabel, countryQuery, countrySettled, pickerOrder, resolveBrowsing, validEmail } from './browsing';
 
 const IN: Country = { iso2: 'IN', name: 'India', slug: 'india', enabled: true, comingSoon: false };
 const NP: Country = { iso2: 'NP', name: 'Nepal', slug: 'nepal', enabled: false, comingSoon: true };
@@ -38,5 +38,19 @@ describe('browsing helpers', () => {
     expect(validEmail(' a@b.co ')).toBe(true);
     expect(validEmail('nope')).toBe(false);
     expect(validEmail('a@b')).toBe(false);
+  });
+});
+
+describe('country set in settings', () => {
+  it('is settled only when both the home country and the unit were chosen', () => {
+    expect(countrySettled({ home: 'IN', unit: 'km' })).toBe(true);
+    expect(countrySettled({ home: 'IN', unit: null })).toBe(false);
+    expect(countrySettled({ home: null, unit: 'mi' })).toBe(false);
+    expect(countrySettled({ home: null, unit: null })).toBe(false);
+  });
+  it('follows the home country once settled, and the picker choice before that', () => {
+    expect(browsingChoice({ home: 'IN', unit: 'km', browsing: 'NP' })).toBe('IN');
+    expect(browsingChoice({ home: 'IN', unit: null, browsing: 'NP' })).toBe('NP');
+    expect(browsingChoice({ home: null, unit: null, browsing: null })).toBeNull();
   });
 });

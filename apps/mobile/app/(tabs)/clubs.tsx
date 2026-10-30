@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useDistanceUnit } from '@/store/region';
+import { useCountrySettled, useDistanceUnit } from '@/store/region';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LogIn, Users } from 'lucide-react-native';
@@ -38,6 +38,7 @@ function ClubCard({ club, onPress }: { club: ClubSummary; onPress: () => void })
 
 export default function Clubs() {
   useDistanceUnit(); // re-draws any distance when the unit changes
+  const settled = useCountrySettled(); // country and unit chosen in settings: no picker here
   const router = useRouter();
   const token = useAuth((s) => s.token);
   const signedIn = !!token;
@@ -55,7 +56,7 @@ export default function Clubs() {
   return (
     <Screen tabs brand overlay={<><CreateClubSheet open={creating} busy={act.busy} problem={act.problem} onSubmit={(b) => void create(b)} onClose={() => { setCreating(false); act.clear(); }} /><CountrySheet open={picking} onClose={() => setPicking(false)} /></>}>
       <PageTitle>Clubs</PageTitle>
-      <View style={{ alignSelf: 'flex-start', marginBottom: space[4] }}><CountryChip onPress={() => setPicking(true)} /></View>
+      {settled ? null : <View style={{ alignSelf: 'flex-start', marginBottom: space[4] }}><CountryChip onPress={() => setPicking(true)} /></View>}
       {!signedIn ? (
         <Card style={{ gap: space[4] }}>
           <Text variant="label" tone="muted">Sign in with the same email link as moto-trails.com to see your clubs.</Text>

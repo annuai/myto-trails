@@ -4,7 +4,7 @@ import { ApiFailure, api } from './client';
 import { toLatLng, type BikeMakeList, type BikeModelPage, type ClubDetail, type ClubJoinRequest, type ClubPost, type ClubSummary, type Me, type RouteDto, type SavedItem, type SearchResult, type TrailComment, type TrailDetail } from './types';
 import { cacheDelete, cacheDeleteWhere, cacheGet, cacheSet, clearUserCache, isFresh } from './cacheStore';
 import { countryAt } from '@/lib/countryBoundaries';
-import { countryQuery, resolveBrowsing } from '@/lib/browsing';
+import { browsingChoice, countryQuery, resolveBrowsing } from '@/lib/browsing';
 import { deviceRegion } from '@/lib/locale';
 import { useAuth } from '@/store/auth';
 import { useLocation } from '@/store/location';
@@ -47,7 +47,7 @@ export function useCountries(): Async<Country[]> & { data: Country[] } {
 
 /** The country the lists show: the rider's choice, else where their phone or GPS says they are, else null for every open country. */
 export function useBrowsingCountry(): string | null {
-  const chosen = useRegion((s) => s.browsing);
+  const chosen = useRegion(browsingChoice);
   const fix = useLocation((s) => s.fix);
   const countries = useCountries().data;
   return resolveBrowsing({ chosen, countries, detected: deviceRegion() ?? (fix ? countryAt(fix.lat, fix.lng) : null) });
