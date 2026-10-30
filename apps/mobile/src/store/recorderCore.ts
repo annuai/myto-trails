@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { haversine, type LatLng } from '@/lib/geo';
 import { uid } from '@/lib/id';
+import { fixSpeedKmh } from '@/lib/liveSpeed';
+import { medianOf, TOP_SPEED_WINDOW } from '@/lib/topSpeed';
 import type { Journal } from '@/lib/journal';
 import { breaksOf, cleanTrack, driftRadius, splitSegments, trackStats } from '@/lib/track';
 import { WAYPOINT_LABEL, type WaypointKind } from '@/lib/waypointKinds';
@@ -70,6 +72,8 @@ const blank = { status: 'idle' as const, startedAt: 0, rideId: '', points: [], w
 /** The live recorder. Every fix goes to the journal first; the store only shows what the screen needs. */
 export function createRecorder(journal: Journal, hooks: { stopBackground?: () => Promise<void> } = {}) {
   let queue: Promise<unknown> = Promise.resolve();
+  // The speeds of the last few drawn fixes: the top speed is their median, so one glitch cannot set it.
+  let recent: number[] = [];
   return create<State>((set, get) => ({
     ...blank, source: 'gps', recoverable: null, backgrounded: false,
     flush: async () => { await queue; },
@@ -82,6 +86,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
     resume: async () => {
       if (!get().paused) return;
       const t = Date.now();
+      recent = [];
       set({ paused: false, pausedMs: get().pausedMs + (t - get().pausedAt), skipStep: true });
       await journal.resume(t);
     },
@@ -91,6 +96,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       const existing = await journal.read();
       if (existing) { set({ recoverable: { startedAt: existing.meta.startedAt, points: existing.points.length } }); return false; }
       const startedAt = Date.now();
+      recent = [];
       const rideId = uid();
       await journal.begin({ startedAt, source, rideId });
       set({ ...blank, status: 'running', source, startedAt, rideId, recoverable: null, error: undefined });
@@ -106,17 +112,18 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       const step = last ? haversine(last, p) : 0;
       const dt = last && last.t != null && p.t != null ? (p.t - last.t) / 1000 : 0;
       // A step inside the jitter radius is not travel: a parked phone wandering 5 m a second must not read as moving.
+      const inside = !!last && step < driftRadius(p.acc);
       const derived = dt > 0 ? (step / dt) * 3.6 : 0;
-      const real = step >= driftRadius(p.acc) ? derived : 0;
-      const kmh = p.speed != null && p.speed >= 0 ? p.speed * 3.6 : real;
+      const kmh = fixSpeedKmh({ stepM: step, dtSec: dt, inside, reportedMps: p.speed });
       const poor = p.acc != null && p.acc > MAX_ACCURACY_M;
       // A fix too poor to draw says nothing about whether the rider is moving, so it leaves that as it was.
-      set(poor ? { lastFixAt: Date.now() } : { lastFixAt: Date.now(), moving: kmh >= 3.6 });
+      set(poor ? { lastFixAt: Date.now() } : { lastFixAt: Date.now(), moving: kmh >= 3.6, speedKmh: kmh });
       if (poor) return queue as Promise<void>;
       if (!last) { set({ points: [p] }); return queue as Promise<void>; }
       if (get().skipStep) { set({ points: [...points, p], pauseBreaks: [...get().pauseBreaks, points.length], skipStep: false }); return queue as Promise<void>; }
-      if (derived > MAX_KMH || step < driftRadius(p.acc)) return queue as Promise<void>;
-      set({ points: [...points, p], meters: meters + step, speedKmh: kmh, maxKmh: Math.max(maxKmh, kmh) });
+      if (derived > MAX_KMH || inside) return queue as Promise<void>;
+      recent = [...recent, kmh].slice(-TOP_SPEED_WINDOW);
+      set({ points: [...points, p], meters: meters + step, maxKmh: recent.length >= 3 ? Math.max(maxKmh, medianOf(recent)) : maxKmh });
       return queue as Promise<void>;
     },
     addWaypoint: async () => {
@@ -142,6 +149,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
     recover: async () => {
       const r = await journal.read();
       if (!r) return set({ recoverable: null });
+      recent = [];
       const points = cleanTrack(r.points);
       const stats = trackStats(splitSegments(points, r.pauses));
       const open = r.pauses.find((x) => x.to === undefined);
@@ -150,6 +158,6 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
     },
     discardRecovered: async () => { await hooks.stopBackground?.(); await journal.clear(); set({ recoverable: null }); },
     setError: (error) => set({ error }),
-    reset: () => set({ ...blank, error: undefined }),
+    reset: () => { recent = []; set({ ...blank, error: undefined }); },
   }));
 }

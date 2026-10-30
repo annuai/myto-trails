@@ -8,6 +8,7 @@ import { deviceLocale } from './locale';
 export function countryName(iso2: string | null | undefined, locale: string = deviceLocale()): string {
   if (!iso2) return '';
   const code = iso2.toUpperCase();
+  if (!COUNTRY_NAMES[code]) return code; // not a country we list: Intl answers "Unknown Region", which is worse than the code
   try {
     const n = new Intl.DisplayNames([locale], { type: 'region' }).of(code);
     if (n && n !== code) return n;

@@ -4,8 +4,8 @@ import { useCountries } from '@/api/useApi';
 import { CURRENCY_NAMES } from '@/lib/countryData';
 import { currencySymbol } from '@/lib/fuelCost';
 import { View } from 'react-native';
-import { Check, Globe } from 'lucide-react-native';
-import { knownCountryCodes } from '@/lib/countryBoundaries';
+import { Check, Coins, Globe } from 'lucide-react-native';
+import { COUNTRIES } from '@/lib/countryList';
 import { countryName } from '@/lib/countryNames';
 import { currencyFor } from '@/lib/locale';
 import { homeCountry, useDistanceUnit, useRegion } from '@/store/region';
@@ -29,8 +29,8 @@ export default function RegionSettings() {
   const unit = useDistanceUnit();
   const [picking, setPicking] = useState(false);
   const [q, setQ] = useState('');
-  const options = useMemo(() => knownCountryCodes().map((iso2) => ({ iso2, name: countryName(iso2) })).sort((a, b) => a.name.localeCompare(b.name)), []);
-  const shown = q.trim() ? options.filter((o) => o.name.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 30) : options.slice(0, 30);
+  const options = useMemo(() => COUNTRIES.map((c) => ({ iso2: c.iso2, name: countryName(c.iso2) })).sort((a, b) => a.name.localeCompare(b.name)), []);
+  const shown = q.trim() ? options.filter((o) => o.name.toLowerCase().includes(q.trim().toLowerCase())) : options;
   const currency = currencyFor(home);
   const symbol = currencySymbol(currency);
   const currencyLabel = currency ? `${CURRENCY_NAMES[currency] ?? currency}${symbol && symbol !== currency ? ` (${symbol})` : ` (${currency})`}` : 'Not known for this country';
@@ -45,7 +45,7 @@ export default function RegionSettings() {
           <Row icon={Globe} label="Follow my phone" sub="Use the region set on this phone" chevron={false} onPress={() => { useRegion.getState().setHome(null); setPicking(false); setQ(''); }} right={chosenHome === null ? <Icon icon={Check} tone="accent" /> : undefined} />
           {shown.map((o) => <Row key={o.iso2} label={o.name} chevron={false} onPress={() => { useRegion.getState().setHome(o.iso2); setPicking(false); setQ(''); }} right={chosenHome === o.iso2 ? <Icon icon={Check} tone="accent" /> : undefined} />)}
         </ListCard>
-        {!q.trim() ? <Text variant="caption" tone="muted">Type to find more countries.</Text> : null}
+        {shown.length === 0 ? <Text variant="label" tone="muted">No country by that name.</Text> : null}
       </Sheet>
     }>
       <BackHeader title="You" />

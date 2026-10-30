@@ -103,7 +103,7 @@ export default function You() {
       <ListCard>
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
         <Row icon={CalendarDays} label="Your year" value={asText(distanceKm(yearRecap(rides, new Date().getFullYear()).distanceKm))} mono onPress={() => router.push('/recap')} />
-        <Row icon={Fuel} label="Fuel costs" sub="What your rides cost in petrol" onPress={() => router.push('/fuel')} />
+        <Row icon={Fuel} label="Fuel logs" sub="What your rides cost in petrol" onPress={() => router.push('/fuel')} />
         <Row icon={Stamp} label="Trails ridden" onPress={() => router.push('/passport')} />
         <Row icon={Luggage} label="Trips" value={`${tripCount}`} mono onPress={() => router.push('/trips')} />
         <Row icon={BookOpen} label="Journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />

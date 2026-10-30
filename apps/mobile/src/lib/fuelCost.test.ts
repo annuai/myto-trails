@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { costsBetween, currencySymbol, formatLitres, formatMoney, lastMonthRange, monthRange, parseAmount, rideCost, settingFor, upsertSetting, validSetting, yearRange, type CostRide, type FuelSetting } from './fuelCost';
+import { costsBetween, currencySymbol, formatLitres, formatMoney, lastMonthRange, mileageFromFills, monthRange, parseAmount, REFERENCE_KMH, rideCost, settingFor, speedFactor, upsertSetting, validSetting, yearRange, type CostRide, type FuelSetting } from './fuelCost';
 
 const at = (y: number, m: number, d: number, h = 9) => new Date(y, m - 1, d, h).getTime();
 const ride = (id: string, startedAt: number, distanceKm: number, extra: Partial<CostRide> = {}): CostRide => ({ id, startedAt, distanceKm, ...extra });
@@ -93,5 +93,29 @@ describe('numbers and ranges', () => {
     expect(lastMonthRange('2026-01-05')).toEqual({ from: '2025-12-01', to: '2025-12-31' });
     expect(lastMonthRange('2026-03-10')).toEqual({ from: '2026-02-01', to: '2026-02-28' });
     expect(yearRange('2026-10-29')).toEqual({ from: '2026-01-01', to: '2026-10-29' });
+  });
+});
+
+describe('mileage from fill-ups', () => {
+  it('is the distance divided by the petrol that filled the tank again', () => expect(mileageFromFills([{ km: 280, litres: 8 }])).toBeCloseTo(35, 5));
+  it('adds up several fill-ups instead of averaging their mileages', () => expect(mileageFromFills([{ km: 100, litres: 2 }, { km: 300, litres: 10 }])).toBeCloseTo(400 / 12, 5));
+  it('is null with no usable fill-up', () => { expect(mileageFromFills([])).toBeNull(); expect(mileageFromFills([{ km: 0, litres: 3 }, { km: 50, litres: 0 }])).toBeNull(); });
+});
+
+describe('what speed does to mileage', () => {
+  it('is 1 at the usual mixed-riding speed', () => expect(speedFactor(REFERENCE_KMH)).toBe(1));
+  it('is worse in stop-go traffic and at high speed', () => { expect(speedFactor(15)).toBeLessThan(0.9); expect(speedFactor(110)).toBeLessThan(0.85); });
+  it('never leaves the range it is clamped to', () => { expect(speedFactor(0)).toBeGreaterThanOrEqual(0.7); expect(speedFactor(300)).toBeGreaterThanOrEqual(0.7); });
+  it('a ride costs more at a slow average than at the reference one, for the same distance', () => {
+    const h = [{ from: '2026-01-01', kmPerLitre: 40, pricePerLitre: 100 }];
+    const slow = rideCost({ id: 'a', startedAt: Date.UTC(2026, 5, 1, 6), distanceKm: 20, durationSec: 20 * 3600 / 15 }, h)!;
+    const usual = rideCost({ id: 'b', startedAt: Date.UTC(2026, 5, 1, 6), distanceKm: 20, durationSec: 20 * 3600 / 45 }, h)!;
+    expect(slow.litres).toBeGreaterThan(usual.litres);
+    expect(usual.litres).toBeCloseTo(0.5, 5);
+    expect(slow.avgKmh).toBeCloseTo(15, 5);
+  });
+  it('uses the plain mileage when the ride has no time', () => {
+    const h = [{ from: '2026-01-01', kmPerLitre: 40, pricePerLitre: 100 }];
+    expect(rideCost({ id: 'c', startedAt: Date.UTC(2026, 5, 1, 6), distanceKm: 20 }, h)!.litres).toBeCloseTo(0.5, 5);
   });
 });

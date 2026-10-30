@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Fuel as FuelIcon, Settings2 } from 'lucide-react-native';
 import { FuelSettingsSheet } from '@/features/FuelSettingsSheet';
 import { formatDate, todayISO } from '@/lib/dates';
@@ -16,6 +16,7 @@ import { Card } from '@/ui/Card';
 import { ChoiceChip } from '@/ui/Chip';
 import { DateRangePicker } from '@/ui/DateRangePicker';
 import { EmptyState } from '@/ui/EmptyState';
+import { IconButton } from '@/ui/IconButton';
 import { BackHeader, PageTitle } from '@/ui/Header';
 import { ScalePressable } from '@/ui/motion';
 import { Screen } from '@/ui/Screen';
@@ -30,19 +31,22 @@ export default function FuelCosts() {
   const currency = useCurrency();
   const [preset, setPreset] = useState<Preset>('month');
   const [custom, setCustom] = useState<DateRange>({});
-  const [settings, setSettings] = useState(false);
+  // The mileage page sends a worked-out mileage here: the settings open with it filled in.
+  const { mileage } = useLocalSearchParams<{ mileage?: string }>();
+  const worked = mileage ? Number(mileage) : undefined;
+  const [settings, setSettings] = useState(!!worked);
   const today = todayISO();
   const range = preset === 'month' ? monthRange(today) : preset === 'last' ? lastMonthRange(today) : preset === 'year' ? yearRange(today) : { from: custom.start ?? today, to: custom.end ?? custom.start ?? today };
   const summary = costsBetween(rides, history, range.from, range.to);
   const hasRange = preset !== 'custom' || !!custom.start;
 
   return (
-    <Screen overlay={<FuelSettingsSheet key={String(settings)} open={settings} onClose={() => setSettings(false)} />}>
-      <BackHeader title="You" />
-      <PageTitle>Fuel costs</PageTitle>
+    <Screen overlay={<FuelSettingsSheet key={String(settings)} initialKmPerLitre={worked} open={settings} onClose={() => setSettings(false)} />}>
+      <BackHeader title="You" right={<IconButton icon={Settings2} label="Mileage and petrol price" onPress={() => setSettings(true)} plain />} />
+      <PageTitle>Fuel logs</PageTitle>
       {!history.length ? (
         <View style={{ gap: space[4] }}>
-        <EmptyState icon={FuelIcon} title="Set your mileage and petrol price" body="Myto Moto works out the petrol each ride used and what it cost, from its distance." />
+        <EmptyState icon={FuelIcon} title="See what every ride costs" body="Tell us your mileage and the petrol price, and each ride shows the petrol it used." />
         <Button label="Set up" onPress={() => setSettings(true)} />
         </View>
       ) : (

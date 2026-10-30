@@ -158,7 +158,7 @@ export default function TrailDetail() {
         )}
         <Button variant="soft" icon={Bookmark} label={isSaved ? 'Saved. Tap to remove' : token ? 'Save this trail' : 'Sign in to save'} disabled={busy} onPress={toggleSave} />
         <Button variant="soft" icon={Stamp} label={iRode ? "Ridden. Tap to undo" : token ? "I've ridden this" : 'Sign in to mark as ridden'} disabled={busy} onPress={() => void toggleRidden()} />
-        {start ? <Button variant="soft" icon={Navigation} label="Open in Google Maps" onPress={openInMaps} /> : null}
+        {start ? <Button variant="soft" icon={Navigation} label="Navigate to the start" onPress={openInMaps} /> : null}
         <Button variant="soft" icon={CalendarPlus} label="Plan a trip" arrow onPress={() => setPlanning(true)} />
         <Button label="Ride this trail" onPress={() => setRideChoice(true)} />
       </View>

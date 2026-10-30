@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BookOpen, Download, Luggage, Megaphone, Pencil, Share2, Trash2, Upload } from 'lucide-react-native';
 import { ReportSheet } from '@/features/ReportSheet';
+import { RideFuelCard } from '@/features/RideFuelCard';
 import { ShareRideSheet } from '@/features/ShareRideSheet';
 import { useJournal } from '@/store/journal';
 import { useTrips } from '@/store/trips';
@@ -98,6 +99,7 @@ function StoryBody() {
         <Stat value={`${ride.waypoints.length}`} label="Waypoints" />
         {gapM > 0 ? <Stat parts={distanceKm(+(gapM / 1000).toFixed(1))} label="GPS gap" /> : <Stat value={`${ride.points.length}`} label="Points" />}
       </Card>
+      <View style={{ marginBottom: space[3] }}><RideFuelCard ride={ride} /></View>
         </>}
         right={<>
       <View style={{ marginTop: 0 }}><RideMap radius={radius.card} points={ride.points} breaks={ride.breaks} waypoints={ride.waypoints} /></View>

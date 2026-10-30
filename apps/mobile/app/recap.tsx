@@ -44,7 +44,7 @@ export default function Recap() {
     ) : null}>
       <BackHeader title="You" />
       <PageTitle sub="What you rode in a calendar year, from the rides in your log.">Your year</PageTitle>
-      {!recap || year === undefined ? <EmptyState icon={CalendarDays} title="Nothing yet" body="Ride a little and your year builds here." /> : (
+      {!recap || year === undefined ? <EmptyState icon={CalendarDays} title="Your year is just getting started" body="Ride a little and your recap builds here." /> : (
         <>
           {years.length > 1 ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2], marginBottom: space[4] }}>

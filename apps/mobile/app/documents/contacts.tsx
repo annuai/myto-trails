@@ -52,7 +52,7 @@ export default function Contacts() {
     >
       <BackHeader title="Documents" />
       <PageTitle sub="The main contact is first in your SOS list.">Emergency contacts</PageTitle>
-      {contacts.length === 0 ? <EmptyState icon={Siren} title="No contacts yet" body="Add someone who should be called if something goes wrong on a ride." /> : (
+      {contacts.length === 0 ? <EmptyState icon={Siren} title="Add someone we can call" body="If something goes wrong on a ride, they are the first to hear about it." /> : (
         <ListCard>
           {contacts.map((c) => (
             <View key={c.id} style={{ minHeight: size.rowTall, paddingHorizontal: space[5], paddingVertical: space[3], flexDirection: 'row', alignItems: 'center', gap: space[2] }}>

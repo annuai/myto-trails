@@ -4,11 +4,11 @@ import { ApiFailure, api } from './client';
 import { toLatLng, type BikeMakeList, type BikeModelPage, type ClubDetail, type ClubJoinRequest, type ClubPost, type ClubSummary, type Me, type RouteDto, type SavedItem, type SearchResult, type TrailComment, type TrailDetail } from './types';
 import { cacheDelete, cacheDeleteWhere, cacheGet, cacheSet, clearUserCache, isFresh } from './cacheStore';
 import { countryAt } from '@/lib/countryBoundaries';
+import { useDebounced } from '@/lib/useDebounced';
 import { countryQuery, resolveBrowsing } from '@/lib/browsing';
-import { deviceRegion } from '@/lib/locale';
 import { useAuth } from '@/store/auth';
 import { useLocation } from '@/store/location';
-import { useRegion } from '@/store/region';
+import { homeCountry, useRegion } from '@/store/region';
 import { fetchCountries, FALLBACK_COUNTRIES, type Country } from './countries';
 import { useTrailStore } from '@/store/trails';
 
@@ -45,12 +45,12 @@ export function useCountries(): Async<Country[]> & { data: Country[] } {
   return { ...r, data: r.data ?? FALLBACK_COUNTRIES };
 }
 
-/** The country the lists show: the home country chosen in settings (if it is open), else where their phone or GPS says they are, else null for every open country. */
+/** The country the lists show: the home country (the rider's choice in settings, else their phone's region), else where GPS says they are, else null for every open country. */
 export function useBrowsingCountry(): string | null {
-  const chosen = useRegion((s) => s.home);
+  const home = useRegion(homeCountry);
   const fix = useLocation((s) => s.fix);
   const countries = useCountries().data;
-  return resolveBrowsing({ chosen, countries, detected: deviceRegion() ?? (fix ? countryAt(fix.lat, fix.lng) : null) });
+  return resolveBrowsing({ home, countries, detected: fix ? countryAt(fix.lat, fix.lng) : null });
 }
 
 export function useTrailSearch(q: string): Async<SearchResult> {
@@ -94,11 +94,59 @@ export function useMe(): Async<Me> {
   return useFetch(token ? 'me' : null, (signal) => api<Me>('/me', { token, signal }));
 }
 
-export function useClubs(): Async<ClubSummary[]> {
+type ClubsPage = { items: ClubSummary[]; nextCursor: string | null };
+/** The clubs the rider is in come in one go; every club is limited to the rider's own page by the server (100 at most). */
+const MY_CLUBS_LIMIT = 100;
+const OTHER_CLUBS_PAGE = 20;
+const SEARCH_PAUSE_MS = 300;
+
+/**
+ * The club lists. `mine` are the clubs the rider is in. `others` are the rest, a page at a time: `loadMore` asks for the next page and
+ * is safe to call again and again (it does nothing while a page is on its way or when there is no more). `text` is what the rider typed;
+ * both lists are searched by the server (name or description) once they pause typing, so every club can be found, not only the
+ * ones already loaded. While a new search loads, the previous results stay on screen.
+ */
+export function useClubs(text: string) {
   const token = useAuth((s) => s.token);
-  const country = countryQuery(useBrowsingCountry());
-  const query = new URLSearchParams(country).toString();
-  return useFetch(token ? (query ? `clubs:${query}` : 'clubs') : null, async (signal) => (await api<{ items: ClubSummary[] }>(`/clubs${query ? `?${query}` : ''}`, { token, signal })).items);
+  const q = useDebounced(text.trim(), SEARCH_PAUSE_MS);
+  const search = q ? `&q=${encodeURIComponent(q)}` : '';
+  const mine = useFetch(token ? `clubs:mine:${q}` : null, async (signal) => (await api<ClubsPage>(`/clubs?scope=mine&limit=${MY_CLUBS_LIMIT}${search}`, { token, signal })).items);
+
+  const [others, setOthers] = useState<{ items: ClubSummary[]; cursor: string | null; loading: boolean; loadingMore: boolean; error?: string; loaded: boolean }>({ items: [], cursor: null, loading: false, loadingMore: false, loaded: false });
+  const [tick, setTick] = useState(0);
+  /** Which request may still write its answer: a newer search or a reload makes an older one stale. */
+  const generation = useRef(0);
+  const inFlight = useRef(false);
+  const cursorRef = useRef<string | null>(null);
+  cursorRef.current = others.cursor;
+
+  useEffect(() => {
+    if (!token) { setOthers({ items: [], cursor: null, loading: false, loadingMore: false, loaded: false }); return; }
+    const gen = ++generation.current;
+    const ctl = new AbortController();
+    inFlight.current = true;
+    setOthers((o) => ({ ...o, loading: true, error: undefined }));
+    api<ClubsPage>(`/clubs?scope=others&limit=${OTHER_CLUBS_PAGE}${search}`, { token, signal: ctl.signal })
+      .then((p) => { if (generation.current === gen) setOthers({ items: p.items, cursor: p.nextCursor, loading: false, loadingMore: false, loaded: true }); })
+      .catch((e: unknown) => { if (!ctl.signal.aborted && generation.current === gen) setOthers((o) => ({ ...o, loading: false, error: e instanceof ApiFailure ? e.message : 'Something went wrong.' })); })
+      .finally(() => { if (generation.current === gen) inFlight.current = false; });
+    return () => ctl.abort();
+  }, [token, q, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadMore = useCallback(() => {
+    const cursor = cursorRef.current;
+    if (!token || !cursor || inFlight.current) return;
+    const mineGen = generation.current;
+    inFlight.current = true;
+    setOthers((o) => ({ ...o, loadingMore: true, error: undefined }));
+    api<ClubsPage>(`/clubs?scope=others&limit=${OTHER_CLUBS_PAGE}${search}&cursor=${encodeURIComponent(cursor)}`, { token })
+      .then((p) => { if (generation.current === mineGen) setOthers((o) => ({ ...o, items: [...o.items, ...p.items], cursor: p.nextCursor, loadingMore: false })); })
+      .catch((e: unknown) => { if (generation.current === mineGen) setOthers((o) => ({ ...o, loadingMore: false, error: e instanceof ApiFailure ? e.message : 'Something went wrong.' })); })
+      .finally(() => { if (generation.current === mineGen) inFlight.current = false; });
+  }, [token, search]);
+
+  const reload = useCallback(() => { mine.reload(); setTick((n) => n + 1); }, [mine.reload]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { mine, others: { ...others, hasMore: others.cursor !== null, loadMore }, /** The words the lists are showing results for, which trail what was typed by the pause. */ searched: q, reload };
 }
 
 export function useClub(id: string): Async<ClubDetail> {

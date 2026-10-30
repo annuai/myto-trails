@@ -55,6 +55,7 @@ export default function Root() {
       <RideNotificationHost />
           <VoiceHost />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: light.paper }, animation: 'slide_from_right' }}>
+        <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="ride/live" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
       </Stack>
       <CrashHost />

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { uid } from '@/lib/id';
 import type { LatLng } from '@/lib/geo';
+import { withCorrectTopSpeeds } from '@/lib/fixTopSpeeds';
 import { sampleRide } from '@/lib/sim';
 import type { WaypointKind } from '@/lib/waypointKinds';
 import { storage } from './persist';
@@ -39,7 +40,8 @@ export const useRides = create<State>()(
       linkRide: (id, links) => set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, ...links, updatedAt: Date.now() } : r)) })),
       setSubmission: (id, submission) => set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, submission, updatedAt: Date.now() } : r)) })),
     }),
-    { name: 'myto-rides', storage },
+    // Version 1: top speeds of rides saved before they were judged over several steps are worked out again from the saved points.
+    { name: 'myto-rides', storage, version: 1, migrate: (state, from) => (from < 1 ? { ...(state as object), rides: withCorrectTopSpeeds((state as { rides: Ride[] }).rides ?? []) } as State : (state as State)) },
   ),
 );
 

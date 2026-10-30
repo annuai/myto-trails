@@ -29,7 +29,7 @@ export default function Journals() {
             <Row key={g.rideKey} icon={BookOpen} label={journalTitle(g.rideKey, rides, titles)} sub={`${journalDate(g.rideKey)} · ${summarise(g.entries)}`} onPress={() => router.push(`/journal/${g.rideKey}`)} />
           ))}
         </ListCard>
-      ) : <EmptyState icon={BookOpen} title="No journal entries yet" body="Start a journal and add a note, a voice note or a photo. You can also add them to a ride while you ride." />}
+      ) : <EmptyState icon={BookOpen} title="Start your ride journal" body="Keep notes, voice memos and photos from the road. You can add them while you ride too." />}
     </Screen>
   );
 }

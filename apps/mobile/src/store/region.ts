@@ -30,7 +30,7 @@ export const useRegion = create<State>()(
   ),
 );
 
-/** The home country in use: the rider's choice, else the phone's region. It sets the currency, not the distance unit. */
+/** The home country in use: the rider's choice, else the phone's region. It sets the currency and which country's trails and clubs the lists show, not the distance unit. */
 export const homeCountry = (s: Pick<State, 'home'>): string | null => s.home ?? deviceRegion();
 export const effectiveUnit = (s: Pick<State, 'unit'>): DistanceUnit => s.unit ?? 'km';
 export const useHomeCountry = (): string | null => useRegion(homeCountry);

@@ -1,5 +1,6 @@
 import { haversine, type LatLng } from './geo';
 import type { Pause } from './journal';
+import { topSpeedKmh } from './topSpeed';
 
 const MAX_ACCURACY_M = 100;
 const MAX_KMH = 250;
@@ -58,7 +59,7 @@ export function splitSegments(points: LatLng[], pauses: Pause[] = []): LatLng[][
 
 /** Distance and moving time from the real segments only; the straight line across a break is reported as `gapM`. */
 export function trackStats(segments: LatLng[][]): { distanceM: number; movingSec: number; gapM: number; maxKmh: number } {
-  let distanceM = 0, movingSec = 0, gapM = 0, maxKmh = 0;
+  let distanceM = 0, movingSec = 0, gapM = 0;
   segments.forEach((seg, s) => {
     for (let i = 1; i < seg.length; i++) {
       const step = haversine(seg[i - 1], seg[i]);
@@ -67,13 +68,12 @@ export function trackStats(segments: LatLng[][]): { distanceM: number; movingSec
       if (dt > 0) {
         const kmh = (step / dt) * 3.6;
         if (kmh > MOVING_KMH) movingSec += dt;
-        maxKmh = Math.max(maxKmh, kmh);
       }
     }
     const prev = segments[s - 1];
     if (prev?.length && seg.length) gapM += haversine(prev[prev.length - 1], seg[0]);
   });
-  return { distanceM, movingSec, gapM, maxKmh };
+  return { distanceM, movingSec, gapM, maxKmh: topSpeedKmh(segments) };
 }
 
 /** Rebuild segments from a flat track and the indices where each new segment starts (absent on rides saved before gaps were tracked). */

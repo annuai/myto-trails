@@ -205,7 +205,7 @@ export default function Home() {
             <Row key={r.key} icon={r.icon} label={r.label} sub={r.sub} value={r.value} onPress={() => router.push(r.go as never)} chevron={false} />
           ))}
         </ListCard>
-      ) : <EmptyState icon={ClipboardList} title="Nothing due" body="Add your PUC, insurance or a chain lube reminder." />}
+      ) : <EmptyState icon={ClipboardList} title="You're all caught up" body="Add a reminder for your PUC, insurance or a chain lube and we'll nudge you in time." />}
       <View style={{ marginTop: space[3] }}><Button variant="soft" label="See all" arrow onPress={() => router.push('/todos')} /></View>
 
         </>}
@@ -213,7 +213,7 @@ export default function Home() {
       <SectionTitle>Near you</SectionTitle>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space[3], paddingRight: space[5] }} style={landscape ? undefined : { marginHorizontal: -space[5], paddingLeft: space[5] }}>
         {(near.data?.items ?? []).slice(0, 8).map((t) => <TrailTile key={t.slug} trail={toTrailLike(t)} onPress={() => router.push(`/trail/${t.slug}`)} />)}
-        {!near.data ? <Text variant="label" tone="muted">{near.error ?? 'Loading trails…'}</Text> : null}
+        {!near.data ? <Text variant="label" tone="muted">{near.error ?? 'Finding trails near you…'}</Text> : near.data.items.length === 0 ? <Text variant="label" tone="muted">No trails near you yet. Browse them all in the Trails tab.</Text> : null}
       </ScrollView>
 
       <SectionTitle>Your latest ride</SectionTitle>
@@ -229,8 +229,8 @@ export default function Home() {
           </View>
         </Card>
         </ScalePressable>
-      ) : <EmptyState icon={RouteIcon} title="No rides yet" body="Tap Ride to log your first ride." />}
-      {latest ? <View style={{ marginTop: space[3] }}>
+      ) : <EmptyState icon={RouteIcon} title="Your first ride starts here" body="Tap Ride below and go. We keep the route, the distance and what it cost." />}
+      {latest ? <View style={{ marginTop: space[3], gap: space[3] }}>
         <Button variant="soft" label="All rides" arrow onPress={() => router.push('/rides')} />
       </View> : null}
         </>}

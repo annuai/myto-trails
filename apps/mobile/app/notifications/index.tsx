@@ -28,7 +28,7 @@ export default function Notifications() {
               right={<IconButton icon={Trash2} label={`Clear ${n.title}`} onPress={() => useNotifications.getState().clear(n.id)} plain size={44} />} />
           ))}
         </ListCard>
-      ) : <EmptyState icon={Bell} title="No notifications yet" body="Reminders show up here when a to-do is due or a trip is coming up." />}
+      ) : <EmptyState icon={Bell} title="You're all caught up" body="Reminders for due to-dos and upcoming trips show up here." />}
     </Screen>
   );
 }

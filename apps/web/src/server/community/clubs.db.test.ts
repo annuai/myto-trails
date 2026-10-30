@@ -4,7 +4,7 @@ import { createTestDatabase } from "../testing/db";
 import { makeUser } from "../testing/submission-fixture";
 import { JOIN_PHONE_RETENTION_DAYS } from "./constants";
 import {
-  createClub, decideJoinRequest, getClub, leaveClub, listClubs, listFeed, listJoinRequests, postToClub, purgeJoinPhones, removeMember,
+  createClub, decideJoinRequest, getClub, leaveClub, listClubs, searchClubs, listFeed, listJoinRequests, postToClub, purgeJoinPhones, removeMember,
   requestJoin, respondToRide, setMemberRole, hidePost, withdrawJoinRequest,
 } from "./clubs";
 import { completeWelcome } from "./members";
@@ -292,4 +292,43 @@ describe("review fixes", () => {
     expect((await listJoinRequests(db.sql, { userId: admin, clubId: id }, fromNow(31)))!.filter((x) => x.status === "pending")).toEqual([]);
   });
 });
+});
+
+describe("paging and searching the club list", () => {
+  it("walks every club once, newest first, even when several share a creation time", async () => {
+    const a = await rider("Pager");
+    const made: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const r = await createClub(db.sql, { userId: a, name: `Paged Club ${i} ${++n}`, description: "paging", womenOnly: false, now: t0 });
+      if (!r.ok) throw new Error(r.reason);
+      made.push(r.clubId);
+    }
+    const seen: string[] = [];
+    let cursor: string | null = null;
+    do {
+      const page = await searchClubs(db.sql, a, { q: "paging", limit: 3, cursor });
+      seen.push(...page!.items.map((c) => c.clubId));
+      cursor = page!.nextCursor;
+    } while (cursor);
+    expect(new Set(seen).size).toBe(7);
+    expect([...seen].sort()).toEqual([...made].sort());
+  });
+  it("searches name and description anywhere, takes % and _ literally, and splits mine from the rest", async () => {
+    const a = await rider("Searcher"), b = await rider("Other");
+    const mine = await createClub(db.sql, { userId: a, name: `Zebra Riders ${++n}`, description: "Sunday 100% fun", womenOnly: false, now: t0 });
+    const theirs = await createClub(db.sql, { userId: b, name: `Quokka Crew ${++n}`, description: "weekend loops", womenOnly: false, now: t0 });
+    if (!mine.ok || !theirs.ok) throw new Error("setup");
+    expect((await searchClubs(db.sql, a, { q: "ZEBRA" }))!.items.map((c) => c.clubId)).toEqual([mine.clubId]);
+    expect((await searchClubs(db.sql, a, { q: "weekend loops" }))!.items.map((c) => c.clubId)).toEqual([theirs.clubId]);
+    expect((await searchClubs(db.sql, a, { q: "100%" }))!.items.map((c) => c.clubId)).toEqual([mine.clubId]);
+    expect((await searchClubs(db.sql, a, { q: "%" }))!.items.map((c) => c.clubId)).toEqual([mine.clubId]);
+    expect((await searchClubs(db.sql, a, { scope: "mine", q: "Riders" }))!.items.map((c) => c.clubId)).toContain(mine.clubId);
+    expect((await searchClubs(db.sql, a, { scope: "others", q: "Crew" }))!.items.map((c) => c.clubId)).toEqual([theirs.clubId]);
+    expect((await searchClubs(db.sql, a, { scope: "others", q: "ZEBRA" }))!.items).toEqual([]);
+  });
+  it("refuses a cursor it did not write, and shows nothing to a rider who has not finished the welcome step", async () => {
+    const a = await rider("Cursor");
+    expect(await searchClubs(db.sql, a, { cursor: "garbage" })).toBeNull();
+    expect(await searchClubs(db.sql, await rider("Nobody2", { declared: false }), {})).toEqual({ items: [], nextCursor: null });
+  });
 });

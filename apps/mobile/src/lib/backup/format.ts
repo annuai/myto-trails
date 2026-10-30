@@ -27,7 +27,7 @@ export type Snapshot = {
   /** Routes the rider built or imported, and trips of several days. Backups made before they existed have none. */
   routes?: MyRoute[];
   trips?: Trip[];
-  /** Mileage and petrol price by date, for the fuel costs. Backups made before they existed have none. */
+  /** Mileage and petrol price by date, for the fuel logs. Backups made before they existed have none. */
   fuel?: FuelSetting[];
   /** Chosen bike, when the app stores one on the phone. */
   bike?: unknown;

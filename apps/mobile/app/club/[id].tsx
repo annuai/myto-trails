@@ -183,7 +183,7 @@ export default function ClubScreen() {
           {posts.error && !posts.data ? (
             <Card style={{ gap: space[3] }}><Text variant="label" tone="stop">{posts.error}</Text><Button variant="soft" label="Try again" onPress={posts.reload} /></Card>
           ) : !posts.data ? <Text variant="label" tone="muted">Loading…</Text>
-          : posts.data.length === 0 ? <EmptyState icon={MessageSquare} title="Nothing here yet" body="Post something, or plan the club’s next ride." />
+          : posts.data.length === 0 ? <EmptyState icon={MessageSquare} title="Quiet in here" body="Be the first to post, or plan the club’s next ride." />
           : (
             <View style={{ gap: space[3] }}>
               {posts.data.map((p) => (
