@@ -140,3 +140,25 @@ Going global:
 ## Not yet verified
 
 This design comes from a grep of the repo, not a full audit. Not checked: how mobile place search is implemented, whether club and ride tables already store a time zone, and Supabase's current region (affects latency for distant users).
+
+## Implementation decisions (made while building, 2026-10-30)
+
+- **Boundaries:** Natural Earth's India point-of-view edition (public domain) supplies every outline, so India's outline
+  matches its official map. The Survey of India's own data was not sourced; swap it in later if the owner obtains a
+  redistributable copy (`apps/web/data/boundaries/README.md`).
+- **Trail country:** a trail's `country_id` follows its state's country (trigger). Outlines decide whether a submission
+  is accepted and flag unplaceable points; they do not reassign a trail.
+- **Coming soon:** all 236 other countries are seeded disabled, with the usual English names. `enabled` is only ever
+  changed on purpose, in the database. Opening one also needs its config (emergency number, currency, ...) in
+  `COUNTRY_CONFIGS` and a scoped moderator.
+- **Notify me:** one email per country is stored with a plain consent line. No sender was built; the list is for the owner.
+- **Time zones:** the client sends its IANA zone for check-ins and club ride plans (no offline lookup library). Mobile club
+  ride plans still compose India time.
+- **Phones:** libphonenumber validity, so valid landlines are accepted too.
+- **Emergency numbers:** only India is configured. Elsewhere the SOS sheet says the number isn't known and asks the rider
+  to check it; the rider can always edit it.
+- **Moderators:** granted per country (`grantRole(..., country)`, India by default); one granted no country acts nowhere.
+- **Redirects:** old `/regions/<state>` URLs redirect permanently (HTTP 308) to `/regions/india/<state>`.
+- **Clubs:** not filtered by country yet; clubs carry no country.
+- **Not run:** the `*.db.test.ts` suites (they need a throwaway local database); migrations were dry-run in a rolled-back
+  transaction on Supabase and then applied.
