@@ -1,5 +1,6 @@
 import { slugify } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
+import { checkOpenCountry } from "./country";
 import { STEPS, STEP_KEYS, validateAll, validateStep, type Step, type SubmissionData } from "./schema";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -233,7 +234,9 @@ export async function photoPreviews(sql: Sql, userId: string, ids: string[]): Pr
 }
 
 export async function listStates(sql: Sql): Promise<{ slug: string; name: string }[]> {
-  const rows = await sql`select slug, name from region where kind = 'state' order by name`;
+  const rows = await sql`
+    select s.slug, s.name from region s join region c on c.id = s.parent_id and c.enabled
+    where s.kind = 'state' order by s.name`;
   return rows.map((r) => ({ slug: r.slug as string, name: r.name as string }));
 }
 
@@ -248,6 +251,7 @@ export async function discardDraft(sql: Sql, i: { userId: string; id: string }):
 export type SubmitResult =
   | { ok: true; slug: string }
   | { ok: false; reason: "not_found" | "locked" | "rate_limited" | "photo_unavailable" }
+  | { ok: false; reason: "country_not_open"; message: string }
   | { ok: false; reason: "invalid"; steps: Step[] };
 
 class AttachmentUnavailable extends Error {}
@@ -288,8 +292,12 @@ async function submitTx(tx: TransactionSql, i: { userId: string; id: string }): 
   if (!all.ok) return { ok: false, reason: "invalid", steps: all.steps };
   const d = all.value;
 
-  const [state] = await tx`select id from region where kind = 'state' and slug = ${d.basics.state}`;
+  const [state] = await tx`
+    select s.id from region s join region c on c.id = s.parent_id and c.enabled
+    where s.kind = 'state' and s.slug = ${d.basics.state} and c.iso2 = ${(d.basics.country ?? "IN").toUpperCase()}`;
   if (!state) return { ok: false, reason: "invalid", steps: [1] };
+  const where = await checkOpenCountry(tx, d.route.startPoint);
+  if (!where.ok && where.error === "country_not_open") return { ok: false, reason: "country_not_open", message: where.message };
 
   const [limit] = await tx`select rate_limit_hit(${`submit:${i.userId}`}, ${SUBMISSIONS_PER_DAY}, 86400) as ok`;
   if (!limit!.ok) return { ok: false, reason: "rate_limited" };
@@ -321,11 +329,11 @@ async function submitTx(tx: TransactionSql, i: { userId: string; id: string }): 
   const point = tx`ST_SetSRID(ST_MakePoint(${d.route.startPoint.lon}, ${d.route.startPoint.lat}), 4326)::geography`;
   const [rev] = await tx`
     insert into trail_revision (trail_id, version_no, state, name, summary, description, nearest_town, start_point, route_shape,
-      distance_km, elevation_gain_m, difficulty, terrain, suitable_for, best_months, season_notes, hazards, safety_notes, surface_notes, contributor_credit)
+      distance_km, elevation_gain_m, difficulty, terrain, suitable_for, best_months, season_notes, hazards, safety_notes, surface_notes, contributor_credit, country_unmatched)
     values (${trailId}, ${versionNo}, 'submitted', ${d.basics.name}, ${d.basics.summary}, ${d.details.description ?? null}, ${d.basics.nearestTown},
       ${point}, ${d.route.routeShape}, ${route ? Number(Number(route.distance_km).toFixed(1)) : null}, ${route?.elev_gain_m ?? null},
       ${d.details.difficulty}, ${d.details.terrain}, ${d.details.suitableFor}, ${d.details.bestMonths}, ${d.details.seasonNotes ?? null},
-      ${d.details.hazards}, ${d.review.safetyNotes ?? null}, ${d.details.surfaceNotes ?? null}, ${(user?.display_name as string | undefined) ?? null})
+      ${d.details.hazards}, ${d.review.safetyNotes ?? null}, ${d.details.surfaceNotes ?? null}, ${(user?.display_name as string | undefined) ?? null}, ${!where.ok})
     returning id`;
   const revisionId = rev!.id as string;
   if (row.revision_id) await tx`update trail_revision set state = 'superseded' where id = ${row.revision_id}`;

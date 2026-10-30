@@ -17,6 +17,7 @@ const columns = [
       { href: "/trails", label: "All trails" },
       { href: "/trails?view=map", label: "Map" },
       { href: "/regions", label: "Regions" },
+      { href: "/countries", label: "Countries" },
     ],
   },
   {
@@ -45,7 +46,7 @@ export function SiteFooter() {
           <div className="mb-14 flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <Image src="/brand/moto-trails-logo.svg" alt="Moto Trails" width={144} height={26} className="mb-5 h-auto w-36" unoptimized />
-              <p className="max-w-[260px] text-sm leading-relaxed text-muted">A moderated directory of motorcycle trails in India: who may ride, how we know, and when it was last checked.</p>
+              <p className="max-w-[260px] text-sm leading-relaxed text-muted">A moderated directory of motorcycle trails: who may ride, how we know, and when it was last checked.</p>
             </div>
             <Suspense fallback={<FooterClock place={null} />}>
               <FooterLocation />

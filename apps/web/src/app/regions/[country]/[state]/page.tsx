@@ -1,26 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { INDIA_STATES } from "@moto-trails/domain";
 import { TrailCard } from "@/features/discovery/TrailCard";
 import { Breadcrumbs } from "@/ui/Breadcrumbs/Breadcrumbs";
 import { getDistricts, getRegion } from "@/server/queries/regions";
 import { getTrailsInRegion } from "@/server/queries/trails";
-import { regionMetadata } from "../seo";
+import { regionMetadata } from "../../seo";
 
 // Region data is cached with "use cache"; awaiting params makes the route render on demand with a real 404.
 export const instant = false;
 
-export async function generateMetadata({ params }: PageProps<"/regions/[state]">): Promise<Metadata> {
-  const { state } = await params;
-  const region = await getRegion(state);
+export async function generateMetadata({ params }: PageProps<"/regions/[country]/[state]">): Promise<Metadata> {
+  const { country, state } = await params;
+  const region = await getRegion(country, state);
   return region ? regionMetadata(region) : {};
 }
 
-export default async function StatePage({ params }: PageProps<"/regions/[state]">) {
-  const { state } = await params;
-  const region = await getRegion(state);
+export default async function StatePage({ params }: PageProps<"/regions/[country]/[state]">) {
+  const { country, state } = await params;
+  const region = await getRegion(country, state);
+  // Old links were /regions/<state>/<district>; they now live under India.
+  if (!region && INDIA_STATES.some((s) => s.slug === country)) permanentRedirect(`/regions/india/${country}/${state}`);
   if (!region) notFound();
-  const [districts, trails] = await Promise.all([getDistricts(state), getTrailsInRegion(state)]);
+  const [districts, trails] = await Promise.all([getDistricts(country, state), getTrailsInRegion(country, state)]);
   const withTrails = districts.filter((d) => d.publishedTrailCount > 0);
 
   return (
@@ -37,7 +40,7 @@ export default async function StatePage({ params }: PageProps<"/regions/[state]"
           <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-1">
             {withTrails.map((d) => (
               <li key={d.slug}>
-                <Link href={`/regions/${state}/${d.slug}`} className="inline-flex min-h-11 items-center underline underline-offset-4">
+                <Link href={`/regions/${country}/${state}/${d.slug}`} className="inline-flex min-h-11 items-center underline underline-offset-4">
                   {d.name} <span className="ml-2 font-mono text-sm text-muted">{d.publishedTrailCount}</span>
                 </Link>
               </li>

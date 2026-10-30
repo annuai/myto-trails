@@ -14,6 +14,8 @@ const MAX_KM = 5000;
 
 export type SearchParams = {
   q: string;
+  /** ISO 3166-1 alpha-2, upper case. Absent means every open country. */
+  country?: string;
   state?: string;
   district?: string;
   /** A place slug, or "me" for the rider's own location (coordinates are never part of the URL). */
@@ -74,6 +76,7 @@ export function parseSearchParams(raw: Raw): SearchParams {
 
   const base = {
     q,
+    country: /^[A-Za-z]{2}$/.test(first(raw.country) ?? "") ? first(raw.country)!.toUpperCase() : undefined,
     state: slug(first(raw.state)),
     district: slug(first(raw.district)),
     near,
@@ -101,6 +104,7 @@ export function parseSearchParams(raw: Raw): SearchParams {
 export function toSearchString(p: SearchParams): string {
   const out = new URLSearchParams();
   if (p.q) out.set("q", p.q);
+  if (p.country) out.set("country", p.country);
   if (p.state) out.set("state", p.state);
   if (p.district) out.set("district", p.district);
   if (p.near) out.set("near", p.near);

@@ -7,7 +7,12 @@ let n = 0;
 
 export async function makeUser(sql: Sql, o: { name?: string; role?: "moderator" | "admin" } = {}): Promise<string> {
   const [u] = await sql`insert into app_user (email, display_name) values (${`fx${++n}-${crypto.randomUUID().slice(0, 6)}@example.test`}, ${o.name ?? "Rider Ravi"}) returning id`;
-  if (o.role) await sql`insert into user_role (user_id, role) values (${u!.id}, ${o.role})`;
+  if (o.role) {
+    // Moderators act within a country; these fixtures are India's.
+    await sql`insert into region (kind, name, slug, iso2, enabled) values ('country', 'India', 'india', 'IN', true) on conflict do nothing`;
+    const [india] = await sql`select id from region where kind = 'country' and iso2 = 'IN'`;
+    await sql`insert into user_role (user_id, role, region_id) values (${u!.id}, ${o.role}, ${o.role === "moderator" ? india!.id : null})`;
+  }
   return u!.id as string;
 }
 

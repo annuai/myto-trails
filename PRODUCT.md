@@ -2,7 +2,7 @@
 
 Detail: [docs/02](docs/02-product-requirements.md), [docs/03](docs/03-information-architecture.md), [docs/04](docs/04-user-flows.md).
 
-**Purpose:** a trustworthy, community-contributed, moderated directory of motorcycle trails in India. For every trail a rider can tell: may I ride it, can I ride it now, and how do we know.
+**Purpose:** a trustworthy, community-contributed, moderated directory of motorcycle trails, opening country by country (India first; other countries show as coming soon). For every trail a rider can tell: may I ride it, can I ride it now, and how do we know.
 
 **Not:** a travel directory, a blog, or a social network. Coverage is never claimed beyond what the data shows.
 

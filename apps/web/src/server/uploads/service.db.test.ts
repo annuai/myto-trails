@@ -162,7 +162,7 @@ describe("completeUpload: GPX", () => {
     ["a file that is not GPX", enc("hello, this is not a GPX file"), /does not look like a GPX/i],
     ["a GPX with an entity declaration", enc('<?xml version="1.0"?><!DOCTYPE x [<!ENTITY a "b">]><gpx version="1.1"/>'), /not allowed|unsafe/i],
     ["a track with one point", enc(makeGpx(line(1))), /Only 1 track point/],
-    ["a track outside India", enc(makeGpx(line(100, { lat: 51.5, lon: -0.1 }))), /outside India/i],
+    ["a track with positions off the Earth", enc(makeGpx(line(100, { lat: 95, lon: -0.1 }))), /not on Earth/i],
     ["a track that teleports", enc(makeGpx([...line(50), ...line(50, { lat: 18.6, lon: 76.1 })])), /jumps/i],
   ])("rejects %s with a clear message and leaves nothing behind", async (_l, bytes, message) => {
     fresh();

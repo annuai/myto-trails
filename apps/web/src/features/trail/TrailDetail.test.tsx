@@ -8,8 +8,8 @@ describe("TrailDetail", () => {
     render(<TrailDetail trail={makeTrail()} media={[]} />);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Sample Wayanad ridge track");
-    expect(screen.getByRole("link", { name: "Kerala" })).toHaveAttribute("href", "/regions/kerala");
-    expect(screen.getByRole("link", { name: "Wayanad" })).toHaveAttribute("href", "/regions/kerala/wayanad");
+    expect(screen.getByRole("link", { name: "Kerala" })).toHaveAttribute("href", "/regions/india/kerala");
+    expect(screen.getByRole("link", { name: "Wayanad" })).toHaveAttribute("href", "/regions/india/kerala/wayanad");
   });
 
   it("puts the at-a-glance strip before the summary", () => {
@@ -20,7 +20,7 @@ describe("TrailDetail", () => {
 
   it("links the state only when the trail has no district", () => {
     render(<TrailDetail trail={makeTrail({ district: null })} media={[]} />);
-    expect(screen.getByRole("link", { name: "Kerala" })).toHaveAttribute("href", "/regions/kerala");
+    expect(screen.getByRole("link", { name: "Kerala" })).toHaveAttribute("href", "/regions/india/kerala");
     expect(screen.queryByRole("link", { name: "Wayanad" })).toBeNull();
   });
 

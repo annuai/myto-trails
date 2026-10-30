@@ -79,8 +79,8 @@ describe("the route table", () => {
     expect(routes.filter((r) => r.access !== "public" && r.cache === "day").map((r) => r.path)).toEqual([]);
   });
 
-  it("the cached set is exactly trails, trail, route, bikes, makes and the API description", () => {
-    expect(routes.filter((r) => r.cache === "day").map((r) => r.path).sort()).toEqual(["/bikes", "/bikes/makes", "/openapi.json", "/trails", "/trails/{slug}", "/trails/{slug}/route"]);
+  it("the cached set is exactly trails, trail, route, bikes, makes, countries and the API description", () => {
+    expect(routes.filter((r) => r.cache === "day").map((r) => r.path).sort()).toEqual(["/bikes", "/bikes/makes", "/countries", "/openapi.json", "/trails", "/trails/{slug}", "/trails/{slug}/route"]);
   });
 });
 

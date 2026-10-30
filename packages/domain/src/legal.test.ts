@@ -48,6 +48,29 @@ describe("legal documents", () => {
   });
 });
 
+describe("global use", () => {
+  it("about describes a directory that opens country by country, not India only", () => {
+    const text = docText(legalDocs.about);
+    expect(text).not.toContain("trails in India");
+    expect(text).toContain("one country at a time");
+  });
+
+  it("terms say rules differ by country and have a governing-law section for the lawyer to settle", () => {
+    const text = docText(legalDocs.terms);
+    expect(text).toContain("local law");
+    expect(legalDocs.terms.sections.some((s) => s.heading === "Governing law")).toBe(true);
+  });
+
+  it("privacy names the rights people have wherever they live, and the country email", () => {
+    const text = docText(legalDocs.privacy);
+    expect(text).toContain("GDPR");
+    expect(text).toContain("CCPA");
+    expect(text).toContain("We do not sell personal data");
+    expect(text).toContain("opens in a country that is coming soon");
+    expect(text).toContain("three functional cookies");
+  });
+});
+
 describe("privacy claims match the code", () => {
   const text = docText(legalDocs.privacy);
 

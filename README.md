@@ -1,6 +1,6 @@
 # Moto Trails
 
-A moderated, community-contributed directory of motorcycle trails in India.
+A moderated, community-contributed directory of motorcycle trails, opening country by country (India first).
 
 - Product, architecture and design specification: [docs/](docs/00-project-overview.md)
 - Implementation plans: [docs/superpowers/plans/](docs/superpowers/plans/)

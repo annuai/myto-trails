@@ -30,7 +30,8 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
     sections: [
       {
         blocks: [
-          p("Moto Trails is a community-powered directory of motorcycle trails in India. Riders share trails; moderators check them, with special care for one question: are riders allowed here?"),
+          p("Moto Trails is a community-powered directory of motorcycle trails. Riders share trails; moderators check them, with special care for one question: are riders allowed here?"),
+          p("We open one country at a time, and only where someone who knows the local rules can check trails. We started in India. Other countries show as coming soon until then."),
           p("Moto Trails is a project by ", myto, `. ${MADE_IN_INDIA}.`),
         ],
       },
@@ -66,6 +67,12 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
         ],
       },
       {
+        heading: "Where Moto Trails is open",
+        blocks: [
+          p("We list trails only in countries we have opened, and we say so plainly for the rest. Rules about where motorcycles may ride differ from country to country and from place to place. Wherever you ride, you must follow the local law and the landowner's wishes, whatever a trail page says."),
+        ],
+      },
+      {
         heading: "What you submit",
         blocks: [
           p("You confirm that you rode or know the trail first-hand, that you did not trespass to collect it, and that you may share what you submit. You allow Moto Trails to publish your trail details, photos and GPX, to let other riders use and share them, and to credit you by display name."),
@@ -86,6 +93,12 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
       {
         heading: "Being a good member",
         blocks: [p("Be respectful. Do not post other people's personal details, and do not use club features to pester anyone.")],
+      },
+      {
+        heading: "Governing law",
+        blocks: [
+          p("These terms were written for use in India. Which country's law governs them, and which courts decide disputes, will be confirmed after legal review as we open in more countries. Until then, nothing here limits any right you have under the law of the country where you live that cannot be waived by agreement."),
+        ],
       },
       {
         heading: "Donations",
@@ -148,6 +161,13 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
         ],
       },
       {
+        heading: "Your country",
+        blocks: [
+          p("The website uses the country your network address appears to be in, as told to us by our host, to choose which country's trails to show first. We do not store it. You can change the country at any time, and your choice is kept in a cookie on your device. The app uses your phone's region, or your position if you allow it, for the same purpose, and keeps your choice on the phone."),
+          p("If you ask to be told when Moto Trails opens in a country that is coming soon, we store your email address and that country, and use them only to send you one email about it. Write to us to have it removed."),
+        ],
+      },
+      {
         heading: "Who sees what",
         blocks: [
           p("Your display name appears as credit on trails you contribute. Your email address is never shown publicly. Moderators see your submissions and the permission contacts and evidence you provide. Members of a club see each other's names, pictures and bikes."),
@@ -168,12 +188,19 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
       },
       {
         heading: "Cookies",
-        blocks: [p('The website uses two functional cookies: one keeps you signed in, and one remembers "near me" for 30 minutes. There are no advertising or tracking cookies.')],
+        blocks: [p('The website uses three functional cookies: one keeps you signed in, one remembers "near me" for 30 minutes, and one remembers the country you chose for up to a year. There are no advertising or tracking cookies.')],
       },
       {
         heading: "Your choices",
         blocks: [
           p("You can change your display name and sign out everywhere on your account page. You can export or erase your on-device data in the app. You can delete your account and the personal data tied to it from your account page on the website, or in the app under You, \"Delete account\". Trails you submitted that were published stay for other riders with your name removed, and problem reports you filed stay as from a \"Former rider\". If you cannot sign in, email ", email, " and we will delete it for you."),
+        ],
+      },
+      {
+        heading: "Your rights",
+        blocks: [
+          p("Wherever you live, you can ask us for a copy of the personal data we hold about you, to correct it, or to delete it, and you can delete your account yourself as described above. Depending on where you live (for example under the GDPR and UK GDPR, India's Digital Personal Data Protection Act, or California's CCPA) you may have further rights, such as objecting to how data is used or complaining to your data protection authority. We do not sell personal data. Write to us at ", email, " and we will answer."),
+          p("Our service providers listed above may store or process data in countries other than yours."),
         ],
       },
       {

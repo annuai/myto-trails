@@ -16,6 +16,7 @@ import { getClub, listClubs, listMembers, setClubCover } from "../community/club
 import { getAvatarUrl, getBike, removeBike, saveBike, setAvatar } from "../community/profile";
 import { communityRoutes } from "./community-routes";
 import { rideRoutes } from "./ride-routes";
+import { listCountries, registerInterest } from "../countries/countries";
 import { revokeToken } from "./tokens";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 import { clientIp, hashIp } from "../auth/request-context";
@@ -103,6 +104,24 @@ export const routes: RouteDef[] = [
     },
   },
 
+  {
+    method: "GET", path: "/countries", access: "public", cache: "day", summary: "Countries Moto Trails is open in, and the ones coming soon (iso2, name, slug, enabled, comingSoon)",
+    async handler(c) {
+      return ok({ countries: await withPublicRole(c.sql, (tx) => listCountries(tx)) });
+    },
+  },
+  {
+    method: "POST", path: "/countries/{iso2}/interest", access: "public", summary: "Ask to be emailed once when Moto Trails opens in a country that is coming soon (body: email)",
+    async handler(c) {
+      const b = await asObject(c);
+      const r = await registerInterest(c.sql, { iso2: c.params.iso2!, email: b.email, ipHash: hashIp(clientIp(c.req.headers)) });
+      if (r.ok) return ok({ saved: true }, 201);
+      if (r.reason === "rate_limited") return fail(429, "rate_limited", "Too many requests. Please try again tomorrow.");
+      if (r.reason === "not_found") return fail(404, "not_found", "No such country.");
+      if (r.reason === "already_open") return fail(409, "already_open", "Moto Trails is already open there.");
+      return fail(400, "invalid_request", "Send a valid email address.");
+    },
+  },
   {
     method: "POST", path: "/auth/token", access: "public", summary: "Trade a one-time code from the website's app sign-in for a device token (body: code, verifier, kind app_android|app_ios; PKCE S256)",
     async handler(c) {
@@ -260,6 +279,7 @@ export const routes: RouteDef[] = [
       const r = await submit(c.sql, { userId: c.userId, id: c.params.id!, now: c.now });
       if (r.ok) return ok({ slug: r.slug });
       if (r.reason === "invalid") return fail(422, "validation_failed", "Some steps are incomplete.", { steps: r.steps });
+      if (r.reason === "country_not_open") return fail(422, "country_not_open", r.message);
       const map = { not_found: [404, "No such submission."], locked: [409, "This submission cannot be submitted now."], rate_limited: [429, "Too many submissions today."], photo_unavailable: [409, "A photo or the route is no longer available."] } as const;
       return fail(map[r.reason][0], r.reason, map[r.reason][1]);
     },

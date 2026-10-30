@@ -1,6 +1,6 @@
 import { CONDITION_REASONS, EVIDENCE_KINDS, OPERATIONAL_STATUSES, type EvidenceKind } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
-import { FORBIDDEN, getActor, type Actor } from "./actor";
+import { FORBIDDEN, canActIn, getActor, type Actor } from "./actor";
 import { audit, record } from "./audit";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -32,8 +32,9 @@ export async function verifyAccess(
     if (!actor) return FORBIDDEN;
     if (!UUID.test(i.trailId)) return { ok: false, reason: "not_found" } as const;
     if (i.level !== "moderator_verified" && i.level !== "officially_verified") return { ok: false, reason: "invalid" } as const;
-    const [t] = await tx`select t.id, t.condition_current from trail t where t.id = ${i.trailId} for update`;
+    const [t] = await tx`select t.id, t.condition_current, t.country_id from trail t where t.id = ${i.trailId} for update`;
     if (!t) return { ok: false, reason: "not_found" } as const;
+    if (!canActIn(actor, t.country_id)) return FORBIDDEN;
     const [a] = await tx`select id, access_class, restrictions, permission_instructions, permission_contact, basis from access_assessment where trail_id = ${i.trailId} order by created_at desc, id desc limit 1`;
     if (!a) return { ok: false, reason: "invalid" } as const;
 
@@ -80,8 +81,9 @@ export async function unpublish(sql: Sql, i: { actorId: string; trailId: string;
     if (!UUID.test(i.trailId)) return { ok: false, reason: "not_found" } as const;
     const reason = String(i.reason ?? "").trim().slice(0, 1000);
     if (!reason) return { ok: false, reason: "invalid" } as const;
-    const [t] = await tx`select id, slug, lifecycle, published_revision_id from trail where id = ${i.trailId} for update`;
+    const [t] = await tx`select id, slug, lifecycle, published_revision_id, country_id from trail where id = ${i.trailId} for update`;
     if (!t) return { ok: false, reason: "not_found" } as const;
+    if (!canActIn(actor, t.country_id)) return FORBIDDEN;
     if (t.lifecycle !== "published") return { ok: false, reason: "wrong_state" } as const;
     await tx`update trail set lifecycle = 'unpublished', updated_at = now() where id = ${t.id}`;
     const rev = (t.published_revision_id as string | null) ?? (await auditRevision(tx, i.trailId));
@@ -101,8 +103,9 @@ export async function release(sql: Sql, i: { actorId: string; trailId: string; r
     if (!UUID.test(i.trailId)) return { ok: false, reason: "not_found" } as const;
     const reason = String(i.reason ?? "").trim().slice(0, 1000);
     if (!reason) return { ok: false, reason: "invalid" } as const;
-    const [t] = await tx`select id, slug, lifecycle, published_revision_id from trail where id = ${i.trailId} for update`;
+    const [t] = await tx`select id, slug, lifecycle, published_revision_id, country_id from trail where id = ${i.trailId} for update`;
     if (!t) return { ok: false, reason: "not_found" } as const;
+    if (!canActIn(actor, t.country_id)) return FORBIDDEN;
     if (t.lifecycle !== "unpublished" || !t.published_revision_id) return { ok: false, reason: "wrong_state" } as const;
     await tx`update trail set lifecycle = 'published', updated_at = now() where id = ${t.id}`;
     await record(tx, { subjectType: "revision", subjectId: t.published_revision_id, moderatorId: actor.id, action: "release", comment: reason });
@@ -130,8 +133,9 @@ export async function setCondition(sql: Sql, i: { actorId: string; trailId: stri
     const actor = await getActor(tx, i.actorId);
     if (!actor) return FORBIDDEN;
     if (!UUID.test(i.trailId)) return { ok: false, reason: "not_found" } as const;
-    const [t] = await tx`select slug from trail where id = ${i.trailId} for update`;
+    const [t] = await tx`select slug, country_id from trail where id = ${i.trailId} for update`;
     if (!t) return { ok: false, reason: "not_found" } as const;
+    if (!canActIn(actor, t.country_id)) return FORBIDDEN;
     if (!(await insertCondition(tx, i.trailId, i, "moderator", i.now))) return { ok: false, reason: "invalid" } as const;
     await auditCondition(tx, actor, i.trailId, i.status);
     return { ok: true, slug: t.slug as string } as const;
@@ -149,13 +153,15 @@ export type DueItem = { slug: string; name: string; accessClass: string; level: 
 
 /** Published trails whose verified access expires within `withinDays` or has already lapsed, soonest first. */
 export async function listDueForRecheck(sql: Sql, actorId: string, now: Date, withinDays = 30): Promise<{ ok: true; items: DueItem[] } | typeof FORBIDDEN> {
-  if (!(await getActor(sql, actorId))) return FORBIDDEN;
+  const actor = await getActor(sql, actorId);
+  if (!actor) return FORBIDDEN;
   const today = isoDate(now);
   const horizon = isoDate(new Date(now.getTime() + withinDays * 86_400_000));
   const rows = await sql`
     select t.slug, rev.name, t.access_class_current as access_class, t.access_verification_level_current as level, t.access_verified_until::text as valid_until
     from trail t join trail_revision rev on rev.id = t.published_revision_id
     where t.lifecycle = 'published' and t.access_verified_until is not null and t.access_verified_until <= ${horizon}
+      and (${actor.countryIds === null} or t.country_id = any(${actor.countryIds ?? []}::uuid[]))
       and t.access_verification_level_current in ('moderator_verified', 'officially_verified')
     order by t.access_verified_until asc, t.slug limit 500`;
   return { ok: true, items: rows.map((r) => ({ slug: r.slug, name: r.name, accessClass: r.access_class, level: r.level, validUntil: r.valid_until, overdue: r.valid_until <= today })) };
@@ -167,14 +173,16 @@ export type TrailModerationView = {
 };
 
 export async function getTrailForModeration(sql: Sql, actorId: string, slug: string): Promise<{ ok: true; trail: TrailModerationView } | typeof FORBIDDEN | { ok: false; reason: "not_found" }> {
-  if (!(await getActor(sql, actorId))) return FORBIDDEN;
+  const actor = await getActor(sql, actorId);
+  if (!actor) return FORBIDDEN;
   const [t] = await sql`
-    select t.id, t.slug, t.lifecycle, t.access_class_current, t.access_verification_level_current, t.access_verified_until::text as valid_until, t.condition_current,
+    select t.country_id, t.id, t.slug, t.lifecycle, t.access_class_current, t.access_verification_level_current, t.access_verified_until::text as valid_until, t.condition_current,
       coalesce(rev.name, t.slug) as name, a.permission_contact, coalesce((select count(*)::int from evidence e where e.assessment_id = a.id), 0) as evidence_count
     from trail t
     left join trail_revision rev on rev.id = coalesce(t.published_revision_id, (select id from trail_revision where trail_id = t.id order by version_no desc limit 1))
     left join lateral (select id, permission_contact from access_assessment where trail_id = t.id order by created_at desc, id desc limit 1) a on true
     where t.slug = ${slug}`;
   if (!t) return { ok: false, reason: "not_found" };
+  if (!canActIn(actor, t.country_id)) return FORBIDDEN;
   return { ok: true, trail: { trailId: t.id, slug: t.slug, name: t.name, lifecycle: t.lifecycle, accessClass: t.access_class_current, level: t.access_verification_level_current, validUntil: t.valid_until, condition: t.condition_current, permissionContact: t.permission_contact ?? null, evidenceCount: t.evidence_count } };
 }

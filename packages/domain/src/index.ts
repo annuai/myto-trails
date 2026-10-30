@@ -10,3 +10,4 @@ export * from "./reports";
 export * from "./api";
 export * from "./bikes";
 export * from "./legal";
+export * from "./countries";

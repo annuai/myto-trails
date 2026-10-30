@@ -4,21 +4,21 @@ import { TrailCard } from "@/features/discovery/TrailCard";
 import { Breadcrumbs } from "@/ui/Breadcrumbs/Breadcrumbs";
 import { getRegion } from "@/server/queries/regions";
 import { getTrailsInRegion } from "@/server/queries/trails";
-import { regionMetadata } from "../../seo";
+import { regionMetadata } from "../../../seo";
 
 export const instant = false;
 
-export async function generateMetadata({ params }: PageProps<"/regions/[state]/[district]">): Promise<Metadata> {
-  const { state, district } = await params;
-  const region = await getRegion(state, district);
+export async function generateMetadata({ params }: PageProps<"/regions/[country]/[state]/[district]">): Promise<Metadata> {
+  const { country, state, district } = await params;
+  const region = await getRegion(country, state, district);
   return region ? regionMetadata(region) : {};
 }
 
-export default async function DistrictPage({ params }: PageProps<"/regions/[state]/[district]">) {
-  const { state, district } = await params;
-  const [stateRegion, region] = await Promise.all([getRegion(state), getRegion(state, district)]);
+export default async function DistrictPage({ params }: PageProps<"/regions/[country]/[state]/[district]">) {
+  const { country, state, district } = await params;
+  const [stateRegion, region] = await Promise.all([getRegion(country, state), getRegion(country, state, district)]);
   if (!stateRegion || !region) notFound();
-  const trails = await getTrailsInRegion(state, district);
+  const trails = await getTrailsInRegion(country, state, district);
 
   return (
     <div className="flex flex-col gap-10 py-8">
@@ -27,7 +27,7 @@ export default async function DistrictPage({ params }: PageProps<"/regions/[stat
           items={[
             { label: "Home", href: "/" },
             { label: "Regions", href: "/regions" },
-            { label: stateRegion.name, href: `/regions/${state}` },
+            { label: stateRegion.name, href: `/regions/${country}/${state}` },
             { label: region.name },
           ]}
         />

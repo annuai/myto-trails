@@ -17,10 +17,9 @@ export type TrackAnalysis = {
   fingerprint: string;
 };
 
-export type AnalyzeError = "no_track_points" | "too_many_points" | "too_few_points" | "outside_india" | "teleport" | "too_long";
+export type AnalyzeError = "no_track_points" | "too_many_points" | "too_few_points" | "invalid_coordinates" | "teleport" | "too_long";
 export type AnalyzeResult = { ok: true; analysis: TrackAnalysis } | { ok: false; error: AnalyzeError; message: string };
 
-const INDIA = { minLat: 6, maxLat: 37, minLon: 68, maxLon: 98 };
 const MIN_POINTS = 50;
 const MIN_LENGTH_KM = 0.5;
 const MAX_LENGTH_KM = 500;
@@ -138,8 +137,8 @@ export function analyzeTrack(segments: TrackPoint[][]): AnalyzeResult {
     return fail("too_few_points", `Only ${points.length} track point${points.length === 1 ? "" : "s"} found; a trail needs at least 50 points or 500 m.`);
   }
   if (distanceKm < MIN_DISTANCE_KM) return fail("too_few_points", "The track barely moves (under 50 m), so there is no route to show.");
-  if (points.some((p) => p.lat < INDIA.minLat || p.lat > INDIA.maxLat || p.lon < INDIA.minLon || p.lon > INDIA.maxLon)) {
-    return fail("outside_india", "This track is outside India. Moto Trails only lists trails in India for now.");
+  if (points.some((p) => Math.abs(p.lat) > 90 || Math.abs(p.lon) > 180)) {
+    return fail("invalid_coordinates", "The track has positions that are not on Earth, so the GPS data looks corrupt.");
   }
   if (distanceKm > MAX_LENGTH_KM) return fail("too_long", "The track is longer than 500 km.");
 

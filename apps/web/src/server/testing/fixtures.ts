@@ -71,8 +71,10 @@ export async function insertTrailFixture(
     ...overrides,
   };
 
+  await sql`insert into region (kind, name, slug, iso2, enabled) values ('country', 'India', 'india', 'IN', true) on conflict do nothing`;
+  const [india] = await sql`select id from region where kind = 'country' and slug = 'india'`;
   const [stateRow] = await sql`
-    insert into region (kind, name, slug) values ('state', ${f.state.name}, ${f.state.slug})
+    insert into region (kind, name, slug, parent_id) values ('state', ${f.state.name}, ${f.state.slug}, ${india!.id})
     on conflict (parent_id, slug) do update set name = excluded.name returning id`;
   let regionId = stateRow!.id as string;
   if (f.district) {

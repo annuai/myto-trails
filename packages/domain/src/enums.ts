@@ -25,7 +25,7 @@ export const HAZARDS = [
 ] as const;
 export const ACCESS_BASES = ["official_notice", "owner_confirmed", "authority_confirmed", "rider_observed", "map_data", "none"] as const;
 export const EVIDENCE_KINDS = ["official_document", "written_confirmation", "signage_photo", "url", "call_note", "other"] as const;
-export const RESTRICTIONS = ["forest_dept", "protected_area", "private_estate", "seasonal_ban", "permit", "no_motor_vehicles"] as const;
+export const RESTRICTIONS = ["forest_dept", "protected_area", "private_estate", "seasonal_ban", "permit", "no_motor_vehicles", "local_ordinance", "public_land_closure"] as const;
 
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export type Terrain = (typeof TERRAINS)[number];

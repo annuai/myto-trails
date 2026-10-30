@@ -11,14 +11,16 @@ async function adminActor(tx: Sql, userId: string): Promise<Actor | null> {
   return a?.role === "admin" ? a : null;
 }
 
-export async function grantRole(sql: Sql, i: { actorId: string; email: string; role: Role }): Promise<{ ok: true; userId: string } | { ok: false; reason: "forbidden" | "not_found" | "invalid" }> {
+export async function grantRole(sql: Sql, i: { actorId: string; email: string; role: Role; /** ISO code a moderator acts in; India when absent. Ignored for admins. */ country?: string }): Promise<{ ok: true; userId: string } | { ok: false; reason: "forbidden" | "not_found" | "invalid" }> {
   return sql.begin(async (tx) => {
     const actor = await adminActor(tx as unknown as Sql, i.actorId);
     if (!actor) return FORBIDDEN;
     if (!ROLES.includes(i.role)) return { ok: false, reason: "invalid" } as const;
     const [u] = await tx`select id from app_user where email = ${String(i.email ?? "").trim().toLowerCase()} and status = 'active'`;
     if (!u) return { ok: false, reason: "not_found" } as const;
-    await tx`insert into user_role (user_id, role, granted_by) values (${u.id}, ${i.role}, ${actor.id}) on conflict (user_id, role) do nothing`;
+    const [c] = i.role === "moderator" ? await tx`select id from region where kind = 'country' and iso2 = ${(i.country ?? "IN").toUpperCase()}` : [];
+    if (i.role === "moderator" && !c) return { ok: false, reason: "invalid" } as const;
+    await tx`insert into user_role (user_id, role, region_id, granted_by) values (${u.id}, ${i.role}, ${c?.id ?? null}, ${actor.id}) on conflict (user_id, role) do update set region_id = excluded.region_id`;
     await audit(tx, actor, { action: "grant_role", entityType: "user", entityId: u.id, after: { role: i.role } });
     return { ok: true, userId: u.id as string } as const;
   });

@@ -18,7 +18,7 @@ flowchart LR
 - Trails are stable; content is versioned (`trail` → `trail_revision`); edits go through moderation while the old revision stays live.
 - Access class, operational condition and verification level are independent, evidence-backed, and expire.
 - Geometry and GPX are public only after moderation and only if the access class allows; sensitive trails publish reduced geometry.
-- Search = PostgreSQL full-text + trigram + PostGIS, plus an own gazetteer of Indian places (alternate names) for "Bangalore"-style searches, "near me", and approximate travel time (real routing later). Sensitive trails use an approximate public point for distances.
+- Search = PostgreSQL full-text + trigram + PostGIS, plus an own gazetteer of places per open country (alternate names; India first, GeoNames for others) for "Bangalore"-style searches, "near me", and approximate travel time (real routing later). Sensitive trails use an approximate public point for distances.
 - Clients: web, Trails app (background ride recording while another navigation app runs; submits drafts), Myto Navi (Android hardware with SIM; offline-first sync). One API, one submission/moderation pipeline; GPX exports are plain GPX 1.1 with access status in standard fields.
 - Donations: hosted payment page in the MVP; Myto (company) receives funds.
 - Reads via server components and typed queries; writes via server actions validated with shared Zod schemas; authorisation in code and in the database (RLS).

@@ -20,6 +20,7 @@ export function mapSummary(r: Row, now: Date): TrailSummaryDto {
     nearestTown: r.nearest_town,
     state: { slug: r.state_slug, name: r.state_name },
     district: r.district_slug ? { slug: r.district_slug, name: r.district_name } : null,
+    country: r.country_slug ? { slug: r.country_slug, iso2: r.country_iso2 } : null,
     difficulty: r.difficulty,
     terrain: r.terrain,
     distanceKm: num(r.distance_km),
@@ -128,14 +129,14 @@ export async function attachCovers<T extends { slug: string }>(sql: Sql, items: 
 
 export async function queryTrailsInRegion(
   sql: Sql,
-  region: { stateSlug: string; districtSlug?: string },
+  region: { countrySlug: string; stateSlug: string; districtSlug?: string },
   now: Date,
 ): Promise<TrailSummaryDto[]> {
-  if (!isValidSlug(region.stateSlug) || (region.districtSlug !== undefined && !isValidSlug(region.districtSlug))) return [];
+  if (!isValidSlug(region.countrySlug) || !isValidSlug(region.stateSlug) || (region.districtSlug !== undefined && !isValidSlug(region.districtSlug))) return [];
   const district = region.districtSlug ?? null;
   const rows = (await sql`
     select * from public_trails
-    where state_slug = ${region.stateSlug} and (${district}::text is null or district_slug = ${district})
+    where country_slug = ${region.countrySlug} and state_slug = ${region.stateSlug} and (${district}::text is null or district_slug = ${district})
     order by name`) as Row[];
   return attachCovers(sql, rows.map((r) => mapSummary(r, now)));
 }
@@ -147,17 +148,18 @@ export async function querySitemapEntries(
   const trails = (await sql`
     select slug, updated_at from public_trails where (${!opts.excludeSample} or not is_sample) order by slug`) as Row[];
   const counts = (await sql`
-    select state_slug, district_slug, count(*)::int as n from public_trails
+    select country_slug, state_slug, district_slug, count(*)::int as n from public_trails
     where (${!opts.excludeSample} or not is_sample)
     group by state_slug, district_slug`) as Row[];
 
   const stateCounts = new Map<string, number>();
   const regions: { path: string }[] = [];
   for (const c of counts) {
-    stateCounts.set(c.state_slug, (stateCounts.get(c.state_slug) ?? 0) + c.n);
-    if (c.district_slug && isRegionIndexable(c.n)) regions.push({ path: `/regions/${c.state_slug}/${c.district_slug}` });
+    const base = `/regions/${c.country_slug ?? "india"}/${c.state_slug}`;
+    stateCounts.set(base, (stateCounts.get(base) ?? 0) + c.n);
+    if (c.district_slug && isRegionIndexable(c.n)) regions.push({ path: `${base}/${c.district_slug}` });
   }
-  for (const [state, n] of stateCounts) if (isRegionIndexable(n)) regions.push({ path: `/regions/${state}` });
+  for (const [path, n] of stateCounts) if (isRegionIndexable(n)) regions.push({ path });
   regions.sort((a, b) => a.path.localeCompare(b.path));
   return { trails: trails.map((t) => ({ slug: t.slug, updatedAt: iso(t.updated_at) })), regions };
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { formatWhen, zoneName } from "@/lib/time-zone";
 import { connection } from "next/server";
 import { PinMap } from "@/features/map/PinMap";
 import { getSql } from "@/server/db/client";
@@ -8,7 +9,7 @@ export const instant = false;
 // The link is the key to this page: keep it out of search results and out of Referer headers.
 export const metadata: Metadata = { title: "Ride check-in", robots: { index: false, follow: false }, referrer: "no-referrer" };
 
-const when = (iso: string) => new Date(iso).toLocaleString("en-GB", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+const when = (iso: string, timeZone: string) => formatWhen(iso, timeZone);
 
 export default async function TrackPage({ params }: PageProps<"/track/[token]">) {
   await connection();
@@ -29,26 +30,26 @@ export default async function TrackPage({ params }: PageProps<"/track/[token]">)
       {v.status === "arrived" ? (
         <>
           <h1 className="display-md break-words">{v.riderName} has arrived</h1>
-          <p className="text-status-good font-medium">Marked safe{v.arrivedAt ? ` at ${when(v.arrivedAt)}` : ""}. You don&apos;t need to do anything.</p>
+          <p className="text-status-good font-medium">Marked safe{v.arrivedAt ? ` at ${when(v.arrivedAt, v.timeZone)}` : ""}. You don&apos;t need to do anything.</p>
         </>
       ) : null}
       {v.status === "active" ? (
         <>
           <h1 className="display-md break-words">{v.riderName} is on the way</h1>
-          <p className="max-w-prose">Expected by <strong>{when(v.expectedAt)}</strong> (India time){v.rideName ? `, on ${v.rideName}` : ""}. If they haven&apos;t marked themselves safe by then, this page will say so. It refreshes every minute.</p>
+          <p className="max-w-prose">Expected by <strong>{when(v.expectedAt, v.timeZone)}</strong> ({zoneName(v.timeZone, new Date(v.expectedAt))}){v.rideName ? `, on ${v.rideName}` : ""}. If they haven&apos;t marked themselves safe by then, this page will say so. It refreshes every minute.</p>
         </>
       ) : null}
       {overdue ? (
         <>
           <h1 className="display-md break-words text-status-stop">{v.riderName} hasn&apos;t arrived</h1>
-          <p className="max-w-prose">They were expected by <strong>{when(v.expectedAt)}</strong> (India time){v.rideName ? `, on ${v.rideName}` : ""} and haven&apos;t marked themselves safe. Try calling them first. If you can&apos;t reach them and are worried, call 112.</p>
+          <p className="max-w-prose">They were expected by <strong>{when(v.expectedAt, v.timeZone)}</strong> ({zoneName(v.timeZone, new Date(v.expectedAt))}){v.rideName ? `, on ${v.rideName}` : ""} and haven&apos;t marked themselves safe. Try calling them first. If you can&apos;t reach them and are worried, call 112.</p>
           <a href="tel:112" className="inline-flex min-h-12 w-fit items-center rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Call 112</a>
         </>
       ) : null}
       {v.position ? (
         <div className="flex flex-col gap-2">
           <h2 className="text-xl font-semibold">Last known position</h2>
-          <p className="text-sm text-muted">{v.lastSeenAt ? `Seen ${when(v.lastSeenAt)}` : "Time not known"}{v.batteryPct !== null ? `, battery ${v.batteryPct}%` : ""}. The phone may have lost signal since.</p>
+          <p className="text-sm text-muted">{v.lastSeenAt ? `Seen ${when(v.lastSeenAt, v.timeZone)}` : "Time not known"}{v.batteryPct !== null ? `, battery ${v.batteryPct}%` : ""}. The phone may have lost signal since.</p>
           <div className="h-80 w-full border border-border"><PinMap lon={v.position.lng} lat={v.position.lat} label="Last known position" /></div>
           <a href={`https://www.openstreetmap.org/?mlat=${v.position.lat}&mlon=${v.position.lng}#map=15/${v.position.lat}/${v.position.lng}`} className="text-sm underline underline-offset-4" rel="noreferrer">Open on a map</a>
         </div>

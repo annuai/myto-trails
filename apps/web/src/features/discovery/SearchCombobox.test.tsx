@@ -9,7 +9,7 @@ import { SearchCombobox } from "./SearchCombobox";
 const suggestions = {
   trails: [{ slug: "wayanad-ridge", name: "Wayanad ridge", place: "Wayanad, Kerala" }],
   places: [{ slug: "bengaluru", name: "Bengaluru", state: "Karnataka" }],
-  regions: [{ slug: "kerala", name: "Kerala" }],
+  regions: [{ slug: "kerala", name: "Kerala", countrySlug: "india" }],
 };
 
 describe("SearchCombobox", () => {
@@ -91,7 +91,7 @@ describe("SearchCombobox", () => {
     push.mockClear();
     await type("ker");
     fireEvent.click(await screen.findByRole("option", { name: "Kerala" }));
-    expect(push).toHaveBeenCalledWith("/regions/kerala");
+    expect(push).toHaveBeenCalledWith("/regions/india/kerala");
   });
 
   it("searches the typed text on Enter when nothing is highlighted", async () => {

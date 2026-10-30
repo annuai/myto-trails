@@ -1,7 +1,7 @@
 import type { Sql, TransactionSql } from "postgres";
 import { ensureDistrict } from "../db/regions";
 import { STEP_KEYS, type SubmissionData } from "../submissions/schema";
-import { FORBIDDEN, getActor, type Actor } from "./actor";
+import { FORBIDDEN, canActIn, getActor, type Actor } from "./actor";
 import { audit, record } from "./audit";
 
 export const REASON_CODES = ["duplicate", "insufficient_information", "unverifiable_access", "private_property", "protected_area_risk", "unsafe_content", "inaccurate_gpx", "copyright", "spam"] as const;
@@ -22,6 +22,8 @@ async function lockForDecision(tx: TransactionSql, actorId: string, submissionId
   if (!UUID.test(submissionId)) return { ok: false, reason: "not_found" };
   const [sub] = await tx`select id, user_id, status, trail_id, revision_id, data, first_approver from submission where id = ${submissionId} for update`;
   if (!sub || !sub.revision_id) return { ok: false, reason: "not_found" };
+  const [where] = await tx`select country_id from trail where id = ${sub.trail_id}`;
+  if (!canActIn(actor, where?.country_id)) return FORBIDDEN;
   if (sub.user_id === actor.id) return { ok: false, reason: "own_submission" };
   if (sub.status !== "submitted") return { ok: false, reason: "wrong_state" };
   const data = sub.data as Partial<SubmissionData>;
@@ -37,7 +39,8 @@ export type QueueItem = {
 };
 
 export async function listQueue(sql: Sql, actorId: string): Promise<{ ok: true; items: QueueItem[] } | typeof FORBIDDEN> {
-  if (!(await getActor(sql, actorId))) return FORBIDDEN;
+  const actor = await getActor(sql, actorId);
+  if (!actor) return FORBIDDEN;
   const rows = await sql`
     select s.id, s.submitted_at, s.first_approver, rev.name, rev.version_no, st.name as state_name, a.access_class, a.restrictions
     from submission s
@@ -45,7 +48,7 @@ export async function listQueue(sql: Sql, actorId: string): Promise<{ ok: true; 
     join trail_revision rev on rev.id = s.revision_id
     join region st on st.id = t.state_id
     left join lateral (select access_class, restrictions from access_assessment where trail_id = t.id order by created_at desc, id desc limit 1) a on true
-    where s.status = 'submitted'
+    where s.status = 'submitted' and (${actor.countryIds === null} or t.country_id = any(${actor.countryIds ?? []}::uuid[]))
     order by s.submitted_at asc limit 200`;
   return {
     ok: true,
@@ -68,16 +71,18 @@ export type Review = {
 
 /** Everything a moderator needs to review one submission. Contributor email is deliberately not included. */
 export async function getReview(sql: Sql, actorId: string, submissionId: string): Promise<{ ok: true; review: Review } | typeof FORBIDDEN | { ok: false; reason: "not_found" }> {
-  if (!(await getActor(sql, actorId))) return FORBIDDEN;
+  const actor = await getActor(sql, actorId);
+  if (!actor) return FORBIDDEN;
   if (!UUID.test(submissionId)) return { ok: false, reason: "not_found" };
   const [s] = await sql`
-    select s.id, s.status, s.data, s.duplicate_candidates, s.contributor_note, s.submitted_at, s.revision_id, s.trail_id, s.first_approver,
+    select t.country_id, s.id, s.status, s.data, s.duplicate_candidates, s.contributor_note, s.submitted_at, s.revision_id, s.trail_id, s.first_approver,
       rev.name, rev.version_no, t.slug, u.display_name, fa.display_name as first_name
     from submission s
     join trail t on t.id = s.trail_id join trail_revision rev on rev.id = s.revision_id
     join app_user u on u.id = s.user_id left join app_user fa on fa.id = s.first_approver
     where s.id = ${submissionId}`;
   if (!s) return { ok: false, reason: "not_found" };
+  if (!canActIn(actor, s.country_id)) return FORBIDDEN;
   const [a] = await sql`select id, access_class, restrictions, permission_instructions, permission_contact, basis, level from access_assessment where trail_id = ${s.trail_id} order by created_at desc, id desc limit 1`;
   const evidence = a ? await sql`select kind, description, url from evidence where assessment_id = ${a.id}` : [];
   const [r] = await sql`select distance_km, elev_gain_m, point_count, profile, st_asgeojson(simplified, 5) as line from route where revision_id = ${s.revision_id}`;

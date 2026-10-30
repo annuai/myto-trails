@@ -9,7 +9,7 @@ export function RegionTiles({ regions }: { regions: RegionDto[] }) {
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {states.map((s) => (
         <li key={s.slug}>
-          <Link href={`/regions/${s.slug}`} className="flex h-full min-h-24 flex-col justify-between rounded-3xl bg-card-cream p-5 transition-transform hover:-translate-y-0.5">
+          <Link href={`/regions/${s.countrySlug ?? "india"}/${s.slug}`} className="flex h-full min-h-24 flex-col justify-between rounded-3xl bg-card-cream p-5 transition-transform hover:-translate-y-0.5">
             <span className="text-lg font-semibold">{s.name}</span>
             <span className="text-sm text-muted">{s.publishedTrailCount} {s.publishedTrailCount === 1 ? "trail" : "trails"}</span>
           </Link>

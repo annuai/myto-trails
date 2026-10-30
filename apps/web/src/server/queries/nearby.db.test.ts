@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { loadBoundaries } from "../db/boundaries";
 import { createTestDatabase } from "../testing/db";
 import { insertTrailFixture } from "../testing/fixtures";
 import { nearbyTrails } from "./nearby";
@@ -46,7 +47,10 @@ describe("nearbyTrails", () => {
     expect(r.items.map((i) => i.name)).not.toContain("Closed crowd");
   });
 
-  it("rejects junk and places far outside India without querying", async () => {
+  it("rejects junk and places in a country we are not open in without querying", async () => {
+    const [gb] = await db.sql`insert into region (kind, name, slug, iso2, enabled) values ('country', 'United Kingdom', 'united-kingdom', 'GB', false) returning id`;
+    await loadBoundaries(db.sql, [{ iso2: "GB", geometry: { type: "Polygon", coordinates: [[[-8, 49], [2, 49], [2, 61], [-8, 61], [-8, 49]]] } }]);
+    expect(gb!.id).toBeTruthy();
     for (const p of [{ lat: "x", lon: 1 }, { lat: NaN, lon: 77 }, { lat: 100, lon: 77 }, { lat: null, lon: undefined }]) {
       expect(await nearbyTrails(db.sql, p, now)).toEqual({ ok: false, reason: "invalid" });
     }

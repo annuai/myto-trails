@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import Link from "next/link";
 import { connection } from "next/server";
 import { ActiveFilterList } from "@/features/discovery/ActiveFilterList";
@@ -12,7 +12,10 @@ import { SearchResultCard } from "@/features/discovery/SearchResultCard";
 import { SortLinks } from "@/features/discovery/SortLinks";
 import { ViewToggle } from "@/features/discovery/ViewToggle";
 import { isShareableSearch, parseSearchParams, toSearchString } from "@/features/discovery/search-params";
+import { CountryChip } from "@/features/country/CountryChip";
 import { NEAR_COOKIE, parseNearCookie } from "@/lib/near-cookie";
+import { getCountries } from "@/server/countries/queries";
+import { COUNTRY_COOKIE, detectCountry, parseCountryCookie, resolveBrowsingCountry } from "@/server/geo/detect-country";
 import { getSql, withPublicRole } from "@/server/db/client";
 import { TrailMapLoader } from "@/features/map/TrailMapLoader";
 import { searchMapPoints, searchTrails } from "@/server/queries/search.sql";
@@ -26,7 +29,7 @@ export async function generateMetadata({ searchParams }: PageProps<"/trails">): 
   const filtered = toSearchString({ ...params, view: "list" }) !== "";
   return {
     title: "Explore trails",
-    description: "Search motorcycle trails in India by place, terrain, difficulty and access.",
+    description: "Search motorcycle trails by place, terrain, difficulty and access.",
     alternates: { canonical: "/trails" },
     // Filtered and paged views are for people, not for search results pages.
     robots: filtered || params.view === "map" ? { index: false, follow: true } : undefined,
@@ -34,8 +37,18 @@ export async function generateMetadata({ searchParams }: PageProps<"/trails">): 
 }
 
 export default async function TrailsPage({ searchParams }: PageProps<"/trails">) {
-  const params = parseSearchParams(await searchParams);
-  const point = parseNearCookie((await cookies()).get(NEAR_COOKIE)?.value);
+  const parsed = parseSearchParams(await searchParams);
+  const jar = await cookies();
+  const countries = await getCountries();
+  const browsing = resolveBrowsingCountry({
+    cookie: parseCountryCookie(jar.get(COUNTRY_COOKIE)?.value),
+    detected: detectCountry(await headers()),
+    open: new Set(countries.filter((c) => c.enabled).map((c) => c.iso2)),
+  });
+  // An explicit ?country= wins; otherwise the browsing country narrows the list.
+  const params = parsed.country || !browsing.iso2 ? parsed : { ...parsed, country: browsing.iso2 };
+  const countryName = countries.find((c) => c.iso2 === params.country)?.name ?? null;
+  const point = parseNearCookie(jar.get(NEAR_COOKIE)?.value);
   await connection(); // the clock is request-specific: opt into request time before reading it
   const shared = isShareableSearch(params);
   const result = shared ? await getCachedSearch(params) : await withPublicRole(getSql(), (tx) => searchTrails(tx, params, new Date(), { point }));
@@ -47,6 +60,7 @@ export default async function TrailsPage({ searchParams }: PageProps<"/trails">)
     <div className="flex flex-col gap-6 py-8">
       <header className="flex flex-col gap-4">
         <h1 className="font-display text-3xl leading-tight">Explore trails</h1>
+        <CountryChip name={countryName} notOpenYet={browsing.notOpenYet ? countries.find((c) => c.iso2 === browsing.notOpenYet)?.name ?? browsing.notOpenYet : null} />
         <SearchCombobox initialQuery={params.q} />
         <NearMeButton href={`/trails?${toSearchString({ ...params, near: "me", page: 1 })}`} />
       </header>

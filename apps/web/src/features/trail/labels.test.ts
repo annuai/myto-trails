@@ -27,6 +27,8 @@ describe("labels", () => {
     expect(routeShapeLabel("point_to_point")).toBe("Point to point");
     expect(restrictionLabel("forest_dept")).toBe("Forest department");
     expect(restrictionLabel("private_estate")).toBe("Private estate");
+    expect(restrictionLabel("local_ordinance")).toBe("Local ordinance");
+    expect(restrictionLabel("public_land_closure")).toBe("Public land closure");
   });
   it("names months from 1 to 12", () => {
     expect(monthLabel(1)).toBe("Jan");

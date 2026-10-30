@@ -33,7 +33,7 @@ describe("trailMetadata", () => {
 describe("trailJsonLd", () => {
   type Node = Record<string, unknown> & { itemListElement?: { name: string }[] };
   type Graph = { "@graph": Node[] };
-  it("describes the trail as a Place in India with breadcrumbs", () => {
+  it("describes the trail as a Place in its country with breadcrumbs", () => {
     const ld = trailJsonLd(makeTrail(), site) as Graph;
     const place = ld["@graph"].find((n) => n["@type"] === "Place")!;
     expect(place).toMatchObject({
