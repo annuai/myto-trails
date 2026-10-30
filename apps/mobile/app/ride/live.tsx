@@ -32,6 +32,7 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { buzz } from '@/lib/haptics';
 import { EmergencyEditor } from '@/ui/EmergencyEditor';
+import { RIDER_OS } from '@/lib/flags';
 import { HoldButton } from '@/ui/HoldButton';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { useRouteLine } from '@/api/useApi';
@@ -187,7 +188,7 @@ function LiveBody() {
       <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={last} />
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
       <NoteSheet open={noteOpen} canType={j.canType} onSave={j.addNote} onClose={() => setNoteOpen(false)} />
-      <Sheet open={journalOpen} title="Ride journal" onClose={() => setJournalOpen(false)}>
+      <Sheet open={journalOpen} title={RIDER_OS ? 'Add a moment' : 'Ride journal'} onClose={() => setJournalOpen(false)}>
         <Button icon={j.recording ? Square : Mic} label={j.recording ? `Stop recording ${Math.floor(j.seconds / 60)}:${String(j.seconds % 60).padStart(2, '0')}` : 'Record a voice note'} onPress={() => void j.toggleVoice()} />
         <Button variant="soft" icon={Camera} label="Take photo" onPress={() => void j.addPhoto('camera')} />
         <Button variant="soft" icon={PenLine} label={j.canType ? 'Write a note' : 'Write a note (when stopped)'} onPress={() => { setJournalOpen(false); setNoteOpen(true); }} />
@@ -211,7 +212,7 @@ function LiveBody() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">{group ? 'Group' : 'Group ride'}</Text></Pressable> : null}
-          <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Journal</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">{RIDER_OS ? 'Add moment' : 'Journal'}</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
         </View>
       </View>

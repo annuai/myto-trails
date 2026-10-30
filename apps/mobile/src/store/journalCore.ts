@@ -25,13 +25,17 @@ export type JournalState = {
 
 const without = (t: Record<number, string>, key: number) => Object.fromEntries(Object.entries(t).filter(([k]) => Number(k) !== key));
 
-/** `rideIdFor` finds the ride an entry's `rideKey` belongs to (the one being recorded, or a saved one), so a new entry carries its id. */
-export const journalSlice = (media: JournalMediaOps, rideIdFor: (rideKey: number) => string | undefined = () => undefined): StateCreator<JournalState> => (set, get) => {
+/** `rideIdFor` finds the ride an entry's `rideKey` belongs to (the one being recorded, or a saved one), so a new entry carries its id. `whereNow` is where the phone is, so a new entry carries its place. */
+export const journalSlice = (media: JournalMediaOps, rideIdFor: (rideKey: number) => string | undefined = () => undefined, whereNow: () => { lat: number; lng: number } | undefined = () => undefined): StateCreator<JournalState> => (set, get) => {
   const drop = (e: JournalEntry) => { if (e.kind !== 'note') media.remove(e.id, e.kind); };
   return {
     entries: [],
     titles: {},
-    add: (e) => { const rideId = e.rideId ?? rideIdFor(e.rideKey); set((s) => ({ entries: [...s.entries, rideId ? { ...e, rideId } : e] })); },
+    add: (e) => {
+      const rideId = e.rideId ?? rideIdFor(e.rideKey);
+      const here = e.lat === undefined || e.lng === undefined ? whereNow() : undefined;
+      set((s) => ({ entries: [...s.entries, { ...e, ...(rideId ? { rideId } : {}), ...(here ?? {}) }] }));
+    },
     backfillRideIds: (rides) => {
       const byStart = new Map(rides.map((r) => [r.startedAt, r.id]));
       let changed = 0;

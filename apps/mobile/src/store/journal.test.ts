@@ -4,9 +4,9 @@ import type { JournalEntry } from '@/lib/journalEntries';
 import { journalSlice } from './journalCore';
 
 const entry = (id: string, rideKey: number, kind: JournalEntry['kind']): JournalEntry => ({ id, rideKey, at: 1, kind });
-const setup = (rideIdFor?: (rideKey: number) => string | undefined) => {
+const setup = (rideIdFor?: (rideKey: number) => string | undefined, whereNow?: () => { lat: number; lng: number } | undefined) => {
   const media = { remove: vi.fn(), removeAll: vi.fn() };
-  return { media, store: create(journalSlice(media, rideIdFor)) };
+  return { media, store: create(journalSlice(media, rideIdFor, whereNow)) };
 };
 
 describe('journal store', () => {
@@ -90,5 +90,18 @@ describe('journal store', () => {
     expect(store.getState().entries.map((e) => e.rideId)).toEqual(['ride-x', 'ride-x', undefined, 'keep']);
     expect(store.getState().titles).toEqual({ 100: 'Title' });
     expect(store.getState().backfillRideIds([{ id: 'ride-x', startedAt: 100 }])).toBe(0);
+  });
+
+  it('notes where a moment was made when the phone knows, and never overwrites a place it was given', () => {
+    const { store } = setup(undefined, () => ({ lat: 13, lng: 77 }));
+    store.getState().add(entry('a', 1, 'note'));
+    store.getState().add({ ...entry('b', 1, 'note'), lat: 1, lng: 2 });
+    const by = Object.fromEntries(store.getState().entries.map((e) => [e.id, [e.lat, e.lng]]));
+    expect(by).toEqual({ a: [13, 77], b: [1, 2] });
+  });
+  it('adds no place when the phone does not know where it is', () => {
+    const { store } = setup(undefined, () => undefined);
+    store.getState().add(entry('a', 1, 'note'));
+    expect(store.getState().entries[0]).not.toHaveProperty('lat');
   });
 });
