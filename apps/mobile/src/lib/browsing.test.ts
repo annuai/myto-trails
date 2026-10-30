@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Country } from '@/api/countries';
-import { chipLabel, countryQuery, pickerOrder, resolveBrowsing, validEmail } from './browsing';
+import { countryQuery, resolveBrowsing, validEmail } from './browsing';
 
 const IN: Country = { iso2: 'IN', name: 'India', slug: 'india', enabled: true, comingSoon: false };
 const NP: Country = { iso2: 'NP', name: 'Nepal', slug: 'nepal', enabled: false, comingSoon: true };
@@ -23,16 +23,9 @@ describe('resolveBrowsing', () => {
 });
 
 describe('browsing helpers', () => {
-  it('labels the chip', () => {
-    expect(chipLabel('IN', countries)).toBe('Showing: India');
-    expect(chipLabel(null, countries)).toBe('Showing: All open countries');
-  });
   it('adds the country to a request only when there is one', () => {
     expect(countryQuery('IN')).toEqual({ country: 'IN' });
     expect(countryQuery(null)).toEqual({});
-  });
-  it('lists open countries first', () => {
-    expect(pickerOrder(countries).map((c) => c.iso2)).toEqual(['IN', 'AU', 'NP']);
   });
   it('checks an email before it is sent', () => {
     expect(validEmail(' a@b.co ')).toBe(true);

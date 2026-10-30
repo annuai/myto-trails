@@ -13,7 +13,7 @@ import { pathLength } from '@/lib/geo';
 import { buildGpx } from '@/lib/gpx';
 import { parseGpx } from '@/lib/gpxImport';
 import { buildSharedRoute, sharedIdOf } from '@/lib/shareRoute';
-import { asText, distanceKm } from '@/lib/units';
+import { asText, distanceKm, elevationM } from '@/lib/units';
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '@/store/auth';
 import { useMyRoutes, type MyRoute } from '@/store/myRoutes';
@@ -69,7 +69,7 @@ export default function Plan() {
           const profile = elevationProfile(open.points);
           const gain = profile?.gainM;
           return (<>
-            <Text variant="label" tone="muted">{km(open)}{gain ? ` · ${Math.round(gain)} m climb` : ''}</Text>
+            <Text variant="label" tone="muted">{km(open)}{gain ? ` · ${asText(elevationM(gain))} climb` : ''}</Text>
             {profile ? <ElevationChart samples={profile.samples} /> : null}
             <Button icon={Play} label="Ride this route" onPress={() => { follow(open.id); setOpen(undefined); router.back(); }} />
             <Button variant="soft" icon={Link2} label={open.sharedUrl ? 'Share the link again' : 'Share as a link'} disabled={share.busy} onPress={() => (open.sharedUrl ? void Share.share({ message: `${open.name} on Myto Moto: ${open.sharedUrl}` }) : void shareLink(open))} />

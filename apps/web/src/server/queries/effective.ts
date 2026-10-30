@@ -1,4 +1,5 @@
 import { effectiveCondition, effectiveVerificationLevel } from "@moto-trails/domain";
+import type { SearchResult } from "./search.sql";
 import type { TrailSummaryDto } from "./types";
 
 /**
@@ -11,4 +12,9 @@ export function applyNow<T extends TrailSummaryDto>(dto: T, now: Date): T {
     condition: effectiveCondition({ status: dto.rawCondition, expectedUntil: dto.conditionExpectedUntil }, now),
     verification: effectiveVerificationLevel({ level: dto.rawVerificationLevel, validUntil: dto.validUntil }, now),
   };
+}
+
+/** The same for a whole search result: a cached page of results is hours old, its statuses must not be. */
+export function applyNowToSearch(result: SearchResult, now: Date): SearchResult {
+  return { ...result, items: result.items.map((t) => applyNow(t, now)) };
 }

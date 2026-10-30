@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react';
 import { Animated, Easing, Pressable, View } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
-import { fixed, radius } from '@/theme/tokens';
+import { fixed, radius, type Tone, space, scrim, size } from '@/theme/tokens';
 import { Icon } from './Icon';
 import { Text } from './Text';
 
-/** Stop and SOS need a held press so a glove or a bump cannot trigger them (docs/16 §3). */
-export function HoldButton({ label, icon, color, borderOnly, ms = 1000, onComplete, minHeight = 88 }: { label: string; icon: LucideIcon; color: string; borderOnly?: boolean; ms?: number; onComplete: () => void; minHeight?: number }) {
+/** Stop and SOS need a held press so a glove or a bump cannot trigger them (docs/16 §3). A screen reader's double tap cannot hold, so it triggers the same action directly. */
+export function HoldButton({ label, icon, color, borderOnly, ms = 1000, onComplete, minHeight = 88, row, tone = 'onInk' }: { label: string; icon: LucideIcon; color: string; borderOnly?: boolean; ms?: number; onComplete: () => void; minHeight?: number; /** Icon and label side by side, for the smaller buttons in a row of three. */ row?: boolean; /** The icon's colour: on an outline-only button it must stand out from the screen, not from a filled button. */ tone?: Tone }) {
   const fill = useRef(new Animated.Value(0)).current;
   const [holding, setHolding] = useState(false);
   const anim = useRef<Animated.CompositeAnimation | null>(null);
@@ -17,12 +17,12 @@ export function HoldButton({ label, icon, color, borderOnly, ms = 1000, onComple
   };
   const cancel = () => { anim.current?.stop(); fill.setValue(0); setHolding(false); };
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`${label}, press and hold`} accessibilityHint={`Hold for ${ms / 1000} seconds`} onPressIn={start} onPressOut={cancel}
-      style={{ minHeight, borderRadius: radius.control, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', gap: 6, backgroundColor: borderOnly ? 'transparent' : color, borderWidth: borderOnly ? 1.5 : 0, borderColor: color, flex: 1 }}>
-      <Animated.View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.28)', width: fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
-      <View style={{ alignItems: 'center', gap: 6 }}>
-        <Icon icon={icon} size={26} tone="onInk" />
-        <Text variant="labelMedium" style={{ color: fixed.white }}>{holding ? 'Keep holding' : label}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={`${label}, press and hold`} accessibilityHint={`Hold for ${ms / 1000} seconds`} accessibilityActions={[{ name: 'activate' }]} onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'activate') onComplete(); }} onPressIn={start} onPressOut={cancel}
+      style={{ minHeight, borderRadius: radius.control, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', gap: space[2], backgroundColor: borderOnly ? 'transparent' : color, borderWidth: borderOnly ? size.outline : 0, borderColor: color, flex: 1 }}>
+      <Animated.View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: scrim.hold, width: fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
+      <View style={{ alignItems: 'center', gap: row ? space[3] : space[2], flexDirection: row ? 'row' : 'column' }}>
+        <Icon icon={icon} size={row ? 22 : 26} tone={tone} color={borderOnly ? undefined : fixed.white} />
+        <Text variant={row ? 'bodyMedium' : 'labelMedium'} style={{ color: borderOnly ? color : fixed.white }}>{holding ? (row ? 'Hold…' : 'Keep holding') : label}</Text>
       </View>
     </Pressable>
   );

@@ -9,18 +9,8 @@ export function resolveBrowsing(i: { chosen: string | null; detected: string | n
   return open(i.chosen) ?? open(i.detected);
 }
 
-/** "Showing: India" or, with no single country, "Showing: All open countries". */
-export function chipLabel(browsing: string | null, countries: Country[]): string {
-  const name = browsing ? countries.find((c) => c.iso2 === browsing)?.name : undefined;
-  return `Showing: ${name ?? 'All open countries'}`;
-}
-
 /** The `country` query for list requests; absent when no single country is chosen so the server's answer stays as it was. */
 export const countryQuery = (browsing: string | null): Record<string, string> => (browsing ? { country: browsing } : {});
-
-/** Countries to offer in the picker: open ones first, then coming soon, each in alphabetical order. */
-export const pickerOrder = (countries: Country[]): Country[] =>
-  [...countries].sort((a, b) => Number(b.enabled) - Number(a.enabled) || a.name.localeCompare(b.name));
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 export const validEmail = (text: string): boolean => text.trim().length <= 254 && EMAIL.test(text.trim());

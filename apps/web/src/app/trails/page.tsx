@@ -20,6 +20,7 @@ import { getSql, withPublicRole } from "@/server/db/client";
 import { TrailMapLoader } from "@/features/map/TrailMapLoader";
 import { searchMapPoints, searchTrails } from "@/server/queries/search.sql";
 import { getCachedMapPoints, getCachedSearch } from "@/server/queries/trails";
+import { applyNowToSearch } from "@/server/queries/effective";
 
 // Search is uncached and depends on the URL (and, for "near me", a cookie), so this route renders on demand.
 export const instant = false;
@@ -51,7 +52,8 @@ export default async function TrailsPage({ searchParams }: PageProps<"/trails">)
   const point = parseNearCookie(jar.get(NEAR_COOKIE)?.value);
   await connection(); // the clock is request-specific: opt into request time before reading it
   const shared = isShareableSearch(params);
-  const result = shared ? await getCachedSearch(params) : await withPublicRole(getSql(), (tx) => searchTrails(tx, params, new Date(), { point }));
+  // A cached result is hours old: re-evaluate expiries against the request time, as the trail page does.
+  const result = applyNowToSearch(shared ? await getCachedSearch(params) : await withPublicRole(getSql(), (tx) => searchTrails(tx, params, new Date(), { point })), new Date());
   const mapPoints = params.view !== "map" ? [] : shared ? await getCachedMapPoints(params) : await withPublicRole(getSql(), (tx) => searchMapPoints(tx, params, { point }));
   const placeName = result.origin?.kind === "place" ? result.origin.name : undefined;
   const needsLocation = params.near === "me" && result.origin === null;

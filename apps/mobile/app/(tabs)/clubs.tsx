@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDistanceUnit } from '@/store/region';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LogIn, Users } from 'lucide-react-native';
@@ -9,7 +10,6 @@ import { CreateClubSheet } from '@/features/community/CreateClubSheet';
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '@/store/auth';
 import { Button } from '@/ui/Button';
-import { CountryChip, CountrySheet } from '@/ui/CountryChip';
 import { Card } from '@/ui/Card';
 import { ClubCover } from '@/ui/ClubCover';
 import { EmptyState } from '@/ui/EmptyState';
@@ -36,11 +36,11 @@ function ClubCard({ club, onPress }: { club: ClubSummary; onPress: () => void })
 }
 
 export default function Clubs() {
+  useDistanceUnit(); // re-draws any distance when the unit changes
   const router = useRouter();
   const token = useAuth((s) => s.token);
   const signedIn = !!token;
   const [creating, setCreating] = useState(false);
-  const [picking, setPicking] = useState(false);
   const act = useAction();
   const clubs = useClubs();
   const mine = clubs.data?.filter((c) => c.role) ?? [];
@@ -51,9 +51,8 @@ export default function Clubs() {
     if (r) { setCreating(false); clubs.reload(); open(r.value); }
   };
   return (
-    <Screen tabs brand overlay={<><CreateClubSheet open={creating} busy={act.busy} problem={act.problem} onSubmit={(b) => void create(b)} onClose={() => { setCreating(false); act.clear(); }} /><CountrySheet open={picking} onClose={() => setPicking(false)} /></>}>
+    <Screen tabs brand overlay={<CreateClubSheet open={creating} busy={act.busy} problem={act.problem} onSubmit={(b) => void create(b)} onClose={() => { setCreating(false); act.clear(); }} />}>
       <PageTitle>Clubs</PageTitle>
-      <View style={{ alignSelf: 'flex-start', marginBottom: space[4] }}><CountryChip onPress={() => setPicking(true)} /></View>
       {!signedIn ? (
         <Card style={{ gap: space[4] }}>
           <Text variant="label" tone="muted">Sign in with the same email link as moto-trails.com to see your clubs.</Text>
@@ -68,7 +67,7 @@ export default function Clubs() {
         <Text variant="body" tone="muted">Loading…</Text>
       ) : (
         <>
-          <SectionTitle onAdd={() => setCreating(true)} addLabel="Start a club">Your clubs</SectionTitle>
+          <SectionTitle first onAdd={() => setCreating(true)} addLabel="Start a club">Your clubs</SectionTitle>
           {mine.length ? <View style={{ gap: space[3] }}>{mine.map((c) => <ClubCard key={c.clubId} club={c} onPress={() => open(c.clubId)} />)}</View>
             : <EmptyState icon={Users} title="No club yet" body="Ask to join a club below, or start one with the + button." />}
           {others.length ? (

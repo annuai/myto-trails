@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import { distanceKm, speedKmh } from '@/lib/units';
 import { Linking, Platform, Share, Vibration, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, Flag, Megaphone, Mic, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
@@ -78,6 +80,12 @@ function LiveBody() {
   // Help on a solo ride's lock screen card opens this screen with the SOS sheet up.
   const { sos: sosParam } = useLocalSearchParams<{ sos?: string }>();
   useEffect(() => { if (sosParam) setSos(true); }, [sosParam]);
+  // The screen stays on while the rider is looking at the ride (a bike mount). Locking the phone still records through the background task.
+  useEffect(() => {
+    if (r.paused) return;
+    void activateKeepAwakeAsync('myto-live-screen').catch(() => undefined);
+    return () => { void deactivateKeepAwake('myto-live-screen'); };
+  }, [r.paused]);
   const [journalOpen, setJournalOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -111,17 +119,19 @@ function LiveBody() {
     router.replace(id ? `/story/${id}` : '/');
   };
 
+  const distance = distanceKm(r.meters / 1000);
+  const speed = speedKmh(r.paused ? 0 : r.speedKmh);
   const stats = (
-    <Card style={{ gap: landscape ? 12 : 20, paddingVertical: landscape ? 16 : 20 }}>
-      <View style={{ gap: 4 }}>
+    <Card style={{ gap: landscape ? space[3] : space[5], paddingVertical: landscape ? space[4] : space[5] }}>
+      <View style={{ gap: space[1] }}>
         <Text variant="label" tone="muted">Distance</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-          <Text variant="live" style={landscape ? { fontSize: 56, lineHeight: 60 } : undefined}>{(r.meters / 1000).toFixed(1)}</Text><Text variant="bodyMedium" tone="muted">km</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: space[2] }}>
+          <Text variant={landscape ? 'liveCompact' : 'live'}>{distance.value}</Text><Text variant="bodyMedium" tone="muted">{distance.unit}</Text>
         </View>
       </View>
       <View style={{ flexDirection: 'row' }}>
-        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{r.paused ? 'Paused' : 'Time'}</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{clock(r.elapsedMs(Date.now()))}</Text></View>
-        <View style={{ flex: 1 }}><Text variant="label" tone="muted">Speed</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{r.paused ? 0 : Math.round(r.speedKmh)}</Text></View>
+        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{r.paused ? 'Paused' : 'Time'}</Text><Text variant={landscape ? 'liveSecondaryCompact' : 'liveSecondary'}>{clock(r.elapsedMs(Date.now()))}</Text></View>
+        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{`Speed (${speed.unit})`}</Text><Text variant={landscape ? 'liveSecondaryCompact' : 'liveSecondary'}>{speed.value}</Text></View>
       </View>
     </Card>
   );
@@ -131,7 +141,7 @@ function LiveBody() {
   // The background task is what keeps recording with the screen locked; tell the rider when it is not running.
   const foregroundOnly = r.source === 'gps' && !r.paused && Platform.OS !== 'web' && !r.backgrounded && Date.now() - r.startedAt > 3000;
   const status = (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: space[2] }}>
       {r.error ? <Banner eyebrow="Storage" title={r.error} /> : null}
       {lostSignal ? <Banner eyebrow="GPS" title="Lost GPS signal, still recording" /> : null}
       {off ? <Banner eyebrow="Route" title="You are off the route" /> : null}
@@ -160,10 +170,9 @@ function LiveBody() {
       <Icon icon={Flag} size={h > 70 ? 26 : 22} /><Text variant="labelMedium">Waypoint{r.waypoints.length ? ` · ${r.waypoints.length}` : ''}</Text>
     </Pressable>
   );
+  // SOS is held, like Stop, so a glove or a bump cannot open it. A shorter hold than Stop, because it is the one a hurt rider reaches for.
   const sosBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => { buzz.help(); setSos(true); }} style={{ flex: 1, minHeight: h, borderRadius: radius.control, borderWidth: 1.5, borderColor: c.stop, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
-      <Icon icon={Siren} tone="stop" size={22} /><Text variant="bodyMedium" tone="stop">SOS</Text>
-    </Pressable>
+    <HoldButton label="SOS" icon={Siren} color={c.stop} tone="stop" row borderOnly ms={700} minHeight={h} onComplete={() => { buzz.help(); setSos(true); }} />
   );
 
   const smallBtn = (label: string, icon: typeof Users, onPress: () => void, h: number) => (
@@ -194,37 +203,37 @@ function LiveBody() {
         {contacts.length === 0 ? <Text variant="label" tone="muted">No emergency contacts yet. Add them under You, Documents and emergency.</Text> : null}
       </Sheet>
     </>}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 48 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: r.paused ? c.muted : c.stop }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: size.target }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+          <View style={{ width: size.dot, height: size.dot, borderRadius: radius.chip, backgroundColor: r.paused ? c.muted : c.stop }} />
           <Text variant="labelMedium" tone="muted">{r.paused ? 'Paused' : r.source === 'sim' ? 'Recording (simulated)' : 'Recording'}</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[5] }}>
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
-          {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">{group ? 'Group' : 'Group ride'}</Text></Pressable> : null}
+          {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Group</Text></Pressable> : null}
           <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Journal</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
         </View>
       </View>
       {landscape ? (
         // Turned on its side (a handlebar mount): numbers on the left, map and big buttons on the right, no scrolling.
-        <View style={{ flex: 1, flexDirection: 'row', gap: 16 }}>
+        <View style={{ flex: 1, flexDirection: 'row', gap: space[4] }}>
           <View style={{ flex: 1, gap: space[3] }}>{stats}{status}{groupTiles}</View>
-          <View style={{ flex: 1.25, gap: 12 }}>
-            <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
-            <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(64)}{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
+          <View style={{ flex: 1.25, gap: space[3] }}>
+            <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
+            <View style={{ flexDirection: 'row', gap: space[3] }}>{pauseBtn(64)}{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
           </View>
         </View>
       ) : (
         <>
-          <View style={{ marginTop: 8 }}>{stats}</View>
-          <View style={{ marginTop: 12 }}>
-            <OsmMap height={200} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
+          <View style={{ marginTop: space[2] }}>{stats}</View>
+          <View style={{ marginTop: space[3] }}>
+            <OsmMap height={200} radius={radius.card} follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
           </View>
           <View style={{ marginTop: space[3], gap: space[3] }}>{status}{groupTiles}</View>
           <View style={{ flex: 1 }} />
-          <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(88)}{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} onComplete={stop} /></View>
-          <View style={{ marginTop: space[3], flexDirection: 'row', gap: space[3] }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn(group ? 'Group' : 'Group ride', Users, () => setGroupOpen(true), 56)}</View>
+          <View style={{ flexDirection: 'row', gap: space[3] }}>{pauseBtn(88)}{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} onComplete={stop} /></View>
+          <View style={{ marginTop: space[3], flexDirection: 'row', gap: space[3] }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn('Group', Users, () => setGroupOpen(true), 56)}</View>
         </>
       )}
     </Screen>

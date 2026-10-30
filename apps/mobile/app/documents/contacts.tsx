@@ -18,6 +18,7 @@ import { deviceRegion } from '@/lib/locale';
 import { normalizePhone } from '@/lib/phone';
 import { useHomeCountry } from '@/store/region';
 
+import { space, size } from '@/theme/tokens';
 const blood = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
 export default function Contacts() {
@@ -40,8 +41,8 @@ export default function Contacts() {
     <Screen
       footer={<Button icon={Plus} label="Add a contact" onPress={() => setOpen(true)} />}
       overlay={
-        <Sheet open={open} title="New emergency contact" onClose={() => setOpen(false)} footer={<View style={{ gap: 8 }}>{error ? <Text variant="label" tone="stop">{error}</Text> : null}<Button label="Save contact" onPress={save} /></View>}>
-          <View style={{ gap: 20 }}>
+        <Sheet open={open} title="New emergency contact" onClose={() => setOpen(false)} footer={<View style={{ gap: space[2] }}>{error ? <Text variant="label" tone="stop">{error}</Text> : null}<Button label="Save contact" onPress={save} /></View>}>
+          <View style={{ gap: space[5] }}>
             <Field label="Name" value={name} onChangeText={setName} autoComplete="name" />
             <Field label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" />
             <Field label="Who are they to you? (optional)" value={relation} onChangeText={setRelation} placeholder="e.g. Sister" />
@@ -54,8 +55,8 @@ export default function Contacts() {
       {contacts.length === 0 ? <EmptyState icon={Siren} title="No contacts yet" body="Add someone who should be called if something goes wrong on a ride." /> : (
         <ListCard>
           {contacts.map((c) => (
-            <View key={c.id} style={{ minHeight: 76, paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={{ flex: 1, gap: 4 }}>
+            <View key={c.id} style={{ minHeight: size.rowTall, paddingHorizontal: space[5], paddingVertical: space[3], flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
+              <View style={{ flex: 1, gap: space[1] }}>
                 <Text variant="body">{c.name}</Text>
                 <Text variant="data" tone="muted">{c.phone}{c.relation ? ` · ${c.relation}` : ''}</Text>
                 {c.primary ? <StatusChip status="good" label="Main contact" /> : null}
@@ -68,14 +69,14 @@ export default function Contacts() {
         </ListCard>
       )}
       <SectionTitle>Helpful for responders</SectionTitle>
-      <Card style={{ gap: 16 }}>
+      <Card style={{ gap: space[4] }}>
         <Text variant="labelMedium">Blood group</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
           {blood.map((b) => <ChoiceChip raised key={b} label={b} selected={medical.bloodGroup === b} onPress={() => setMedical({ ...medical, bloodGroup: medical.bloodGroup === b ? undefined : b })} />)}
         </View>
         <Field onCard label="Allergies or conditions (optional)" value={medical.notes ?? ''} onChangeText={(notes) => setMedical({ ...medical, notes })} multiline />
       </Card>
-      <Text variant="caption" tone="muted" style={{ marginTop: 16 }}>Kept on this device. Myto Moto does not replace emergency services.</Text>
+      <Text variant="caption" tone="muted" style={{ marginTop: space[4] }}>Kept on this device. Myto Moto does not replace emergency services.</Text>
     </Screen>
   );
 }

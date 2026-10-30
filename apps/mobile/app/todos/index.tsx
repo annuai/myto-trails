@@ -6,6 +6,7 @@ import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { Button } from '@/ui/Button';
 import { EmptyState } from '@/ui/EmptyState';
+import { space } from '@/theme/tokens';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { IconButton } from '@/ui/IconButton';
 import { ListCard } from '@/ui/ListCard';
@@ -30,10 +31,10 @@ export default function Todos() {
       <BackHeader title="You" right={<IconButton icon={Plus} label="Add a to-do" onPress={() => router.push('/todos/new')} />} />
       <PageTitle>To-do list</PageTitle>
       {rows.length === 0 ? <EmptyState icon={ClipboardList} title="Nothing here" body="Add your PUC, insurance, or a chain lube reminder." /> : null}
-      {attention.length ? <><SectionTitle>Needs attention</SectionTitle>{list(attention)}</> : null}
-      {later.length ? <><SectionTitle>Later</SectionTitle>{list(later)}</> : null}
-      {done.length ? <><SectionTitle>Done</SectionTitle>{list(done)}</> : null}
-      <Text variant="caption" tone="muted" style={{ marginTop: 24 }}>
+      {attention.length ? <><SectionTitle first>Needs attention</SectionTitle>{list(attention)}</> : null}
+      {later.length ? <><SectionTitle first={!attention.length}>Later</SectionTitle>{list(later)}</> : null}
+      {done.length ? <><SectionTitle first={!attention.length && !later.length}>Done</SectionTitle>{list(done)}</> : null}
+      <Text variant="caption" tone="muted" style={{ marginTop: space[6] }}>
         Kilometre limits only count rides recorded in Myto Moto. Rides made without the app are not counted, so the date limit is the safer one. Tap the circular arrow when you have done the job to restart the count.
       </Text>
     </Screen>

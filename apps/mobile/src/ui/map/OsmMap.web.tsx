@@ -90,7 +90,7 @@ export function OsmMap({ height, line, track, trackBreaks, position, waypoints, 
     import('maplibre-gl').then((ml) => {
       const b = new ml.LngLatBounds(all[0]!, all[0]!);
       all.forEach((c) => b.extend(c));
-      m.fitBounds(b, { padding: 32, maxZoom: 15, animate: fitted.current });
+      m.fitBounds(b, { padding: space[8], maxZoom: 15, animate: fitted.current });
       fitted.current = true;
     });
   }, [ready, line, track, trackBreaks, position, waypoints, riders, regroup, follow, dark]);
@@ -98,7 +98,7 @@ export function OsmMap({ height, line, track, trackBreaks, position, waypoints, 
   return (
     <View style={{ height, borderRadius: radius, overflow: 'hidden', backgroundColor: dark ? fixed.mapNight : fixed.mapDay }}>
       <div ref={box} style={{ width: '100%', height: '100%' }} />
-      {problem && !ready ? <View style={{ position: 'absolute', left: 12, right: 12, bottom: 12 }}><Text variant="caption" tone="muted">{problem}</Text></View> : null}
+      {problem && !ready ? <View style={{ position: 'absolute', left: space[3], right: space[3], bottom: space[3] }}><Text variant="caption" tone="muted">{problem}</Text></View> : null}
     </View>
   );
 }

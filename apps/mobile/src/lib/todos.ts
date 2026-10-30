@@ -1,4 +1,5 @@
 import { addDays, addMonths, daysUntil, formatDate, todayISO } from './dates';
+import { roundedDistanceKm, withUnit } from './units';
 
 export type TodoCategory = 'document' | 'service' | 'pack' | 'other';
 export type Todo = {
@@ -11,8 +12,6 @@ export type Todo = {
 };
 
 export type Due = { state: 'ok' | 'soon' | 'overdue' | 'done'; text: string; sortKey: number };
-
-const roundKm = (n: number) => Math.max(10, Math.round(n / 10) * 10);
 
 /**
  * How due is a to-do. For service items we only know the kilometres recorded in Myto, not rides made outside the app,
@@ -33,7 +32,7 @@ export function dueInfo(t: Todo, appKm: number, today: string = todayISO()): Due
   if (days < 0 || (t.everyKm && kmLeft <= 0)) return { state: 'overdue', text: 'Due now', sortKey: Math.min(days, -1) };
   const near = days <= 7 || (!!t.everyKm && kmLeft <= (t.everyKm ?? 0) * 0.15);
   const parts = [`${days} day${days === 1 ? '' : 's'}`];
-  if (t.everyKm) parts.push(`about ${roundKm(kmLeft)} km`);
+  if (t.everyKm) parts.push(`about ${withUnit(roundedDistanceKm(kmLeft))}`);
   return { state: near ? 'soon' : 'ok', text: `Due in ${parts.join(' or ')}`, sortKey: days };
 }
 

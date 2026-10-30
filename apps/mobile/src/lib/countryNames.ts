@@ -1,11 +1,18 @@
+import { COUNTRY_NAMES } from './countryData';
 import { deviceLocale } from './locale';
 
-/** The country's name in the rider's language ("India", "Deutschland"), or the code when the phone does not know it. */
+/**
+ * The country's full name ("India", "Deutschland"), never its code unless the country is unknown. The phone's own translation is used
+ * when it has one; some phones' JavaScript engines have none, and then the bundled English name is used.
+ */
 export function countryName(iso2: string | null | undefined, locale: string = deviceLocale()): string {
   if (!iso2) return '';
+  const code = iso2.toUpperCase();
   try {
-    return new Intl.DisplayNames([locale], { type: 'region' }).of(iso2.toUpperCase()) ?? iso2.toUpperCase();
+    const n = new Intl.DisplayNames([locale], { type: 'region' }).of(code);
+    if (n && n !== code) return n;
   } catch {
-    return iso2.toUpperCase();
+    // fall through to the bundled name
   }
+  return COUNTRY_NAMES[code] ?? code;
 }

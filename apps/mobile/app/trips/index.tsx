@@ -35,8 +35,8 @@ export default function Trips() {
       <BackHeader title="You" />
       <PageTitle sub="Pick a start date and the days. You start the trip yourself on its first day, and it records from there.">Trips</PageTitle>
       {trips.length === 0 ? <EmptyState icon={Luggage} title="No trips yet" body="Plan one with a date, a route for each day and a packing list." /> : null}
-      {ahead.length ? <><SectionTitle>Coming up</SectionTitle><ListCard>{ahead.map(row)}</ListCard></> : null}
-      {past.length ? <><SectionTitle>Finished and earlier</SectionTitle><ListCard>{past.map(row)}</ListCard></> : null}
+      {ahead.length ? <><SectionTitle first>Coming up</SectionTitle><ListCard>{ahead.map(row)}</ListCard></> : null}
+      {past.length ? <><SectionTitle first={!ahead.length}>Finished and earlier</SectionTitle><ListCard>{past.map(row)}</ListCard></> : null}
       <View style={{ marginTop: space[8] }}><Button label="Plan a trip" onPress={() => setPlanning(true)} /></View>
     </Screen>
   );

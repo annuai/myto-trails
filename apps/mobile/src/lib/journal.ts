@@ -1,6 +1,7 @@
 import type { LatLng } from './geo';
 
-export type JournalMeta = { startedAt: number; source: 'gps' | 'sim' };
+/** `rideId` is given when recording starts so everything made on the ride can point at it. A journal from before it has none. */
+export type JournalMeta = { startedAt: number; source: 'gps' | 'sim'; rideId?: string };
 export type JournalWaypoint = { name: string; lat: number; lng: number; kind?: 'fuel' | 'water' | 'food' | 'hazard' };
 /** A pause the rider chose (a tea break). `to` is missing while the ride is still paused. */
 export type Pause = { from: number; to?: number };

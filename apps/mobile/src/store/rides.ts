@@ -7,29 +7,36 @@ import type { WaypointKind } from '@/lib/waypointKinds';
 import { storage } from './persist';
 
 export type Waypoint = { name: string; lat: number; lng: number; kind?: WaypointKind };
-export type SubmissionState = { status: 'submitted'; at: number; trailName: string; slug: string; clientId: string };
+export type SubmissionState = { status: 'submitted'; at: number; trailName: string; slug: string; clientId: string; /** What the moderators did with it, as last fetched. */ outcome?: { status: string; feedback?: string; checkedAt: number } };
 
 export type Ride = {
   id: string; name: string; startedAt: number; durationSec: number; /** Time the rider spent paused, already left out of durationSec. */ pausedSec?: number; distanceKm: number; maxKmh: number; points: LatLng[]; /** Indices into `points` where a new GPS segment starts. Absent on rides saved before gaps were tracked. */ breaks?: number[];
   waypoints: Waypoint[]; sample?: boolean; updatedAt?: number; submission?: SubmissionState; /** Stays the same across upload attempts so a retry continues the same draft. */ clientId?: string;
+  /** The group ride and check-in that were live when this ride finished. */ groupId?: string; checkinId?: string;
 };
 
 type State = {
   rides: Ride[];
-  addRide: (r: Omit<Ride, 'id'>) => string;
+  addRide: (r: Omit<Ride, 'id'>, id?: string) => string;
   removeRide: (id: string) => void;
   /** Gives a ride a new name. A blank name is ignored. */
   renameRide: (id: string, name: string) => void;
   setSubmission: (id: string, s: SubmissionState) => void;
+  /** Notes the group ride and check-in a ride was recorded under. */
+  linkRide: (id: string, links: { groupId?: string; checkinId?: string }) => void;
+  /** Stores the moderators' answer on a ride that was sent for review. */
+  setOutcome: (id: string, outcome: { status: string; feedback?: string }) => void;
 };
 
 export const useRides = create<State>()(
   persist(
     (set) => ({
       rides: [sampleRide()],
-      addRide: (r) => { const id = uid(); set((s) => ({ rides: [{ ...r, id }, ...s.rides] })); return id; },
+      addRide: (r, given) => { const id = given ?? uid(); set((s) => ({ rides: [{ ...r, id }, ...s.rides] })); return id; },
       removeRide: (id) => set((s) => ({ rides: s.rides.filter((r) => r.id !== id) })),
       renameRide: (id, name) => { const n = name.replace(/\s+/g, ' ').trim().slice(0, 80); if (n) set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, name: n, updatedAt: Date.now() } : r)) })); },
+      setOutcome: (id, o) => set((s) => ({ rides: s.rides.map((r) => (r.id === id && r.submission ? { ...r, submission: { ...r.submission, outcome: { ...o, checkedAt: Date.now() } } } : r)) })),
+      linkRide: (id, links) => set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, ...links, updatedAt: Date.now() } : r)) })),
       setSubmission: (id, submission) => set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, submission, updatedAt: Date.now() } : r)) })),
     }),
     { name: 'myto-rides', storage },

@@ -17,6 +17,8 @@ import { deleteCommentAction, editCommentAction, markRiddenAction, postCommentAc
 import { askRiderAction } from "@/features/community/question-actions";
 import { getMemberState } from "@/server/community/members";
 import { listComments } from "@/server/community/comments";
+import { RiderReports } from "@/features/trail/RiderReports";
+import { listConditionReports } from "@/server/rides/condition-reports";
 import { getRiddenSummary } from "@/server/community/ridden";
 import { Skeleton } from "@/ui/Skeleton/Skeleton";
 import { getTrail, getTrailMedia, getTrailRoute, getTrailVideos } from "@/server/queries/trails";
@@ -55,6 +57,14 @@ async function TrailActions({ slug }: { slug: string }) {
 }
 
 /** Riders and comments: per-viewer, so it streams in (queries run side by side) after the cached trail content. */
+/** Reports from riders in the last two months, shown apart from the moderator-set condition. Nothing is shown when there are none. */
+async function TrailRiderReports({ slug }: { slug: string }) {
+  await connection();
+  const now = new Date();
+  const reports = await listConditionReports(getSql(), slug, now);
+  return reports ? <RiderReports reports={reports} now={now} /> : null;
+}
+
 async function TrailCommunity({ slug, searchParams }: { slug: string; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const code = typeof sp.c === "string" ? sp.c.slice(0, 40) : undefined;
@@ -88,14 +98,23 @@ export default async function TrailPage({ params, searchParams }: PageProps<"/tr
         videos={videos}
         route={route}
         community={
-          <Suspense fallback={<Skeleton className="h-64 rounded-3xl" />}>
-            <TrailCommunity slug={slug} searchParams={searchParams} />
-          </Suspense>
+          <>
+            <Suspense fallback={null}>
+              <TrailRiderReports slug={slug} />
+            </Suspense>
+            <Suspense fallback={<Skeleton className="h-64 rounded-3xl" />}>
+              <TrailCommunity slug={slug} searchParams={searchParams} />
+            </Suspense>
+          </>
         }
         actions={
-          <Suspense fallback={<Skeleton className="h-11 w-44" />}>
-            <TrailActions slug={slug} />
-          </Suspense>
+          <>
+            <Suspense fallback={<Skeleton className="h-11 w-44" />}>
+              <TrailActions slug={slug} />
+            </Suspense>
+            {/* Phones only. The app opens at this trail; where it is not installed nothing happens, so the link is a plain extra, never the only way in. */}
+            <a href={`myto://trail/${slug}`} className="inline-flex min-h-11 items-center rounded-lg border border-ink px-4 text-sm md:hidden">Open in the Myto Moto app</a>
+          </>
         }
       />
     </>

@@ -45,9 +45,9 @@ export function useCountries(): Async<Country[]> & { data: Country[] } {
   return { ...r, data: r.data ?? FALLBACK_COUNTRIES };
 }
 
-/** The country the lists show: the rider's choice, else where their phone or GPS says they are, else null for every open country. */
+/** The country the lists show: the home country chosen in settings (if it is open), else where their phone or GPS says they are, else null for every open country. */
 export function useBrowsingCountry(): string | null {
-  const chosen = useRegion((s) => s.browsing);
+  const chosen = useRegion((s) => s.home);
   const fix = useLocation((s) => s.fix);
   const countries = useCountries().data;
   return resolveBrowsing({ chosen, countries, detected: deviceRegion() ?? (fix ? countryAt(fix.lat, fix.lng) : null) });

@@ -4,13 +4,14 @@ import { useRouter } from 'expo-router';
 import { Motorbike, Route, User, Users, type LucideIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChrome } from '@/store/chrome';
-import { fixed } from '@/theme/tokens';
+import { fixed, space, layout, radius, shadow, opacity } from '@/theme/tokens';
 import { useLayout } from './useLayout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { EASE, ScalePressable } from './motion';
 import { tabBarFade } from './tabBarFade';
+import { tabBar } from './TabBar.tokens';
 
 const items: Record<string, { label: string; icon: LucideIcon }> = {
   index: { label: 'Dash', icon: Motorbike }, trails: { label: 'Trails', icon: Route }, clubs: { label: 'Clubs', icon: Users }, you: { label: 'You', icon: User },
@@ -25,7 +26,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { landscape } = useLayout();
   const sheetOpen = useChrome((s) => s.sheets > 0);
-  const h = landscape ? 60 : 68;
+  const h = landscape ? tabBar.heightLandscape : tabBar.height;
   const order = ['index', 'trails', 'REC', 'clubs', 'you'];
   const active = state.routes[state.index]?.name;
   // Same shape as the website's top nav: a white, fully rounded bar floating clear of the edges with a soft shadow.
@@ -39,24 +40,24 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
   if (sheetOpen) return null;
   return (
     <Animated.View pointerEvents={touchable ? 'box-none' : 'none'} style={{ opacity: tabBarFade, position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingLeft: Math.max(16, insets.left), paddingRight: Math.max(16, insets.right), paddingBottom: Math.max(insets.bottom, landscape ? 6 : 12) + (landscape ? 2 : 4) }}>
-      <View style={{ height: h, width: '100%', maxWidth: landscape ? 560 : 520, borderRadius: h / 2, backgroundColor: bar, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, shadowColor: fixed.shadow, shadowOpacity: 0.1, shadowRadius: 24, shadowOffset: { width: 0, height: 4 }, elevation: 8 }}>
+      <View style={{ height: h, width: '100%', maxWidth: landscape ? layout.wideMax : layout.barMax, borderRadius: h / 2, backgroundColor: bar, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space[2], ...shadow.bar }}>
       {order.map((name) => {
         if (name === 'REC') {
           return (
             <View key={name} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
               <ScalePressable scaleTo={0.92} accessibilityRole="button" accessibilityLabel="Ride" onPress={() => router.push('/ride')}
-                style={({ pressed }) => ({ marginTop: landscape ? -22 : -30, width: landscape ? 60 : 72, height: landscape ? 60 : 72, borderRadius: 36, backgroundColor: c.record, alignItems: 'center', justifyContent: 'center', borderWidth: 6, borderColor: bar, opacity: pressed ? 0.9 : 1, shadowColor: fixed.shadow, shadowOpacity: 0.18, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } })}>
-                <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: fixed.white }} />
+                style={({ pressed }) => ({ marginTop: landscape ? tabBar.liftLandscape : tabBar.lift, width: landscape ? tabBar.recordLandscape : tabBar.record, height: landscape ? tabBar.recordLandscape : tabBar.record, borderRadius: radius.chip, backgroundColor: c.record, alignItems: 'center', justifyContent: 'center', borderWidth: tabBar.ring, borderColor: bar, opacity: pressed ? opacity.pressed : 1, ...shadow.record })}>
+                <View style={{ width: tabBar.mark, height: tabBar.mark, borderRadius: radius.chip, backgroundColor: fixed.white }} />
               </ScalePressable>
-              <Text variant="caption" style={{ marginTop: 2, fontFamily: 'Geist_500Medium' }}>Ride</Text>
+              <Text variant="caption" style={{ marginTop: space.half, fontFamily: 'Geist_500Medium' }}>Ride</Text>
             </View>
           );
         }
         const it = items[name]; const on = active === name;
         return (
-          <ScalePressable scaleTo={0.92} key={name} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={it.label} onPress={() => navigateToTab(state.routes.find((r) => r.name === name)?.key ?? name)} style={{ flex: 1, height: h - 12, alignItems: 'center', justifyContent: 'center', gap: landscape ? 1 : 3, borderRadius: (h - 12) / 2 }}>
+          <ScalePressable scaleTo={0.92} key={name} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={it.label} onPress={() => navigateToTab(state.routes.find((r) => r.name === name)?.key ?? name)} style={{ flex: 1, height: h - 12, alignItems: 'center', justifyContent: 'center', gap: landscape ? space.half : space[1], borderRadius: (h - 12) / 2 }}>
             <Highlight on={on} color={c.paper} radius={(h - 12) / 2} />
-            <View style={{ position: 'relative', zIndex: 1, alignItems: 'center', gap: landscape ? 1 : 3 }}>
+            <View style={{ position: 'relative', zIndex: 1, alignItems: 'center', gap: landscape ? space.half : space[1] }}>
               <Icon icon={it.icon} size={24} tone={on ? 'ink' : 'muted'} strokeWidth={on ? 2.25 : 1.75} />
               <Text variant="caption" tone={on ? 'ink' : 'muted'} style={{ fontFamily: 'Geist_500Medium' }}>{it.label}</Text>
             </View>

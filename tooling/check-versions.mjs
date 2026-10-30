@@ -17,7 +17,7 @@ const files = [
   ["tooling/package.json", (j) => j.version],
 ].map(([path, pick]) => ({ path, version: pick(read(path)) }));
 // The iOS build reads its version from Info.plist, not from app.json.
-const plist = "apps/mobile/ios/Myto/Info.plist";
+const plist = "apps/mobile/ios/MytoMoto/Info.plist";
 files.push({ path: plist, version: plistVersion(readFileSync(root + plist, "utf8")) });
 
 const drift = findVersionDrift(manifest, files);

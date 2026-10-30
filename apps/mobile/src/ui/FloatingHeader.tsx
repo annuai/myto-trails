@@ -4,7 +4,7 @@ import { Bell } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNotifications } from '@/store/notifications';
 import { useTheme } from '@/theme/ThemeProvider';
-import { fixed, size, space } from '@/theme/tokens';
+import { size, space, scrim, shadow } from '@/theme/tokens';
 import { IconButton } from './IconButton';
 import { Logo } from './Logo';
 import { ScalePressable } from './motion';
@@ -33,8 +33,8 @@ export function FloatingHeader({ scrollY }: { scrollY: Animated.Value }) {
         style={{
           width: '100%', maxWidth: CONTENT_MAX, height: HEADER_HEIGHT, borderRadius: HEADER_HEIGHT / 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
           paddingLeft: edge(0, 20), paddingRight: edge(0, 4),
-          backgroundColor: p.interpolate({ inputRange: [0, 1], outputRange: ['rgba(255,255,255,0)', pill] }),
-          shadowColor: fixed.shadow, shadowRadius: 24, shadowOffset: { width: 0, height: space[1] }, shadowOpacity: p.interpolate({ inputRange: [0, 1], outputRange: [0, 0.1] }),
+          backgroundColor: p.interpolate({ inputRange: [0, 1], outputRange: [scrim.clear, pill] }),
+          ...shadow.header, shadowOpacity: p.interpolate({ inputRange: [0, 1], outputRange: [0, 0.1] }),
         }}
       >
         <ScalePressable accessibilityRole="link" accessibilityLabel="Go to Dash" onPress={() => router.replace('/')} style={{ minHeight: size.target, justifyContent: 'center', paddingRight: space[4] }}>

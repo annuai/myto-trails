@@ -14,6 +14,8 @@ export type TrailDetail = TrailSummary & {
   media?: Media[];
   description: string | null; safetyNotes: string | null; hazards: string[]; bestMonths: number[]; elevationGainM: number | null;
   restrictions: string[]; permissionInstructions: string | null; conditionNote: string | null; hasGpx: boolean;
+  /** Where the trail starts; only the approximate public point for a sensitive trail. */
+  location?: { lat: number; lon: number } | null;
 };
 export type RouteDto = { distanceKm: number; elevGainM: number; elevLossM: number; minElevM: number; maxElevM: number; pointCount: number; profile: { d: number; e: number }[]; line: [number, number][] };
 export type SearchResult = { items: TrailSummary[]; total: number; page: number; pageSize: number };

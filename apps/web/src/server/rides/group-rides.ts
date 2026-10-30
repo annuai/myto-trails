@@ -8,6 +8,8 @@ const HOUR = 3_600_000;
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const MAX_RIDERS = 30;
 const CREATES_PER_DAY = 5;
+/** A code is six characters, so the number of tries is what keeps it from being guessed. */
+const JOIN_TRIES_PER_HOUR = 20;
 /** A group ride ends 12 hours after the last activity, and never lives longer than 72 hours. */
 export const IDLE_MS = 12 * HOUR;
 export const HARD_CAP_MS = 72 * HOUR;
@@ -112,11 +114,13 @@ async function wipe(sql: Sql | TransactionSql, rideId: string, now: Date) {
 export async function joinGroupRide(
   sql: Sql,
   i: { userId: string; code: string; displayName: string; now: Date },
-): Promise<{ ok: true; id: string; name: string; role: "leader" | "member" } | Fail<"not_member" | "invalid" | "not_found" | "full">> {
+): Promise<{ ok: true; id: string; name: string; role: "leader" | "member" } | Fail<"not_member" | "invalid" | "not_found" | "full" | "too_many_tries">> {
   if (!(await isMember(sql, i.userId))) return { ok: false, reason: "not_member" };
   const code = normalizeCode(i.code);
   if (!code) return { ok: false, reason: "not_found" };
   return sql.begin(async (tx) => {
+    const [hit] = await tx`select rate_limit_hit(${`group-join:${i.userId}`}, ${JOIN_TRIES_PER_HOUR}, 3600) as ok`;
+    if (!hit!.ok) return { ok: false, reason: "too_many_tries" } as const;
     const [g] = await tx`select id, name, created_at, last_activity_at, ended_at from group_ride where code = ${code} and ended_at is null for update`;
     if (!g) return { ok: false, reason: "not_found" } as const;
     if (isExpired({ createdAt: g.created_at, lastActivityAt: g.last_activity_at, endedAt: g.ended_at }, i.now)) {

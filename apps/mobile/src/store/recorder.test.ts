@@ -274,4 +274,20 @@ describe('moving while paused', () => {
     expect(second.getState().pauseBreaks).toEqual([2]);
     vi.restoreAllMocks();
   });
+
+  it('gives each ride an id when it starts, keeps it in the journal, and restores it after a kill', async () => {
+    const j = createMemoryJournal();
+    const first = createRecorder(j);
+    await first.getState().start('gps');
+    const id = first.getState().rideId;
+    expect(id).not.toBe('');
+    expect((await j.read())!.meta.rideId).toBe(id);
+    const second = createRecorder(j);
+    await second.getState().start('gps');
+    await second.getState().recover();
+    expect(second.getState().rideId).toBe(id);
+    const other = createRecorder(createMemoryJournal());
+    await other.getState().start('gps');
+    expect(other.getState().rideId).not.toBe(id);
+  });
 });

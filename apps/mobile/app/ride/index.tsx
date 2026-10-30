@@ -12,7 +12,10 @@ import { useLocation } from '@/store/location';
 import { useRecorder } from '@/store/recorder';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { dueInfo } from '@/lib/todos';
-import { daysUntil } from '@/lib/dates';
+import { daysUntil, todayISO } from '@/lib/dates';
+import { dayIndexOn, tripStatus } from '@/lib/tripPlan';
+import { tripChecks } from '@/lib/tripReadiness';
+import { useTrips } from '@/store/trips';
 import { useProfile } from '@/store/profile';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
@@ -26,6 +29,7 @@ import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 
+import { space } from '@/theme/tokens';
 type Check = { label: string; status: Status; word: string; go?: string };
 
 function validity(label: string, iso: string | undefined, go: string): Check {
@@ -53,6 +57,9 @@ export default function RideReady() {
   const todos = useTodos((s) => s.todos);
   const overdue = todos.filter((t) => dueInfo(t, totalKm(rides)).state === 'overdue').length;
   const trail = nextTrip;
+  // The trip under way (or ready to start) adds its own rows: today's route and how much of the pack list is done.
+  const trip = useTrips((s) => s.trips.find((t) => { const st = tripStatus(t, todayISO()); return st === 'active' || st === 'ready'; }));
+  const pack = todos.filter((t) => !!trip && t.tripId === trip.id);
   const fix = useLocation((s) => s.fix);
   const gpsError = useLocation((s) => s.error);
   // Start looking for the rider as soon as this screen opens, so a fix is ready by the time the ride starts.
@@ -70,6 +77,10 @@ export default function RideReady() {
     contacts.length ? { label: 'Emergency contact', status: 'good', word: 'Set', go: '/documents/contacts' } : { label: 'Emergency contact', status: 'caution', word: 'Add one', go: '/documents/contacts' },
     overdue ? { label: 'To-dos', status: 'caution', word: `${overdue} overdue`, go: '/todos' } : { label: 'To-dos', status: 'good', word: 'Up to date' },
   ];
+  if (trip) {
+    const day = trip.days?.[dayIndexOn(trip, todayISO()) ?? 0];
+    for (const c of tripChecks({ route: day?.route, pack: { total: pack.length, done: pack.filter((t) => t.done).length } })) checks.push({ ...c, go: `/trips/${trip.id}` });
+  }
   if (trail) checks.push(offline[trail.slug] ? { label: `Offline pack: ${trail.name}`, status: 'good', word: 'Ready' } : { label: `Offline pack: ${trail.name}`, status: 'caution', word: 'Not downloaded', go: `/trail/${trail.slug}` });
 
   const begin = async () => {
@@ -109,16 +120,16 @@ export default function RideReady() {
       </ListCard>
       </>} right={<>
       <SectionTitle>Location</SectionTitle>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: space[2] }}>
         <ChoiceChip label="Phone GPS" selected={source === 'gps'} onPress={() => setSource('gps')} />
         <ChoiceChip label="Simulated (testing)" selected={source === 'sim'} onPress={() => setSource('sim')} />
       </View>
-      <Text variant="caption" tone="muted" style={{ marginTop: 12 }}>
+      <Text variant="caption" tone="muted" style={{ marginTop: space[3] }}>
         {source === 'sim' ? 'Moves along a test loop so you can try recording on a laptop. Not a real ride.'
           : fix ? 'Your position is shown below. It is only saved once you start.'
           : gpsError ?? 'Finding your location. If asked, allow location access.'}
       </Text>
-      {source === 'gps' ? <View style={{ marginTop: 16 }}><OsmMap height={220} radius={24} follow position={here} /></View> : null}
+      {source === 'gps' ? <View style={{ marginTop: space[4] }}><OsmMap height={220} radius={24} follow position={here} /></View> : null}
       </>} />
     </Screen>
   );

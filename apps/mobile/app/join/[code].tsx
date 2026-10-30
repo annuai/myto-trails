@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Users } from 'lucide-react-native';
 import { endGroupRide, joinGroupRide, leaveGroupRide } from '@/api/groups';
 import { normalizeInviteCode } from '@/lib/inviteLink';
 import { useAction } from '@/lib/useAction';
+import { startSignIn } from '@/lib/signIn';
 import { useAuth } from '@/store/auth';
 import { useCompanion } from '@/store/companion';
 import { Button } from '@/ui/Button';
@@ -24,6 +26,7 @@ export default function JoinGroup() {
   const user = useAuth((s) => s.user);
   const group = useCompanion((s) => s.group);
   const { busy, problem, run } = useAction();
+  const [signInProblem, setSignInProblem] = useState<string>();
 
   const joinNow = async () => {
     if (!token || !code) return;
@@ -58,8 +61,9 @@ export default function JoinGroup() {
           </Card>
           {!token ? (
             <>
-              <Text variant="label" tone="muted">Sign in first. Then open the invite link again to join.</Text>
-              <Button label="Sign in" onPress={() => router.push('/auth')} />
+              <Text variant="label" tone="muted">Sign in with your email link first. You come back to this invite to join.</Text>
+              <Button label="Sign in" onPress={() => { setSignInProblem(undefined); startSignIn(`/join/${code}`).catch((e: Error) => setSignInProblem(e.message)); }} />
+              {signInProblem ? <Text variant="label" tone="stop">{signInProblem}</Text> : null}
             </>
           ) : group?.code === code ? (
             <>
