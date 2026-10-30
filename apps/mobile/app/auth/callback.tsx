@@ -16,7 +16,7 @@ export default function AuthCallback() {
   useEffect(() => {
     if (ran.current) return;
     ran.current = true;
-    finishSignIn(String(code ?? ''), String(state ?? '')).then(() => router.replace('/you')).catch((e: Error) => setError(e.message));
+    finishSignIn(String(code ?? ''), String(state ?? '')).then((next) => router.replace(next as never)).catch((e: Error) => setError(e.message));
   }, [code, state, router]);
   return (
     <Screen>
