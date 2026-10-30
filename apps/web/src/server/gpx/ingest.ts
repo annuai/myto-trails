@@ -7,6 +7,7 @@ export const PARSE_MESSAGES: Record<ParseError, string> = {
   doctype_not_allowed: "This file contains declarations that are not allowed in a GPX file, so it was refused for safety.",
   not_gpx: "This does not look like a GPX file.",
   no_track_points: "No track points were found. Export the recorded track (not just waypoints or a planned route).",
+  invalid_coordinates: "The track has positions that are not on Earth, so the GPS data looks corrupt.",
   too_complex: "This file is too large or too deeply nested to process.",
 };
 

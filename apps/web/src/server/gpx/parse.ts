@@ -3,7 +3,7 @@ import { XMLParser } from "fast-xml-parser";
 export type TrackPoint = { lat: number; lon: number; ele?: number; time?: number };
 export type Waypoint = { lat: number; lon: number; name: string };
 
-export type ParseError = "doctype_not_allowed" | "not_gpx" | "no_track_points" | "too_complex";
+export type ParseError = "doctype_not_allowed" | "not_gpx" | "no_track_points" | "invalid_coordinates" | "too_complex";
 export type ParseResult =
   | { ok: true; tracks: TrackPoint[][]; waypoints: Waypoint[]; name?: string }
   | { ok: false; error: ParseError };
@@ -55,6 +55,15 @@ function point(node: unknown): TrackPoint | null {
   return { lat, lon, ele: num(text(n.ele)), time: Number.isFinite(time) ? time : undefined };
 }
 
+/** A point with a latitude or longitude that exists as a number but is not on Earth: corrupt data, not an empty file. */
+function offEarth(node: unknown): boolean {
+  const n = asNode(node);
+  if (!n) return false;
+  const lat = num(n["@_lat"]);
+  const lon = num(n["@_lon"]);
+  return lat !== undefined && lon !== undefined && (Math.abs(lat) > 90 || Math.abs(lon) > 180);
+}
+
 export function parseGpx(xml: string): ParseResult {
   if (typeof xml !== "string" || xml.trim() === "") return { ok: false, error: "not_gpx" };
   if (/<!\s*(DOCTYPE|ENTITY)/i.test(xml)) return { ok: false, error: "doctype_not_allowed" };
@@ -77,7 +86,10 @@ export function parseGpx(xml: string): ParseResult {
     tracks = arr(gpx.rte).map(asNode).map((r) => arr(r?.rtept).map(point).filter((p): p is TrackPoint => p !== null));
   }
   tracks = tracks.filter((t) => t.length > 0);
-  if (tracks.length === 0) return { ok: false, error: "no_track_points" };
+  if (tracks.length === 0) {
+    const raw = [...trks.flatMap((t) => arr(t.trkseg).map(asNode)).flatMap((seg) => arr(seg?.trkpt)), ...arr(gpx.rte).map(asNode).flatMap((r) => arr(r?.rtept))];
+    return { ok: false, error: raw.some(offEarth) ? "invalid_coordinates" : "no_track_points" };
+  }
 
   const waypoints: Waypoint[] = arr(gpx.wpt).flatMap((w) => {
     const p = point(w);

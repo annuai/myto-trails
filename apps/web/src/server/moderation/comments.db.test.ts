@@ -28,6 +28,8 @@ async function pendingComment() {
   const author = await member("New Author");
   const r = await postComment(db.sql, { userId: author, slug: t.slug, body: "My first comment here" });
   if (!r.ok) throw new Error();
+  // New comments show straight away. Ones posted before that change may still be waiting for approval, so make this one wait.
+  await db.sql`update trail_comment set status = 'pending' where id = ${r.id}`;
   return { t, author, id: r.id };
 }
 

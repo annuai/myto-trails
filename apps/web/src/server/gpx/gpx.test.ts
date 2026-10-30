@@ -53,6 +53,10 @@ describe("parseGpx", () => {
     expect(parseGpx('<gpx version="1.1"><trk><trkseg></trkseg></trk></gpx>')).toEqual({ ok: false, error: "no_track_points" });
   });
 
+  it("says the data is corrupt, not empty, when every point is off the Earth", () => {
+    expect(parseGpx('<gpx version="1.1"><trk><trkseg><trkpt lat="95" lon="10"/><trkpt lat="12" lon="400"/></trkseg></trk></gpx>')).toEqual({ ok: false, error: "invalid_coordinates" });
+  });
+
   it("drops points with missing, non-numeric, infinite or out-of-range coordinates", () => {
     const xml = `<gpx version="1.1"><trk><trkseg>
       <trkpt lat="11.6" lon="76.1"/><trkpt lat="abc" lon="76.1"/><trkpt lat="Infinity" lon="76.1"/><trkpt lat="NaN" lon="76.1"/>
