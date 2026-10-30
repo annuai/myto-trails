@@ -8,7 +8,6 @@ import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import { countryName } from '@/lib/countryNames';
 import { signOut, startSignIn } from '@/lib/signIn';
-import { RIDER_OS } from '@/lib/flags';
 import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAuth } from '@/store/auth';
 import { asText, distanceKm } from '@/lib/units';
@@ -100,15 +99,15 @@ export default function You() {
       )}
       {authError ? <Text variant="label" tone="stop" style={{ marginTop: space[2] }}>{authError}</Text> : null}
       </>} right={<>
-      <SectionTitle>{RIDER_OS ? 'Garage' : 'Keep track'}</SectionTitle>
+      <SectionTitle>Keep track</SectionTitle>
       <ListCard>
-        {!RIDER_OS ? (<Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />) : null}
-        {!RIDER_OS ? (<Row icon={CalendarDays} label="Your year" value={asText(distanceKm(yearRecap(rides, new Date().getFullYear()).distanceKm))} mono onPress={() => router.push('/recap')} />) : null}
+        <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
+        <Row icon={CalendarDays} label="Your year" value={asText(distanceKm(yearRecap(rides, new Date().getFullYear()).distanceKm))} mono onPress={() => router.push('/recap')} />
         <Row icon={Fuel} label="Fuel costs" sub="What your rides cost in petrol" onPress={() => router.push('/fuel')} />
-        {!RIDER_OS ? (<Row icon={Stamp} label="Trails ridden" onPress={() => router.push('/passport')} />) : null}
-        {!RIDER_OS ? (<Row icon={Luggage} label="Trips" value={`${tripCount}`} mono onPress={() => router.push('/trips')} />) : null}
-        {!RIDER_OS ? (<Row icon={BookOpen} label="Journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />) : null}
-        {!RIDER_OS ? (<Row icon={ClipboardList} label="To-do list" value={`${openTodos} open`} onPress={() => router.push('/todos')} />) : null}
+        <Row icon={Stamp} label="Trails ridden" onPress={() => router.push('/passport')} />
+        <Row icon={Luggage} label="Trips" value={`${tripCount}`} mono onPress={() => router.push('/trips')} />
+        <Row icon={BookOpen} label="Journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />
+        <Row icon={ClipboardList} label="To-do list" value={`${openTodos} open`} onPress={() => router.push('/todos')} />
         <Row icon={IdCard} label="Documents and emergency" sub={docs || 'Licence, vehicle, emergency contacts'} onPress={() => router.push('/documents')} />
       </ListCard>
       <SectionTitle>Settings</SectionTitle>

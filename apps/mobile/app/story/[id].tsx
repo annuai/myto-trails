@@ -24,7 +24,6 @@ import { RideTimeline } from '@/features/RideTimeline';
 import { fetchOutcome } from '@/api/submissionOutcome';
 import { outcomeText } from '@/lib/submissionOutcome';
 import { useAuth } from '@/store/auth';
-import { RIDER_OS } from '@/lib/flags';
 import { RideMap } from '@/ui/RideMap';
 import { Columns } from '@/ui/Columns';
 import { Screen } from '@/ui/Screen';
@@ -91,7 +90,8 @@ function StoryBody() {
         <Measure parts={distanceKm(ride.distanceKm)} size="liveCompact" color={c.accentInk} />
         <Text variant="label" style={{ color: c.accentInk }}>in {asText(durationParts(ride.durationSec))}</Text>
       </View>
-      {RIDER_OS ? <><SectionTitle>Timeline</SectionTitle><View style={{ marginBottom: space[3] }}><RideTimeline ride={ride} /></View></> : null}
+      <SectionTitle>Timeline</SectionTitle>
+      <View style={{ marginBottom: space[3] }}><RideTimeline ride={ride} /></View>
       <SectionTitle>Highlights</SectionTitle>
       <Card style={{ flexDirection: 'row', marginBottom: space[3] }}>
         <Stat parts={speedKmh(ride.maxKmh)} label="Top speed" />

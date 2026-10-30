@@ -304,7 +304,7 @@ PODS:
   - React-Core (0.88.1):
     - React-Core-prebuilt
     - React-Core/Default (= 0.88.1)
-  - React-Core-prebuilt (0.88.0):
+  - React-Core-prebuilt (0.88.1):
     - ReactNativeDependencies
   - React-Core/CoreModulesHeaders (0.88.1):
     - React-Core-prebuilt
@@ -2887,7 +2887,7 @@ SPEC CHECKSUMS:
   ExpoLocalAuthentication: ac9c695d877aafc2d7b33b3fdc47ed8fdf90053e
   ExpoLocation: 743cb999a9e622b6cdb76298cd3dee0956e221f1
   ExpoLogBox: 624d64042d73abe0dc230a24b1a9f835adb2cec9
-  ExpoModulesCore: 6e10b9ba24e75f4c56b0ed486f884f814f51011c
+  ExpoModulesCore: 4be5076f5bdcded204fb0871e69c93044a2d067c
   ExpoModulesJSI: 0c41d2327b3002cc736e81465a3e5e55b6d93b94
   ExpoModulesWorklets: e010ffcda2ad799980848396501c9cd2bea18ef5
   ExpoModulesWorkletsAdapter: 3192d3905ee120d256120d748c0722bc5288067e
@@ -2902,7 +2902,7 @@ SPEC CHECKSUMS:
   ExpoTaskManager: a9a9c3ccecdf3e0b76d11c35893a5ee0989ccd7a
   ExpoUI: 94997b1c5e718d014a1ca18af2d0d7e13345be88
   ExpoWebBrowser: 2156882323a8634b7f01a8e2595d52187eb42fea
-  ExpoWidgets: 9cca1c52f1abd0e91fa86f873823154aaa041ec7
+  ExpoWidgets: 81888ca794786237c29e406bfe95a4ffeaee663d
   EXUpdatesInterface: 1c6a522d0eb0485f4de3fa55d0316288763b3f10
   fast_float: 7c925d1cebf8328d4018d061f49377e9f887e3b4
   FBLazyVector: 07cb4c5b92110c132f2bb73b908e87f35cbe0a19
@@ -2920,7 +2920,7 @@ SPEC CHECKSUMS:
   React-bridging: 48b96b1b423710103381dd90478513fff84456c4
   React-callinvoker: 8eb02682e7fc3ddc0e25a8d96eb5733c367436e8
   React-Core: 4cce9d3d50bd1544f33379cde3ae22175f6a1bcb
-  React-Core-prebuilt: 0fd2555a42f40e7770ced1c7dfc5ee1dbfe041cd
+  React-Core-prebuilt: dbd0bf94bbe1a1714bd4e27bc4f1bf33c02bb7b3
   React-CoreModules: c96f14c068269b233fcabc8add64963132a371a2
   React-cxxreact: 2956b35d64e2e5594607d359df31454a999acbed
   React-cxxstableapi: 7019410c5d74d0a60cae97b5a636cd42017370a3

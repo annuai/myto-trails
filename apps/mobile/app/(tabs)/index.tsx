@@ -18,8 +18,6 @@ import { clockLabel } from '@/lib/community';
 import { useCompanion } from '@/store/companion';
 import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
 import { startTodaysRide, startTrip } from '@/features/trip/startTrip';
-import { HomeFocusCard } from '@/features/HomeFocusCard';
-import { RIDER_OS } from '@/lib/flags';
 import { TripCard } from '@/features/trip/TripCard';
 import { dayIndexOn, soonestTrip, tripStatus } from '@/lib/tripPlan';
 import { todayISO } from '@/lib/dates';
@@ -35,6 +33,7 @@ import { distanceKm, durationParts, speedKmh } from '@/lib/units';
 import { useProfile } from '@/store/profile';
 import { useDistanceUnit } from '@/store/region';
 import { totalKm, useRides } from '@/store/rides';
+import { justFinishedRide } from '@/lib/justFinished';
 import { useTodos } from '@/store/todos';
 import { Banner } from '@/ui/Banner';
 import { Button } from '@/ui/Button';
@@ -88,8 +87,7 @@ export default function Home() {
       return mine.length ? [{ key: tr.id, sort: mine[0]!.d.sortKey, icon: Luggage, label: tr.name, sub: `${mine.length} to pack`, value: mine[0]!.d.text.replace('Due in ', 'in ').replace('Due ', ''), go: `/trips/${tr.id}` }] : [];
     }),
   ].sort((a, b) => a.sort - b.sort);
-  // A new rider has only the seeded sample ride; under the Rider OS flag it is not shown as theirs.
-  const latest = RIDER_OS ? rides.find((r) => !r.sample) : rides[0];
+  const latest = rides[0];
   const journals = groupByRide(useJournal((s) => s.entries)).slice(0, 3);
   const journalTitles = useJournal((s) => s.titles);
   const { permission, refresh } = usePermission();
@@ -100,6 +98,7 @@ export default function Home() {
   const checkin = useCompanion((s) => s.checkin);
   const group = useCompanion((s) => s.group);
   const nowMs = Date.now();
+  const finished = justFinishedRide(rides, nowMs);
 
   return (
     <Screen tabs brand overlay={<>
@@ -146,20 +145,14 @@ export default function Home() {
           <Banner eyebrow="Reminders" title="Get a nudge before a to-do is due or a ride starts" onPress={() => setRemindOpen(true)} />
         </View>
       ) : null}
-      {RIDER_OS ? (
-        <>
-          <HomeFocusCard />
-          <View style={{ marginTop: space[3] }}>
-        {overdue.length ? (
-          <Banner eyebrow="Needs attention" title={overdue.length === 1 ? `${overdue[0].t.title}: ${overdue[0].d.text.toLowerCase()}` : `${overdue.length} things are overdue`} onPress={() => router.push('/todos')} />
-        ) : contacts.length === 0 ? (
-          <Banner eyebrow="Safety" title="Add an emergency contact so SOS can reach someone" onPress={() => router.push('/documents/contacts')} />
-        ) : null}
+      {finished ? (
+        <HeroCard eyebrow="Just finished" title={finished.name}>
+          <View style={{ flexDirection: 'row' }}>
+            <Stat parts={durationParts(finished.durationSec)} label="Duration" /><Stat parts={distanceKm(finished.distanceKm)} label="Distance" /><Stat parts={speedKmh(finished.maxKmh)} label="Top speed" />
           </View>
-        </>
-      ) : (
-        <>
-      {nextTripPlan ? (
+          <Button variant="accent" label="View ride story" arrow onPress={() => router.push(`/story/${finished.id}`)} />
+        </HeroCard>
+      ) : nextTripPlan ? (
         <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} />
       ) : trail ? (
         <HeroCard eyebrow={trail.date ? `Next ride · ${trail.date}` : 'Next ride'} title={trail.name} action={<IconButton icon={MoreHorizontal} label="Next ride options" onPress={() => setMenu(true)} plain />}>
@@ -189,8 +182,6 @@ export default function Home() {
           <Banner eyebrow="Safety" title="Add an emergency contact so SOS can reach someone" onPress={() => router.push('/documents/contacts')} />
         ) : null}
       </View>
-        </>
-      )}
 
       <SectionTitle onAdd={() => router.push(`/journal/${Date.now()}`)} addLabel="Start a journal">Recent journals</SectionTitle>
       {journals.length ? (
