@@ -6,7 +6,7 @@
   "apps/mobile/app/documents/licence.tsx": 4,
   "apps/mobile/app/documents/vehicle.tsx": 4,
   "apps/mobile/app/ride/index.tsx": 3,
-  "apps/mobile/app/ride/live.tsx": 23,
+  "apps/mobile/app/ride/live.tsx": 21,
   "apps/mobile/app/story/[id].tsx": 4,
   "apps/mobile/app/story/submit.tsx": 9,
   "apps/mobile/app/todos/index.tsx": 1,

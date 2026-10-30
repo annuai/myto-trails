@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { distanceKm, speedKmh } from '@/lib/units';
 import { Linking, Platform, Share, Vibration, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -79,6 +80,12 @@ function LiveBody() {
   // Help on a solo ride's lock screen card opens this screen with the SOS sheet up.
   const { sos: sosParam } = useLocalSearchParams<{ sos?: string }>();
   useEffect(() => { if (sosParam) setSos(true); }, [sosParam]);
+  // The screen stays on while the rider is looking at the ride (a bike mount). Locking the phone still records through the background task.
+  useEffect(() => {
+    if (r.paused) return;
+    void activateKeepAwakeAsync('myto-live-screen').catch(() => undefined);
+    return () => { void deactivateKeepAwake('myto-live-screen'); };
+  }, [r.paused]);
   const [journalOpen, setJournalOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -163,10 +170,9 @@ function LiveBody() {
       <Icon icon={Flag} size={h > 70 ? 26 : 22} /><Text variant="labelMedium">Waypoint{r.waypoints.length ? ` · ${r.waypoints.length}` : ''}</Text>
     </Pressable>
   );
+  // SOS is held, like Stop, so a glove or a bump cannot open it. A shorter hold than Stop, because it is the one a hurt rider reaches for.
   const sosBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => { buzz.help(); setSos(true); }} style={{ flex: 1, minHeight: h, borderRadius: radius.control, borderWidth: 1.5, borderColor: c.stop, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
-      <Icon icon={Siren} tone="stop" size={22} /><Text variant="bodyMedium" tone="stop">SOS</Text>
-    </Pressable>
+    <HoldButton label="SOS" icon={Siren} color={c.stop} borderOnly ms={700} minHeight={h} onComplete={() => { buzz.help(); setSos(true); }} />
   );
 
   const smallBtn = (label: string, icon: typeof Users, onPress: () => void, h: number) => (
