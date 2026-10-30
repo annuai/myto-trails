@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.10.0](https://github.com/annuai/myto-trails/compare/v0.9.0...v0.10.0) (2026-10-30)
+
+
+### Features
+
+* **mobile:** new pictures for the record and setup pages; the setup picture is top-aligned ([6917534](https://github.com/annuai/myto-trails/commit/6917534d088fa721e55c0bf9376bcad02c7208ee))
+* **mobile:** onboarding swipe that dissolves between pages, larger logo, steady header, new pictures ([88c1345](https://github.com/annuai/myto-trails/commit/88c13454d55cb4e95bbd71de3c7594ce14502394))
+
+
+### Bug Fixes
+
+* **mobile:** stop adding the sample ride, and remove it from phones that have it ([1ab577e](https://github.com/annuai/myto-trails/commit/1ab577e62789363aeb8c9772cb832b8ca59906e0))
+
 ## [0.9.0](https://github.com/annuai/myto-trails/compare/v0.8.0...v0.9.0) (2026-10-30)
 
 
