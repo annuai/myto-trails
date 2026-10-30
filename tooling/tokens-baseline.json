@@ -1,5 +1,5 @@
 {
-  "apps/mobile/app/(tabs)/index.tsx": 11,
+  "apps/mobile/app/(tabs)/index.tsx": 9,
   "apps/mobile/app/(tabs)/trails.tsx": 6,
   "apps/mobile/app/(tabs)/you.tsx": 2,
   "apps/mobile/app/documents/contacts.tsx": 10,
@@ -9,7 +9,6 @@
   "apps/mobile/app/ride/live.tsx": 21,
   "apps/mobile/app/story/[id].tsx": 4,
   "apps/mobile/app/story/submit.tsx": 9,
-  "apps/mobile/app/todos/index.tsx": 1,
   "apps/mobile/app/todos/new.tsx": 7,
   "apps/mobile/app/trail/[id].tsx": 22,
   "apps/mobile/src/features/TodoRow.tsx": 9,
@@ -24,7 +23,6 @@
   "apps/mobile/src/ui/EmptyState.tsx": 3,
   "apps/mobile/src/ui/Field.tsx": 4,
   "apps/mobile/src/ui/FloatingHeader.tsx": 1,
-  "apps/mobile/src/ui/Header.tsx": 9,
   "apps/mobile/src/ui/HeroCard.tsx": 9,
   "apps/mobile/src/ui/HoldButton.tsx": 2,
   "apps/mobile/src/ui/ListCard.tsx": 6,

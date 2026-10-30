@@ -230,8 +230,7 @@ export default function Home() {
         </Card>
         </ScalePressable>
       ) : <EmptyState icon={RouteIcon} title="No rides yet" body="Tap Ride to log your first ride." />}
-      {latest ? <View style={{ marginTop: 12, gap: 12 }}>
-        <Button variant="soft" label="View ride story" arrow onPress={() => router.push(`/story/${latest.id}`)} />
+      {latest ? <View style={{ marginTop: space[3] }}>
         <Button variant="soft" label="All rides" arrow onPress={() => router.push('/rides')} />
       </View> : null}
         </>}

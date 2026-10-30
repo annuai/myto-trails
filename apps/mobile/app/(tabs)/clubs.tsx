@@ -67,7 +67,7 @@ export default function Clubs() {
         <Text variant="body" tone="muted">Loading…</Text>
       ) : (
         <>
-          <SectionTitle onAdd={() => setCreating(true)} addLabel="Start a club">Your clubs</SectionTitle>
+          <SectionTitle first onAdd={() => setCreating(true)} addLabel="Start a club">Your clubs</SectionTitle>
           {mine.length ? <View style={{ gap: space[3] }}>{mine.map((c) => <ClubCard key={c.clubId} club={c} onPress={() => open(c.clubId)} />)}</View>
             : <EmptyState icon={Users} title="No club yet" body="Ask to join a club below, or start one with the + button." />}
           {others.length ? (
