@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { haversine, type LatLng } from '@/lib/geo';
+import { uid } from '@/lib/id';
 import type { Journal } from '@/lib/journal';
 import { breaksOf, cleanTrack, driftRadius, splitSegments, trackStats } from '@/lib/track';
 import { WAYPOINT_LABEL, type WaypointKind } from '@/lib/waypointKinds';
@@ -16,6 +17,8 @@ type State = {
   status: 'idle' | 'running';
   source: 'gps' | 'sim';
   startedAt: number;
+  /** The id this ride is saved under. Created at the start so a journal entry made during the ride can point at it. Empty while idle. */
+  rideId: string;
   points: LatLng[];
   waypoints: Waypoint[];
   meters: number;
@@ -62,7 +65,7 @@ type State = {
   reset: () => void;
 };
 
-const blank = { status: 'idle' as const, startedAt: 0, points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0, moving: false, paused: false, pausedAt: 0, pausedMs: 0, pauseBreaks: [] as number[], skipStep: false };
+const blank = { status: 'idle' as const, startedAt: 0, rideId: '', points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0, moving: false, paused: false, pausedAt: 0, pausedMs: 0, pauseBreaks: [] as number[], skipStep: false };
 
 /** The live recorder. Every fix goes to the journal first; the store only shows what the screen needs. */
 export function createRecorder(journal: Journal, hooks: { stopBackground?: () => Promise<void> } = {}) {
@@ -88,8 +91,9 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       const existing = await journal.read();
       if (existing) { set({ recoverable: { startedAt: existing.meta.startedAt, points: existing.points.length } }); return false; }
       const startedAt = Date.now();
-      await journal.begin({ startedAt, source });
-      set({ ...blank, status: 'running', source, startedAt, recoverable: null, error: undefined });
+      const rideId = uid();
+      await journal.begin({ startedAt, source, rideId });
+      set({ ...blank, status: 'running', source, startedAt, rideId, recoverable: null, error: undefined });
       return true;
     },
     ingest: (p) => {
@@ -142,7 +146,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       const stats = trackStats(splitSegments(points, r.pauses));
       const open = r.pauses.find((x) => x.to === undefined);
       const pausedMs = r.pauses.reduce((n, x) => n + (x.to !== undefined ? x.to - x.from : 0), 0);
-      set({ ...blank, status: 'running', source: r.meta.source, startedAt: r.meta.startedAt, points, waypoints: r.waypoints, meters: stats.distanceM, maxKmh: stats.maxKmh, lastFixAt: Date.now(), recoverable: null, paused: !!open, pausedAt: open?.from ?? 0, pausedMs, pauseBreaks: breaksOf(splitSegments(points, r.pauses)) });
+      set({ ...blank, status: 'running', source: r.meta.source, startedAt: r.meta.startedAt, rideId: r.meta.rideId ?? '', points, waypoints: r.waypoints, meters: stats.distanceM, maxKmh: stats.maxKmh, lastFixAt: Date.now(), recoverable: null, paused: !!open, pausedAt: open?.from ?? 0, pausedMs, pauseBreaks: breaksOf(splitSegments(points, r.pauses)) });
     },
     discardRecovered: async () => { await hooks.stopBackground?.(); await journal.clear(); set({ recoverable: null }); },
     setError: (error) => set({ error }),

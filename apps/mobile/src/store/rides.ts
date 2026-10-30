@@ -16,7 +16,7 @@ export type Ride = {
 
 type State = {
   rides: Ride[];
-  addRide: (r: Omit<Ride, 'id'>) => string;
+  addRide: (r: Omit<Ride, 'id'>, id?: string) => string;
   removeRide: (id: string) => void;
   /** Gives a ride a new name. A blank name is ignored. */
   renameRide: (id: string, name: string) => void;
@@ -27,7 +27,7 @@ export const useRides = create<State>()(
   persist(
     (set) => ({
       rides: [sampleRide()],
-      addRide: (r) => { const id = uid(); set((s) => ({ rides: [{ ...r, id }, ...s.rides] })); return id; },
+      addRide: (r, given) => { const id = given ?? uid(); set((s) => ({ rides: [{ ...r, id }, ...s.rides] })); return id; },
       removeRide: (id) => set((s) => ({ rides: s.rides.filter((r) => r.id !== id) })),
       renameRide: (id, name) => { const n = name.replace(/\s+/g, ' ').trim().slice(0, 80); if (n) set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, name: n, updatedAt: Date.now() } : r)) })); },
       setSubmission: (id, submission) => set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, submission, updatedAt: Date.now() } : r)) })),

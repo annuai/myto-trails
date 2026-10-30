@@ -6,6 +6,8 @@ export type JournalKind = 'note' | 'voice' | 'photo';
  */
 export type JournalEntry = {
   id: string; rideKey: number; at: number; kind: JournalKind;
+  /** The id of the ride this belongs to. Written next to `rideKey` (which stays) so a later change can switch to it; absent on a journal with no ride, and on entries from before it. */
+  rideId?: string;
   /** The note, or a caption on a photo. */
   text?: string;
   /** Voice length. */

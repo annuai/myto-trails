@@ -18,6 +18,8 @@ function db(): Promise<SQLiteDatabase> {
     `);
     // The kind column came later: add it to a journal created before it (the statement fails harmlessly when it is already there).
     await d.execAsync('ALTER TABLE waypoints ADD COLUMN kind TEXT').catch(() => undefined);
+    // The same for the ride id, so a ride recorded before ride ids can still be recovered.
+    await d.execAsync('ALTER TABLE meta ADD COLUMN ride_id TEXT').catch(() => undefined);
     return d;
   })();
   return opened;
@@ -31,7 +33,7 @@ export const journal: Journal = {
     const d = await db();
     await d.withTransactionAsync(async () => {
       await clearAll(d);
-      await d.runAsync('INSERT INTO meta (id, started_at, source) VALUES (1, ?, ?)', meta.startedAt, meta.source);
+      await d.runAsync('INSERT INTO meta (id, started_at, source, ride_id) VALUES (1, ?, ?, ?)', meta.startedAt, meta.source, meta.rideId ?? null);
     });
   },
   async append(f) {
@@ -55,7 +57,7 @@ export const journal: Journal = {
   },
   async read(): Promise<JournalRide | null> {
     const d = await db();
-    const meta = await d.getFirstAsync<{ started_at: number; source: 'gps' | 'sim' }>('SELECT started_at, source FROM meta WHERE id = 1');
+    const meta = await d.getFirstAsync<{ started_at: number; source: 'gps' | 'sim'; ride_id: string | null }>('SELECT started_at, source, ride_id FROM meta WHERE id = 1');
     if (!meta) return null;
     const rows = await d.getAllAsync<FixRow>('SELECT lat, lng, t, ele, speed, acc FROM fixes ORDER BY id');
     const wpRows = await d.getAllAsync<{ name: string; lat: number; lng: number; kind: JournalWaypoint['kind'] | null }>('SELECT name, lat, lng, kind FROM waypoints ORDER BY id');
@@ -64,7 +66,7 @@ export const journal: Journal = {
     const pauses: Pause[] = [];
     for (const e of events) { if (e.kind === 'pause') pauses.push({ from: e.t }); else if (pauses.length) pauses[pauses.length - 1].to = e.t; }
     return {
-      meta: { startedAt: meta.started_at, source: meta.source },
+      meta: { startedAt: meta.started_at, source: meta.source, ...(meta.ride_id ? { rideId: meta.ride_id } : {}) },
       points: rows.map((r) => ({ lat: r.lat, lng: r.lng, ...(r.t != null ? { t: r.t } : {}), ...(r.ele != null ? { ele: r.ele } : {}), ...(r.speed != null ? { speed: r.speed } : {}), ...(r.acc != null ? { acc: r.acc } : {}) })),
       waypoints, pauses,
     };

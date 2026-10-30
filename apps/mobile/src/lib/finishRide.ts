@@ -17,5 +17,5 @@ export const finishRide = createFinisher({
   flush: () => useRecorder.getState().flush(),
   reset: () => useRecorder.getState().reset(),
   findSaved: (startedAt) => useRides.getState().rides.find((r) => r.startedAt === startedAt)?.id,
-  addRide: (r) => useRides.getState().addRide(r),
+  addRide: (r, id) => useRides.getState().addRide(r, id),
 });

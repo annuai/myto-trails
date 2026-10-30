@@ -4,9 +4,9 @@ import type { JournalEntry } from '@/lib/journalEntries';
 import { journalSlice } from './journalCore';
 
 const entry = (id: string, rideKey: number, kind: JournalEntry['kind']): JournalEntry => ({ id, rideKey, at: 1, kind });
-const setup = () => {
+const setup = (rideIdFor?: (rideKey: number) => string | undefined) => {
   const media = { remove: vi.fn(), removeAll: vi.fn() };
-  return { media, store: create(journalSlice(media)) };
+  return { media, store: create(journalSlice(media, rideIdFor)) };
 };
 
 describe('journal store', () => {
@@ -73,5 +73,22 @@ describe('journal store', () => {
     expect(store.getState().titles).toEqual({ 7: 'New' });
     store.getState().restore([]);
     expect(store.getState().titles).toEqual({});
+  });
+
+  it('stamps the id of the ride an entry belongs to, when it is known', () => {
+    const { store } = setup((k) => (k === 100 ? 'ride-x' : undefined));
+    store.getState().add(entry('a', 100, 'note'));
+    store.getState().add(entry('b', 200, 'note'));
+    store.getState().add({ ...entry('c', 100, 'note'), rideId: 'already' });
+    const by = Object.fromEntries(store.getState().entries.map((e) => [e.id, e.rideId]));
+    expect(by).toEqual({ a: 'ride-x', b: undefined, c: 'already' });
+  });
+  it('fills in the ride id of older entries from the saved rides, once, and keeps everything else', () => {
+    const { store } = setup();
+    store.getState().restore([entry('a', 100, 'note'), entry('b', 100, 'photo'), entry('c', 999, 'note'), { ...entry('d', 100, 'note'), rideId: 'keep' }], { 100: 'Title' });
+    expect(store.getState().backfillRideIds([{ id: 'ride-x', startedAt: 100 }])).toBe(2);
+    expect(store.getState().entries.map((e) => e.rideId)).toEqual(['ride-x', 'ride-x', undefined, 'keep']);
+    expect(store.getState().titles).toEqual({ 100: 'Title' });
+    expect(store.getState().backfillRideIds([{ id: 'ride-x', startedAt: 100 }])).toBe(0);
   });
 });

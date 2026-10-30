@@ -11,7 +11,8 @@ export type FinishDeps = {
   reset: () => void;
   /** The id of an already saved ride that started at this time, if any. */
   findSaved: (startedAt: number) => string | undefined;
-  addRide: (r: Omit<Ride, 'id'>) => string;
+  /** `id` is the one given when recording started; a recording from before ride ids has none, and the store makes one. */
+  addRide: (r: Omit<Ride, 'id'>, id?: string) => string;
   /** Resolves once the saved rides are written to the phone's storage. */
   persist: () => Promise<void>;
   now: () => number;
@@ -34,7 +35,7 @@ export function createFinisher(d: FinishDeps): () => Promise<string | undefined>
     let id: string | undefined;
     if (ride) {
       id = d.findSaved(raw.meta.startedAt);
-      if (!id) { id = d.addRide(ride); await d.persist(); }
+      if (!id) { id = d.addRide(ride, raw.meta.rideId); await d.persist(); }
     }
     await d.journal.clear();
     return id;
