@@ -4,7 +4,7 @@ Five halftone illustrations, one per page of the welcome flow. Replace any of th
 
 **Files:** `welcome.webp`, `record.webp`, `trails.webp`, `safety.webp`, `setup.webp` in this folder (named in `src/features/onboarding/slides.ts`).
 **Size:** 1200 x 1200 px, square, WebP (quality about 78), under 400 KB each. PNG is much too heavy for this texture (1 to 3 MB).
-**Shown:** cropped to fill a rounded card about 350 x 420 points, so the subject must sit in the middle 70 percent; sky and ground run off the edges.
+**Shown:** cropped to fill a rounded card about 350 x 420 points, so the subject must sit in the middle 70 percent; sky and ground run off the edges. The setup picture is shown top-aligned in a shorter frame (the globe must be in its top half); the rest is cut off below.
 
 ## Style (match `assets/rider-on-ridge.jpg`)
 
@@ -17,10 +17,10 @@ faces, no gradients, no photo realism. One rider (black full-face helmet, dark j
 | File | Page | Place | Camera | Light | Rider | Red accent |
 |---|---|---|---|---|---|---|
 | `welcome` | Every ride, remembered. | Alpine ridge | Side, mid-height | Dawn, cream sky | Medium, left | Jacket and sun ring |
-| `record` | Tap Ride. We do the rest. | Farmland and a river | Straight down from above | Midday, flat | Tiny | The recorded route line |
+| `record` | Tap Ride. We do the rest. | Causeway road across a lagoon | High, from the side | Day, cream sky | Small, right of centre | The recorded route line along the road |
 | `trails` | Know before you go. | Pine forest, stream crossing | Eye level, no horizon | Misty morning | Medium, centre | Tag on a trail post |
 | `safety` | Someone always knows. | Dirt road above a lake | High, looking down the road | Day, cream sky | A group: two ride on, two help a rider | Red sonar rings on the rider being helped |
-| `setup` | Set up in a few taps. | Coast road, with the world behind | Over the rider's shoulder | Day, cream sky | Medium, lower left | A red dot on the home country |
+| `setup` | Set up in a few taps. | Coast road, with the world behind | High, no rider | Day, cream sky | None | A red dot on the home country |
 
 ## Making a new one (ChatGPT image generation)
 

@@ -77,7 +77,7 @@ export function OnboardingFlow({ onDone, onPickCountry }: { onDone: () => void; 
     };
   }, [scrollX, width, drift, pages]);
   const frame = { position: 'absolute', top: 0, left: 0, width, overflow: 'hidden', borderRadius: radius.card, backgroundColor: c.card } as const;
-  /** A picture a little wider than its frame, so the drift never shows an edge. */
+  /** A picture a little wider than its frame, so the drift never shows an edge. It starts at the frame's top edge; anything taller than the frame is cut off at the bottom. */
   const picture = (source: ImageSourcePropType, page: number, key: string, height: number) => (
     <Animated.Image key={key} source={source} resizeMode="cover" accessibilityIgnoresInvertColors
       style={{ position: 'absolute', top: 0, left: -width * drift, width: width * (1 + 2 * drift), height, opacity: motion?.pages[page]?.picture ?? 1, transform: [{ translateX: motion?.pages[page]?.shift ?? 0 }] }} />
@@ -100,7 +100,8 @@ export function OnboardingFlow({ onDone, onPickCountry }: { onDone: () => void; 
               {SLIDES.map((s, i) => picture(s.art, i, s.key, tall))}
             </Animated.View>
             <Animated.View style={[frame, { height: short, opacity: motion?.shortFrame ?? 0 }]}>
-              {picture(SETUP_ART, SLIDES.length, 'setup', short)}
+              {/* The setup picture is square and its frame is short: keep it whole and top-aligned, so the globe at the top is what shows. */}
+              {picture(SETUP_ART, SLIDES.length, 'setup', Math.max(short, width * (1 + 2 * drift)))}
             </Animated.View>
           </View>
         ) : null}
