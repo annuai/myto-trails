@@ -174,9 +174,9 @@ describe("querySitemapEntries", () => {
     expect(slugs).toContain(t1.slug);
     expect(slugs).toContain(t4.slug);
     expect(slugs).not.toContain(draft.slug);
-    expect(entries.regions.map((r) => r.path)).toContain("/regions/qs-n");
-    expect(entries.regions.map((r) => r.path)).toContain("/regions/qs-n/qd-n");
-    expect(entries.regions.map((r) => r.path)).not.toContain("/regions/qs-o");
+    expect(entries.regions.map((r) => r.path)).toContain("/regions/india/qs-n");
+    expect(entries.regions.map((r) => r.path)).toContain("/regions/india/qs-n/qd-n");
+    expect(entries.regions.map((r) => r.path)).not.toContain("/regions/india/qs-o");
   });
 
   it("omits sample trails when asked", async () => {

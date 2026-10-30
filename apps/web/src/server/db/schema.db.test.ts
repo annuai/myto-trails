@@ -59,7 +59,6 @@ describe("revision constraints", () => {
     ["no terrain", { terrain: [] }],
     ["an unknown terrain value", { terrain: ["lava"] }],
     ["a month outside 1-12", { bestMonths: [13] }],
-    ["a start point outside India", { lon: 0, lat: 0 }],
   ] satisfies [string, RevisionOverrides][])("rejects %s", async (_label, overrides) => {
     await expect(addRevision(await makeTrail(), overrides)).rejects.toThrow();
   });

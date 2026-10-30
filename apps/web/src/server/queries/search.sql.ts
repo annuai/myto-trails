@@ -158,7 +158,7 @@ export async function suggest(sql: Sql, rawQuery: string): Promise<Suggestions> 
     sql`select slug, name, state_name from public_places
         where search_text like ${prefix} or search_text like ${`% ${escapeLike(lower)}%`} or search_text % ${lower}
         order by (search_text like ${prefix}) desc, similarity(search_text, ${lower}) desc, rank asc, name limit 5`,
-    sql`select slug, name, country_slug from public_regions r where kind = 'state' and name ilike ${prefix} and exists (select 1 from region c where c.slug = r.country_slug and c.kind = 'country' and c.enabled) order by name limit 5`,
+    sql`select slug, name, country_slug from public_regions r where kind = 'state' and name ilike ${prefix} and exists (select 1 from public_countries c where c.slug = r.country_slug and c.enabled) order by name limit 5`,
   ]);
   return {
     trails: (trails as Row[]).map((r) => ({ slug: r.slug, name: r.name, place: [r.district_name, r.state_name].filter(Boolean).join(", ") })),

@@ -298,8 +298,9 @@ describe("paging and searching the club list", () => {
   it("walks every club once, newest first, even when several share a creation time", async () => {
     const a = await rider("Pager");
     const made: string[] = [];
+    // One rider may only start a few clubs an hour, so each club has its own founder; they all share one creation time `t0`.
     for (let i = 0; i < 7; i++) {
-      const r = await createClub(db.sql, { userId: a, name: `Paged Club ${i} ${++n}`, description: "paging", womenOnly: false, now: t0 });
+      const r = await createClub(db.sql, { userId: i === 0 ? a : await rider(`Pager ${i}`), name: `Paged Club ${i} ${++n}`, description: "paging", womenOnly: false, now: t0 });
       if (!r.ok) throw new Error(r.reason);
       made.push(r.clubId);
     }
