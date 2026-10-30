@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BookOpen, Download, Luggage, Megaphone, Pencil, Share2, Trash2, Upload } from 'lucide-react-native';
@@ -21,6 +21,9 @@ import { Card } from '@/ui/Card';
 import { StatusChip } from '@/ui/Chip';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { RideTimeline } from '@/features/RideTimeline';
+import { fetchOutcome } from '@/api/submissionOutcome';
+import { outcomeText } from '@/lib/submissionOutcome';
+import { useAuth } from '@/store/auth';
 import { RIDER_OS } from '@/lib/flags';
 import { RideMap } from '@/ui/RideMap';
 import { Columns } from '@/ui/Columns';
@@ -48,6 +51,15 @@ function StoryBody() {
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState('');
   const trips = useTrips((s) => s.trips);
+  const token = useAuth((s) => s.token);
+  const slug = ride?.submission?.slug;
+  // Ask the site what the moderators did with a ride that was sent for review. Offline or signed out, the last answer stays.
+  useEffect(() => {
+    if (!token || !slug || !ride) return;
+    let cancelled = false;
+    fetchOutcome(token, slug).then((o) => { if (o && !cancelled) useRides.getState().setOutcome(ride.id, o); }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [token, slug, ride?.id]);
   if (!ride) return <Screen><BackHeader /><Text>Ride not found.</Text></Screen>;
   const deleteRide = () => { useJournal.getState().removeForRide(ride.startedAt); useTrips.getState().forgetRide(ride.id); useRides.getState().removeRide(ride.id); router.replace('/rides'); };
   const sub = ride.submission;
@@ -92,8 +104,9 @@ function StoryBody() {
       <SectionTitle>Share it</SectionTitle>
       {sub ? (
         <Card style={{ gap: 10 }}>
-          <StatusChip status="good" label="Sent for review" />
+          {(() => { const o = sub.outcome ? outcomeText(sub.outcome.status, sub.outcome.feedback) : undefined; return <StatusChip status={o?.tone ?? 'good'} label={o ? o.label : 'Sent for review'} />; })()}
           <Text variant="label" tone="muted">{sub.trailName}. Moderators check it before anything is published.</Text>
+          {sub.outcome ? (() => { const o = outcomeText(sub.outcome.status, sub.outcome.feedback); return o.note ? <Text variant="label">{o.note}</Text> : null; })() : null}
         </Card>
       ) : null}
       <View style={{ gap: 12, marginTop: sub ? 12 : 0 }}>
