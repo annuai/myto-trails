@@ -9,13 +9,17 @@ describe('crash alert', () => {
     expect(secondsLeft(60_000, 70_000)).toBe(0);
   });
 
-  it('offers the main contact first, then 112', () => {
-    const t = callTargets([{ name: 'Asha', phone: '98450 00000', primary: false }, { name: 'Ravi', phone: '98450 11111', primary: true }]);
+  it('offers the main contact first, then the emergency number', () => {
+    const t = callTargets([{ name: 'Asha', phone: '98450 00000', primary: false }, { name: 'Ravi', phone: '98450 11111', primary: true }], '112');
     expect(t.map((x) => x.label)).toEqual(['Call Ravi', 'Call 112']);
   });
 
-  it('offers only 112 when there are no contacts', () => {
-    expect(callTargets([]).map((x) => x.label)).toEqual(['Call 112']);
+  it('dials the number it is given, not a fixed one', () => {
+    expect(callTargets([], '911')).toEqual([{ label: 'Call 911', phone: '911' }]);
+  });
+
+  it('offers only the emergency number when there are no contacts', () => {
+    expect(callTargets([], '112').map((x) => x.label)).toEqual(['Call 112']);
   });
 
   it('strips spaces and punctuation from a number', () => {

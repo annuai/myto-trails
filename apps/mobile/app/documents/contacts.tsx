@@ -14,6 +14,9 @@ import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { Siren } from 'lucide-react-native';
+import { deviceRegion } from '@/lib/locale';
+import { normalizePhone } from '@/lib/phone';
+import { useHomeCountry } from '@/store/region';
 
 const blood = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
@@ -22,11 +25,14 @@ export default function Contacts() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(''); const [phone, setPhone] = useState(''); const [relation, setRelation] = useState('');
   const [error, setError] = useState<string>();
+  const region = useHomeCountry() ?? deviceRegion() ?? 'IN';
 
   const save = () => {
     if (name.trim().length < 2) return setError('Enter a name.');
-    if (phone.replace(/\D/g, '').length < 7) return setError('Enter a phone number.');
-    addContact({ name: name.trim(), phone: phone.trim(), relation: relation.trim() });
+    // Saved as +<country code><number>, so a call works from any country.
+    const number = normalizePhone(phone, region);
+    if (!number) return setError('Enter a real phone number. Start with + and the country code if it is from another country.');
+    addContact({ name: name.trim(), phone: number, relation: relation.trim() });
     setName(''); setPhone(''); setRelation(''); setError(undefined); setOpen(false);
   };
 

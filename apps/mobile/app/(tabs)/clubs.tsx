@@ -9,6 +9,7 @@ import { CreateClubSheet } from '@/features/community/CreateClubSheet';
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '@/store/auth';
 import { Button } from '@/ui/Button';
+import { CountryChip, CountrySheet } from '@/ui/CountryChip';
 import { Card } from '@/ui/Card';
 import { ClubCover } from '@/ui/ClubCover';
 import { EmptyState } from '@/ui/EmptyState';
@@ -39,6 +40,7 @@ export default function Clubs() {
   const token = useAuth((s) => s.token);
   const signedIn = !!token;
   const [creating, setCreating] = useState(false);
+  const [picking, setPicking] = useState(false);
   const act = useAction();
   const clubs = useClubs();
   const mine = clubs.data?.filter((c) => c.role) ?? [];
@@ -49,8 +51,9 @@ export default function Clubs() {
     if (r) { setCreating(false); clubs.reload(); open(r.value); }
   };
   return (
-    <Screen tabs brand overlay={<CreateClubSheet open={creating} busy={act.busy} problem={act.problem} onSubmit={(b) => void create(b)} onClose={() => { setCreating(false); act.clear(); }} />}>
+    <Screen tabs brand overlay={<><CreateClubSheet open={creating} busy={act.busy} problem={act.problem} onSubmit={(b) => void create(b)} onClose={() => { setCreating(false); act.clear(); }} /><CountrySheet open={picking} onClose={() => setPicking(false)} /></>}>
       <PageTitle>Clubs</PageTitle>
+      <View style={{ alignSelf: 'flex-start', marginBottom: space[4] }}><CountryChip onPress={() => setPicking(true)} /></View>
       {!signedIn ? (
         <Card style={{ gap: space[4] }}>
           <Text variant="label" tone="muted">Sign in with the same email link as moto-trails.com to see your clubs.</Text>

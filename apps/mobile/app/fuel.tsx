@@ -5,9 +5,10 @@ import { Fuel as FuelIcon, Settings2 } from 'lucide-react-native';
 import { FuelSettingsSheet } from '@/features/FuelSettingsSheet';
 import { formatDate, todayISO } from '@/lib/dates';
 import type { DateRange } from '@/lib/dateRange';
-import { costsBetween, formatLitres, formatRupees, lastMonthRange, monthRange, yearRange } from '@/lib/fuelCost';
+import { costsBetween, formatLitres, formatMoney, lastMonthRange, monthRange, yearRange } from '@/lib/fuelCost';
 import { asText, distanceKm, durationParts } from '@/lib/units';
 import { useFuel } from '@/store/fuel';
+import { useCurrency } from '@/store/region';
 import { useRides } from '@/store/rides';
 import { space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
@@ -26,6 +27,7 @@ export default function FuelCosts() {
   const router = useRouter();
   const rides = useRides((s) => s.rides);
   const history = useFuel((s) => s.history);
+  const currency = useCurrency();
   const [preset, setPreset] = useState<Preset>('month');
   const [custom, setCustom] = useState<DateRange>({});
   const [settings, setSettings] = useState(false);
@@ -47,7 +49,7 @@ export default function FuelCosts() {
         <View style={{ gap: space[4] }}>
           <Card>
             <Text variant="label" tone="muted">{hasRange ? `${formatDate(range.from)} to ${formatDate(range.to)}` : 'Pick the first and last day'}</Text>
-            <Text variant="dataLarge">{formatRupees(summary.totalCost)}</Text>
+            <Text variant="dataLarge">{formatMoney(summary.totalCost, currency)}</Text>
             <Text variant="label" tone="muted">{`${formatLitres(summary.totalLitres)} · ${asText(distanceKm(summary.totalKm))} · ${summary.count} ${summary.count === 1 ? 'ride' : 'rides'}`}</Text>
           </Card>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
@@ -65,7 +67,7 @@ export default function FuelCosts() {
                   <Text variant="label" tone="muted">{`${formatDate(new Date(ride.startedAt).toISOString().slice(0, 10))} · ${asText(distanceKm(ride.distanceKm))} · ${asText(durationParts(ride.durationSec))}`}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: space.half }}>
-                  <Text variant="bodyMedium">{formatRupees(cost)}</Text>
+                  <Text variant="bodyMedium">{formatMoney(cost, currency)}</Text>
                   <Text variant="label" tone="muted">{formatLitres(litres)}</Text>
                 </View>
               </View>

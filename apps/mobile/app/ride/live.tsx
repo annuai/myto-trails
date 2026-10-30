@@ -3,10 +3,12 @@ import { Linking, Platform, Share, Vibration, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, Flag, Megaphone, Mic, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
+import { useEmergency } from '@/features/emergency/useEmergency';
 import { GroupSheet } from '@/features/GroupSheet';
 import { NoteSheet } from '@/features/NoteSheet';
 import { ReportSheet } from '@/features/ReportSheet';
 import { clockLabel } from '@/lib/community';
+import { telUrl } from '@/lib/crashAlert';
 import { distanceToLine, startFollow, stepFollow } from '@/lib/routeFollow';
 import { WAYPOINT_KINDS, WAYPOINT_LABEL } from '@/lib/waypointKinds';
 import { RiderTiles } from '@/features/group/RiderTiles';
@@ -27,6 +29,7 @@ import { Theme } from '@/theme/ThemeProvider';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { buzz } from '@/lib/haptics';
+import { EmergencyEditor } from '@/ui/EmergencyEditor';
 import { HoldButton } from '@/ui/HoldButton';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { useRouteLine } from '@/api/useApi';
@@ -53,6 +56,7 @@ function LiveBody() {
   const r = useRecorder();
   const contacts = useProfile((s) => s.contacts);
   const medical = useProfile((s) => s.medical);
+  const emergency = useEmergency();
   const planned = useTrailStore((s) => s.nextTrip);
   const trailLine = useRouteLine(planned?.slug);
   // A route the rider built or imported wins over a published trail's line.
@@ -182,7 +186,8 @@ function LiveBody() {
       </Sheet>
       <Sheet open={sos} title="SOS" onClose={() => setSos(false)}>
         <Text variant="label" tone="muted">Call for help. This does not replace emergency services.</Text>
-        <Button label="Call 112 (emergency)" variant="danger" icon={Phone} onPress={() => Linking.openURL('tel:112')} />
+        <Button label={`Call ${emergency.number} (emergency)`} variant="danger" icon={Phone} onPress={() => Linking.openURL(telUrl(emergency.number))} />
+        <EmergencyEditor choice={emergency} />
         <Button variant="soft" icon={Share2} label="Share my position" onPress={() => void shareHere()} />
         {medical.bloodGroup || medical.notes ? <Text variant="label" tone="muted">Emergency card: {[medical.bloodGroup && `blood group ${medical.bloodGroup}`, medical.notes].filter(Boolean).join(' · ')}</Text> : null}
         {contacts.map((c) => <Button key={c.id} variant="soft" icon={Phone} label={`${c.name}${c.primary ? ' (main)' : ''}`} onPress={() => Linking.openURL(`tel:${c.phone}`)} />)}

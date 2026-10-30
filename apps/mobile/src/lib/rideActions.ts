@@ -6,7 +6,7 @@ export type RideCategory = 'ride' | 'ride-paused' | 'ride-group' | 'ride-group-p
 const PAUSE: RideAction = { id: 'ride.pause', label: 'Pause' };
 const RESUME: RideAction = { id: 'ride.resume', label: 'Resume' };
 const HELP: RideAction = { id: 'ride.help', label: 'Help', destructive: true };
-/** On a solo ride there is no group to tell, so Help opens the app on the SOS sheet (call 112, share position). */
+/** On a solo ride there is no group to tell, so Help opens the app on the SOS sheet (call the emergency number, share position). */
 const HELP_SOLO: RideAction = { ...HELP, opensApp: true };
 const UNDO: RideAction = { id: 'ride.undo-help', label: 'Undo' };
 const CRASH_OK: RideAction = { id: 'crash.ok', label: "I'm OK" };
@@ -43,7 +43,7 @@ export const isRideAction = (id: string): id is RideActionId => Object.values(CA
 
 /** The countdown after a crash is detected, and what it says once nobody answered. The detector is lib/crashDetect. */
 export const crashNotice: RideNotice & { category: RideCategory } = { category: 'crash', title: 'Crash detected. Are you OK?', body: 'Tap I\'m OK now, or your group will be told and you can call for help.' };
-export const crashAlertedNotice = (callName?: string): RideNotice & { category: RideCategory } => ({ category: 'crash', title: 'Crash alert sent', body: callName ? `Open Myto Moto to call ${callName} or 112.` : 'Open Myto Moto to call 112.' });
+export const crashAlertedNotice = (callName?: string): RideNotice & { category: RideCategory } => ({ category: 'crash', title: 'Crash alert sent', body: callName ? `Open Myto Moto to call ${callName} or emergency services.` : 'Open Myto Moto to call emergency services.' });
 
 /** Everything the ride card on the lock screen (iOS Live Activity) and in the shade (Android) shows. Plain values only: the card draws them. */
 export type RideSurfaceProps = {

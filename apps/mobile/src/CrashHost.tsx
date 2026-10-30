@@ -3,6 +3,7 @@ import { Linking, StyleSheet, Vibration, View } from 'react-native';
 import { Phone, ShieldAlert } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { syncGroupNow } from '@/CompanionHost';
+import { useEmergency, type EmergencyChoice } from '@/features/emergency/useEmergency';
 import { callTargets, secondsLeft, telUrl } from '@/lib/crashAlert';
 import { CRASH_NOTICE_ID, crashAlertedNotice, crashNotice } from '@/lib/rideActions';
 import { clearRideNotice, showRideNotice } from '@/lib/rideNotification';
@@ -12,6 +13,7 @@ import { useProfile } from '@/store/profile';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
+import { EmergencyEditor } from '@/ui/EmergencyEditor';
 import { Icon } from '@/ui/Icon';
 import { Text } from '@/ui/Text';
 
@@ -30,7 +32,8 @@ export function CrashHost() {
   const group = useCompanion((s) => !!s.group);
   const [now, setNow] = useState(() => Date.now());
   const sentHelp = useRef(false);
-  const targets = callTargets(contacts);
+  const emergency = useEmergency();
+  const targets = callTargets(contacts, emergency.number);
 
   // The clock: drives the countdown and runs it out.
   useEffect(() => {
@@ -64,10 +67,10 @@ export function CrashHost() {
   }, [phase]);
 
   if (phase === 'idle') return null;
-  return <CrashScreen phase={phase} test={test} seconds={secondsLeft(deadline, now)} targets={targets} group={group} />;
+  return <CrashScreen phase={phase} test={test} seconds={secondsLeft(deadline, now)} targets={targets} emergency={emergency} group={group} />;
 }
 
-function CrashScreen({ phase, test, seconds, targets, group }: { phase: 'countdown' | 'alerted'; test: boolean; seconds: number; targets: { label: string; phone: string }[]; group: boolean }) {
+function CrashScreen({ phase, test, seconds, targets, emergency, group }: { phase: 'countdown' | 'alerted'; test: boolean; seconds: number; targets: { label: string; phone: string }[]; emergency: EmergencyChoice; group: boolean }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const ok = () => useCrash.getState().cancel();
@@ -90,6 +93,7 @@ function CrashScreen({ phase, test, seconds, targets, group }: { phase: 'countdo
         )}
       </View>
       <View style={{ gap: space[3] }}>
+        <EmergencyEditor choice={emergency} />
         {phase === 'alerted' ? targets.map((t) => <Button key={t.phone} big variant="accent" icon={Phone} label={t.label} onPress={() => void Linking.openURL(telUrl(t.phone))} />) : null}
         <Button big variant={phase === 'countdown' ? 'primary' : 'soft'} label={phase === 'countdown' ? "I'm OK" : "I'm OK, close this"} onPress={ok} />
       </View>

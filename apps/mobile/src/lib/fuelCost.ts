@@ -1,4 +1,5 @@
 import { toISO } from './dates';
+import { deviceLocale } from './locale';
 
 /** The rider's bike economy and the petrol price, from a date on. Changing either adds a new entry, so earlier rides keep the price they had. */
 export type FuelSetting = { from: string; kmPerLitre: number; pricePerLitre: number };
@@ -43,7 +44,14 @@ export function costsBetween<R extends CostRide>(rides: R[], history: FuelSettin
   return { items, totalCost: items.reduce((n, i) => n + i.cost, 0), totalLitres: items.reduce((n, i) => n + i.litres, 0), totalKm: items.reduce((n, i) => n + i.ride.distanceKm, 0), count: items.length };
 }
 
-export const formatRupees = (n: number): string => `₹${Math.round(n).toLocaleString('en-IN')}`;
+/** A whole amount in the rider's currency ("₹1,23,456", "$1,235"), grouped the way their phone groups numbers. With no currency known it is a plain number. */
+export const formatMoney = (n: number, currency: string | null, locale: string = deviceLocale()): string =>
+  currency
+    ? new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 }).format(Math.round(n))
+    : Math.round(n).toLocaleString(locale);
+/** Just the symbol ("₹"), or an empty string when there is no currency. */
+export const currencySymbol = (currency: string | null, locale: string = deviceLocale()): string =>
+  currency ? new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? currency : '';
 export const formatLitres = (n: number): string => `${n < 10 ? n.toFixed(1) : Math.round(n)} L`;
 
 /** A number typed into a field ("35", "104.5", "104,5"), or null when it is not a usable number. */

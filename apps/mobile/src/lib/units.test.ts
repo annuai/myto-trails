@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { asText, distanceKm, durationParts, elevationM, NARROW_SPACE, speedKmh, spoken } from './units';
+import { afterEach, describe, expect, it } from 'vitest';
+import { asText, distanceKm, durationParts, elevationM, NARROW_SPACE, setDistanceUnit, speedKmh, spoken } from './units';
 
 describe('units', () => {
   it('formats distance with one decimal and Indian grouping', () => {
@@ -26,5 +26,15 @@ describe('units', () => {
   it('reads out full unit names', () => {
     expect(spoken(distanceKm(37))).toBe('37 kilometres');
     expect(spoken(durationParts(3900))).toBe('1 hours 5 minutes');
+  });
+  describe('in miles', () => {
+    afterEach(() => setDistanceUnit('km'));
+    it('converts what is shown and nothing else', () => {
+      setDistanceUnit('mi');
+      expect(distanceKm(16.09344)).toEqual({ value: '10', unit: 'mi' });
+      expect(speedKmh(80.4672)).toEqual({ value: '50', unit: 'mph' });
+      expect(elevationM(1000)).toEqual({ value: '3,281', unit: 'ft' });
+      expect(spoken(distanceKm(16.09344))).toBe('10 miles');
+    });
   });
 });

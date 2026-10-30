@@ -5,7 +5,7 @@ import { api } from './client';
 export type CheckinStatus = 'active' | 'overdue' | 'arrived' | 'expired';
 export type CheckinEmergency = { riderName?: string; bloodGroup?: string; allergies?: string; bikeName?: string };
 export type CheckinPosition = { lat: number; lng: number; at: string };
-export type CreateCheckin = { rideName?: string; expectedAt: string; contactName: string; contactEmail?: string; shareLive?: boolean; position?: CheckinPosition; emergency?: CheckinEmergency };
+export type CreateCheckin = { rideName?: string; /** IANA zone the ride happens in; the contact sees the expected time in it. */ timeZone?: string; expectedAt: string; contactName: string; contactEmail?: string; shareLive?: boolean; position?: CheckinPosition; emergency?: CheckinEmergency };
 /** `token` and `url` are shown once: share the link, do not store the token. */
 export type CreatedCheckin = { id: string; token: string; url: string };
 export type CheckinDto = { id: string; status: CheckinStatus; expectedAt: string; arrivedAt: string | null; lastPingAt: string | null };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { costsBetween, formatLitres, formatRupees, lastMonthRange, monthRange, parseAmount, rideCost, settingFor, upsertSetting, validSetting, yearRange, type CostRide, type FuelSetting } from './fuelCost';
+import { costsBetween, currencySymbol, formatLitres, formatMoney, lastMonthRange, monthRange, parseAmount, rideCost, settingFor, upsertSetting, validSetting, yearRange, type CostRide, type FuelSetting } from './fuelCost';
 
 const at = (y: number, m: number, d: number, h = 9) => new Date(y, m - 1, d, h).getTime();
 const ride = (id: string, startedAt: number, distanceKm: number, extra: Partial<CostRide> = {}): CostRide => ({ id, startedAt, distanceKm, ...extra });
@@ -61,7 +61,11 @@ describe('costsBetween', () => {
 
 describe('numbers and ranges', () => {
   it('writes rupees with Indian grouping and litres to a sensible precision', () => {
-    expect(formatRupees(123456.4)).toBe('₹1,23,456');
+    expect(formatMoney(123456.4, 'INR', 'en-IN')).toBe('₹1,23,456');
+    expect(formatMoney(1234.6, 'USD', 'en-US')).toBe('$1,235');
+    expect(formatMoney(1234.6, null, 'en-US')).toBe('1,235');
+    expect(currencySymbol('INR', 'en-IN')).toBe('₹');
+    expect(currencySymbol(null)).toBe('');
     expect(formatLitres(2.345)).toBe('2.3 L');
     expect(formatLitres(41.6)).toBe('42 L');
   });

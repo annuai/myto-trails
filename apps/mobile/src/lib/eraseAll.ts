@@ -11,6 +11,7 @@ import { useJournal } from '@/store/journal';
 import { useMyRoutes } from '@/store/myRoutes';
 import { useNotifications } from '@/store/notifications';
 import { useProfile } from '@/store/profile';
+import { useRegion } from '@/store/region';
 import { useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { useTrailStore } from '@/store/trails';
@@ -34,6 +35,7 @@ export function eraseEverything(token: string | null) {
   useFuel.getState().wipe();
   traceDelete();
   useProfile.getState().wipe();
+  useRegion.getState().wipe();
   useTodos.setState({ todos: [] });
   useRides.setState({ rides: [] });
   useTrailStore.getState().clear();

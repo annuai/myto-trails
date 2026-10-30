@@ -1,5 +1,6 @@
 import { PLAN_KMH } from './routePlan';
 import { forecastUrl, parseForecast } from './weather';
+import { deviceLocale } from './locale';
 
 /** Be off the road this long before the sun goes down. */
 export const DARK_BUFFER_MIN = 30;
@@ -28,7 +29,7 @@ export function daylightAdvice(i: { distanceKm: number; sunsetMs: number; now: n
   return { sunsetMs: i.sunsetMs, rideMs, endIfNowMs, darkKm: +darkKm.toFixed(1), latestStartMs: i.sunsetMs - DARK_BUFFER_MIN * MIN - rideMs };
 }
 
-const clock = (ms: number) => new Date(ms).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+const clock = (ms: number) => new Date(ms).toLocaleTimeString(deviceLocale(), { hour: 'numeric', minute: '2-digit' });
 
 /** One or two plain sentences for the planning card. */
 export function daylightText(a: DaylightAdvice, now: number): string {

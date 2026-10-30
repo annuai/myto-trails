@@ -28,5 +28,5 @@ export function isFresh(key: string, now = Date.now()): boolean {
 
 /** Forget everything that belongs to the signed-in account, so the next person on this phone never sees it. */
 export function clearUserCache() {
-  cacheDeleteWhere((k) => k === 'saved' || k === 'me' || k === 'clubs' || k.startsWith('club:') || (k.startsWith('comments:') && k.endsWith(':in')));
+  cacheDeleteWhere((k) => k === 'saved' || k === 'me' || k === 'clubs' || k.startsWith('clubs:') || k.startsWith('club:') || (k.startsWith('comments:') && k.endsWith(':in')));
 }

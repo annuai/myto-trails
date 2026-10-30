@@ -31,14 +31,14 @@ export default function Safety() {
       <SectionTitle>What happens</SectionTitle>
       <Card style={{ gap: space[3] }}>
         <Text variant="label" tone="muted">If a hard impact at speed is followed by the bike stopping dead and staying still, the phone buzzes and asks &ldquo;Are you OK?&rdquo; for 60 seconds. Tap I&rsquo;m OK, on the screen or on the lock screen notification, to cancel.</Text>
-        <Text variant="label" tone="muted">If you do not answer on a group ride, your group is told you need help, the same as pressing Help. The screen then offers a call to your main contact and to 112.</Text>
+        <Text variant="label" tone="muted">If you do not answer on a group ride, your group is told you need help, the same as pressing Help. The screen then offers a call to your main contact and to the emergency number for where you are. You can change that number on the screen.</Text>
         <Text variant="labelMedium" tone="stop">It does not message or call anyone by itself. Ride alone and nobody is told unless you call. The phone must be on the bike or on you, with Myto Moto recording the ride.</Text>
       </Card>
       {contacts === 0 ? (
         <>
           <SectionTitle>Add someone to call</SectionTitle>
           <View style={{ gap: space[3] }}>
-            <Text variant="label" tone="muted">There are no emergency contacts yet, so the call buttons would only offer 112.</Text>
+            <Text variant="label" tone="muted">There are no emergency contacts yet, so the call buttons would only offer the emergency number for where you are.</Text>
             <Button variant="soft" label="Add emergency contacts" onPress={() => router.push('/documents/contacts')} />
           </View>
         </>

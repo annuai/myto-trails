@@ -11,10 +11,11 @@ import { Card } from '@/ui/Card';
 import { StatusChip } from '@/ui/Chip';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/tokens';
+import { deviceLocale } from '@/lib/locale';
 
 /** More than this without a pump is worth planning around: a full tank of a small bike goes about this far. */
 const LONG_GAP_KM = 120;
-const dayName = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+const dayName = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString(deviceLocale(), { weekday: 'short', day: 'numeric', month: 'short' });
 
 /** Asks for the fuel stops along a route and the weather where it starts. Nothing is fetched until the rider asks. */
 export function RouteCheck({ line }: { line: LatLng[] }) {
