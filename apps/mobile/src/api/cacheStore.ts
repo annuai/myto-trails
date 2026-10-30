@@ -8,8 +8,20 @@ export function cacheGet<T>(key: string): { data: T; at: number } | undefined {
   return entries.get(key) as { data: T; at: number } | undefined;
 }
 
+const listeners = new Set<() => void>();
+/** Called after every cacheSet, so something can save the cache. Returns a function that stops listening. */
+export function onCacheSet(fn: () => void): () => void { listeners.add(fn); return () => { listeners.delete(fn); }; }
+
 export function cacheSet(key: string, data: unknown, now = Date.now()) {
   entries.set(key, { data, at: now });
+  listeners.forEach((l) => l());
+}
+
+export const cacheEntries = (): [string, Entry][] => [...entries];
+
+/** Puts saved entries back at start-up, keeping whatever this session already fetched if it is newer. Does not tell listeners. */
+export function cacheRestore(saved: [string, Entry][]) {
+  for (const [k, e] of saved) { const have = entries.get(k); if (!have || have.at < e.at) entries.set(k, e); }
 }
 
 export function cacheDelete(key: string) {

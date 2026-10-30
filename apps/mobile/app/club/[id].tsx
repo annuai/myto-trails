@@ -8,6 +8,7 @@ import { createGroupRide, getClubGroupRide, joinGroupRide } from '@/api/groups';
 import type { ClubMember, ClubPost } from '@/api/types';
 import { forgetProfile, useClub, useClubPosts, useClubRequests } from '@/api/useApi';
 import { ClubPostCard } from '@/features/community/ClubPostCard';
+import { nextWeek } from '@/lib/community';
 import { ConfirmSheet } from '@/features/community/ConfirmSheet';
 import { JoinRequestCard } from '@/features/community/JoinRequestCard';
 import { JoinSheet } from '@/features/community/JoinSheet';
@@ -189,7 +190,8 @@ export default function ClubScreen() {
                 <ClubPostCard key={p.id} post={p} busy={act.busy} canRemove={p.mine || isAdmin}
                   group={live ? { label: 'Join the group ride', onPress: () => void joinGroup() } : p.mine || isAdmin ? { label: 'Start a group ride', onPress: () => void startGroup() } : undefined}
                   onRespond={(r) => void submit(() => respondToRide(token!, p.id, r))}
-                  onReply={() => setOpen({ kind: 'reply', post: p })} onRemove={() => setOpen({ kind: 'removePost', post: p })} />
+                  onReply={() => setOpen({ kind: 'reply', post: p })} onRemove={() => setOpen({ kind: 'removePost', post: p })}
+                  onRepeat={p.kind === 'ride_plan' && p.at && (p.mine || isAdmin) ? () => void submit(() => postToClub(ref, { body: p.body, ...(p.place ? { place: p.place } : {}), rideAt: nextWeek(p.at!) })) : undefined} />
               ))}
             </View>
           )}

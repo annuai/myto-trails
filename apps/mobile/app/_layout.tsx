@@ -17,6 +17,7 @@ import { CrashHost } from '@/CrashHost';
 import { RideNotificationHost } from '@/RideNotificationHost';
 import { VoiceHost } from '@/VoiceHost';
 import { runRideIdMigration } from '@/lib/rideIdMigration.run';
+import { startCachePersistence } from '@/api/cachePersist.run';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -42,6 +43,7 @@ export default function Root() {
     return () => document.removeEventListener('contextmenu', noMenu);
   }, []);
   useEffect(() => { void runRideIdMigration().catch(() => undefined); }, []);
+  useEffect(() => { void startCachePersistence(); }, []);
   const [loaded] = useFonts({ Michroma_400Regular, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, GeistMono_400Regular, GeistMono_500Medium });
   useEffect(() => { if (loaded) void SplashScreen.hideAsync(); }, [loaded]);
   if (!loaded) return null;
