@@ -27,7 +27,7 @@ import { Measure } from '@/ui/Measure';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius } from '@/theme/tokens';
+import { radius, space } from '@/theme/tokens';
 
 export default function Story() {
   return <Theme mode="dark"><StoryBody /></Theme>;
@@ -78,7 +78,7 @@ function StoryBody() {
         <Text variant="label" style={{ color: c.accentInk }}>in {asText(durationParts(ride.durationSec))}</Text>
       </View>
       <SectionTitle>Highlights</SectionTitle>
-      <Card style={{ flexDirection: 'row' }}>
+      <Card style={{ flexDirection: 'row', marginBottom: space[3] }}>
         <Stat parts={speedKmh(ride.maxKmh)} label="Top speed" />
         <Stat value={`${ride.waypoints.length}`} label="Waypoints" />
         {gapM > 0 ? <Stat parts={distanceKm(+(gapM / 1000).toFixed(1))} label="GPS gap" /> : <Stat value={`${ride.points.length}`} label="Points" />}

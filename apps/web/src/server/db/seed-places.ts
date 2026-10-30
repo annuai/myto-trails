@@ -6,6 +6,8 @@ export type PlaceSeed = {
   altNames: string[];
   kind: "city" | "town" | "village" | "hill_station";
   state: string;
+  /** ISO code of the state's country; absent means India. */
+  country?: string;
   lat: number;
   lon: number;
   rank: number;
@@ -16,7 +18,9 @@ export async function seedPlaces(sql: Sql, places: PlaceSeed[]): Promise<{ inser
   return sql.begin(async (tx) => {
     let inserted = 0;
     for (const p of places) {
-      const [state] = await tx`select id from region where kind = 'state' and slug = ${p.state}`;
+      const [state] = await tx`
+        select s.id from region s join region c on c.id = s.parent_id
+        where s.kind = 'state' and s.slug = ${p.state} and c.iso2 = ${(p.country ?? "IN").toUpperCase()}`;
       if (!state) throw new Error(`Unknown state: ${p.state}`);
       const rows = await tx`
         insert into place (slug, name, alt_names, kind, state_id, point, rank)

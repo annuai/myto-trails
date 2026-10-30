@@ -27,6 +27,6 @@ describe("domain enums", () => {
     expect(HAZARDS).toEqual(["slippery_after_rain", "river_crossing", "steep_descent", "loose_rock", "wildlife", "no_mobile_signal", "no_fuel", "low_branches"]);
     expect(ACCESS_BASES).toEqual(["official_notice", "owner_confirmed", "authority_confirmed", "rider_observed", "map_data", "none"]);
     expect(EVIDENCE_KINDS).toEqual(["official_document", "written_confirmation", "signage_photo", "url", "call_note", "other"]);
-    expect(RESTRICTIONS).toEqual(["forest_dept", "protected_area", "private_estate", "seasonal_ban", "permit", "no_motor_vehicles"]);
+    expect(RESTRICTIONS).toEqual(["forest_dept", "protected_area", "private_estate", "seasonal_ban", "permit", "no_motor_vehicles", "local_ordinance", "public_land_closure"]);
   });
 });

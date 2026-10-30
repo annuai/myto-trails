@@ -38,7 +38,7 @@ describe("normalizePhone", () => {
   it.each([
     ["98123 45678", "+919812345678"], ["+91-98123-45678", "+919812345678"], ["919812345678", "+919812345678"], ["09812345678", "+919812345678"], ["+44 7911 123456", "+447911123456"],
   ])("accepts %s", (raw, out) => expect(normalizePhone(raw)).toBe(out));
-  it.each([["12345"], ["abcdefghij"], ["5812345678"], ["+0123456789"], [""]])("rejects %j", (raw) => expect(normalizePhone(raw)).toBeNull());
+  it.each([["12345"], ["abcdefghij"], ["+0123456789"], [""]])("rejects %j", (raw) => expect(normalizePhone(raw)).toBeNull());
 });
 
 describe("askRider", () => {

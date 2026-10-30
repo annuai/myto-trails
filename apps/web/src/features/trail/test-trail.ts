@@ -10,6 +10,7 @@ export function makeTrail(overrides: Partial<TrailDetailDto> = {}): TrailDetailD
     nearestTown: "Sampletown",
     state: { slug: "kerala", name: "Kerala" },
     district: { slug: "wayanad", name: "Wayanad" },
+    country: { slug: "india", iso2: "IN" },
     difficulty: "moderate",
     terrain: ["gravel", "forest_track"],
     distanceKm: 24.1,

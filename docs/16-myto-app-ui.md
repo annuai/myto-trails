@@ -172,3 +172,19 @@ Per doc 15 §12, with Home as a stub in S1 (saved trails, near you) that gains c
 - **Offline copy** now saves the trail's details, access and route on the device. Map tiles still need a connection.
 - **Maps** are OpenStreetMap through MapLibre: `maplibre-gl` in the web build (tested), `@maplibre/maplibre-react-native` on phones (written, **not yet run on a device**; needs a development build). The live recording screen draws the GPX track on the map as the ride happens and follows the rider; the ride story and trail page show the track or the published route. OpenStreetMap's public tile servers allow light use only and forbid bulk downloading, so set `EXPO_PUBLIC_MAP_STYLE_URL` to a tile provider or our own tiles before launch, and offline map packs need that too.
 - **Open:** the production web build needs its own origin in `APP_REDIRECT_URIS` and `API_CORS_ORIGINS`; the R2 bucket needs a CORS rule if a web build uploads straight to it (phones do not); the shop sign-in from doc 15 §4.5 is not part of this.
+
+## 13. Added since (27 to 29 October 2026)
+
+The app is now named **Myto Moto** (store name; the iOS project is `apps/mobile/ios/MytoMoto`). Each item has its own design under [docs/superpowers/specs/](superpowers/specs/); this list only says what exists.
+
+- **Ride companion** ([design](superpowers/specs/2026-10-28-ride-companion-features-design.md)): check-ins, group rides with an invite link and live status, condition reports, shared routes. Needs the website's `/api/v1` and migration `0023_ride_companion.sql`. The invite page `/join/CODE` can show a "Get the app" button when `APP_DOWNLOAD_URL` is set.
+- **Ride journal, pause and stop detection** ([design](superpowers/specs/2026-10-28-ride-journal-design.md)): notes during a ride, pause, a prompt when the bike seems stopped. Recorder durability and streamed backups (format v3) are in the [plan](superpowers/plans/2026-10-28-phase1-recorder-durability.md).
+- **Motion detection** ([design](superpowers/specs/2026-10-29-motion-detection-design.md)): GPS, shake and steps fused to decide whether the rider is moving, with a trace recorder for tuning. Built; not yet tuned on real rides.
+- **Notifications** ([design](superpowers/specs/2026-10-28-notifications-design.md)): local reminders for trips and to-dos, a break reminder with a rider-chosen interval and three buzzes.
+- **Ride notification** ([design](superpowers/specs/2026-10-29-ride-notification-design.md)): Pause, Resume and Help from the lock screen while recording.
+- **Route planning** ([design](superpowers/specs/2026-10-29-route-planning-design.md)): search places, order the stops, follow roads, save.
+- **Offline maps, daylight (sunset) check, auto-arrive, ride import, year recap, rider tiles.** Offline maps replace the "map tiles still need a connection" note in §12; they depend on the tile source in [self-hosted map tiles](runbooks/self-hosted-map-tiles.md).
+- **Crash detection (beta, off by default)** ([design](superpowers/specs/2026-10-29-crash-detection-design.md)): a hard impact at speed, then a dead stop, starts a 60-second "Are you OK?" countdown. No answer tells a group ride you need help and offers calls to your main contact and 112. It never messages anyone by itself.
+- **Fuel costs:** a page with mileage and petrol price settings and a date range picker.
+
+**Still true from §12:** the phone map and sign-in redirect have not all been run on a device. Treat anything above that touches background behaviour (notification buttons, recording while locked, motion sensors) as untested until it has been ridden with.

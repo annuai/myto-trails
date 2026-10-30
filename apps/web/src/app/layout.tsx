@@ -16,7 +16,7 @@ const michroma = Michroma({ variable: "--font-michroma", subsets: ["latin"], wei
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl(process.env)),
   title: { default: "Moto Trails", template: "%s · Moto Trails" },
-  description: "A moderated directory of motorcycle trails in India: access, condition and verification for every trail.",
+  description: "A moderated directory of motorcycle trails: access, condition and verification for every trail.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

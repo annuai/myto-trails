@@ -54,6 +54,7 @@ export async function saveStepAction(_prev: WizardState, formData: FormData): Pr
     const r = await submit(getSql(), { userId: user.id, id, now: new Date() });
     if (r.ok) redirect(`/account/contributions/${id}?sent=1`);
     if (r.reason === "invalid") return { message: `These steps still need attention: ${r.steps.join(", ")}.`, steps: r.steps, values };
+    if (r.reason === "country_not_open") return { message: r.message, steps: [2], values };
     if (r.reason === "rate_limited") return { message: "You've sent several trails today. Please try again tomorrow.", values };
     if (r.reason === "photo_unavailable") return { message: "One of your photos or your route is no longer available. Check steps 2 and 5.", values };
     return { message: SAVE_ERROR[r.reason] ?? "We couldn't submit this trail.", values };

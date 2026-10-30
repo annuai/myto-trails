@@ -8,8 +8,9 @@ import { BackHeader, PageTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
+import { deviceLocale } from '@/lib/locale';
 
-const month = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+const month = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString(deviceLocale(), { month: 'short', year: 'numeric' });
 
 /** The trails the rider says they have ridden. Marked from a trail's page; kept on their account. */
 export default function Passport() {

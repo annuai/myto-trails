@@ -20,6 +20,8 @@ const RESTRICTIONS: Record<Restriction, string> = {
   seasonal_ban: "Seasonal ban",
   permit: "Permit",
   no_motor_vehicles: "No motor vehicles",
+  local_ordinance: "Local ordinance",
+  public_land_closure: "Public land closure",
 };
 export const restrictionLabel = (r: Restriction | string) => RESTRICTIONS[r as Restriction] ?? sentence(r);
 

@@ -2,6 +2,7 @@ import type { Todo } from '../todos';
 import type { DocPhoto } from '../localMedia/types';
 import type { JournalEntry } from '../journalEntries';
 import type { MyRoute } from '@/store/myRoutes';
+import type { FuelSetting } from '@/lib/fuelCost';
 import type { Ride } from '@/store/rides';
 import type { Trip } from '@/store/trips';
 import type { Contact, Licence, Medical, Vehicle } from '@/store/profile';
@@ -26,6 +27,8 @@ export type Snapshot = {
   /** Routes the rider built or imported, and trips of several days. Backups made before they existed have none. */
   routes?: MyRoute[];
   trips?: Trip[];
+  /** Mileage and petrol price by date, for the fuel costs. Backups made before they existed have none. */
+  fuel?: FuelSetting[];
   /** Chosen bike, when the app stores one on the phone. */
   bike?: unknown;
 };

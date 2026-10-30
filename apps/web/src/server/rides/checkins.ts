@@ -1,4 +1,5 @@
 import type { Sql } from "postgres";
+import { DEFAULT_TIME_ZONE, validTimeZone, zoneName } from "@/lib/time-zone";
 import type { EmailSender } from "../auth/email";
 import { generateToken, hashToken } from "../auth/tokens";
 import { cleanBody, LINK } from "../community/comments";
@@ -48,7 +49,7 @@ export function parseExpectedAt(v: unknown, from: Date): Date | null {
   return d;
 }
 
-export type NewCheckin = { rideName: string | null; expectedAt: Date; contactName: string; contactEmail: string | null; shareLive: boolean; position: Position | null; emergency: Emergency | null };
+export type NewCheckin = { timeZone: string; rideName: string | null; expectedAt: Date; contactName: string; contactEmail: string | null; shareLive: boolean; position: Position | null; emergency: Emergency | null };
 
 export function parseNewCheckin(b: Record<string, unknown>, now: Date): NewCheckin | null {
   const expectedAt = parseExpectedAt(b.expectedAt, now);
@@ -69,7 +70,7 @@ export function parseNewCheckin(b: Record<string, unknown>, now: Date): NewCheck
     emergency = Object.fromEntries(Object.entries(parts).filter(([, v]) => v !== undefined)) as Emergency;
     if (Object.keys(emergency).length === 0) emergency = null;
   }
-  return { rideName: rideName || null, expectedAt, contactName, contactEmail: email, shareLive: b.shareLive === true, position, emergency };
+  return { timeZone: validTimeZone(b.timeZone) ?? DEFAULT_TIME_ZONE, rideName: rideName || null, expectedAt, contactName, contactEmail: email, shareLive: b.shareLive === true, position, emergency };
 }
 
 type Fail<R extends string> = { ok: false; reason: R };
@@ -84,8 +85,8 @@ export async function createCheckin(sql: Sql, i: { userId: string; input: NewChe
     const token = generateToken();
     const p = i.input.position;
     const [row] = await tx`
-      insert into ride_checkin (user_id, token_hash, ride_name, contact_name, contact_email, share_live, started_at, expected_at, last_lat, last_lng, last_ping_at, emergency)
-      values (${i.userId}, ${hashToken(token)}, ${i.input.rideName}, ${i.input.contactName}, ${i.input.contactEmail}, ${i.input.shareLive}, ${i.now}, ${i.input.expectedAt},
+      insert into ride_checkin (user_id, token_hash, ride_name, contact_name, contact_email, share_live, started_at, expected_at, time_zone, last_lat, last_lng, last_ping_at, emergency)
+      values (${i.userId}, ${hashToken(token)}, ${i.input.rideName}, ${i.input.contactName}, ${i.input.contactEmail}, ${i.input.shareLive}, ${i.now}, ${i.input.expectedAt}, ${i.input.timeZone},
         ${p?.lat ?? null}, ${p?.lng ?? null}, ${p ? i.now : null}, ${i.input.emergency ? tx.json(i.input.emergency) : null})
       returning id`;
     return { ok: true, id: row!.id as string, token } as const;
@@ -144,7 +145,7 @@ export async function arriveCheckin(sql: Sql, i: { userId: string; id: string; n
 export type TrackView =
   | { found: false }
   | {
-      found: true; status: CheckinStatus; riderName: string; rideName: string | null; expectedAt: string; arrivedAt: string | null;
+      found: true; status: CheckinStatus; timeZone: string; riderName: string; rideName: string | null; expectedAt: string; arrivedAt: string | null;
       lastSeenAt: string | null; position: { lat: number; lng: number } | null; batteryPct: number | null; emergency: Emergency | null;
     };
 
@@ -155,7 +156,7 @@ export type TrackView =
 export async function viewCheckin(sql: Sql, token: string, now: Date): Promise<TrackView> {
   if (!TOKEN.test(token)) return { found: false };
   const [r] = await sql`
-    select c.ride_name, c.share_live, c.expected_at, c.arrived_at, c.last_lat, c.last_lng, c.last_ping_at, c.battery_pct, c.emergency, c.wiped_at, u.display_name
+    select c.ride_name, c.share_live, c.time_zone, c.expected_at, c.arrived_at, c.last_lat, c.last_lng, c.last_ping_at, c.battery_pct, c.emergency, c.wiped_at, u.display_name
     from ride_checkin c join app_user u on u.id = c.user_id
     where c.token_hash = ${hashToken(token)}`;
   if (!r) return { found: false };
@@ -166,7 +167,7 @@ export async function viewCheckin(sql: Sql, token: string, now: Date): Promise<T
   const showPosition = !ended && r.last_lat !== null && (status === "overdue" || (status === "active" && r.share_live === true));
   const emergency = (r.emergency ?? null) as Emergency | null;
   return {
-    found: true, status: ended ? "expired" : status, riderName: String(emergency?.riderName ?? r.display_name), rideName: r.ride_name, expectedAt: expectedAt.toISOString(), arrivedAt: arrivedAt ? arrivedAt.toISOString() : null,
+    found: true, status: ended ? "expired" : status, timeZone: r.time_zone as string, riderName: String(emergency?.riderName ?? r.display_name), rideName: r.ride_name, expectedAt: expectedAt.toISOString(), arrivedAt: arrivedAt ? arrivedAt.toISOString() : null,
     lastSeenAt: !ended && r.last_ping_at ? (r.last_ping_at as Date).toISOString() : null,
     position: showPosition ? { lat: r.last_lat, lng: r.last_lng } : null,
     batteryPct: showPosition ? r.battery_pct : null,
@@ -174,13 +175,14 @@ export async function viewCheckin(sql: Sql, token: string, now: Date): Promise<T
   };
 }
 
-export function overdueEmail(i: { riderName: string; rideName: string | null; expectedAt: Date }): { subject: string; text: string } {
-  const when = i.expectedAt.toLocaleString("en-GB", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+export function overdueEmail(i: { riderName: string; rideName: string | null; expectedAt: Date; timeZone?: string }): { subject: string; text: string } {
+  const zone = i.timeZone ?? DEFAULT_TIME_ZONE;
+  const when = i.expectedAt.toLocaleString("en-GB", { timeZone: zone, day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
   const rider = i.riderName.replace(/[\r\n]+/g, " ").slice(0, 60);
   return {
     subject: `${rider} has not arrived`,
     text: [
-      `${rider} asked Myto to tell you if they had not arrived${i.rideName ? ` from "${i.rideName.replace(/[\r\n]+/g, " ")}"` : ""} by ${when} (India time), and they have not marked themselves safe.`,
+      `${rider} asked Myto to tell you if they had not arrived${i.rideName ? ` from "${i.rideName.replace(/[\r\n]+/g, " ")}"` : ""} by ${when} (${zoneName(zone, i.expectedAt)}), and they have not marked themselves safe.`,
       "",
       "Open the link they shared with you for their last known position and emergency details.",
       "Try calling them first. If you cannot reach them and are worried, call 112.",
@@ -196,7 +198,7 @@ export function overdueEmail(i: { riderName: string; rideName: string | null; ex
  */
 export async function sweepCheckins(sql: Sql, sender: EmailSender, now: Date): Promise<{ notified: number; wiped: number }> {
   const due = await sql`
-    select c.id, c.contact_email, c.ride_name, c.expected_at, u.display_name, c.emergency
+    select c.id, c.contact_email, c.ride_name, c.expected_at, c.time_zone, u.display_name, c.emergency
     from ride_checkin c join app_user u on u.id = c.user_id
     where c.arrived_at is null and c.wiped_at is null and c.overdue_notified_at is null and c.expected_at <= ${now} and c.contact_email is not null
       and c.expected_at > ${new Date(now.getTime() - WIPE_AFTER_MS)}`;
@@ -204,7 +206,7 @@ export async function sweepCheckins(sql: Sql, sender: EmailSender, now: Date): P
   for (const d of due) {
     try {
       const rider = (d.emergency as Emergency | null)?.riderName ?? (d.display_name as string);
-      await sender.send({ to: d.contact_email as string, ...overdueEmail({ riderName: rider, rideName: d.ride_name, expectedAt: d.expected_at }) });
+      await sender.send({ to: d.contact_email as string, ...overdueEmail({ riderName: rider, rideName: d.ride_name, expectedAt: d.expected_at, timeZone: d.time_zone }) });
       // Marked only after it went out, so an email that failed is tried again on the next sweep.
       await sql`update ride_checkin set overdue_notified_at = ${now} where id = ${d.id} and overdue_notified_at is null`;
       notified++;

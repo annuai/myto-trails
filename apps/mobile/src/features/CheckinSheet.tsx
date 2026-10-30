@@ -46,7 +46,7 @@ export function CheckinSheet({ open, onClose }: { open: boolean; onClose: () => 
     if (!token || !contact) return;
     const expectedAt = nextOccurrence(new Date(), minutes);
     const r = await run(() => createCheckin(token, {
-      expectedAt: new Date(expectedAt).toISOString(), contactName: contact.name, shareLive: live,
+      expectedAt: new Date(expectedAt).toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, contactName: contact.name, shareLive: live,
       ...(email.trim() ? { contactEmail: email.trim() } : {}),
       ...(fix ? { position: { lat: fix.lat, lng: fix.lng, at: new Date().toISOString() } } : {}),
       emergency: { ...(riderName ? { riderName } : {}), ...(medical.bloodGroup ? { bloodGroup: medical.bloodGroup } : {}), ...(medical.notes ? { allergies: medical.notes } : {}), ...(vehicle?.model ? { bikeName: vehicle.model } : {}) },

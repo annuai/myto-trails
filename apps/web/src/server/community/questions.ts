@@ -8,14 +8,8 @@ type Db = Sql | TransactionSql;
 const clean = (s: unknown) => String(s ?? "").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "").replace(/\r\n?/g, "\n").trim();
 const LINK = /(https?:\/\/|www\.)/i;
 
-/** "98123 45678", "+91-98123-45678" and "919812345678" become +919812345678; other countries need a leading +. */
-export function normalizePhone(raw: string): string | null {
-  const t = String(raw ?? "").replace(/[\s().-]/g, "");
-  if (/^\+[1-9]\d{7,14}$/.test(t)) return t;
-  if (/^(91)?[6-9]\d{9}$/.test(t)) return `+91${t.slice(-10)}`;
-  if (/^0[6-9]\d{9}$/.test(t)) return `+91${t.slice(1)}`;
-  return null;
-}
+import { normalizePhone } from "./phone";
+export { normalizePhone };
 
 async function blockedEitherWay(sql: Db, a: string, b: string): Promise<boolean> {
   const [r] = await sql`select 1 as x from rider_block where (blocker_id = ${a} and blocked_id = ${b}) or (blocker_id = ${b} and blocked_id = ${a})`;

@@ -3,32 +3,28 @@ import { Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
-import { Download, FileUp, Link2, Play, Trash2, Undo2 } from 'lucide-react-native';
+import { Download, FileUp, Link2, Play, Trash2 } from 'lucide-react-native';
 import { createSharedRoute, deleteSharedRoute } from '@/api/sharedRoutes';
+import { RouteBuilder } from '@/features/route/RouteBuilder';
 import { RouteCheck } from '@/features/RouteCheck';
 import { elevationProfile } from '@/lib/elevation';
 import { exportGpx } from '@/lib/exportGpx';
 import { pathLength } from '@/lib/geo';
 import { buildGpx } from '@/lib/gpx';
 import { parseGpx } from '@/lib/gpxImport';
-import { planRoute } from '@/lib/routePlan';
 import { buildSharedRoute, sharedIdOf } from '@/lib/shareRoute';
-import { asText, distanceKm, durationParts } from '@/lib/units';
+import { asText, distanceKm } from '@/lib/units';
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '@/store/auth';
 import { useMyRoutes, type MyRoute } from '@/store/myRoutes';
 import { useTrailStore } from '@/store/trails';
 import { Button } from '@/ui/Button';
-import { ChoiceChip } from '@/ui/Chip';
-import { Field } from '@/ui/Field';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
-import { OsmMap } from '@/ui/map/OsmMap';
 import { ElevationChart } from '@/ui/ElevationChart';
 import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
-import type { LatLng } from '@/lib/geo';
 import { space } from '@/theme/tokens';
 
 const km = (r: { distanceKm: number }) => asText(distanceKm(r.distanceKm));
@@ -39,19 +35,11 @@ export default function Plan() {
   const token = useAuth((s) => s.token);
   const { routes, followId, add, remove, follow, setShared } = useMyRoutes();
   const trip = useTrailStore((s) => s.nextTrip);
-  const [tapped, setTapped] = useState<LatLng[]>([]);
-  const [name, setName] = useState('');
   const [open, setOpen] = useState<MyRoute>();
   const [problem, setProblem] = useState<string>();
   const share = useAction();
-  const planned = tapped.length >= 2 ? planRoute(tapped) : undefined;
   const followed = routes.find((r) => r.id === followId);
 
-  const save = () => {
-    if (!planned) return;
-    const id = add({ name: name.trim() || 'My route', points: planned.points, distanceKm: planned.distanceKm });
-    follow(id); setTapped([]); setName('');
-  };
   const importGpx = async () => {
     setProblem(undefined);
     try {
@@ -102,22 +90,7 @@ export default function Plan() {
       </ListCard>
 
       <SectionTitle>Build a route</SectionTitle>
-      <Text variant="label" tone="muted" style={{ marginBottom: space[3] }}>Tap the map to add points in order.</Text>
-      <OsmMap height={280} radius={24} line={tapped} waypoints={tapped} onTap={(p) => setTapped((t) => [...t, p])} />
-      <View style={{ marginTop: space[3], gap: space[3] }}>
-        {planned ? <Text variant="label" tone="muted">{km(planned)} · about {asText(durationParts(planned.etaMin * 60))} at a steady pace</Text> : <Text variant="label" tone="muted">Add at least two points.</Text>}
-        <View style={{ flexDirection: 'row', gap: space[2] }}>
-          <ChoiceChip icon={Undo2} label="Undo" onPress={() => setTapped((t) => t.slice(0, -1))} />
-          <ChoiceChip label="Clear" onPress={() => setTapped([])} />
-        </View>
-        {planned ? (
-          <>
-            <Field label="Name" value={name} onChangeText={setName} placeholder="Sunday loop" maxLength={80} />
-            <RouteCheck line={planned.points} />
-            <Button label="Save and ride this route" onPress={save} />
-          </>
-        ) : null}
-      </View>
+      <RouteBuilder onSave={(r) => follow(add(r))} />
 
       <SectionTitle>Import</SectionTitle>
       <Button variant="soft" icon={FileUp} label="Import a GPX file" onPress={() => void importGpx()} />

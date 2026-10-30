@@ -11,7 +11,7 @@
   "apps/mobile/app/story/submit.tsx": 9,
   "apps/mobile/app/todos/index.tsx": 1,
   "apps/mobile/app/todos/new.tsx": 7,
-  "apps/mobile/app/trail/[id].tsx": 23,
+  "apps/mobile/app/trail/[id].tsx": 22,
   "apps/mobile/src/features/TodoRow.tsx": 9,
   "apps/mobile/src/ui/Banner.tsx": 6,
   "apps/mobile/src/ui/Button.tsx": 4,
@@ -34,6 +34,5 @@
   "apps/mobile/src/ui/Stat.tsx": 1,
   "apps/mobile/src/ui/TabBar.tsx": 9,
   "apps/mobile/src/ui/TrailRow.tsx": 10,
-  "apps/mobile/src/ui/map/OsmMap.tsx": 4,
   "apps/mobile/src/ui/map/OsmMap.web.tsx": 4
 }

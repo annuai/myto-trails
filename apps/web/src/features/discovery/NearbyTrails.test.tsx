@@ -39,7 +39,7 @@ describe("NearbyTrails", () => {
     expect(screen.getByRole("link", { name: /browse by region/i })).toHaveAttribute("href", "/regions");
   });
 
-  it("says so when nothing is near, or when the visitor is outside India", async () => {
+  it("says so when nothing is near, or when the visitor is in a country we are not open in yet", async () => {
     geo((ok) => ok({ coords: { latitude: 12.9, longitude: 77.5 } } as GeolocationPosition));
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ items: [] }))));
     const { unmount } = render(<NearbyTrails />);
@@ -49,7 +49,7 @@ describe("NearbyTrails", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ error: "outside" }))));
     render(<NearbyTrails />);
     await userEvent.click(screen.getByRole("button", { name: /show trails near me/i }));
-    expect(await screen.findByText(/only list trails in india/i)).toBeInTheDocument();
+    expect(await screen.findByText(/isn't open in your country yet/i)).toBeInTheDocument();
   });
 
   it("recovers from a network failure", async () => {

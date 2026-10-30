@@ -137,7 +137,7 @@ function mergeById<T extends { id: string } & Stamped>(local: T[], incoming: T[]
 }
 
 /** Copy of `incoming` as a Snapshot, without the photo files. */
-const plain = (p: Snapshot): Snapshot => ({ licence: p.licence, vehicle: p.vehicle, contacts: p.contacts, medical: p.medical, photos: p.photos, todos: p.todos, rides: p.rides, journal: p.journal, journalTitles: p.journalTitles, routes: p.routes, trips: p.trips, bike: p.bike });
+const plain = (p: Snapshot): Snapshot => ({ licence: p.licence, vehicle: p.vehicle, contacts: p.contacts, medical: p.medical, photos: p.photos, todos: p.todos, rides: p.rides, journal: p.journal, journalTitles: p.journalTitles, routes: p.routes, trips: p.trips, fuel: p.fuel, bike: p.bike });
 
 /** Both lists joined, the same id kept once (the phone's copy), and no list at all when neither side has one. */
 const union = <T extends { id: string }>(local: T[] | undefined, incoming: T[] | undefined): T[] | undefined =>
@@ -158,6 +158,8 @@ export function mergeSnapshots(local: Snapshot, incoming: Snapshot): Snapshot {
     journal: [...new Map([...incoming.journal, ...local.journal].map((e) => [e.id, e])).values()],
     journalTitles: { ...incoming.journalTitles, ...local.journalTitles },
     routes: union(local.routes, incoming.routes), trips: union(local.trips, incoming.trips),
+    // the same start date is the same setting: the phone's copy stays
+    fuel: local.fuel || incoming.fuel ? [...new Map([...(incoming.fuel ?? []), ...(local.fuel ?? [])].map((x) => [x.from, x])).values()].sort((a, b) => a.from.localeCompare(b.from)) : undefined,
     bike: incoming.bike !== undefined && local.bike === undefined ? incoming.bike : local.bike,
   };
 }

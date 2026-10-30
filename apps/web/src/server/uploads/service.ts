@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { Sql } from "postgres";
 import { GPX_MAX_BYTES, IMAGE_MAX_BYTES } from "@moto-trails/domain";
 import { ingestGpx, insertRoute } from "../gpx/ingest";
+import { checkOpenCountry } from "../submissions/country";
 import { processImage } from "../media/image";
 import { buildObjectKey, verifyUpload, type StorageProvider, type UploadTarget } from "../storage";
 
@@ -143,6 +144,8 @@ type PutFn = (bucket: "originals" | "public", key: string, bytes: Uint8Array, ty
 async function processGpx(sql: Sql, storage: StorageProvider, put: PutFn, u: UploadRow, userId: string, bytes: Uint8Array): Promise<UploadOutcome> {
   const ingested = ingestGpx(bytes);
   if (!ingested.ok) return reject(sql, storage, u, ingested.code, ingested.message);
+  const country = await checkOpenCountry(sql, ingested.analysis.start);
+  if (!country.ok && country.error === "country_not_open") return reject(sql, storage, u, country.error, country.message);
 
   const originalKey = u.storage_key;
   const cleanKey = originalKey.replace(/\.gpx$/, "-clean.gpx");

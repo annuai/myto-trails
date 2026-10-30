@@ -13,12 +13,14 @@ const basics = z.object({
   name: clean(80, 3),
   summary: clean(400, 40).refine((s) => !NO_URLS.test(s), "Describe the trail in words, without web addresses."),
   state: z.string().refine(isValidSlug, "Choose a state."),
+  /** ISO code of the state's country; absent means India, the only open country when this was added. */
+  country: z.string().regex(/^[A-Za-z]{2}$/).optional(),
   district: clean(120, 1),
   nearestTown: clean(120, 1),
 });
 
 const route = z.object({
-  startPoint: z.object({ lat: z.number().min(6).max(37), lon: z.number().min(68).max(98) }),
+  startPoint: z.object({ lat: z.number().min(-90).max(90), lon: z.number().min(-180).max(180) }),
   routeShape: z.enum(ROUTE_SHAPES),
 });
 

@@ -3,7 +3,13 @@ import type { LatLng } from '@/lib/geo';
 import { ApiFailure, api } from './client';
 import { toLatLng, type BikeMakeList, type BikeModelPage, type ClubDetail, type ClubJoinRequest, type ClubPost, type ClubSummary, type Me, type RouteDto, type SavedItem, type SearchResult, type TrailComment, type TrailDetail } from './types';
 import { cacheDelete, cacheDeleteWhere, cacheGet, cacheSet, clearUserCache, isFresh } from './cacheStore';
+import { countryAt } from '@/lib/countryBoundaries';
+import { countryQuery, resolveBrowsing } from '@/lib/browsing';
+import { deviceRegion } from '@/lib/locale';
 import { useAuth } from '@/store/auth';
+import { useLocation } from '@/store/location';
+import { useRegion } from '@/store/region';
+import { fetchCountries, FALLBACK_COUNTRIES, type Country } from './countries';
 import { useTrailStore } from '@/store/trails';
 
 type Async<T> = { data?: T; error?: string; loading: boolean; reload: () => void };
@@ -33,8 +39,22 @@ function useFetch<T>(key: string | null, load: (signal: AbortSignal) => Promise<
   return { ...state, reload: useCallback(() => { forceRef.current = true; setTick((n) => n + 1); }, []) };
 }
 
+/** Every country the website lists. Offline, or before the answer, India is the only one assumed open. */
+export function useCountries(): Async<Country[]> & { data: Country[] } {
+  const r = useFetch('countries', fetchCountries);
+  return { ...r, data: r.data ?? FALLBACK_COUNTRIES };
+}
+
+/** The country the lists show: the rider's choice, else where their phone or GPS says they are, else null for every open country. */
+export function useBrowsingCountry(): string | null {
+  const chosen = useRegion((s) => s.browsing);
+  const fix = useLocation((s) => s.fix);
+  const countries = useCountries().data;
+  return resolveBrowsing({ chosen, countries, detected: deviceRegion() ?? (fix ? countryAt(fix.lat, fix.lng) : null) });
+}
+
 export function useTrailSearch(q: string): Async<SearchResult> {
-  const params = new URLSearchParams();
+  const params = new URLSearchParams(countryQuery(useBrowsingCountry()));
   if (q.trim()) params.set('q', q.trim());
   return useFetch(`search:${params}`, (signal) => api<SearchResult>(`/trails?${params}`, { signal }));
 }
@@ -76,7 +96,9 @@ export function useMe(): Async<Me> {
 
 export function useClubs(): Async<ClubSummary[]> {
   const token = useAuth((s) => s.token);
-  return useFetch(token ? 'clubs' : null, async (signal) => (await api<{ items: ClubSummary[] }>('/clubs', { token, signal })).items);
+  const country = countryQuery(useBrowsingCountry());
+  const query = new URLSearchParams(country).toString();
+  return useFetch(token ? (query ? `clubs:${query}` : 'clubs') : null, async (signal) => (await api<{ items: ClubSummary[] }>(`/clubs${query ? `?${query}` : ''}`, { token, signal })).items);
 }
 
 export function useClub(id: string): Async<ClubDetail> {
@@ -114,7 +136,7 @@ export function forgetComments(slug: string) {
 
 /** Forget cached profile and club screens after an edit, so they reload. */
 export function forgetProfile() {
-  cacheDeleteWhere((k) => k === 'me' || k === 'clubs' || k.startsWith('club:'));
+  cacheDeleteWhere((k) => k === 'me' || k === 'clubs' || k.startsWith('clubs:') || k.startsWith('club:'));
 }
 
 /** One page of the bike catalogue (only models that have a picture). Public, so no token. */

@@ -62,16 +62,16 @@ export async function getTrailRoute(slug: string): Promise<RouteDto | null> {
   return isValidSlug(slug) ? loadTrailRoute(slug) : null;
 }
 
-async function loadTrailsInRegion(stateSlug: string, districtSlug: string | undefined): Promise<TrailSummaryDto[]> {
+async function loadTrailsInRegion(countrySlug: string, stateSlug: string, districtSlug: string | undefined): Promise<TrailSummaryDto[]> {
   "use cache";
-  cacheTag("trails", `region:${stateSlug}`);
+  cacheTag("trails", `region:${countrySlug}:${stateSlug}`);
   cacheLife("hours");
-  return withPublicRole(getSql(), (tx) => queryTrailsInRegion(tx, { stateSlug, districtSlug }, new Date()));
+  return withPublicRole(getSql(), (tx) => queryTrailsInRegion(tx, { countrySlug, stateSlug, districtSlug }, new Date()));
 }
 
-export async function getTrailsInRegion(stateSlug: string, districtSlug?: string): Promise<TrailSummaryDto[]> {
-  if (!isValidSlug(stateSlug) || (districtSlug !== undefined && !isValidSlug(districtSlug))) return [];
-  const trails = await loadTrailsInRegion(stateSlug, districtSlug);
+export async function getTrailsInRegion(countrySlug: string, stateSlug: string, districtSlug?: string): Promise<TrailSummaryDto[]> {
+  if (!isValidSlug(countrySlug) || !isValidSlug(stateSlug) || (districtSlug !== undefined && !isValidSlug(districtSlug))) return [];
+  const trails = await loadTrailsInRegion(countrySlug, stateSlug, districtSlug);
   await connection();
   const now = new Date();
   return trails.map((t) => applyNow(t, now));

@@ -1,13 +1,14 @@
 import type { StateCreator } from 'zustand';
 import type { Reminder, ReminderPrefs } from '@/lib/reminders';
+import { DEFAULT_BREAK_MIN } from '@/lib/breakReminder';
 import { REMIND_BEFORE_MIN } from '@/lib/tripPlan';
 
 /** A reminder that has come due, kept so the rider can read it again and clear it. */
 export type InboxItem = { id: string; title: string; body: string; route: string; kind: Reminder['kind']; at: number; read: boolean };
-export type Prefs = ReminderPrefs & { showDetails: boolean; /** Tell me when someone in my group ride changes their signal (help, wait up, fuel, break). */ groupSignals: boolean; /** A reminder after two hours of riding without a stop of ten minutes. */ breakReminder: boolean; /** An alert about 45 minutes before sunset while riding. */ daylightAlert: boolean };
+export type Prefs = ReminderPrefs & { showDetails: boolean; /** Tell me when someone in my group ride changes their signal (help, wait up, fuel, break). */ groupSignals: boolean; /** Minutes of riding without a stop of ten minutes before a break reminder; 0 is off. Two hours when not set. */ breakEveryMin?: number; /** An alert about 45 minutes before sunset while riding. */ daylightAlert: boolean };
 
 const MAX_INBOX = 100;
-const defaults = (): Prefs => ({ todos: true, trips: true, paused: true, tripLeadMin: REMIND_BEFORE_MIN, showDetails: false, groupSignals: true, breakReminder: true, daylightAlert: true });
+const defaults = (): Prefs => ({ todos: true, trips: true, paused: true, tripLeadMin: REMIND_BEFORE_MIN, showDetails: false, groupSignals: true, breakEveryMin: DEFAULT_BREAK_MIN, daylightAlert: true });
 const toItem = (r: Reminder, at: number): InboxItem => ({ id: r.id, title: r.title, body: r.body, route: r.route, kind: r.kind, at, read: false });
 
 export type NotificationsState = {
@@ -19,7 +20,9 @@ export type NotificationsState = {
   kmNotified: Record<string, number>;
   /** The rider said "Not now" to turning reminders on. */
   asked: boolean;
-  setPref: (key: Exclude<keyof Prefs, 'tripLeadMin'>, value: boolean) => void;
+  setPref: (key: Exclude<keyof Prefs, 'tripLeadMin' | 'breakEveryMin'>, value: boolean) => void;
+  /** How long to ride, without a stop, before a break reminder (0 is off). */
+  setBreakEvery: (minutes: number) => void;
   /** How long before a trip starts to be reminded to start it (0 is off). */
   setTripLead: (minutes: number) => void;
   setScheduled: (list: Reminder[]) => void;
@@ -43,6 +46,7 @@ const merge = (inbox: InboxItem[], add: InboxItem[]) => {
 export const notificationsSlice = (): StateCreator<NotificationsState> => (set) => ({
   prefs: defaults(), scheduled: [], inbox: [], kmNotified: {}, asked: false,
   setPref: (key, value) => set((s) => ({ prefs: { ...s.prefs, [key]: value } })),
+  setBreakEvery: (breakEveryMin) => set((s) => ({ prefs: { ...s.prefs, breakEveryMin } })),
   setTripLead: (tripLeadMin) => set((s) => ({ prefs: { ...s.prefs, tripLeadMin } })),
   setScheduled: (list) => set({ scheduled: list }),
   absorb: (now) => set((s) => {
@@ -56,3 +60,12 @@ export const notificationsSlice = (): StateCreator<NotificationsState> => (set) 
   setAsked: () => set({ asked: true }),
   wipe: () => set({ prefs: defaults(), scheduled: [], inbox: [], kmNotified: {}, asked: false }),
 });
+
+/**
+ * Joins what was saved on the phone to the defaults. A setting added in a later version is missing from what an older version saved, and
+ * without this it would read as off instead of taking its default; what the rider chose is kept as they chose it.
+ */
+export const mergePersisted = (persisted: unknown, current: NotificationsState): NotificationsState => {
+  const saved = (persisted ?? {}) as Partial<NotificationsState>;
+  return { ...current, ...saved, prefs: { ...current.prefs, ...saved.prefs } };
+};

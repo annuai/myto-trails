@@ -5,7 +5,7 @@ import { arriveCheckin, pingCheckin } from '@/api/checkins';
 import { postConditionReport } from '@/api/conditionReports';
 import { leaveGroupRide, syncGroupRide } from '@/api/groups';
 import { startArrive, stepArrive } from '@/lib/autoArrive';
-import { startBreak, stepBreak } from '@/lib/breakReminder';
+import { breakLabel, DEFAULT_BREAK_MIN, startBreak, stepBreak } from '@/lib/breakReminder';
 import { buzzThrice } from '@/lib/buzz';
 import { daylightAlertDue, fetchSunsetMs, sunsetClock } from '@/lib/daylight';
 import type { LatLng } from '@/lib/geo';
@@ -68,6 +68,10 @@ function followedRouteEnd(): LatLng | undefined {
   const end = trip ? useTrailStore.getState().offline[trip.slug]?.route?.line.at(-1) : undefined;
   return end ? { lat: end[1], lng: end[0] } : undefined;
 }
+
+/** Sends the rider's signal to the group now rather than at the next poll. Set while the host is mounted. */
+let pollGroupNow: (() => void) | undefined;
+export const syncGroupNow = () => pollGroupNow?.();
 
 /** What auto-arrive has seen for the open check-in. It starts afresh for each check-in. */
 const arriveWatch = { id: '', state: startArrive };
@@ -152,6 +156,7 @@ export function CompanionHost() {
         if (e instanceof ApiFailure && (e.status === 403 || e.status === 404)) useCompanion.getState().setGroup(null);
       }
     };
+    pollGroupNow = () => { void pollGroup(); };
     const loop = () => {
       void pollGroup().finally(() => {
         const { group, live } = useCompanion.getState();
@@ -187,9 +192,11 @@ export function CompanionHost() {
       const { prefs } = useNotifications.getState();
       const now = Date.now();
       const running = rec.status === 'running';
-      const b = stepBreak(brk, { now, running, paused: rec.paused, stopped: useMotion.getState().stopped });
+      const everyMin = prefs.breakEveryMin ?? DEFAULT_BREAK_MIN;
+      const b = stepBreak(brk, { now, running, paused: rec.paused, stopped: useMotion.getState().stopped, afterMs: everyMin * 60_000 });
       brk = b.state;
-      if (b.remind && prefs.breakReminder) announce('break', 'Time for a break', 'You have been riding for 2 hours. Stop, drink some water and stretch.', 'Time for a break', '/ride/live', true);
+      // When the detector cannot tell what the rider is doing, stay quiet rather than risk a reminder at a stop.
+      if (b.remind && useMotion.getState().activity !== 'unknown') announce('break', 'Time for a break', `You have been riding for ${breakLabel(everyMin).toLowerCase()}. Stop, drink some water and stretch.`, 'Time for a break', '/ride/live', true);
       if (!running) { sunsetAt = undefined; sunsetTold = false; sunsetTries = 0; return; }
       const p = rec.points[rec.points.length - 1];
       if (prefs.daylightAlert && sunsetAt === undefined && p && !looking && sunsetTries < 3) {
@@ -216,7 +223,7 @@ export function CompanionHost() {
       if (r.action === 'resume') void rec.resume();
     }, 5000);
 
-    return () => { unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); clearInterval(watchTimer); app.remove(); flags.autoPaused = false; };
+    return () => { pollGroupNow = undefined; unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); clearInterval(watchTimer); app.remove(); flags.autoPaused = false; };
   }, []);
   return null;
 }

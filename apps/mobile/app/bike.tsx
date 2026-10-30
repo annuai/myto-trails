@@ -79,8 +79,8 @@ export default function Bike() {
       <Card style={{ gap: space[5] }}>
         <BikeImage own={photo.uri} preset={model.preset} want={HERO_WIDTH} label={name.trim() || 'Your bike'} />
         <Button variant="accent" icon={BikeGlyph} label="Choose a bike" disabled={busy} onPress={() => setPicking(true)} />
-        <Field label="Bike name" value={name} onChangeText={setName} maxLength={60} placeholder="Himalayan 450" />
-        <Field label="Model year (optional)" value={year} onChangeText={(t) => setYear(t.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" placeholder="2024" />
+        <Field onCard label="Bike name" value={name} onChangeText={setName} maxLength={60} placeholder="Himalayan 450" />
+        <Field onCard label="Model year (optional)" value={year} onChangeText={(t) => setYear(t.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" placeholder="2024" />
         <Button variant="soft" icon={Camera} label={photo.uri ? 'Change my own photo' : 'Upload my own photo'} disabled={busy} onPress={() => void upload()} />
         {photo.uri ? <Button variant="soft" label="Remove my photo" disabled={busy} onPress={() => setPhoto({ mediaId: null, uri: null })} /> : null}
         {problem ? <Text variant="label" tone="stop">{problem}</Text> : null}

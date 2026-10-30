@@ -221,7 +221,7 @@ describe("sessions", () => {
 
   it("includes the user's roles", async () => {
     const s = await session();
-    await db.sql`insert into user_role (user_id, role) values (${s.user.id}, 'moderator')`;
+    await db.sql`insert into user_role (user_id, role) values (${s.user.id}, 'moderator')`; // no country: signs in as a moderator, acts nowhere yet
     expect((await getSessionUser(db.sql, s.sessionToken))!.roles).toEqual(["moderator"]);
   });
 

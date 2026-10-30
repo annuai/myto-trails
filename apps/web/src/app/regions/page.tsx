@@ -18,8 +18,8 @@ export default async function RegionsPage() {
       ) : (
         <ul className="border-t border-border">
           {states.map((s) => (
-            <li key={s.slug} className="flex items-baseline justify-between border-b border-border">
-              <Link href={`/regions/${s.slug}`} className="inline-flex min-h-11 items-center py-3 text-lg font-semibold underline-offset-4 hover:underline">
+            <li key={`${s.countrySlug}-${s.slug}`} className="flex items-baseline justify-between border-b border-border">
+              <Link href={`/regions/${s.countrySlug ?? "india"}/${s.slug}`} className="inline-flex min-h-11 items-center py-3 text-lg font-semibold underline-offset-4 hover:underline">
                 {s.name}
               </Link>
               <span className="font-mono text-sm text-muted">{s.publishedTrailCount} {s.publishedTrailCount === 1 ? "trail" : "trails"}</span>

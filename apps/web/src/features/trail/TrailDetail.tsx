@@ -18,8 +18,8 @@ export function TrailDetail({ trail, media, videos = [], route = null, actions, 
   const crumbs: Crumb[] = [
     { label: "Home", href: "/" },
     { label: "Regions", href: "/regions" },
-    { label: trail.state.name, href: `/regions/${trail.state.slug}` },
-    ...(trail.district ? [{ label: trail.district.name, href: `/regions/${trail.state.slug}/${trail.district.slug}` }] : []),
+    { label: trail.state.name, href: `/regions/${trail.country?.slug ?? "india"}/${trail.state.slug}` },
+    ...(trail.district ? [{ label: trail.district.name, href: `/regions/${trail.country?.slug ?? "india"}/${trail.state.slug}/${trail.district.slug}` }] : []),
     { label: trail.name },
   ];
   const place = [trail.district?.name, trail.state.name].filter(Boolean).join(", ");

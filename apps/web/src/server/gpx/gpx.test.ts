@@ -143,9 +143,12 @@ describe("analyzeTrack", () => {
     expect(analyzeTrack([line(10, undefined, { step: 0.01 })]).ok).toBe(true); // 10 points but 11 km
   });
 
-  it("rejects tracks outside India, with a message", () => {
-    const london = line(100, { lat: 51.5, lon: -0.12 });
-    expect(analyzeTrack([london])).toMatchObject({ ok: false, error: "outside_india" });
+  it("rejects positions that are not on Earth, with a message", () => {
+    expect(analyzeTrack([line(100, { lat: 95, lon: 10 })])).toMatchObject({ ok: false, error: "invalid_coordinates" });
+  });
+
+  it("accepts a track anywhere on Earth", () => {
+    expect(analyzeTrack([line(100, { lat: 51.5, lon: -0.12 })]).ok).toBe(true);
   });
 
   it("rejects teleports between points", () => {

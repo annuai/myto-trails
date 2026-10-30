@@ -2,7 +2,7 @@
 
 Detail: [docs/02](docs/02-product-requirements.md), [docs/03](docs/03-information-architecture.md), [docs/04](docs/04-user-flows.md).
 
-**Purpose:** a trustworthy, community-contributed, moderated directory of motorcycle trails in India. For every trail a rider can tell: may I ride it, can I ride it now, and how do we know.
+**Purpose:** a trustworthy, community-contributed, moderated directory of motorcycle trails, opening country by country (India first; other countries show as coming soon). For every trail a rider can tell: may I ride it, can I ride it now, and how do we know.
 
 **Not:** a travel directory, a blog, or a social network. Coverage is never claimed beyond what the data shows.
 
@@ -15,6 +15,8 @@ Detail: [docs/02](docs/02-product-requirements.md), [docs/03](docs/03-informatio
 **MVP:** discovery (search incl. places such as "Bangalore", "near me" with approximate travel time, filters, list + map, URL state), a Donate page (Myto the company receives funds), trail pages with go/no-go strip, access/condition/verification, GPX download for approved trails, accounts, Saved, multi-step submission with GPX and photos, moderation tools, reporting, responsive and accessible UI.
 
 **Companion stage (after the web MVP):** public API; Trails app that records rides in the background and posts GPX and details to Trails; Myto Navi (Android hardware with SIM) integration with offline sync ([docs/14](docs/14-platform-contract.md)).
+
+**The Myto Moto app now (built, in testing):** records rides and keeps a ride journal; plans routes from searched places along roads; follows a saved route; group rides with live status and Help; check-ins and condition reports; to-dos, documents and service reminders; fuel costs; offline maps; year recap. Details: [app README](apps/mobile/README.md), [docs/16 §13](docs/16-myto-app-ui.md), [feature designs](docs/superpowers/specs/).
 
 **Later:** collections and completed trails, notifications, corrections, reputation, richer elevation; then planning, device formats, riding stats.
 

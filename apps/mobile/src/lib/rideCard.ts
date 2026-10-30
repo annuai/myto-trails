@@ -3,6 +3,7 @@ import { elevationM, distanceKm, durationParts, speedKmh, type Quantity } from '
 import { forSharing } from './privacy';
 import { cardTokens } from './rideCard.tokens';
 import { simplifyTo } from './routePlan';
+import { deviceLocale } from './locale';
 
 export type CardFormat = 'story' | 'post' | 'square';
 export const CARD_SIZE: Record<CardFormat, { width: number; height: number }> = cardTokens.size;
@@ -39,7 +40,7 @@ export function normaliseRoute(points: LatLng[]): { points: { x: number; y: numb
   return { points: points.map((_, i) => ({ x: (xs[i] - minX + offX) / side, y: 1 - (ys[i] - minY + offY) / side })), aspect: h === 0 ? side / 1e-9 : w / h };
 }
 
-const dateText = (t: number) => new Date(t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+const dateText = (t: number) => new Date(t).toLocaleDateString(deviceLocale(), { day: 'numeric', month: 'short', year: 'numeric' });
 
 /**
  * What a ride card shows. At most four stats (three by default), values in the app's own units, and the route

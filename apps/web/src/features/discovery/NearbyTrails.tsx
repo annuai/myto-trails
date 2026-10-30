@@ -69,7 +69,7 @@ export function NearbyTrails() {
       ) : null}
       {state.kind === "locating" ? <p role="status">Finding your position…</p> : null}
       {state.kind === "empty" ? <p role="status" className="rounded-3xl bg-card-cream p-6">No trails within 300 km yet. <Link href="/trails" className="underline underline-offset-4">See all trails</Link> or <Link href="/submit" className="underline underline-offset-4">add one you know</Link>.</p> : null}
-      {state.kind === "outside" ? <p role="status" className="rounded-3xl bg-card-cream p-6">We only list trails in India for now. <Link href="/trails" className="underline underline-offset-4">Browse all trails</Link>.</p> : null}
+      {state.kind === "outside" ? <p role="status" className="rounded-3xl bg-card-cream p-6">Moto Trails isn&apos;t open in your country yet, but we plan to open there soon. <Link href="/countries" className="underline underline-offset-4">See where we&apos;re open</Link>, or <Link href="/trails" className="underline underline-offset-4">browse all trails</Link>.</p> : null}
       {state.kind === "loaded" ? (
         <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {state.items.map((t) => (

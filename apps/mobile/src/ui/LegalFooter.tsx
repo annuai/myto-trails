@@ -26,6 +26,7 @@ export function LegalFooter() {
         <Text variant="caption" tone="muted">·</Text>
         <Text variant="caption" tone="muted">{MADE_IN_INDIA}</Text>
       </Inline>
+      <Text variant="caption" tone="muted" style={{ textAlign: 'center' }}>Maps © OpenStreetMap contributors, served by OpenFreeMap. Country outlines from Natural Earth (public domain). Place names from GeoNames (CC BY 4.0).</Text>
     </Stack>
   );
 }

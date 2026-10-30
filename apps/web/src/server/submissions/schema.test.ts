@@ -32,11 +32,15 @@ describe("validateStep basics", () => {
 });
 
 describe("validateStep route", () => {
-  it("accepts a start point inside India and a route shape", () => {
+  it("accepts a start point and a route shape", () => {
     expect(validateStep(2, route).ok).toBe(true);
   });
+  it("accepts a start point anywhere on Earth", () => {
+    expect(validateStep(2, { ...route, startPoint: { lat: 51.5, lon: -0.1 } }).ok).toBe(true);
+  });
   it.each([
-    [{ startPoint: { lat: 51.5, lon: -0.1 } }, "startPoint"],
+    [{ startPoint: { lat: 95, lon: -0.1 } }, "startPoint"],
+    [{ startPoint: { lat: 51.5, lon: 200 } }, "startPoint"],
     [{ startPoint: { lat: Number.NaN, lon: 76 } }, "startPoint"],
     [{ startPoint: undefined }, "startPoint"],
     [{ routeShape: "zigzag" }, "routeShape"],

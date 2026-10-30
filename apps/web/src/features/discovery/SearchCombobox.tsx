@@ -7,7 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 type Suggestions = {
   trails: { slug: string; name: string; place: string }[];
   places: { slug: string; name: string; state: string }[];
-  regions: { slug: string; name: string }[];
+  regions: { slug: string; name: string; countrySlug: string }[];
 };
 type Option = { id: string; group: "Places" | "Trails" | "Regions"; label: string; detail?: string; href: string };
 
@@ -18,7 +18,7 @@ function toOptions(s: Suggestions, base: string): Option[] {
   return [
     ...s.places.map((p, i) => ({ id: `${base}-p${i}`, group: "Places" as const, label: p.name, detail: p.state, href: `/trails?near=${p.slug}` })),
     ...s.trails.map((t, i) => ({ id: `${base}-t${i}`, group: "Trails" as const, label: t.name, detail: t.place, href: `/trails/${t.slug}` })),
-    ...s.regions.map((r, i) => ({ id: `${base}-r${i}`, group: "Regions" as const, label: r.name, href: `/regions/${r.slug}` })),
+    ...s.regions.map((r, i) => ({ id: `${base}-r${i}`, group: "Regions" as const, label: r.name, href: `/regions/${r.countrySlug}/${r.slug}` })),
   ];
 }
 

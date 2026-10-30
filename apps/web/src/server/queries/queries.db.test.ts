@@ -114,7 +114,7 @@ describe("regions", () => {
     await insertTrailFixture(db.sql, { ...l, name: "Zulu trail" });
     await insertTrailFixture(db.sql, { ...l, name: "Alpha trail" });
     await insertTrailFixture(db.sql, { ...l, name: "Hidden trail", lifecycle: "draft" });
-    const rows = await asAnon(db.sql, (tx) => queryTrailsInRegion(tx, { stateSlug: "qs-i" }, now));
+    const rows = await asAnon(db.sql, (tx) => queryTrailsInRegion(tx, { countrySlug: "india", stateSlug: "qs-i" }, now));
     expect(rows.map((r) => r.name)).toEqual(["Alpha trail", "Zulu trail"]);
   });
 
@@ -122,21 +122,21 @@ describe("regions", () => {
     const a = loc("j");
     await insertTrailFixture(db.sql, { ...a });
     await insertTrailFixture(db.sql, { state: a.state, district: { slug: "other-d", name: "Other D" } });
-    const rows = await asAnon(db.sql, (tx) => queryTrailsInRegion(tx, { stateSlug: "qs-j", districtSlug: "qd-j" }, now));
+    const rows = await asAnon(db.sql, (tx) => queryTrailsInRegion(tx, { countrySlug: "india", stateSlug: "qs-j", districtSlug: "qd-j" }, now));
     expect(rows).toHaveLength(1);
   });
 
   it("returns an empty list for invalid or unknown region slugs", async () => {
-    expect(await queryTrailsInRegion(neverCalled, { stateSlug: "Bad Slug" }, now)).toEqual([]);
-    expect(await asAnon(db.sql, (tx) => queryTrailsInRegion(tx, { stateSlug: "atlantis" }, now))).toEqual([]);
+    expect(await queryTrailsInRegion(neverCalled, { countrySlug: "india", stateSlug: "Bad Slug" }, now)).toEqual([]);
+    expect(await asAnon(db.sql, (tx) => queryTrailsInRegion(tx, { countrySlug: "india", stateSlug: "atlantis" }, now))).toEqual([]);
   });
 
   it("finds regions by slugs and rejects bad input", async () => {
     await insertTrailFixture(db.sql, { ...loc("k") });
-    expect(await asAnon(db.sql, (tx) => queryRegionBySlugs(tx, "qs-k"))).toMatchObject({ kind: "state", slug: "qs-k", publishedTrailCount: 1 });
-    expect(await asAnon(db.sql, (tx) => queryRegionBySlugs(tx, "qs-k", "qd-k"))).toMatchObject({ kind: "district", parentSlug: "qs-k" });
-    expect(await asAnon(db.sql, (tx) => queryRegionBySlugs(tx, "qs-k", "nope"))).toBeNull();
-    expect(await queryRegionBySlugs(neverCalled, "UPPER")).toBeNull();
+    expect(await asAnon(db.sql, (tx) => queryRegionBySlugs(tx, "india", "qs-k"))).toMatchObject({ kind: "state", slug: "qs-k", publishedTrailCount: 1, countrySlug: "india", countryIso2: "IN" });
+    expect(await asAnon(db.sql, (tx) => queryRegionBySlugs(tx, "india", "qs-k", "qd-k"))).toMatchObject({ kind: "district", parentSlug: "qs-k" });
+    expect(await asAnon(db.sql, (tx) => queryRegionBySlugs(tx, "india", "qs-k", "nope"))).toBeNull();
+    expect(await queryRegionBySlugs(neverCalled, "india", "UPPER")).toBeNull();
   });
 
   it("counts only published trails for states and districts", async () => {
@@ -146,7 +146,7 @@ describe("regions", () => {
     await insertTrailFixture(db.sql, { ...l, lifecycle: "draft" });
     const states = await asAnon(db.sql, (tx) => queryStates(tx));
     expect(states.find((s) => s.slug === "qs-l")!.publishedTrailCount).toBe(2);
-    const districts = await asAnon(db.sql, (tx) => queryDistricts(tx, "qs-l"));
+    const districts = await asAnon(db.sql, (tx) => queryDistricts(tx, "india", "qs-l"));
     expect(districts).toHaveLength(1);
     expect(districts[0]).toMatchObject({ slug: "qd-l", publishedTrailCount: 2 });
   });
@@ -221,7 +221,7 @@ describe("cover photos on list queries", () => {
   it("attaches the cover to region and search results, and null when a trail has no photo", async () => {
     const withPhoto = await insertTrailFixture(db.sql, { ...loc("cv1"), name: "Cover photo trail", mediaCount: 2 });
     const without = await insertTrailFixture(db.sql, { ...loc("cv1"), name: "Cover less trail" });
-    const region = await asAnon(db.sql, (tx) => queryTrailsInRegion(tx, { stateSlug: "qs-cv1" }, now));
+    const region = await asAnon(db.sql, (tx) => queryTrailsInRegion(tx, { countrySlug: "india", stateSlug: "qs-cv1" }, now));
     expect(region.find((t) => t.slug === withPhoto.slug)!.cover).toMatchObject({ altText: "Alt text 0", variants: { "800": expect.stringContaining("https://example.test/") } });
     expect(region.find((t) => t.slug === without.slug)!.cover).toBeNull();
     const found = await asAnon(db.sql, (tx) => searchTrails(tx, parseSearchParams({ q: "Cover photo" }), now));

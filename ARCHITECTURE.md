@@ -18,10 +18,12 @@ flowchart LR
 - Trails are stable; content is versioned (`trail` → `trail_revision`); edits go through moderation while the old revision stays live.
 - Access class, operational condition and verification level are independent, evidence-backed, and expire.
 - Geometry and GPX are public only after moderation and only if the access class allows; sensitive trails publish reduced geometry.
-- Search = PostgreSQL full-text + trigram + PostGIS, plus an own gazetteer of Indian places (alternate names) for "Bangalore"-style searches, "near me", and approximate travel time (real routing later). Sensitive trails use an approximate public point for distances.
+- Search = PostgreSQL full-text + trigram + PostGIS, plus an own gazetteer of places per open country (alternate names; India first, GeoNames for others) for "Bangalore"-style searches, "near me", and approximate travel time (real routing later). Sensitive trails use an approximate public point for distances.
 - Clients: web, Trails app (background ride recording while another navigation app runs; submits drafts), Myto Navi (Android hardware with SIM; offline-first sync). One API, one submission/moderation pipeline; GPX exports are plain GPX 1.1 with access status in standard fields.
 - Donations: hosted payment page in the MVP; Myto (company) receives funds.
 - Reads via server components and typed queries; writes via server actions validated with shared Zod schemas; authorisation in code and in the database (RLS).
 - Layering: `app → features → ui → tokens`; business rules in pure `domain/`; server code behind typed loaders.
+
+**The phone app (built, `apps/mobile`):** Expo / React Native, named Myto Moto, local first. It talks only to the website's `/api/v1` with a device token and never to the database. Rides, journal, to-dos, documents and fuel costs live on the phone; group rides, check-ins, condition reports and shared routes go through the API ([ride companion](docs/superpowers/specs/2026-10-28-ride-companion-features-design.md)). Maps are OpenStreetMap through MapLibre. Route planning calls two free public services directly from the phone, Photon for place search and Valhalla for road routes ([route planning](docs/superpowers/specs/2026-10-29-route-planning-design.md)); neither needs a key. Reminders and the ride-controls notification are local notifications, with no push server ([notifications](docs/superpowers/specs/2026-10-28-notifications-design.md), [ride notification](docs/superpowers/specs/2026-10-29-ride-notification-design.md)).
 
 **Verified about the Myto site:** Next.js (Turbopack) on Vercel (Mumbai), Tailwind v4 tokens, Geist + Michroma. **Not verified:** its auth, database, APIs, repo. See [docs/01](docs/01-existing-system-audit.md).

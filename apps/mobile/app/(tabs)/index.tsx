@@ -31,6 +31,7 @@ import { Sheet } from '@/ui/Sheet';
 import { dueInfo, isDueSoon } from '@/lib/todos';
 import { distanceKm, durationParts, speedKmh } from '@/lib/units';
 import { useProfile } from '@/store/profile';
+import { useDistanceUnit } from '@/store/region';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { Banner } from '@/ui/Banner';
@@ -54,6 +55,7 @@ export default function Home() {
   const router = useRouter();
   const { landscape } = useLayout();
   const rides = useRides((s) => s.rides);
+  useDistanceUnit(); // re-draws the distances when the unit changes
   const nextTrip = useTrailStore((s) => s.nextTrip);
   const [menu, setMenu] = useState(false);
   const [recoverOpen, setRecoverOpen] = useState(false);

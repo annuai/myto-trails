@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Platform, Share, Vibration, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, Flag, Megaphone, Mic, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
+import { useEmergency } from '@/features/emergency/useEmergency';
 import { GroupSheet } from '@/features/GroupSheet';
 import { NoteSheet } from '@/features/NoteSheet';
 import { ReportSheet } from '@/features/ReportSheet';
 import { clockLabel } from '@/lib/community';
+import { telUrl } from '@/lib/crashAlert';
 import { distanceToLine, startFollow, stepFollow } from '@/lib/routeFollow';
 import { WAYPOINT_KINDS, WAYPOINT_LABEL } from '@/lib/waypointKinds';
 import { RiderTiles } from '@/features/group/RiderTiles';
@@ -26,6 +28,8 @@ import { useRecorder } from '@/store/recorder';
 import { Theme } from '@/theme/ThemeProvider';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { buzz } from '@/lib/haptics';
+import { EmergencyEditor } from '@/ui/EmergencyEditor';
 import { HoldButton } from '@/ui/HoldButton';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { useRouteLine } from '@/api/useApi';
@@ -52,6 +56,7 @@ function LiveBody() {
   const r = useRecorder();
   const contacts = useProfile((s) => s.contacts);
   const medical = useProfile((s) => s.medical);
+  const emergency = useEmergency();
   const planned = useTrailStore((s) => s.nextTrip);
   const trailLine = useRouteLine(planned?.slug);
   // A route the rider built or imported wins over a published trail's line.
@@ -70,6 +75,9 @@ function LiveBody() {
   const last = r.source === 'sim' ? lastPoint : fix ? { lat: fix.lat, lng: fix.lng } : lastPoint;
   const [, tick] = useState(0);
   const [sos, setSos] = useState(false);
+  // Help on a solo ride's lock screen card opens this screen with the SOS sheet up.
+  const { sos: sosParam } = useLocalSearchParams<{ sos?: string }>();
+  useEffect(() => { if (sosParam) setSos(true); }, [sosParam]);
   const [journalOpen, setJournalOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -94,6 +102,7 @@ function LiveBody() {
   const shareHere = () => last && Share.share({ message: `I need help. My position: https://maps.google.com/?q=${last.lat.toFixed(5)},${last.lng.toFixed(5)}` });
 
   const stop = async () => {
+    buzz.stop();
     stopping.current = true;
     // If the ride could not be written, it stays on the phone and Home offers it back for saving.
     const id = await finishRide().catch(() => undefined);
@@ -141,18 +150,18 @@ function LiveBody() {
   // The other riders of the group ride, with how far they are and a way to navigate to them (once stopped).
   const groupTiles = group && live.riders.length > 1 ? <RiderTiles tiles={riderTiles(live.riders, live.me, last, Date.now())} canNavigate={canNavigate} /> : null;
   const pauseBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel={r.paused ? 'Resume ride' : 'Pause ride'} onPress={() => void (r.paused ? r.resume() : r.pause())} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: r.paused ? c.accent : pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
+    <Pressable accessibilityRole="button" accessibilityLabel={r.paused ? 'Resume ride' : 'Pause ride'} onPress={() => { (r.paused ? buzz.resume : buzz.pause)(); void (r.paused ? r.resume() : r.pause()); }} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: r.paused ? c.accent : pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
       <Icon icon={r.paused ? Play : Pause} size={h > 70 ? 26 : 22} />
       <Text variant="labelMedium" style={r.paused ? { color: c.accentInk } : undefined}>{r.paused ? 'Resume' : 'Pause'}</Text>
     </Pressable>
   );
   const waypointBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => void useRecorder.getState().addWaypoint().then(() => setDropAt(Date.now()))} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Drop a waypoint" onPress={() => { buzz.waypoint(); void useRecorder.getState().addWaypoint().then(() => setDropAt(Date.now())); }} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
       <Icon icon={Flag} size={h > 70 ? 26 : 22} /><Text variant="labelMedium">Waypoint{r.waypoints.length ? ` · ${r.waypoints.length}` : ''}</Text>
     </Pressable>
   );
   const sosBtn = (h: number) => (
-    <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => setSos(true)} style={{ flex: 1, minHeight: h, borderRadius: radius.control, borderWidth: 1.5, borderColor: c.stop, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
+    <Pressable accessibilityRole="button" accessibilityLabel="SOS" onPress={() => { buzz.help(); setSos(true); }} style={{ flex: 1, minHeight: h, borderRadius: radius.control, borderWidth: 1.5, borderColor: c.stop, flexDirection: 'row', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
       <Icon icon={Siren} tone="stop" size={22} /><Text variant="bodyMedium" tone="stop">SOS</Text>
     </Pressable>
   );
@@ -177,7 +186,8 @@ function LiveBody() {
       </Sheet>
       <Sheet open={sos} title="SOS" onClose={() => setSos(false)}>
         <Text variant="label" tone="muted">Call for help. This does not replace emergency services.</Text>
-        <Button label="Call 112 (emergency)" variant="danger" icon={Phone} onPress={() => Linking.openURL('tel:112')} />
+        <Button label={`Call ${emergency.number} (emergency)`} variant="danger" icon={Phone} onPress={() => Linking.openURL(telUrl(emergency.number))} />
+        <EmergencyEditor choice={emergency} />
         <Button variant="soft" icon={Share2} label="Share my position" onPress={() => void shareHere()} />
         {medical.bloodGroup || medical.notes ? <Text variant="label" tone="muted">Emergency card: {[medical.bloodGroup && `blood group ${medical.bloodGroup}`, medical.notes].filter(Boolean).join(' · ')}</Text> : null}
         {contacts.map((c) => <Button key={c.id} variant="soft" icon={Phone} label={`${c.name}${c.primary ? ' (main)' : ''}`} onPress={() => Linking.openURL(`tel:${c.phone}`)} />)}

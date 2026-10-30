@@ -6,7 +6,7 @@ Status: **approved 2026-10-28 with the decisions in section 8.** Scope: `apps/mo
 
 The app should notify the rider when there is a trip plan, when a to-do is pending, "etc". This design covers those, plus the few "etc" cases the app already has the data for.
 
-**Non-goals (v1):** push from a server (trail closures, club news), notification history stored on the phone, notifications while the app has never been opened, rich notifications (images, action buttons).
+**Non-goals (v1):** push from a server (trail closures, club news), notification history stored on the phone, notifications while the app has never been opened, rich notifications (images, action buttons). The one exception, added later: the ride-in-progress notification has Pause, Resume and Help buttons, see [ride notification](2026-10-29-ride-notification-design.md).
 **Anti-goals:** a notification that nags (the same thing more than a few times), one that fires at night, or one that reveals licence or medical details on a locked screen.
 
 ## 2. The key decision: local notifications, no server

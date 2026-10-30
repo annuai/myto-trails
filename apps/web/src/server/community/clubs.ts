@@ -1,11 +1,12 @@
 import type { Sql, TransactionSql } from "postgres";
+import { DEFAULT_TIME_ZONE } from "@/lib/time-zone";
 import { CLUB_CREATES_PER_DAY, CLUB_POSTS_PER_HOUR, JOIN_PHONE_RETENTION_DAYS, JOIN_REQUEST_TTL_DAYS, JOIN_REQUESTS_PER_DAY } from "./constants";
 import { cleanBody, LINK } from "./comments";
 import { decryptSecret, encryptSecret } from "./crypto-box";
 import { isMember } from "./members";
 import type { ClubMember, ClubSummary, ClubView } from "@moto-trails/domain";
 import { bikeFromRow, ownsMedia, pickVariant } from "./profile";
-import { normalizePhone } from "./questions";
+import { normalizePhone } from "./phone";
 
 type Db = Sql | TransactionSql;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -263,7 +264,7 @@ type PostFail = { ok: false; reason: "not_member" | "not_found" | "invalid" | "r
 
 export async function postToClub(
   sql: Sql,
-  i: { userId: string; clubId: string; body: string; parentId?: string | null; ridePlan?: { at: Date; place: string } | null; now: Date },
+  i: { userId: string; clubId: string; body: string; parentId?: string | null; ridePlan?: { at: Date; place: string; timeZone?: string } | null; now: Date },
 ): Promise<{ ok: true; postId: string } | PostFail> {
   if (!(await isMember(sql, i.userId))) return { ok: false, reason: "not_member" };
   const club = await findClub(sql, i.clubId);
@@ -285,8 +286,8 @@ export async function postToClub(
   const [hit] = await sql`select rate_limit_hit(${`club-post:${i.userId}`}, ${CLUB_POSTS_PER_HOUR}, 3600) as ok`;
   if (!hit!.ok) return { ok: false, reason: "rate_limited" };
   const [p] = await sql`
-    insert into club_post (club_id, author_id, parent_id, kind, body, ride_at, ride_place)
-    values (${club.id}, ${i.userId}, ${i.parentId ?? null}, ${plan ? "ride_plan" : "post"}, ${body}, ${plan?.at ?? null}, ${place})
+    insert into club_post (club_id, author_id, parent_id, kind, body, ride_at, ride_place, time_zone)
+    values (${club.id}, ${i.userId}, ${i.parentId ?? null}, ${plan ? "ride_plan" : "post"}, ${body}, ${plan?.at ?? null}, ${place}, ${plan?.timeZone ?? DEFAULT_TIME_ZONE})
     returning id`;
   return { ok: true, postId: p!.id as string };
 }
@@ -294,7 +295,7 @@ export async function postToClub(
 export type FeedReply = { id: string; authorName: string; body: string; createdAt: Date; mine: boolean };
 export type FeedPost = {
   id: string; kind: "post" | "ride_plan"; authorName: string; authorHandle: string; body: string; createdAt: Date; mine: boolean;
-  at: Date | null; place: string | null; going: number; maybe: number; myResponse: "going" | "maybe" | null; replies: FeedReply[];
+  at: Date | null; timeZone: string; place: string | null; going: number; maybe: number; myResponse: "going" | "maybe" | null; replies: FeedReply[];
 };
 
 /** Members of the club only (null for anyone else). */
@@ -303,7 +304,7 @@ export async function listFeed(sql: Sql, i: { userId: string; clubId: string }):
   const club = await findClub(sql, i.clubId);
   if (!club || !(await roleIn(sql, club.id, i.userId))) return null;
   const posts = await sql`
-    select p.id, p.kind, p.body, p.created_at, p.ride_at, p.ride_place, p.author_id, u.display_name, u.public_id,
+    select p.id, p.kind, p.body, p.created_at, p.ride_at, p.time_zone, p.ride_place, p.author_id, u.display_name, u.public_id,
       (select count(*)::int from club_ride_response r where r.post_id = p.id and r.response = 'going') as going,
       (select count(*)::int from club_ride_response r where r.post_id = p.id and r.response = 'maybe') as maybe,
       (select r.response from club_ride_response r where r.post_id = p.id and r.user_id = ${i.userId}) as mine_response
@@ -316,7 +317,7 @@ export async function listFeed(sql: Sql, i: { userId: string; clubId: string }):
   return {
     posts: posts.map((p) => ({
       id: p.id, kind: p.kind, authorName: p.display_name, authorHandle: p.public_id, body: p.body, createdAt: p.created_at, mine: p.author_id === i.userId,
-      at: p.ride_at, place: p.ride_place, going: p.going, maybe: p.maybe, myResponse: p.mine_response,
+      at: p.ride_at, timeZone: p.time_zone, place: p.ride_place, going: p.going, maybe: p.maybe, myResponse: p.mine_response,
       replies: replies.filter((r) => r.parent_id === p.id).map((r) => ({ id: r.id, authorName: r.display_name, body: r.body, createdAt: r.created_at, mine: r.author_id === i.userId })),
     })),
   };

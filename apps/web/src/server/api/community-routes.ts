@@ -1,4 +1,5 @@
 import { isValidSlug } from "@moto-trails/domain";
+import { validTimeZone } from "@/lib/time-zone";
 import { clubAdminIds, createClub, decideJoinRequest, hidePost, leaveClub, listFeed, listJoinRequests, postToClub, removeMember, requestJoin, respondToRide, setMemberRole, withdrawJoinRequest } from "../community/clubs";
 import { listMyRidden, markRidden, unmarkRidden } from "../community/ridden";
 import { deleteComment, editComment, listComments, postComment, reportContent } from "../community/comments";
@@ -177,7 +178,7 @@ export const communityRoutes: RouteDef[] = [
       const at = rideAt(b.rideAt);
       const r = await postToClub(c.sql, {
         userId: c.userId, clubId: c.params.id!, body: str(b.body), parentId: str(b.parentId) || null,
-        ridePlan: at ? { at, place: str(b.place) } : null, now: c.now,
+        ridePlan: at ? { at, place: str(b.place), timeZone: validTimeZone(b.timeZone) ?? undefined } : null, now: c.now,
       });
       return r.ok ? ok({ postId: r.postId }, 201) : failWith(POST, r.reason);
     },

@@ -17,6 +17,8 @@ export type TrailSummaryDto = {
   nearestTown: string;
   state: PlaceDto;
   district: PlaceDto | null;
+  /** The state's country; null only for legacy rows without one. */
+  country: { slug: string; iso2: string } | null;
   difficulty: Difficulty;
   terrain: string[];
   distanceKm: number | null;
@@ -84,6 +86,8 @@ export type RegionDto = {
   slug: string;
   parentSlug: string | null;
   publishedTrailCount: number;
+  countrySlug: string | null;
+  countryIso2: string | null;
 };
 
 export type VideoDto = {

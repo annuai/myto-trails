@@ -31,8 +31,8 @@ export function trailJsonLd(trail: TrailDetailDto, siteUrl: string): object {
   const crumbs = [
     { name: "Home", item: siteUrl },
     { name: "Regions", item: `${siteUrl}/regions` },
-    { name: trail.state.name, item: `${siteUrl}/regions/${trail.state.slug}` },
-    ...(trail.district ? [{ name: trail.district.name, item: `${siteUrl}/regions/${trail.state.slug}/${trail.district.slug}` }] : []),
+    { name: trail.state.name, item: `${siteUrl}/regions/${trail.country?.slug ?? "india"}/${trail.state.slug}` },
+    ...(trail.district ? [{ name: trail.district.name, item: `${siteUrl}/regions/${trail.country?.slug ?? "india"}/${trail.state.slug}/${trail.district.slug}` }] : []),
     { name: trail.name, item: url },
   ];
   return {
@@ -48,7 +48,7 @@ export function trailJsonLd(trail: TrailDetailDto, siteUrl: string): object {
           "@type": "PostalAddress",
           addressLocality: trail.nearestTown,
           addressRegion: trail.state.name,
-          addressCountry: "IN",
+          addressCountry: trail.country?.iso2 ?? "IN",
         },
         ...(trail.location
           ? { geo: { "@type": "GeoCoordinates", latitude: trail.location.lat, longitude: trail.location.lon } }

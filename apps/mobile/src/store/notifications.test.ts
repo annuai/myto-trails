@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { create } from 'zustand';
 import type { Reminder } from '@/lib/reminders';
-import { notificationsSlice } from './notificationsCore';
+import { mergePersisted, notificationsSlice } from './notificationsCore';
 
 const r = (id: string, fireAt: number): Reminder => ({ id, fireAt, title: `T ${id}`, body: `B ${id}`, lock: 'L', route: '/todos', kind: 'todo' });
 const setup = () => create(notificationsSlice());
 
 describe('notifications store', () => {
   it('starts with everything on, the trip start reminder 10 minutes ahead, and details hidden on the lock screen', () => {
-    expect(setup().getState().prefs).toEqual({ todos: true, trips: true, paused: true, tripLeadMin: 10, showDetails: false, groupSignals: true, breakReminder: true, daylightAlert: true });
+    expect(setup().getState().prefs).toEqual({ todos: true, trips: true, paused: true, tripLeadMin: 10, showDetails: false, groupSignals: true, breakEveryMin: 120, daylightAlert: true });
   });
   it('changes how long before a trip starts the rider is reminded, or turns it off', () => {
     const s = setup();
@@ -16,6 +16,13 @@ describe('notifications store', () => {
     expect(s.getState().prefs.tripLeadMin).toBe(30);
     s.getState().setTripLead(0);
     expect(s.getState().prefs.tripLeadMin).toBe(0);
+  });
+  it('changes how long to ride before a break reminder, or turns it off', () => {
+    const s = setup();
+    s.getState().setBreakEvery(90);
+    expect(s.getState().prefs.breakEveryMin).toBe(90);
+    s.getState().setBreakEvery(0);
+    expect(s.getState().prefs.breakEveryMin).toBe(0);
   });
   it('absorb moves reminders whose time has come into the history, newest first, unread, leaving the rest scheduled', () => {
     const s = setup();
@@ -71,5 +78,11 @@ describe('notifications store', () => {
     expect(s.getState().inbox).toEqual([]);
     expect(s.getState().scheduled).toEqual([]);
     expect(s.getState().prefs.todos).toBe(true);
+  });
+  it('fills in settings an older version never saved, and keeps the ones the rider chose', () => {
+    const current = setup().getState();
+    const merged = mergePersisted({ prefs: { todos: false, trips: true, paused: true, showDetails: true } }, current);
+    expect(merged.prefs).toMatchObject({ todos: false, showDetails: true, groupSignals: true, daylightAlert: true, breakEveryMin: 120, tripLeadMin: 10 });
+    expect(mergePersisted(undefined, current).prefs).toEqual(current.prefs);
   });
 });

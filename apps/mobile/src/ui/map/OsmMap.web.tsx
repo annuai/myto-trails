@@ -3,10 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import type { GeoJSONSource, Map as MlMap } from 'maplibre-gl';
 import type { LatLng } from '@/lib/geo';
-import { fixed } from '@/theme/tokens';
+import { fixed, space } from '@/theme/tokens';
 import { Text } from '../Text';
-import { INDIA_CENTER, mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
+import { mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
 import { trackFeature } from './geojson';
+import { useMapStart } from './useMapStart';
 import type { OsmMapProps } from './types';
 
 const coords = (pts: LatLng[] = []) => pts.map((p) => [p.lng, p.lat] as [number, number]);
@@ -14,8 +15,9 @@ const lineFeature = (pts?: LatLng[]) => ({ type: 'Feature' as const, properties:
 const pointsFeature = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 
 /** OpenStreetMap through MapLibre GL, the same stack as the website. Two-finger or Ctrl+scroll to move, so it never traps page scrolling. */
-export function OsmMap({ height, line, track, trackBreaks, position, waypoints, riders, regroup, onTap, follow, dark, radius = 0, interactive = true }: OsmMapProps) {
+export function OsmMap({ height, line, track, trackBreaks, position, waypoints, riders, regroup, onTap, follow, focus, dark, radius = 0, interactive = true }: OsmMapProps) {
   const box = useRef<HTMLDivElement>(null);
+  const start = useMapStart();
   const tap = useRef(onTap);
   tap.current = onTap;
   const map = useRef<MlMap | null>(null);
@@ -31,8 +33,8 @@ export function OsmMap({ height, line, track, trackBreaks, position, waypoints, 
         ml.setWorkerUrl('/vendor/maplibre/maplibre-gl-worker.mjs');
         if (cancelled || !box.current) return;
         const m = new ml.Map({
-          container: box.current, style: mapStyleUrl(dark), center: INDIA_CENTER, zoom: 3.5,
-          attributionControl: { compact: true }, cooperativeGestures: !follow, interactive,
+          container: box.current, style: mapStyleUrl(dark), ...(start.kind === 'bounds' ? { bounds: start.bounds, fitBoundsOptions: { padding: space[8] } } : { center: start.center, zoom: start.zoom }),
+          attributionControl: interactive ? { compact: true } : false, cooperativeGestures: !follow, interactive,
         });
         map.current = m;
         // The map handles its own touches. Keeping them from reaching React Native Web's responder system stops its
@@ -65,6 +67,10 @@ export function OsmMap({ height, line, track, trackBreaks, position, waypoints, 
     })();
     return () => { cancelled = true; map.current?.remove(); map.current = null; };
   }, [follow, interactive, dark]);
+
+  useEffect(() => {
+    if (focus && ready) map.current?.flyTo({ center: [focus.lng, focus.lat], zoom: Math.max(map.current.getZoom(), 12) });
+  }, [focus, ready]);
 
   // Push data in as it changes (the live track grows every few seconds).
   useEffect(() => {

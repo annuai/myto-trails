@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { regionMetadata } from "./seo";
 
-const region = (n: number) => ({ kind: "state" as const, name: "Kerala", slug: "kerala", parentSlug: "india", publishedTrailCount: n });
+const region = (n: number) => ({ kind: "state" as const, name: "Kerala", slug: "kerala", parentSlug: "india", publishedTrailCount: n, countrySlug: "india", countryIso2: "IN" });
 
 describe("regionMetadata", () => {
   it.each([[0, false], [1, false], [2, false], [3, true], [40, true]])("%i trails -> index %s", (n, index) => {

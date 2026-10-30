@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DEFAULT_TIME_ZONE, formatWhen, zoneName } from "@/lib/time-zone";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BikeImage } from "@/features/bikes/BikeImage";
@@ -22,8 +23,8 @@ const input = "w-full rounded-lg border border-foreground/40 bg-background px-3 
 const btn = "min-h-11 rounded-lg px-4 text-sm font-medium";
 const primary = `${btn} bg-accent text-white hover:bg-accent-hover`;
 const outline = `${btn} border border-foreground`;
-const when = (d: Date) => d.toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" });
-const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
+const when = (d: Date, timeZone: string) => formatWhen(d, timeZone);
+const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: DEFAULT_TIME_ZONE });
 
 export default async function ClubDetailPage({ params, searchParams }: PageProps<"/club/[id]">) {
   const { id } = await params;
@@ -178,7 +179,7 @@ function Post({ p, clubId, canModerate }: { p: FeedPost; clubId: string; canMode
   return (
     <li className="flex flex-col gap-3 rounded-3xl bg-card-cream p-5">
       <p className="text-sm text-muted">{p.authorName} · {day(p.createdAt)}{p.kind === "ride_plan" ? " · Ride plan" : ""}</p>
-      {p.kind === "ride_plan" && p.at ? <p className="font-semibold">{when(p.at)} · {p.place}</p> : null}
+      {p.kind === "ride_plan" && p.at ? <p className="font-semibold">{when(p.at, p.timeZone)} ({zoneName(p.timeZone, p.at)}) · {p.place}</p> : null}
       <p className="whitespace-pre-line break-words">{p.body}</p>
       {p.kind === "ride_plan" ? (
         <form action={respondAction} className="flex flex-wrap items-center gap-2">
