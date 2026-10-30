@@ -172,7 +172,7 @@ function LiveBody() {
   );
   // SOS is held, like Stop, so a glove or a bump cannot open it. A shorter hold than Stop, because it is the one a hurt rider reaches for.
   const sosBtn = (h: number) => (
-    <HoldButton label="SOS" icon={Siren} color={c.stop} borderOnly ms={700} minHeight={h} onComplete={() => { buzz.help(); setSos(true); }} />
+    <HoldButton label="SOS" icon={Siren} color={c.stop} tone="stop" row borderOnly ms={700} minHeight={h} onComplete={() => { buzz.help(); setSos(true); }} />
   );
 
   const smallBtn = (label: string, icon: typeof Users, onPress: () => void, h: number) => (
@@ -210,7 +210,7 @@ function LiveBody() {
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
-          {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">{group ? 'Group' : 'Group ride'}</Text></Pressable> : null}
+          {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Group</Text></Pressable> : null}
           <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Journal</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
         </View>
@@ -233,7 +233,7 @@ function LiveBody() {
           <View style={{ marginTop: space[3], gap: space[3] }}>{status}{groupTiles}</View>
           <View style={{ flex: 1 }} />
           <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(88)}{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} onComplete={stop} /></View>
-          <View style={{ marginTop: space[3], flexDirection: 'row', gap: space[3] }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn(group ? 'Group' : 'Group ride', Users, () => setGroupOpen(true), 56)}</View>
+          <View style={{ marginTop: space[3], flexDirection: 'row', gap: space[3] }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn('Group', Users, () => setGroupOpen(true), 56)}</View>
         </>
       )}
     </Screen>

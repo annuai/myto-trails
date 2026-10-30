@@ -1,22 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { countrySettled } from '@/lib/browsing';
 import { currencyFor, deviceRegion } from '@/lib/locale';
 import { setDistanceUnit, type DistanceUnit } from '@/lib/units';
 import { storage } from './persist';
 
 type State = {
-  /** Where the rider lives (ISO 3166-1 alpha-2). Null follows the phone's region. Sets the default unit and currency. */
+  /** Where the rider lives (ISO 3166-1 alpha-2). Null follows the phone's region. Sets the currency and, when open, which country's trails and clubs the lists show. */
   home: string | null;
   /** The rider's choice of kilometres or miles. Null means kilometres: the default everywhere. */
   unit: DistanceUnit | null;
-  /** The country whose trails, clubs and rides the lists show. Null means every country that is open. */
-  browsing: string | null;
   /** A number the rider typed over the emergency number. Kept for this session only, never saved. */
   emergencyOverride: string | null;
   setHome: (iso2: string | null) => void;
   setUnit: (unit: DistanceUnit | null) => void;
-  setBrowsing: (iso2: string | null) => void;
   setEmergencyOverride: (number: string | null) => void;
   wipe: () => void;
 };
@@ -24,14 +20,13 @@ type State = {
 export const useRegion = create<State>()(
   persist(
     (set) => ({
-      home: null, unit: null, browsing: null, emergencyOverride: null,
+      home: null, unit: null, emergencyOverride: null,
       setHome: (home) => set({ home }),
       setUnit: (unit) => set({ unit }),
-      setBrowsing: (browsing) => set({ browsing }),
       setEmergencyOverride: (emergencyOverride) => set({ emergencyOverride }),
-      wipe: () => set({ home: null, unit: null, browsing: null, emergencyOverride: null }),
+      wipe: () => set({ home: null, unit: null, emergencyOverride: null }),
     }),
-    { name: 'myto-region', storage, partialize: (s) => ({ home: s.home, unit: s.unit, browsing: s.browsing }) },
+    { name: 'myto-region', storage, partialize: (s) => ({ home: s.home, unit: s.unit }) },
   ),
 );
 
@@ -40,8 +35,6 @@ export const homeCountry = (s: Pick<State, 'home'>): string | null => s.home ?? 
 export const effectiveUnit = (s: Pick<State, 'unit'>): DistanceUnit => s.unit ?? 'km';
 export const useHomeCountry = (): string | null => useRegion(homeCountry);
 export const useDistanceUnit = (): DistanceUnit => useRegion(effectiveUnit);
-/** Both country and unit were chosen in settings: the country picker on Trails and Clubs is hidden. */
-export const useCountrySettled = (): boolean => useRegion((s) => countrySettled(s));
 /** The currency amounts are shown in, or null when we do not know one for the home country. */
 export const useCurrency = (): string | null => currencyFor(useHomeCountry());
 

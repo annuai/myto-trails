@@ -26,7 +26,7 @@
   "apps/mobile/src/ui/FloatingHeader.tsx": 1,
   "apps/mobile/src/ui/Header.tsx": 9,
   "apps/mobile/src/ui/HeroCard.tsx": 9,
-  "apps/mobile/src/ui/HoldButton.tsx": 3,
+  "apps/mobile/src/ui/HoldButton.tsx": 2,
   "apps/mobile/src/ui/ListCard.tsx": 6,
   "apps/mobile/src/ui/RideBar.tsx": 9,
   "apps/mobile/src/ui/Screen.tsx": 1,

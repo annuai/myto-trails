@@ -64,7 +64,11 @@ describe('numbers and ranges', () => {
     expect(formatMoney(123456.4, 'INR', 'en-IN')).toBe('₹1,23,456');
     expect(formatMoney(1234.6, 'USD', 'en-US')).toBe('$1,235');
     expect(formatMoney(1234.6, null, 'en-US')).toBe('1,235');
-    expect(currencySymbol('INR', 'en-IN')).toBe('₹');
+    expect(currencySymbol('INR')).toBe('₹');
+    expect(currencySymbol('BRL')).toBe('R$');
+    expect(currencySymbol('CHF')).toBe('CHF');
+    expect(formatMoney(1234.6, 'CHF', 'en-US')).toBe('CHF 1,235');
+    expect(formatMoney(1234.6, 'BRL', 'en-US')).toBe('R$1,235');
     expect(currencySymbol(null)).toBe('');
     expect(formatLitres(2.345)).toBe('2.3 L');
     expect(formatLitres(41.6)).toBe('42 L');

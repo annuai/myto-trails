@@ -34,6 +34,7 @@ import { useProfile } from '@/store/profile';
 import { useDistanceUnit } from '@/store/region';
 import { totalKm, useRides } from '@/store/rides';
 import { justFinishedRide } from '@/lib/justFinished';
+import { ScalePressable } from '@/ui/motion';
 import { useTodos } from '@/store/todos';
 import { Banner } from '@/ui/Banner';
 import { Button } from '@/ui/Button';
@@ -146,13 +147,13 @@ export default function Home() {
         </View>
       ) : null}
       {finished ? (
-        <View style={{ marginBottom: space[3] }}>
+        <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`Open the story of ${finished.name}`} onPress={() => router.push(`/story/${finished.id}`)} style={{ marginBottom: space[3] }}>
         <HeroCard eyebrow="Just finished" title={finished.name}>
           <View style={{ flexDirection: 'row' }}>
             <Stat parts={durationParts(finished.durationSec)} label="Duration" /><Stat parts={distanceKm(finished.distanceKm)} label="Distance" /><Stat parts={speedKmh(finished.maxKmh)} label="Top speed" />
           </View>
         </HeroCard>
-        </View>
+        </ScalePressable>
       ) : null}
       {nextTripPlan ? (
         <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} />
@@ -217,6 +218,7 @@ export default function Home() {
 
       <SectionTitle>Your latest ride</SectionTitle>
       {latest ? (
+        <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`Open the story of ${latest.name}`} onPress={() => router.push(`/story/${latest.id}`)}>
         <Card padded={false}>
           <RideMap points={latest.points} breaks={latest.breaks} />
           <View style={{ padding: 20, gap: 16 }}>
@@ -226,6 +228,7 @@ export default function Home() {
             </View>
           </View>
         </Card>
+        </ScalePressable>
       ) : <EmptyState icon={RouteIcon} title="No rides yet" body="Tap Ride to log your first ride." />}
       {latest ? <View style={{ marginTop: 12, gap: 12 }}>
         <Button variant="soft" label="View ride story" arrow onPress={() => router.push(`/story/${latest.id}`)} />

@@ -1,4 +1,5 @@
 import { toISO } from './dates';
+import { CURRENCY_SYMBOL } from './countryData';
 import { deviceLocale } from './locale';
 
 /** The rider's bike economy and the petrol price, from a date on. Changing either adds a new entry, so earlier rides keep the price they had. */
@@ -44,14 +45,23 @@ export function costsBetween<R extends CostRide>(rides: R[], history: FuelSettin
   return { items, totalCost: items.reduce((n, i) => n + i.cost, 0), totalLitres: items.reduce((n, i) => n + i.litres, 0), totalKm: items.reduce((n, i) => n + i.ride.distanceKm, 0), count: items.length };
 }
 
-/** A whole amount in the rider's currency ("₹1,23,456", "$1,235"), grouped the way their phone groups numbers. With no currency known it is a plain number. */
-export const formatMoney = (n: number, currency: string | null, locale: string = deviceLocale()): string =>
-  currency
-    ? new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 }).format(Math.round(n))
-    : Math.round(n).toLocaleString(locale);
-/** Just the symbol ("₹"), or an empty string when there is no currency. */
-export const currencySymbol = (currency: string | null, locale: string = deviceLocale()): string =>
-  currency ? new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? currency : '';
+/** The sign for a currency ("₹", "$", "R$"), or its code when it has no usual sign ("CHF"). Empty when there is no currency. From a bundled table: no phone's Intl is needed. */
+export const currencySymbol = (currency: string | null): string => (currency ? CURRENCY_SYMBOL[currency] ?? currency : '');
+
+const group = (n: number, locale: string): string => {
+  try {
+    return n.toLocaleString(locale);
+  } catch {
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+};
+
+/** A whole amount in the rider's currency ("₹1,23,456", "$1,235", "CHF 1,235"), grouped the way their phone groups numbers. With no currency known it is a plain number. */
+export const formatMoney = (n: number, currency: string | null, locale: string = deviceLocale()): string => {
+  const whole = group(Math.round(n), locale);
+  const sign = currencySymbol(currency);
+  return !sign ? whole : /^[A-Za-z]+$/.test(sign) ? `${sign} ${whole}` : `${sign}${whole}`;
+};
 export const formatLitres = (n: number): string => `${n < 10 ? n.toFixed(1) : Math.round(n)} L`;
 
 /** A number typed into a field ("35", "104.5", "104,5"), or null when it is not a usable number. */
