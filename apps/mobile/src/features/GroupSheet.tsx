@@ -29,13 +29,14 @@ const km = (m: number) => withUnit(shortDistanceM(m));
  * Ride together: one rider starts a group and shares the six-character code, the others join with it. Everyone sees everyone
  * on the map, and a few quick signals ("Wait up", "Fuel stop") replace typing. The leader can drop a regroup pin.
  */
-export function GroupSheet({ open, onClose, position }: { open: boolean; onClose: () => void; position?: LatLng }) {
+/** `defaultName` pre-fills the name of a new ride, for one made from a trip. */
+export function GroupSheet({ open, onClose, position, defaultName }: { open: boolean; onClose: () => void; position?: LatLng; defaultName?: string }) {
   const router = useRouter();
   const token = useAuth((s) => s.token);
   const user = useAuth((s) => s.user);
   const group = useCompanion((s) => s.group);
   const live = useCompanion((s) => s.live);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(defaultName ?? '');
   const [code, setCode] = useState('');
   const { busy, problem, run } = useAction();
   const leader = group?.role === 'leader';

@@ -93,9 +93,13 @@ export default async function TrailPage({ params, searchParams }: PageProps<"/tr
           </Suspense>
         }
         actions={
-          <Suspense fallback={<Skeleton className="h-11 w-44" />}>
-            <TrailActions slug={slug} />
-          </Suspense>
+          <>
+            <Suspense fallback={<Skeleton className="h-11 w-44" />}>
+              <TrailActions slug={slug} />
+            </Suspense>
+            {/* Phones only. The app opens at this trail; where it is not installed nothing happens, so the link is a plain extra, never the only way in. */}
+            <a href={`myto://trail/${slug}`} className="inline-flex min-h-11 items-center rounded-lg border border-ink px-4 text-sm md:hidden">Open in the Myto Moto app</a>
+          </>
         }
       />
     </>

@@ -15,6 +15,8 @@ A ride gets its `rideId` **when recording starts** (`recorderCore.start`). It is
 | Journal entry | `rideKey` (start time) and, new, `rideId` | entry → ride |
 | Trip | `trip.rideIds[]`; a finished ride joins the active trip (`attachToActive`) | trip → ride. A ride's trip is found by searching trips for its id, not stored on the ride |
 | Trail submission | `ride.submission`, `ride.clientId` | ride → submission |
+| Group ride, check-in | `ride.groupId`, `ride.checkinId`, noted when the ride finishes (Phase 4), because the companion ends them as soon as recording stops | ride → server group / check-in id |
+| Moment's place | `entry.lat`, `entry.lng` when the phone had a fix from the last two minutes (Phase 3) | entry → place |
 
 ## Not linked yet (and where it is planned)
 
@@ -22,9 +24,8 @@ A ride gets its `rideId` **when recording starts** (`recorderCore.start`). It is
 |---|---|
 | To-do ↔ ride (a ride's checklist) | 2 |
 | Bike ↔ ride (and one bike instead of two) | 1 follow-up / 5 |
-| Check-in ↔ ride | 4 |
-| Group session ↔ ride, plan → group ride | 4 |
-| Waypoint ↔ journal entry (moments with a location) | 3 |
+| Plan → group ride carries the trip, not just its name | 4 follow-up |
+| Waypoint ↔ journal entry (a moment tied to a waypoint) | 3 follow-up |
 
 ## States
 

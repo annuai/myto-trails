@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Copy, ListPlus, Pencil, Play, Route as RouteIcon, Square, Trash2 } from 'lucide-react-native';
+import { Copy, ListPlus, Users, Pencil, Play, Route as RouteIcon, Square, Trash2 } from 'lucide-react-native';
+import { GroupSheet } from '@/features/GroupSheet';
+import { RIDER_OS } from '@/lib/flags';
 import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
 import { startTodaysRide, startTrip } from '@/features/trip/startTrip';
 import { TripDaySheet } from '@/features/trip/TripDaySheet';
@@ -38,6 +40,7 @@ export default function TripDetail() {
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState(false);
   const [dayOpen, setDayOpen] = useState<number | null>(null);
+  const [groupOpen, setGroupOpen] = useState(false);
   if (!trip) return <Screen><BackHeader title="Trips" /><Text>Trip not found.</Text></Screen>;
 
   const today = todayISO();
@@ -54,6 +57,7 @@ export default function TripDetail() {
     <Screen overlay={<>
       <PlanTripSheet key={trip.id + (editing ? 'e' : '')} open={editing} trip={trip} onClose={() => setEditing(false)} />
       <TripDaySheet trip={trip} index={dayOpen} onClose={() => setDayOpen(null)} />
+      {RIDER_OS ? <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} defaultName={trip.name} /> : null}
     </>}>
       <BackHeader title="Trips" right={trip.startDate ? <IconButton icon={Pencil} label="Change the trip" onPress={() => setEditing(true)} plain /> : undefined} />
       <PageTitle sub={trip.startDate ? [rangeText(trip), trip.startTime !== undefined ? startTimeText(trip.startTime) : '', `${trip.days?.length ?? 1} ${(trip.days?.length ?? 1) === 1 ? 'day' : 'days'}`, whenText(trip, today)].filter(Boolean).join(' · ') : rides.length ? undefined : "Open a ride's story and choose Add to a trip."}>{trip.name}</PageTitle>
@@ -133,6 +137,7 @@ export default function TripDetail() {
         </>
       ) : null}
 
+      {RIDER_OS && trip.startDate && status !== 'done' ? <View style={{ marginTop: space[6] }}><Button variant="soft" icon={Users} label="Ride this together" onPress={() => setGroupOpen(true)} /><Text variant="caption" tone="muted" style={{ marginTop: space[2] }}>Starts a group ride named after this trip, with a code and link to invite riders. Positions are shared only while you ride.</Text></View> : null}
       {trip.startDate ? <View style={{ marginTop: space[6] }}><Button variant="soft" icon={Copy} label="Plan this trip again" onPress={() => { const copy = useTrips.getState().duplicate(trip.id, addDays(todayISO(), 7)); if (copy) router.push(`/trips/${copy}`); }} /><Text variant="caption" tone="muted" style={{ marginTop: space[2] }}>Makes a copy a week from today with the same days, stops and pack list. Change the date with the pencil.</Text></View> : null}
       <View style={{ marginTop: space[8] }}><Button variant="danger" icon={Trash2} label="Delete this trip" onPress={() => { useTrips.getState().remove(trip.id); router.replace('/trips'); }} /></View>
     </Screen>
