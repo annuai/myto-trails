@@ -12,7 +12,8 @@ import { attachRoute, createDraft, getMine, listMine, saveStep, submit } from ".
 import { completeUpload, getUploadStatus, requestUpload } from "../uploads/service";
 import { exchangeAppCode } from "../auth/app-auth";
 import { listBikeMakes, listBikeModels } from "../community/bikes";
-import { getClub, listClubs, listMembers, setClubCover } from "../community/clubs";
+import { clubPageSize } from "../community/club-paging";
+import { getClub, listMembers, searchClubs, setClubCover } from "../community/clubs";
 import { getAvatarUrl, getBike, removeBike, saveBike, setAvatar } from "../community/profile";
 import { communityRoutes } from "./community-routes";
 import { rideRoutes } from "./ride-routes";
@@ -311,9 +312,14 @@ export const routes: RouteDef[] = [
     },
   },
   {
-    method: "GET", path: "/clubs", access: "token", summary: "Every club, with your role in each. Empty until you have finished the website's welcome step",
+    method: "GET", path: "/clubs", access: "token", summary: "Clubs, newest first, with your role in each. Query: q (matches name or description), scope (mine, others or all), limit (1 to 100, default 20), cursor (the nextCursor of the previous page). Empty until you have finished the website's welcome step",
     async handler(c) {
-      return ok({ items: await listClubs(c.sql, c.userId) });
+      const p = c.url.searchParams;
+      const scope = p.get("scope");
+      if (scope !== null && scope !== "mine" && scope !== "others" && scope !== "all") return fail(400, "invalid_request", "scope must be mine, others or all.");
+      const page = await searchClubs(c.sql, c.userId, { q: p.get("q"), cursor: p.get("cursor"), limit: clubPageSize(p.get("limit")), scope: scope ?? "all" });
+      if (!page) return fail(400, "invalid_request", "That cursor is not valid. Start again without one.");
+      return ok(page);
     },
   },
   {

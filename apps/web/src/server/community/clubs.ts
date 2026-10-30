@@ -3,6 +3,7 @@ import { DEFAULT_TIME_ZONE } from "@/lib/time-zone";
 import { CLUB_CREATES_PER_DAY, CLUB_POSTS_PER_HOUR, JOIN_PHONE_RETENTION_DAYS, JOIN_REQUEST_TTL_DAYS, JOIN_REQUESTS_PER_DAY } from "./constants";
 import { cleanBody, LINK } from "./comments";
 import { decryptSecret, encryptSecret } from "./crypto-box";
+import { CLUB_PAGE_DEFAULT, CLUB_PAGE_MAX, clubSearchPattern, decodeClubCursor, encodeClubCursor } from "./club-paging";
 import { isMember } from "./members";
 import type { ClubMember, ClubSummary, ClubView } from "@moto-trails/domain";
 import { bikeFromRow, ownsMedia, pickVariant } from "./profile";
@@ -70,16 +71,45 @@ export async function createClub(
 export type { ClubSummary };
 
 /** Every club, for declared members only; anyone else gets nothing. */
-export async function listClubs(sql: Sql, userId: string): Promise<ClubSummary[]> {
-  if (!(await isMember(sql, userId))) return [];
+export type ClubScope = "all" | "mine" | "others";
+export type ClubPage = { items: ClubSummary[]; /** Send it back as `cursor` for the next page; null on the last one. */ nextCursor: string | null };
+
+/**
+ * A page of clubs, newest first. `scope` limits it to the clubs the rider is in, the ones they are not in, or both; `q` keeps clubs whose
+ * name or description contains it. Pages follow the creation time and id (keyset, not offset), so a club made meanwhile never shifts a page
+ * and each page costs the same however far down it is. Null when `cursor` is not one this server wrote.
+ */
+export async function searchClubs(sql: Sql, userId: string, o: { q?: unknown; cursor?: string | null; limit?: number; scope?: ClubScope } = {}): Promise<ClubPage | null> {
+  const cursor = decodeClubCursor(o.cursor);
+  if (cursor === null) return null;
+  if (!(await isMember(sql, userId))) return { items: [], nextCursor: null };
+  const limit = Math.max(1, Math.min(CLUB_PAGE_MAX, o.limit ?? CLUB_PAGE_DEFAULT));
+  const like = clubSearchPattern(o.q);
+  const mine = sql`exists (select 1 from club_member m where m.club_id = c.id and m.user_id = ${userId})`;
   const rows = await sql`
-    select c.public_id, c.name, c.description, c.women_only,
+    select c.id, c.public_id, c.name, c.description, c.women_only, c.created_at::text as created_text,
       (select cm.variants from media cm where cm.id = c.cover_media_id) as cover,
       (select count(*)::int from club_member m where m.club_id = c.id) as members,
       (select m.role from club_member m where m.club_id = c.id and m.user_id = ${userId}) as role,
       exists (select 1 from club_join_request r where r.club_id = c.id and r.user_id = ${userId} and r.status = 'pending') as requested
-    from club c where c.archived_at is null order by c.created_at desc limit 100`;
-  return rows.map((r) => ({ clubId: r.public_id, name: r.name, description: r.description, womenOnly: r.women_only, memberCount: r.members, role: r.role, requested: r.requested, coverUrl: pickVariant(r.cover, 800) }));
+    from club c
+    where c.archived_at is null
+      ${o.scope === "mine" ? sql`and ${mine}` : o.scope === "others" ? sql`and not ${mine}` : sql``}
+      ${like ? sql`and (c.name ilike ${like} or c.description ilike ${like})` : sql``}
+      ${cursor ? sql`and (c.created_at, c.id) < (${cursor.at}::timestamptz, ${cursor.id}::uuid)` : sql``}
+    order by c.created_at desc, c.id desc
+    limit ${limit + 1}`;
+  const page = rows.slice(0, limit);
+  const last = page[page.length - 1];
+  return {
+    items: page.map((r) => ({ clubId: r.public_id, name: r.name, description: r.description, womenOnly: r.women_only, memberCount: r.members, role: r.role, requested: r.requested, coverUrl: pickVariant(r.cover, 800) })),
+    nextCursor: rows.length > limit && last ? encodeClubCursor({ at: last.created_text as string, id: last.id as string }) : null,
+  };
+}
+
+/** The newest clubs, for the website's club page. The app pages and searches with `searchClubs`. */
+export async function listClubs(sql: Sql, userId: string): Promise<ClubSummary[]> {
+  return (await searchClubs(sql, userId, { limit: CLUB_PAGE_MAX }))?.items ?? [];
 }
 
 export type { ClubView };
