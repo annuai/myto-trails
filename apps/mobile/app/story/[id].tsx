@@ -85,7 +85,7 @@ function StoryBody() {
       </Card>
         </>}
         right={<>
-      <View style={{ marginTop: 0 }}><RideMap radius={radius.card} dark points={ride.points} breaks={ride.breaks} waypoints={ride.waypoints} /></View>
+      <View style={{ marginTop: 0 }}><RideMap radius={radius.card} points={ride.points} breaks={ride.breaks} waypoints={ride.waypoints} /></View>
       <SectionTitle>Share it</SectionTitle>
       {sub ? (
         <Card style={{ gap: 10 }}>

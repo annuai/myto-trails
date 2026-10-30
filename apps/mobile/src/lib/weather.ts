@@ -1,3 +1,4 @@
+import { speedKmh, withUnit } from './units';
 export type DayForecast = { date: string; maxC: number; minC: number; rainMm: number; rainPct: number; windKmh: number; snowCm: number; /** When the sun rises and sets there that day, as instants. Missing when the answer has no times. */ sunriseMs?: number; sunsetMs?: number };
 export type Rideability = { level: 'good' | 'caution' | 'avoid'; reasons: string[] };
 
@@ -41,8 +42,8 @@ export function rideability(day: DayForecast): Rideability {
   else if (day.rainMm >= 10 || day.rainPct >= 70) flag('caution', day.rainMm >= 10 ? `Rain (${Math.round(day.rainMm)} mm)` : `Rain likely (${Math.round(day.rainPct)}%)`);
   if (day.maxC >= 43) flag('avoid', `Extreme heat (${Math.round(day.maxC)}°C)`);
   else if (day.maxC >= 38) flag('caution', `Hot (${Math.round(day.maxC)}°C)`);
-  if (day.windKmh >= 60) flag('avoid', `Gale-force wind (${Math.round(day.windKmh)} km/h)`);
-  else if (day.windKmh >= 40) flag('caution', `Strong wind (${Math.round(day.windKmh)} km/h)`);
+  if (day.windKmh >= 60) flag('avoid', `Gale-force wind (${withUnit(speedKmh(day.windKmh))})`);
+  else if (day.windKmh >= 40) flag('caution', `Strong wind (${withUnit(speedKmh(day.windKmh))})`);
   if (day.snowCm >= 5) flag('avoid', `Snow (${Math.round(day.snowCm)} cm)`);
   else if (day.snowCm > 0 || day.minC <= 0) flag('caution', 'Snow or ice possible');
   return { level, reasons };

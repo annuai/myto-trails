@@ -1,4 +1,5 @@
 import { haversine } from './geo';
+import { shortDistanceM, withUnit } from './units';
 
 export type GroupStatus = 'ok' | 'wait_up' | 'fuel' | 'break' | 'help';
 export type GroupRiderView = { id: string; name: string; role: string; lat: number | null; lng: number | null; /** ISO instant of the last position, null when none. */ at: string | null; status: GroupStatus };
@@ -70,9 +71,9 @@ export function signalNotice(c: SignalChange): { title: string; body: string } |
   return { title: c.to === 'help' ? 'Group ride: help needed' : 'Group ride', body };
 }
 
-export type RiderTile = { id: string; name: string; isMe: boolean; role: string; status: GroupStatus; /** "350 m" or "1.2 km" from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
+export type RiderTile = { id: string; name: string; isMe: boolean; role: string; status: GroupStatus; /** "350 m" or "1.2 km" (miles and feet in miles mode) from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
 
-const distanceText = (m: number) => (m < 1000 ? `${Math.max(10, Math.round(m / 10) * 10)} m` : `${(m / 1000).toFixed(1)} km`);
+const distanceText = (m: number) => withUnit(shortDistanceM(m));
 const seenText = (r: GroupRiderView, now: number) => {
   if (r.lat == null || r.lng == null || !r.at) return 'not seen yet';
   const s = Math.max(0, Math.round((now - Date.parse(r.at)) / 1000));

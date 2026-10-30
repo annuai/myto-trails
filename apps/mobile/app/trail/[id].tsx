@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Image, ScrollView, View } from 'react-native';
+import { Image, Linking, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AlertTriangle, Bookmark, CalendarPlus, CloudOff, Download, Stamp, Trash2 } from 'lucide-react-native';
+import { AlertTriangle, Bookmark, CalendarPlus, CloudOff, Download, Navigation, Stamp, Trash2 } from 'lucide-react-native';
 import { accessOf, conditionOf, dur, headline, verificationOf } from '@/api/status';
 import { toLatLng } from '@/api/types';
 import { setSaved, useSaved, useTrail } from '@/api/useApi';
@@ -14,6 +14,7 @@ import { ElevationChart } from '@/ui/ElevationChart';
 import { RouteCheck } from '@/features/RouteCheck';
 import { deleteTiles, downloadTiles, hasTiles, tilesAvailable } from '@/lib/offlineTiles';
 import { formatDate } from '@/lib/dates';
+import { mapsDirectionsUrl } from '@/lib/navigate';
 import { asText, distanceKm, elevationM } from '@/lib/units';
 import { useAuth } from '@/store/auth';
 import { useTrailStore } from '@/store/trails';
@@ -72,6 +73,9 @@ export default function TrailDetail() {
   const hero = photos.find((m) => m.role === 'cover') ?? photos[0];
   const heroUri = hero?.variants['1200'] ?? hero?.variants['800'] ?? detail.cover?.variants['800'];
   const gallery = photos.filter((m) => m !== hero);
+
+  const start = detail.location ?? (Number.isFinite(detail.lat) && Number.isFinite(detail.lon) ? { lat: detail.lat, lon: detail.lon } : null);
+  const openInMaps = () => { if (start) void Linking.openURL(mapsDirectionsUrl({ lat: start.lat, lng: start.lon })).catch(() => setProblem('Could not open Google Maps.')); };
 
   const toggleSave = async () => {
     if (!token) return router.push('/you');
@@ -154,6 +158,7 @@ export default function TrailDetail() {
         )}
         <Button variant="soft" icon={Bookmark} label={isSaved ? 'Saved. Tap to remove' : token ? 'Save this trail' : 'Sign in to save'} disabled={busy} onPress={toggleSave} />
         <Button variant="soft" icon={Stamp} label={iRode ? "Ridden. Tap to undo" : token ? "I've ridden this" : 'Sign in to mark as ridden'} disabled={busy} onPress={() => void toggleRidden()} />
+        {start ? <Button variant="soft" icon={Navigation} label="Open in Google Maps" onPress={openInMaps} /> : null}
         <Button variant="soft" icon={CalendarPlus} label="Plan a trip" arrow onPress={() => setPlanning(true)} />
         <Button label="Ride this trail" onPress={() => setRideChoice(true)} />
       </View>

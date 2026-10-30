@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { roundedDistanceKm, withUnit } from '@/lib/units';
 import { View } from 'react-native';
 import { Fuel } from 'lucide-react-native';
 import { daylightAdvice, daylightText } from '@/lib/daylight';
@@ -36,9 +37,9 @@ export function RouteCheck({ line }: { line: LatLng[] }) {
               <View style={{ gap: space[2] }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Text variant="labelMedium">Longest stretch without fuel</Text>
-                  <StatusChip status={result.fuel.longestGapKm > LONG_GAP_KM ? 'caution' : 'good'} label={`${Math.round(result.fuel.longestGapKm)} km`} />
+                  <StatusChip status={result.fuel.longestGapKm > LONG_GAP_KM ? 'caution' : 'good'} label={withUnit(roundedDistanceKm(result.fuel.longestGapKm, 1))} />
                 </View>
-                <Text variant="label" tone="muted">{result.fuel.stops.length ? `${result.fuel.stops.length} fuel stops found on the map` : 'No fuel stops found on the map along this route'}, from km {Math.round(result.fuel.longestGap.fromKm)} to km {Math.round(result.fuel.longestGap.toKm)}. Fill up before it. Stops come from OpenStreetMap and may be out of date.</Text>
+                <Text variant="label" tone="muted">{result.fuel.stops.length ? `${result.fuel.stops.length} fuel stops found on the map` : 'No fuel stops found on the map along this route'}, from {withUnit(roundedDistanceKm(result.fuel.longestGap.fromKm, 1))} to {withUnit(roundedDistanceKm(result.fuel.longestGap.toKm, 1))} along the route. Fill up before it. Stops come from OpenStreetMap and may be out of date.</Text>
               </View>
             ) : <Text variant="label" tone="muted">Could not check fuel stops right now. Try again with a signal.</Text>}
           {result.days[0]?.sunsetMs ? (

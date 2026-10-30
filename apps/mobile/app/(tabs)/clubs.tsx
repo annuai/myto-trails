@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDistanceUnit } from '@/store/region';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LogIn, Users } from 'lucide-react-native';
@@ -36,6 +37,7 @@ function ClubCard({ club, onPress }: { club: ClubSummary; onPress: () => void })
 }
 
 export default function Clubs() {
+  useDistanceUnit(); // re-draws any distance when the unit changes
   const router = useRouter();
   const token = useAuth((s) => s.token);
   const signedIn = !!token;

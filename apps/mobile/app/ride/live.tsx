@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { distanceKm, speedKmh } from '@/lib/units';
 import { Linking, Platform, Share, Vibration, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, Flag, Megaphone, Mic, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
@@ -111,17 +112,19 @@ function LiveBody() {
     router.replace(id ? `/story/${id}` : '/');
   };
 
+  const distance = distanceKm(r.meters / 1000);
+  const speed = speedKmh(r.paused ? 0 : r.speedKmh);
   const stats = (
     <Card style={{ gap: landscape ? 12 : 20, paddingVertical: landscape ? 16 : 20 }}>
       <View style={{ gap: 4 }}>
         <Text variant="label" tone="muted">Distance</Text>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-          <Text variant="live" style={landscape ? { fontSize: 56, lineHeight: 60 } : undefined}>{(r.meters / 1000).toFixed(1)}</Text><Text variant="bodyMedium" tone="muted">km</Text>
+          <Text variant="live" style={landscape ? { fontSize: 56, lineHeight: 60 } : undefined}>{distance.value}</Text><Text variant="bodyMedium" tone="muted">{distance.unit}</Text>
         </View>
       </View>
       <View style={{ flexDirection: 'row' }}>
         <View style={{ flex: 1 }}><Text variant="label" tone="muted">{r.paused ? 'Paused' : 'Time'}</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{clock(r.elapsedMs(Date.now()))}</Text></View>
-        <View style={{ flex: 1 }}><Text variant="label" tone="muted">Speed</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{r.paused ? 0 : Math.round(r.speedKmh)}</Text></View>
+        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{`Speed (${speed.unit})`}</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{speed.value}</Text></View>
       </View>
     </Card>
   );
@@ -211,7 +214,7 @@ function LiveBody() {
         <View style={{ flex: 1, flexDirection: 'row', gap: 16 }}>
           <View style={{ flex: 1, gap: space[3] }}>{stats}{status}{groupTiles}</View>
           <View style={{ flex: 1.25, gap: 12 }}>
-            <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
+            <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
             <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(64)}{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
           </View>
         </View>
@@ -219,7 +222,7 @@ function LiveBody() {
         <>
           <View style={{ marginTop: 8 }}>{stats}</View>
           <View style={{ marginTop: 12 }}>
-            <OsmMap height={200} radius={radius.card} dark follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
+            <OsmMap height={200} radius={radius.card} follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
           </View>
           <View style={{ marginTop: space[3], gap: space[3] }}>{status}{groupTiles}</View>
           <View style={{ flex: 1 }} />

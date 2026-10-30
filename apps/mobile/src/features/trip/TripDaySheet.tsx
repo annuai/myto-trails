@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { asText, distanceKm } from '@/lib/units';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Route as RouteIcon, X } from 'lucide-react-native';
@@ -34,7 +35,7 @@ export function TripDaySheet({ trip, index, onClose }: { trip: Trip; index: numb
             <>
               <Text variant="labelMedium">Your routes</Text>
               <ListCard>
-                {routes.map((r) => <Row key={r.id} icon={RouteIcon} label={r.name} value={`${r.distanceKm} km`} onPress={() => pick({ kind: 'mine', id: r.id, name: r.name })} />)}
+                {routes.map((r) => <Row key={r.id} icon={RouteIcon} label={r.name} value={asText(distanceKm(r.distanceKm))} onPress={() => pick({ kind: 'mine', id: r.id, name: r.name })} />)}
               </ListCard>
             </>
           ) : null}

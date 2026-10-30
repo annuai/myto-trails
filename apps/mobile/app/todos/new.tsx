@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { fromKm, toKm } from '@/lib/units';
+import { useDistanceUnit } from '@/store/region';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CalendarClock, FileText, PenLine, Wrench, Package } from 'lucide-react-native';
@@ -19,12 +21,13 @@ import { Text } from '@/ui/Text';
 
 type Draft = { title: string; category: Todo['category']; kind: 'date' | 'service'; due: string; everyKm: string; everyMonths: string; lastDate: string; custom: boolean };
 const iconFor = { document: FileText, service: Wrench, pack: Package, other: PenLine } as const;
-const fromTemplate = (t: Template): Draft => ({ title: t.title, category: t.category, kind: t.kind, due: addDays(todayISO(), 7), everyKm: String(t.everyKm ?? ''), everyMonths: String(t.everyMonths ?? 1), lastDate: todayISO(), custom: false });
+const fromTemplate = (t: Template): Draft => ({ title: t.title, category: t.category, kind: t.kind, due: addDays(todayISO(), 7), everyKm: t.everyKm ? String(Math.round(fromKm(t.everyKm))) : '', everyMonths: String(t.everyMonths ?? 1), lastDate: todayISO(), custom: false });
 const blank: Draft = { title: '', category: 'other', kind: 'date', due: addDays(todayISO(), 7), everyKm: '', everyMonths: '1', lastDate: todayISO(), custom: true };
 
 export default function NewTodo() {
   const router = useRouter();
   const add = useTodos((s) => s.add);
+  const unit = useDistanceUnit();
   const appKm = totalKm(useRides((s) => s.rides));
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string>();
@@ -35,7 +38,7 @@ export default function NewTodo() {
     if (draft.title.trim().length < 2) return setError('Give it a name.');
     if (draft.kind === 'service' && !(+draft.everyKm > 0) && !(+draft.everyMonths > 0)) return setError('Set a distance or a number of months.');
     if (draft.kind === 'date') add({ title: draft.title.trim(), category: draft.category, kind: 'date', due: draft.due });
-    else add({ title: draft.title.trim(), category: 'service', kind: 'service', everyKm: +draft.everyKm > 0 ? +draft.everyKm : undefined, everyMonths: +draft.everyMonths > 0 ? +draft.everyMonths : 1, lastDate: draft.lastDate, lastKm: appKm });
+    else add({ title: draft.title.trim(), category: 'service', kind: 'service', everyKm: +draft.everyKm > 0 ? Math.round(toKm(+draft.everyKm)) : undefined, everyMonths: +draft.everyMonths > 0 ? +draft.everyMonths : 1, lastDate: draft.lastDate, lastKm: appKm });
     setDraft(null); setError(undefined); router.back();
   };
 
@@ -48,16 +51,16 @@ export default function NewTodo() {
             {draft.custom ? (
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <ChoiceChip label="On a date" selected={draft.kind === 'date'} onPress={() => set({ kind: 'date' })} icon={CalendarClock} />
-                <ChoiceChip label="Every km or months" selected={draft.kind === 'service'} onPress={() => set({ kind: 'service' })} icon={Wrench} />
+                <ChoiceChip label={`Every ${unit === 'mi' ? 'mile' : 'km'} or months`} selected={draft.kind === 'service'} onPress={() => set({ kind: 'service' })} icon={Wrench} />
               </View>
             ) : null}
             {draft.kind === 'date' ? (
               <View style={{ gap: 12 }}><Text variant="labelMedium">Due on {formatDate(draft.due)}</Text><DatePicker value={draft.due} onChange={(due) => set({ due })} /></View>
             ) : (
               <View style={{ gap: 20 }}>
-                <Text variant="label" tone="muted">Due after whichever comes first. Only rides recorded in Myto Moto count towards kilometres, so keep the months limit too.</Text>
+                <Text variant="label" tone="muted">Due after whichever comes first. Only rides recorded in Myto Moto count towards the distance, so keep the months limit too.</Text>
                 <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <View style={{ flex: 1 }}><Field label="Every (km)" keyboardType="numeric" value={draft.everyKm} onChangeText={(everyKm) => set({ everyKm: everyKm.replace(/\D/g, '') })} placeholder="500" /></View>
+                  <View style={{ flex: 1 }}><Field label={`Every (${unit === 'mi' ? 'miles' : 'km'})`} keyboardType="numeric" value={draft.everyKm} onChangeText={(everyKm) => set({ everyKm: everyKm.replace(/\D/g, '') })} placeholder="500" /></View>
                   <View style={{ flex: 1 }}><Field label="Or months" keyboardType="numeric" value={draft.everyMonths} onChangeText={(everyMonths) => set({ everyMonths: everyMonths.replace(/\D/g, '') })} placeholder="1" /></View>
                 </View>
                 <View style={{ gap: 12 }}><Text variant="labelMedium">Last done {formatDate(draft.lastDate)}</Text><DatePicker past value={draft.lastDate} onChange={(lastDate) => set({ lastDate })} /></View>

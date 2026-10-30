@@ -15,6 +15,7 @@ import { useCompanion } from '@/store/companion';
 import { Button } from '@/ui/Button';
 import { ChoiceChip } from '@/ui/Chip';
 import { Field } from '@/ui/Field';
+import { shortDistanceM, withUnit } from '@/lib/units';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/tokens';
@@ -22,7 +23,7 @@ import { space } from '@/theme/tokens';
 const SIGNALS: GroupStatus[] = ['ok', 'wait_up', 'fuel', 'break', 'help'];
 /** Long enough to paste a whole invite link into the code field; a link is turned into its code as it lands. */
 const MAX_PASTE = 300;
-const km = (m: number) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
+const km = (m: number) => withUnit(shortDistanceM(m));
 
 /**
  * Ride together: one rider starts a group and shares the six-character code, the others join with it. Everyone sees everyone
