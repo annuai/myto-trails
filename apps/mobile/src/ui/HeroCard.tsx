@@ -7,6 +7,7 @@ import { Text } from './Text';
 
 import { space, radius, scrim } from '@/theme/tokens';
 import { heroCard } from './HeroCard.tokens';
+import { useAnimatedValue } from './useAnimatedValue';
 /** One big decision per screen: eyebrow, headline, then whatever supports it. */
 export function HeroCard({ eyebrow, title, children, action }: { eyebrow: string; title: string; children?: ReactNode; /** A control pinned to the top right, such as a menu button. */ action?: ReactNode }) {
   return (
@@ -24,7 +25,7 @@ export function HeroCard({ eyebrow, title, children, action }: { eyebrow: string
 export function ProgressBar({ value, max, label }: { value: number; max: number; label: string }) {
   const { c } = useTheme();
   const pct = max ? Math.min(1, value / max) : 0;
-  const w = useRef(new Animated.Value(0)).current;
+  const w = useAnimatedValue(0);
   useEffect(() => { Animated.timing(w, { toValue: pct, duration: 500, easing: EASE, useNativeDriver: false }).start(); }, [pct, w]);
   return (
     <View accessibilityRole="progressbar" accessibilityLabel={label} accessibilityValue={{ min: 0, max, now: value }} style={{ height: heroCard.track, borderRadius: radius.chip, backgroundColor: scrim.track, overflow: 'hidden' }}>

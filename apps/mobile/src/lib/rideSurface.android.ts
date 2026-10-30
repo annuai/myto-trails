@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { AndroidImportance } from 'expo-notifications';
 import RideCard from '@/features/rideSurface/RideCard.tokens';
 import type { RideSurfaceProps } from './rideActions';
 import { allowed } from './rideNotification';
@@ -9,7 +10,7 @@ const ID = 'ride-controls';
 const CHANNEL = 'ride-card';
 let channel: Promise<unknown> | undefined;
 /** Quiet, so updating the card never beeps or pops up. */
-const ensureChannel = () => (channel ??= Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Ride card', importance: Notifications.AndroidImportance.LOW }));
+const ensureChannel = () => (channel ??= Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Ride card', importance: AndroidImportance.LOW }));
 
 /** Posts the ongoing ride card or updates it in place. False when it cannot be shown (notifications refused). */
 export async function showRideSurface(p: RideSurfaceProps): Promise<boolean> {

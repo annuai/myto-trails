@@ -11,6 +11,7 @@ import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { TimeStepper } from '@/ui/TimeStepper';
 import { space } from '@/theme/tokens';
+import { useOnChange } from '@/lib/useOnChange';
 
 export type NewPost = { body: string; rideAt?: string; place?: string };
 const DEFAULT_START = 6 * 60 + 30;
@@ -23,7 +24,7 @@ export function PostSheet({ open, busy, problem, onSubmit, onClose }: { open: bo
   const [minutes, setMinutes] = useState(DEFAULT_START);
   const [place, setPlace] = useState('');
   // Only a fresh sheet resets the form; a failed save keeps everything that was typed.
-  useEffect(() => { if (open) { setBody(''); setRide(false); setDate(addDays(todayISO(), 1)); setMinutes(DEFAULT_START); setPlace(''); } }, [open]);
+  useOnChange(open, (o) => { if (o) { setBody(''); setRide(false); setDate(addDays(todayISO(), 1)); setMinutes(DEFAULT_START); setPlace(''); } });
   const text = body.trim();
   const bad = hasLink(text) || (ride && hasLink(place));
   const ready = text.length > 0 && !bad && (!ride || place.trim().length > 0);

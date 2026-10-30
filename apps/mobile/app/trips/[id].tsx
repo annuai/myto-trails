@@ -64,7 +64,7 @@ export default function TripDetail() {
       {status === 'ready' ? (
         <View style={{ gap: space[3] }}>
           <Button big variant="accent" icon={Play} label="Start trip" onPress={() => startTrip(trip.id, router)} />
-          <Text variant="label" tone="muted">It records from here and follows today's route. You can also start later in the day.</Text>
+          <Text variant="label" tone="muted">It records from here and follows today&apos;s route. You can also start later in the day.</Text>
         </View>
       ) : status === 'active' ? (
         <View style={{ gap: space[3] }}>

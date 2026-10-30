@@ -19,7 +19,7 @@ export function OsmMap({ height, line, track, trackBreaks, position, waypoints, 
   const box = useRef<HTMLDivElement>(null);
   const start = useMapStart();
   const tap = useRef(onTap);
-  tap.current = onTap;
+  useEffect(() => { tap.current = onTap; });
   const map = useRef<MlMap | null>(null);
   const [ready, setReady] = useState(false);
   const [problem, setProblem] = useState<string>();

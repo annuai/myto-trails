@@ -32,6 +32,7 @@ import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { space, media, radius } from '@/theme/tokens';
+import { nowMs } from '@/lib/clock';
 
 const label = (s: string) => s.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
 const mb = (bytes: number) => `${Math.max(0.1, bytes / 1_000_000).toFixed(1)} MB`;
@@ -59,7 +60,8 @@ export default function TrailDetail() {
   /** Map tiles saved for this trail: a percentage while they download, true once saved. */
   const [tiles, setTiles] = useState<number | true>();
   useEffect(() => { void hasTiles(slug).then((v) => v && setTiles(true)).catch(() => undefined); }, [slug]);
-  const line = useMemo(() => (t.data?.route ? toLatLng(t.data.route.line) : undefined), [t.data?.route]);
+  const routeDto = t.data?.route;
+  const line = useMemo(() => (routeDto ? toLatLng(routeDto.line) : undefined), [routeDto]);
 
   if (!t.data) {
     return <Screen><BackHeader title="Trails" /><Text variant="body" tone={t.error ? 'stop' : 'muted'}>{t.error ?? 'Loading…'}</Text>{t.error ? <View style={{ marginTop: space[4] }}><Button variant="soft" label="Try again" onPress={t.reload} /></View> : null}</Screen>;
@@ -176,7 +178,7 @@ export default function TrailDetail() {
       {comments.overlay}
     </>}>
       <BackHeader title="Trails" />
-      {t.fromOffline ? <Card style={{ marginBottom: space[3], flexDirection: 'row', gap: space[3], alignItems: 'center' }}><Icon icon={CloudOff} tone="muted" /><Text variant="label" tone="muted" style={{ flex: 1 }}>Showing your downloaded copy, saved {formatDate(new Date(pack?.savedAt ?? Date.now()).toISOString().slice(0, 10))}. Access may have changed.</Text></Card> : null}
+      {t.fromOffline ? <Card style={{ marginBottom: space[3], flexDirection: 'row', gap: space[3], alignItems: 'center' }}><Icon icon={CloudOff} tone="muted" /><Text variant="label" tone="muted" style={{ flex: 1 }}>Showing your downloaded copy, saved {formatDate(new Date(pack?.savedAt ?? nowMs()).toISOString().slice(0, 10))}. Access may have changed.</Text></Card> : null}
       {landscape ? <Columns left={<>{topEl}{actionsEl}</>} right={<>{routeEl}{comments.body}</>} /> : <>{topEl}{routeEl}{actionsEl}{comments.body}</>}
       <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: space[5] }}>{tiles === true ? 'Offline saves the details, access, route and map.' : 'Offline saves the details, access and route. Map tiles still need a connection.'}</Text>
     </Screen>

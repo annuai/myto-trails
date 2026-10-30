@@ -72,7 +72,7 @@ export default function JoinGroup() {
             </>
           ) : group ? (
             <>
-              <Text variant="bodyMedium">You are already in "{group.name}".</Text>
+              <Text variant="bodyMedium">You are already in &quot;{group.name}&quot;.</Text>
               <Text variant="label" tone="muted">{group.role === 'leader' ? 'You started it, so joining this one ends it for everyone in it.' : 'Joining this one takes you out of it.'}</Text>
               <Button label="Leave it and join this one" disabled={busy} onPress={() => void switchAndJoin()} />
               <Button variant="soft" label="Keep my current group" onPress={() => router.replace('/ride')} />

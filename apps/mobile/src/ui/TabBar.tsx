@@ -12,6 +12,7 @@ import { Text } from './Text';
 import { EASE, ScalePressable } from './motion';
 import { tabBarFade } from './tabBarFade';
 import { tabBar } from './TabBar.tokens';
+import { useAnimatedValue } from './useAnimatedValue';
 
 const items: Record<string, { label: string; icon: LucideIcon }> = {
   index: { label: 'Dash', icon: Motorbike }, trails: { label: 'Trails', icon: Route }, clubs: { label: 'Clubs', icon: Users }, you: { label: 'You', icon: User },
@@ -71,7 +72,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
 
 /** The soft pill behind the current tab fades in and out as the tab changes. */
 function Highlight({ on, color, radius }: { on: boolean; color: string; radius: number }) {
-  const v = useRef(new Animated.Value(on ? 1 : 0)).current;
+  const v = useAnimatedValue(on ? 1 : 0);
   useEffect(() => { Animated.timing(v, { toValue: on ? 1 : 0, duration: 220, easing: EASE, useNativeDriver: true }).start(); }, [on, v]);
   return <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: radius, backgroundColor: color, opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }] }} />;
 }

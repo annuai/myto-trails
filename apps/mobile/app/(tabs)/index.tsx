@@ -52,6 +52,7 @@ import { Screen } from '@/ui/Screen';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
 import { TrailTile } from '@/ui/TrailRow';
+import { nowMs as readClock } from '@/lib/clock';
 
 export default function Home() {
   const router = useRouter();
@@ -98,7 +99,7 @@ export default function Home() {
   const [groupOpen, setGroupOpen] = useState(false);
   const checkin = useCompanion((s) => s.checkin);
   const group = useCompanion((s) => s.group);
-  const nowMs = Date.now();
+  const nowMs = readClock();
   const finished = justFinishedRide(rides, nowMs);
 
   return (

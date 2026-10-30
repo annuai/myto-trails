@@ -4,6 +4,7 @@ import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import { useOnChange } from '@/lib/useOnChange';
 
 /**
  * Write a note. While the vehicle is moving the field is not shown. Whether typing is allowed is decided when the sheet
@@ -12,8 +13,8 @@ import { Text } from '@/ui/Text';
  */
 export function NoteSheet({ open, canType, onSave, onClose }: { open: boolean; canType: boolean; onSave: (text: string) => void; onClose: () => void }) {
   const [text, setText] = useState('');
-  const [unlocked, setUnlocked] = useState(false);
-  useEffect(() => { setUnlocked((u) => nextUnlocked(u, { open, canType })); }, [open, canType]);
+  const [unlocked, setUnlocked] = useState(() => nextUnlocked(false, { open, canType }));
+  useOnChange(`${open}|${canType}`, () => setUnlocked((u) => nextUnlocked(u, { open, canType })));
   return (
     <Sheet open={open} title="Write a note" onClose={onClose}>
       {noteFieldShown({ open, canType, unlocked }) ? (
