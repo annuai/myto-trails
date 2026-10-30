@@ -31,7 +31,7 @@ import { RouteArt } from '@/ui/RouteArt';
 import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
-import { space } from '@/theme/tokens';
+import { space, media, radius } from '@/theme/tokens';
 
 const label = (s: string) => s.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
 const mb = (bytes: number) => `${Math.max(0.1, bytes / 1_000_000).toFixed(1)} MB`;
@@ -62,7 +62,7 @@ export default function TrailDetail() {
   const line = useMemo(() => (t.data?.route ? toLatLng(t.data.route.line) : undefined), [t.data?.route]);
 
   if (!t.data) {
-    return <Screen><BackHeader title="Trails" /><Text variant="body" tone={t.error ? 'stop' : 'muted'}>{t.error ?? 'Loading…'}</Text>{t.error ? <View style={{ marginTop: 16 }}><Button variant="soft" label="Try again" onPress={t.reload} /></View> : null}</Screen>;
+    return <Screen><BackHeader title="Trails" /><Text variant="body" tone={t.error ? 'stop' : 'muted'}>{t.error ?? 'Loading…'}</Text>{t.error ? <View style={{ marginTop: space[4] }}><Button variant="soft" label="Try again" onPress={t.reload} /></View> : null}</Screen>;
   }
   const { detail, route } = t.data;
   const isSaved = !!saved.data?.some((i) => i.trail?.slug === slug);
@@ -97,14 +97,14 @@ export default function TrailDetail() {
       <Card padded={false}>
         {heroUri ? <Image source={{ uri: heroUri }} accessibilityLabel={hero?.altText ?? detail.cover?.altText} style={{ width: '100%', aspectRatio: 16 / 10 }} resizeMode="cover" /> : <RouteArt seed={0} height={180} />}
       </Card>
-      {hero?.credit ? <Text variant="caption" tone="muted" style={{ marginTop: 8 }}>Photo: {hero.credit}</Text> : null}
-      <View style={{ marginTop: 24, gap: 6 }}>
+      {hero?.credit ? <Text variant="caption" tone="muted" style={{ marginTop: space[2] }}>Photo: {hero.credit}</Text> : null}
+      <View style={{ marginTop: space[6], gap: space[2] }}>
         <Text variant="title">{detail.name}</Text>
         <Text variant="label" tone="muted">{detail.nearestTown}, {detail.state.name}</Text>
         <Text variant="data" tone="muted">{[detail.distanceKm != null && asText(distanceKm(detail.distanceKm)), detail.estDurationMin != null && dur(detail.estDurationMin), label(detail.difficulty), detail.elevationGainM != null && `${asText(elevationM(detail.elevationGainM))} climb`].filter(Boolean).join(' · ')}</Text>
       </View>
       {needsCare ? (
-        <Card style={{ marginTop: 20, flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
+        <Card style={{ marginTop: space[5], flexDirection: 'row', gap: space[4], alignItems: 'flex-start' }}>
           <Icon icon={AlertTriangle} tone="caution" />
           <Text variant="label" style={{ flex: 1 }}>{h.label}. Check access before you ride. Myto Moto never calls an unverified or restricted trail open.</Text>
         </Card>
@@ -128,7 +128,7 @@ export default function TrailDetail() {
       {detail.hazards.length || detail.safetyNotes ? (
         <>
           <SectionTitle>Safety</SectionTitle>
-          <Card style={{ gap: 12 }}>
+          <Card style={{ gap: space[3] }}>
             {detail.hazards.length ? <Text variant="labelMedium">{detail.hazards.map(label).join(' · ')}</Text> : null}
             {detail.safetyNotes ? <Text variant="body">{detail.safetyNotes}</Text> : null}
           </Card>
@@ -137,20 +137,20 @@ export default function TrailDetail() {
       {gallery.length ? (
         <>
           <SectionTitle>Photos</SectionTitle>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }} style={landscape ? undefined : { marginHorizontal: -20, paddingLeft: 20 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space[3], paddingRight: space[5] }} style={landscape ? undefined : { marginHorizontal: -space[5], paddingLeft: space[5] }}>
             {gallery.map((m) => (
-              <View key={m.position} style={{ width: 260, gap: 8 }}>
-                <Image source={{ uri: m.variants['800'] ?? m.variants['400'] }} accessibilityLabel={m.altText} style={{ width: 260, height: 180, borderRadius: 20 }} resizeMode="cover" />
+              <View key={m.position} style={{ width: media.trailPhotoW, gap: space[2] }}>
+                <Image source={{ uri: m.variants['800'] ?? m.variants['400'] }} accessibilityLabel={m.altText} style={{ width: media.trailPhotoW, height: media.trailPhotoH, borderRadius: radius.card }} resizeMode="cover" />
                 {m.caption || m.credit ? <Text variant="caption" tone="muted">{[m.caption, m.credit && `Photo: ${m.credit}`].filter(Boolean).join(' · ')}</Text> : null}
               </View>
             ))}
           </ScrollView>
         </>
       ) : null}
-      {detail.description ? <><SectionTitle>About</SectionTitle><Text variant="body">{detail.description}</Text></> : <View style={{ marginTop: 16 }}><Text variant="body">{detail.summary}</Text></View>}
+      {detail.description ? <><SectionTitle>About</SectionTitle><Text variant="body">{detail.description}</Text></> : <View style={{ marginTop: space[4] }}><Text variant="body">{detail.summary}</Text></View>}
   </>);
   const actionsEl = (<>
-      <View style={{ marginTop: 28, gap: 12 }}>
+      <View style={{ marginTop: space[8], gap: space[3] }}>
         {pack ? (
           <Button variant="soft" icon={Trash2} label="Remove offline copy" trailing={mb(pack.bytes)} onPress={dropPack} />
         ) : (
@@ -162,7 +162,7 @@ export default function TrailDetail() {
         <Button variant="soft" icon={CalendarPlus} label="Plan a trip" arrow onPress={() => setPlanning(true)} />
         <Button label="Ride this trail" onPress={() => setRideChoice(true)} />
       </View>
-      {problem ? <Text variant="label" tone="stop" style={{ marginTop: 16 }}>{problem}</Text> : null}
+      {problem ? <Text variant="label" tone="stop" style={{ marginTop: space[4] }}>{problem}</Text> : null}
   </>);
 
   return (
@@ -176,7 +176,7 @@ export default function TrailDetail() {
       {comments.overlay}
     </>}>
       <BackHeader title="Trails" />
-      {t.fromOffline ? <Card style={{ marginBottom: 12, flexDirection: 'row', gap: 12, alignItems: 'center' }}><Icon icon={CloudOff} tone="muted" /><Text variant="label" tone="muted" style={{ flex: 1 }}>Showing your downloaded copy, saved {formatDate(new Date(pack?.savedAt ?? Date.now()).toISOString().slice(0, 10))}. Access may have changed.</Text></Card> : null}
+      {t.fromOffline ? <Card style={{ marginBottom: space[3], flexDirection: 'row', gap: space[3], alignItems: 'center' }}><Icon icon={CloudOff} tone="muted" /><Text variant="label" tone="muted" style={{ flex: 1 }}>Showing your downloaded copy, saved {formatDate(new Date(pack?.savedAt ?? Date.now()).toISOString().slice(0, 10))}. Access may have changed.</Text></Card> : null}
       {landscape ? <Columns left={<>{topEl}{actionsEl}</>} right={<>{routeEl}{comments.body}</>} /> : <>{topEl}{routeEl}{actionsEl}{comments.body}</>}
       <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: space[5] }}>{tiles === true ? 'Offline saves the details, access, route and map.' : 'Offline saves the details, access and route. Map tiles still need a connection.'}</Text>
     </Screen>

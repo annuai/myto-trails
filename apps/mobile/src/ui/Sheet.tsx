@@ -10,6 +10,8 @@ import { Text } from './Text';
 import { dragOffset, shouldDismiss } from './sheetDrag';
 import { useLayout } from './useLayout';
 
+import { space, layout, radius, scrim } from '@/theme/tokens';
+import { sheet } from './Sheet.tokens';
 /**
  * Bottom sheet drawn in the screen's own tree (not a native Modal), so on the web it stays inside the phone frame.
  * Render it as the `overlay` of <Screen>.
@@ -69,20 +71,20 @@ export function Sheet({ open, title, onClose, children, footer }: { open: boolea
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end', alignItems: 'center' }}>
       <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: Animated.multiply(t, drag.interpolate({ inputRange: [0, Dimensions.get('window').height], outputRange: [1, 0], extrapolate: 'clamp' })) }}>
-        <Pressable accessibilityLabel="Close" onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} />
+        <Pressable accessibilityLabel="Close" onPress={onClose} style={{ flex: 1, backgroundColor: scrim.sheet }} />
       </Animated.View>
-      <Animated.View style={{ transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }, { translateY: drag }], opacity: t, backgroundColor: c.paper, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: landscape || keyboard ? '96%' : '88%', width: '100%', maxWidth: 560, paddingBottom: keyboard ? keyboard + 16 : insets.bottom + 16 }}>
+      <Animated.View style={{ transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [sheet.slide, 0] }) }, { translateY: drag }], opacity: t, backgroundColor: c.paper, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, maxHeight: landscape || keyboard ? '96%' : '88%', width: '100%', maxWidth: layout.wideMax, paddingBottom: keyboard ? keyboard + space[4] : insets.bottom + space[4] }}>
         <View {...pan.panHandlers}>
-          <View style={{ alignItems: 'center', paddingTop: 10, paddingBottom: 6 }}>
-            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: c.line }} />
+          <View style={{ alignItems: 'center', paddingTop: space[3], paddingBottom: space[2] }}>
+            <View style={{ width: sheet.handleWidth, height: sheet.handleHeight, borderRadius: radius.chip, backgroundColor: c.line }} />
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 12, paddingTop: 0, paddingBottom: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: space[6], paddingRight: space[3], paddingTop: 0, paddingBottom: space[2] }}>
             <Text variant="section">{title}</Text>
             <IconButton icon={X} label="Close" onPress={onClose} plain />
           </View>
         </View>
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8, gap: 12 }} keyboardShouldPersistTaps="handled">{children}</ScrollView>
-        {footer ? <View style={{ paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: c.line }}>{footer}</View> : null}
+        <ScrollView contentContainerStyle={{ paddingHorizontal: space[5], paddingBottom: space[2], gap: space[3] }} keyboardShouldPersistTaps="handled">{children}</ScrollView>
+        {footer ? <View style={{ paddingHorizontal: space[5], paddingTop: space[3], borderTopWidth: 1, borderTopColor: c.line }}>{footer}</View> : null}
       </Animated.View>
     </View>
   );

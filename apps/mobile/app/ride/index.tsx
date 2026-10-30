@@ -29,6 +29,7 @@ import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 
+import { space } from '@/theme/tokens';
 type Check = { label: string; status: Status; word: string; go?: string };
 
 function validity(label: string, iso: string | undefined, go: string): Check {
@@ -119,16 +120,16 @@ export default function RideReady() {
       </ListCard>
       </>} right={<>
       <SectionTitle>Location</SectionTitle>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: space[2] }}>
         <ChoiceChip label="Phone GPS" selected={source === 'gps'} onPress={() => setSource('gps')} />
         <ChoiceChip label="Simulated (testing)" selected={source === 'sim'} onPress={() => setSource('sim')} />
       </View>
-      <Text variant="caption" tone="muted" style={{ marginTop: 12 }}>
+      <Text variant="caption" tone="muted" style={{ marginTop: space[3] }}>
         {source === 'sim' ? 'Moves along a test loop so you can try recording on a laptop. Not a real ride.'
           : fix ? 'Your position is shown below. It is only saved once you start.'
           : gpsError ?? 'Finding your location. If asked, allow location access.'}
       </Text>
-      {source === 'gps' ? <View style={{ marginTop: 16 }}><OsmMap height={220} radius={24} follow position={here} /></View> : null}
+      {source === 'gps' ? <View style={{ marginTop: space[4] }}><OsmMap height={220} radius={24} follow position={here} /></View> : null}
       </>} />
     </Screen>
   );

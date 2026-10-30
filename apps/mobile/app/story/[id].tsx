@@ -85,7 +85,7 @@ function StoryBody() {
       <PageTitle sub={formatDate(new Date(ride.startedAt).toISOString().slice(0, 10)) + (ride.sample ? ' · sample' : '')}>{ride.name}</PageTitle>
       <Columns
         left={<>
-      <View style={{ backgroundColor: c.accent, borderRadius: radius.card, padding: 24, gap: 4 }}>
+      <View style={{ backgroundColor: c.accent, borderRadius: radius.card, padding: space[6], gap: space[1] }}>
         <Text variant="label" style={{ color: c.accentInk }}>You rode</Text>
         <Measure parts={distanceKm(ride.distanceKm)} size="liveCompact" color={c.accentInk} />
         <Text variant="label" style={{ color: c.accentInk }}>in {asText(durationParts(ride.durationSec))}</Text>
@@ -103,13 +103,13 @@ function StoryBody() {
       <View style={{ marginTop: 0 }}><RideMap radius={radius.card} points={ride.points} breaks={ride.breaks} waypoints={ride.waypoints} /></View>
       <SectionTitle>Share it</SectionTitle>
       {sub ? (
-        <Card style={{ gap: 10 }}>
+        <Card style={{ gap: space[3] }}>
           {(() => { const o = sub.outcome ? outcomeText(sub.outcome.status, sub.outcome.feedback) : undefined; return <StatusChip status={o?.tone ?? 'good'} label={o ? o.label : 'Sent for review'} />; })()}
           <Text variant="label" tone="muted">{sub.trailName}. Moderators check it before anything is published.</Text>
           {sub.outcome ? (() => { const o = outcomeText(sub.outcome.status, sub.outcome.feedback); return o.note ? <Text variant="label">{o.note}</Text> : null; })() : null}
         </Card>
       ) : null}
-      <View style={{ gap: 12, marginTop: sub ? 12 : 0 }}>
+      <View style={{ gap: space[3], marginTop: sub ? space[3] : 0 }}>
         <Button icon={Share2} label="Share this ride" arrow onPress={() => setShareOpen(true)} />
         <Button variant="soft" icon={Megaphone} label="Report the trail's condition" onPress={() => setReportOpen(true)} />
         <Button variant="soft" icon={Luggage} label="Add to a trip" onPress={() => setTripOpen(true)} />

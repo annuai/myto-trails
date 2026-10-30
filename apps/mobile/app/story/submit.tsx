@@ -22,6 +22,7 @@ import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 
+import { space } from '@/theme/tokens';
 const label = (s: string) => s.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
 const DIFFICULTY = ['easy', 'moderate', 'hard', 'expert'];
 const SHAPES = [['loop', 'Loop'], ['out_and_back', 'Out and back'], ['point_to_point', 'Point to point']] as const;
@@ -29,7 +30,7 @@ const ACCESS = [['unknown', 'Not sure'], ['public', 'Public'], ['permission_requ
 const BASIS = ACCESS_BASES.filter((b) => b !== 'none');
 const TRIMS = [0, 200, 500] as const;
 
-const Chips = ({ children }: { children: React.ReactNode }) => <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>{children}</View>;
+const Chips = ({ children }: { children: React.ReactNode }) => <View style={{ flexDirection: 'row', gap: space[2], flexWrap: 'wrap' }}>{children}</View>;
 
 /** Send a ride to Moto Trails as a draft: the same steps as the website's submit form. Moderators review it; it is never published automatically. */
 export default function Submit() {
@@ -104,8 +105,8 @@ export default function Submit() {
     >
       <BackHeader />
       <PageTitle sub="The same steps as the website. Moderators check it before anything is published.">Upload to Moto Trails</PageTitle>
-      {!token ? <Card style={{ marginBottom: 20 }}><Text variant="label" tone="muted">Sign in with your Moto Trails account to upload. Your ride stays on this phone until you send it.</Text></Card> : null}
-      <View style={{ gap: 20 }}>
+      {!token ? <Card style={{ marginBottom: space[5] }}><Text variant="label" tone="muted">Sign in with your Moto Trails account to upload. Your ride stays on this phone until you send it.</Text></Card> : null}
+      <View style={{ gap: space[5] }}>
         <Field label="Trail name" value={name} onChangeText={setName} placeholder="e.g. Granite Ridge Loop" />
         <Field label="What is it like to ride?" value={summary} onChangeText={setSummary} multiline placeholder="Surface, hazards, best season (40 to 400 characters, no web addresses)" />
         <ListCard><Row label="State" value={state?.name ?? 'Choose'} onPress={() => setPicking(true)} /></ListCard>
@@ -120,9 +121,9 @@ export default function Submit() {
       <Chips>{SHAPES.map(([k, l]) => <ChoiceChip key={k} label={l} selected={shape === k} onPress={() => setShape(k)} />)}</Chips>
       <SectionTitle>Is it legal to ride?</SectionTitle>
       <Chips>{ACCESS.map(([k, l]) => <ChoiceChip key={k} label={l} selected={access === k} onPress={() => setAccess(k)} />)}</Chips>
-      <Text variant="caption" tone="muted" style={{ marginTop: 12 }}>A recording shows a route was ridden, not that it is allowed. Moderators verify access separately.</Text>
+      <Text variant="caption" tone="muted" style={{ marginTop: space[3] }}>A recording shows a route was ridden, not that it is allowed. Moderators verify access separately.</Text>
       {access !== 'unknown' ? (
-        <View style={{ gap: 16, marginTop: 16 }}>
+        <View style={{ gap: space[4], marginTop: space[4] }}>
           <Text variant="labelMedium">How do you know?</Text>
           <Chips>{BASIS.map((b) => <ChoiceChip key={b} label={label(b)} selected={basis === b} onPress={() => setBasis(b)} />)}</Chips>
           <Field label="Source, in a few words" value={evidence} onChangeText={setEvidence} placeholder="e.g. Signboard at the gate says open to all" />
@@ -131,12 +132,12 @@ export default function Submit() {
       ) : null}
       <SectionTitle>Hide the start and end</SectionTitle>
       <Chips>{TRIMS.map((t) => <ChoiceChip key={t} label={t ? `${t} m` : 'None'} selected={trim === t} onPress={() => setTrim(t)} />)}</Chips>
-      <Card style={{ marginTop: 16 }}><Text variant="label" tone="muted">The file sent has {points.length} points and {asText(distanceKm(km))}. Trimming keeps your home or work out of it.</Text></Card>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
+      <Card style={{ marginTop: space[4] }}><Text variant="label" tone="muted">The file sent has {points.length} points and {asText(distanceKm(km))}. Trimming keeps your home or work out of it.</Text></Card>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: space[5] }}>
         <Checkbox checked={agreed} onChange={setAgreed} label="Accept the contribution licence" />
         <Text variant="label" style={{ flex: 1 }}>I accept the contribution licence in the Moto Trails terms, so my route can be published after review.</Text>
       </View>
-      {error ? <Text variant="label" tone="stop" style={{ marginTop: 16 }}>{error}</Text> : null}
+      {error ? <Text variant="label" tone="stop" style={{ marginTop: space[4] }}>{error}</Text> : null}
     </Screen>
   );
 }

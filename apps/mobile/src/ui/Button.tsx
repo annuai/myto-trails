@@ -1,10 +1,11 @@
 import { View } from 'react-native';
 import { ArrowRight, type LucideIcon } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
-import { opacity, radius } from '@/theme/tokens';
+import { opacity, radius, space, size } from '@/theme/tokens';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { ScalePressable } from './motion';
+import { button } from './Button.tokens';
 
 type Variant = 'primary' | 'accent' | 'soft' | 'danger';
 type Props = {
@@ -25,14 +26,14 @@ export function Button({ label, onPress, variant = 'primary', icon, arrow, big, 
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => ({
-        minHeight: big ? 72 : 56, borderRadius: radius.control, paddingHorizontal: 20, backgroundColor: bg,
-        flexDirection: 'row', alignItems: 'center', justifyContent: between ? 'space-between' : 'center', gap: 10,
+        minHeight: big ? size.bigButton : size.button, borderRadius: radius.control, paddingHorizontal: space[5], backgroundColor: bg,
+        flexDirection: 'row', alignItems: 'center', justifyContent: between ? 'space-between' : 'center', gap: space[3],
         opacity: disabled ? opacity.disabled : pressed ? opacity.pressed : 1, flex: flex ? 1 : undefined,
       })}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
         {icon ? <Icon icon={icon} size={22} tone={fg} /> : null}
-        <Text variant="bodyMedium" tone={fg} style={[big && { fontSize: 20 }, fgColor ? { color: fgColor } : null]}>{label}</Text>
+        <Text variant="bodyMedium" tone={fg} style={[big && { fontSize: button.bigLabel }, fgColor ? { color: fgColor } : null]}>{label}</Text>
       </View>
       {trailing ? <Text variant="data" tone="muted">{trailing}</Text> : null}
       {arrow ? <Icon icon={ArrowRight} size={20} tone={fg} /> : null}

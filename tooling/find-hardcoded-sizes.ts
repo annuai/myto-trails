@@ -11,11 +11,25 @@ const KEYS = [
 ].join("|");
 const NUMERIC = new RegExp(`\\b(?:${KEYS})\\s*:\\s*-?(?:\\d+\\.?\\d*|\\.\\d+)(?![\\w%.])`, "g");
 const COLOUR_FN = /\b(?:rgba?|hsla?)\(/g;
+// The same keys with a condition ("landscape ? 12 : 20"), plus shadow and layer values: a number can hide on either side of the "?".
+const CONDITION = new RegExp(`\\b(?:${KEYS}|shadowRadius|shadowOpacity|elevation|zIndex)\\s*:\\s*[^,{}\\n]*\\?[^,{}\\n]*`, "g");
+const BARE_NUMBER = /(?<![\w.[])-?(?:\d+\.?\d*|\.\d+)(?![\w.%\]])/g;
+const SHADOW = /\b(?:shadowRadius|shadowOpacity|elevation|zIndex)\s*:\s*-?(?:\d+\.?\d*|\.\d+)(?![\w.%\]])/g;
+const plain = (n: string) => /^-?(?:0|1)(?:\.0+)?$/.test(n);
+
+/** For "key: a ? b : 20" the text up to the first number that is not 0 or 1, or nothing when every number in it is 0, 1 or a token. */
+function inCondition(expr: string): string | null {
+  const q = expr.indexOf("?");
+  for (const m of expr.slice(q).matchAll(BARE_NUMBER)) if (!plain(m[0])) return expr.slice(0, q + (m.index ?? 0) + m[0].length);
+  return null;
+}
 
 const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
 export function findHardcodedSizes(source: string): string[] {
   const code = stripComments(source);
   const numeric = (code.match(NUMERIC) ?? []).filter((m) => !/:\s*-?(?:0|1)(?:\.0+)?$/.test(m));
-  return [...numeric.map((m) => m.replace(/\s+/g, " ")), ...(code.match(COLOUR_FN) ?? [])];
+  const conditional = (code.match(CONDITION) ?? []).map(inCondition).filter((m): m is string => m !== null);
+  const shadows = (code.match(SHADOW) ?? []).filter((m) => !plain(m.split(":")[1]!.trim()));
+  return [...numeric, ...conditional, ...shadows].map((m) => m.replace(/\s+/g, " ")).concat(code.match(COLOUR_FN) ?? []);
 }

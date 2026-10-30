@@ -122,16 +122,16 @@ function LiveBody() {
   const distance = distanceKm(r.meters / 1000);
   const speed = speedKmh(r.paused ? 0 : r.speedKmh);
   const stats = (
-    <Card style={{ gap: landscape ? 12 : 20, paddingVertical: landscape ? 16 : 20 }}>
-      <View style={{ gap: 4 }}>
+    <Card style={{ gap: landscape ? space[3] : space[5], paddingVertical: landscape ? space[4] : space[5] }}>
+      <View style={{ gap: space[1] }}>
         <Text variant="label" tone="muted">Distance</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-          <Text variant="live" style={landscape ? { fontSize: 56, lineHeight: 60 } : undefined}>{distance.value}</Text><Text variant="bodyMedium" tone="muted">{distance.unit}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: space[2] }}>
+          <Text variant={landscape ? 'liveCompact' : 'live'}>{distance.value}</Text><Text variant="bodyMedium" tone="muted">{distance.unit}</Text>
         </View>
       </View>
       <View style={{ flexDirection: 'row' }}>
-        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{r.paused ? 'Paused' : 'Time'}</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{clock(r.elapsedMs(Date.now()))}</Text></View>
-        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{`Speed (${speed.unit})`}</Text><Text variant="liveSecondary" style={landscape ? { fontSize: 32, lineHeight: 36 } : undefined}>{speed.value}</Text></View>
+        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{r.paused ? 'Paused' : 'Time'}</Text><Text variant={landscape ? 'liveSecondaryCompact' : 'liveSecondary'}>{clock(r.elapsedMs(Date.now()))}</Text></View>
+        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{`Speed (${speed.unit})`}</Text><Text variant={landscape ? 'liveSecondaryCompact' : 'liveSecondary'}>{speed.value}</Text></View>
       </View>
     </Card>
   );
@@ -141,7 +141,7 @@ function LiveBody() {
   // The background task is what keeps recording with the screen locked; tell the rider when it is not running.
   const foregroundOnly = r.source === 'gps' && !r.paused && Platform.OS !== 'web' && !r.backgrounded && Date.now() - r.startedAt > 3000;
   const status = (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: space[2] }}>
       {r.error ? <Banner eyebrow="Storage" title={r.error} /> : null}
       {lostSignal ? <Banner eyebrow="GPS" title="Lost GPS signal, still recording" /> : null}
       {off ? <Banner eyebrow="Route" title="You are off the route" /> : null}
@@ -203,12 +203,12 @@ function LiveBody() {
         {contacts.length === 0 ? <Text variant="label" tone="muted">No emergency contacts yet. Add them under You, Documents and emergency.</Text> : null}
       </Sheet>
     </>}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 48 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: r.paused ? c.muted : c.stop }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: size.target }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+          <View style={{ width: size.dot, height: size.dot, borderRadius: radius.chip, backgroundColor: r.paused ? c.muted : c.stop }} />
           <Text variant="labelMedium" tone="muted">{r.paused ? 'Paused' : r.source === 'sim' ? 'Recording (simulated)' : 'Recording'}</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[5] }}>
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Group</Text></Pressable> : null}
           <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Journal</Text></Pressable>
@@ -217,22 +217,22 @@ function LiveBody() {
       </View>
       {landscape ? (
         // Turned on its side (a handlebar mount): numbers on the left, map and big buttons on the right, no scrolling.
-        <View style={{ flex: 1, flexDirection: 'row', gap: 16 }}>
+        <View style={{ flex: 1, flexDirection: 'row', gap: space[4] }}>
           <View style={{ flex: 1, gap: space[3] }}>{stats}{status}{groupTiles}</View>
-          <View style={{ flex: 1.25, gap: 12 }}>
+          <View style={{ flex: 1.25, gap: space[3] }}>
             <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
-            <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(64)}{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
+            <View style={{ flexDirection: 'row', gap: space[3] }}>{pauseBtn(64)}{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
           </View>
         </View>
       ) : (
         <>
-          <View style={{ marginTop: 8 }}>{stats}</View>
-          <View style={{ marginTop: 12 }}>
+          <View style={{ marginTop: space[2] }}>{stats}</View>
+          <View style={{ marginTop: space[3] }}>
             <OsmMap height={200} radius={radius.card} follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
           </View>
           <View style={{ marginTop: space[3], gap: space[3] }}>{status}{groupTiles}</View>
           <View style={{ flex: 1 }} />
-          <View style={{ flexDirection: 'row', gap: 12 }}>{pauseBtn(88)}{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} onComplete={stop} /></View>
+          <View style={{ flexDirection: 'row', gap: space[3] }}>{pauseBtn(88)}{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} onComplete={stop} /></View>
           <View style={{ marginTop: space[3], flexDirection: 'row', gap: space[3] }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn('Group', Users, () => setGroupOpen(true), 56)}</View>
         </>
       )}

@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fadeTarget, isTap, touchPoint } from '@/lib/tabFade';
 import { useTheme } from '@/theme/ThemeProvider';
-import { size } from '@/theme/tokens';
+import { size, space, layout } from '@/theme/tokens';
 import { FloatingHeader, HEADER_HEIGHT } from './FloatingHeader';
 import { PullQuote } from './PullQuote';
 import { EASE, Reveal } from './motion';
@@ -84,8 +84,8 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
       {body}
       {brand ? <FloatingHeader scrollY={scrollY} /> : null}
       {footer ? (
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingLeft: padL, paddingRight: padR, paddingTop: 12, paddingBottom: insets.bottom + 16, backgroundColor: c.paper, borderTopWidth: 1, borderTopColor: c.line }}>
-          <View style={{ width: '100%', maxWidth: landscape ? 520 : CONTENT_MAX, alignSelf: 'center' }}>{footer}</View>
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingLeft: padL, paddingRight: padR, paddingTop: space[3], paddingBottom: insets.bottom + 16, backgroundColor: c.paper, borderTopWidth: 1, borderTopColor: c.line }}>
+          <View style={{ width: '100%', maxWidth: landscape ? layout.barMax : CONTENT_MAX, alignSelf: 'center' }}>{footer}</View>
         </View>
       ) : null}
       {overlay}

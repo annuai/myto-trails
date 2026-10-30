@@ -159,11 +159,11 @@ export default function Home() {
         <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} />
       ) : trail ? (
         <HeroCard eyebrow={trail.date ? `Next ride · ${trail.date}` : 'Next ride'} title={trail.name} action={<IconButton icon={MoreHorizontal} label="Next ride options" onPress={() => setMenu(true)} plain />}>
-          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          <View style={{ flexDirection: 'row', gap: space[2], flexWrap: 'wrap' }}>
             <StatusChip status={trail.status} label={trail.statusLabel} />
           </View>
           {packs.length ? (
-            <View style={{ gap: 8 }}>
+            <View style={{ gap: space[2] }}>
               <ProgressBar value={packs.filter((p) => p.done).length} max={packs.length} label="Packed" />
               <Text variant="label" tone="muted">{packs.filter((p) => p.done).length} of {packs.length} packed</Text>
             </View>
@@ -206,12 +206,12 @@ export default function Home() {
           ))}
         </ListCard>
       ) : <EmptyState icon={ClipboardList} title="Nothing due" body="Add your PUC, insurance or a chain lube reminder." />}
-      <View style={{ marginTop: 12 }}><Button variant="soft" label="See all" arrow onPress={() => router.push('/todos')} /></View>
+      <View style={{ marginTop: space[3] }}><Button variant="soft" label="See all" arrow onPress={() => router.push('/todos')} /></View>
 
         </>}
         right={<>
       <SectionTitle>Near you</SectionTitle>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }} style={landscape ? undefined : { marginHorizontal: -20, paddingLeft: 20 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space[3], paddingRight: space[5] }} style={landscape ? undefined : { marginHorizontal: -space[5], paddingLeft: space[5] }}>
         {(near.data?.items ?? []).slice(0, 8).map((t) => <TrailTile key={t.slug} trail={toTrailLike(t)} onPress={() => router.push(`/trail/${t.slug}`)} />)}
         {!near.data ? <Text variant="label" tone="muted">{near.error ?? 'Loading trails…'}</Text> : null}
       </ScrollView>
@@ -221,7 +221,7 @@ export default function Home() {
         <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`Open the story of ${latest.name}`} onPress={() => router.push(`/story/${latest.id}`)}>
         <Card padded={false}>
           <RideMap points={latest.points} breaks={latest.breaks} />
-          <View style={{ padding: 20, gap: 16 }}>
+          <View style={{ padding: space[5], gap: space[4] }}>
             <Text variant="bodyMedium">{latest.name}{latest.sample ? ' (sample)' : ''}</Text>
             <View style={{ flexDirection: 'row' }}>
               <Stat parts={durationParts(latest.durationSec)} label="Duration" /><Stat parts={distanceKm(latest.distanceKm)} label="Distance" /><Stat parts={speedKmh(latest.maxKmh)} label="Top speed" />

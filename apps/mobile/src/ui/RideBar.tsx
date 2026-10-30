@@ -3,13 +3,14 @@ import { useDistanceUnit } from '@/store/region';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Theme } from '@/theme/ThemeProvider';
-import { dark, fixed } from '@/theme/tokens';
+import { dark, fixed, space, layout, radius, shadow, size } from '@/theme/tokens';
 import { useChrome } from '@/store/chrome';
 import { useRecorder } from '@/store/recorder';
 import { clock } from '@/lib/format';
 import { asText, distanceKm } from '@/lib/units';
 import { Text } from './Text';
 import { useLayout } from './useLayout';
+import { rideBar } from './RideBar.tokens';
 
 /** Shown above the tab bar while a ride is recording; opens the live screen. */
 export function RideBar() {
@@ -27,9 +28,9 @@ export function RideBar() {
   return (
     <Theme mode="dark">
       <Pressable accessibilityRole="button" accessibilityLabel="Open the live ride" onPress={() => router.push('/ride/live')}
-        style={{ position: 'absolute', alignSelf: 'center', width: '92%', maxWidth: 520, bottom: landscape ? 92 : 116, height: 56, borderRadius: 18, backgroundColor: fixed.ink, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, shadowColor: fixed.shadow, shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: paused ? dark.muted : dark.stop }} />
+        style={{ position: 'absolute', alignSelf: 'center', width: '92%', maxWidth: layout.barMax, bottom: landscape ? rideBar.bottomLandscape : rideBar.bottom, height: size.button, borderRadius: radius.thumb, backgroundColor: fixed.ink, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space[5], ...shadow.ride }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+          <View style={{ width: size.dot, height: size.dot, borderRadius: radius.chip, backgroundColor: paused ? dark.muted : dark.stop }} />
           <Text variant="data">{paused ? 'Paused' : 'Riding'} {clock(elapsedMs(Date.now()))} · {asText(distanceKm(meters / 1000))}</Text>
         </View>
         <Text variant="labelMedium" tone="accent">Open</Text>

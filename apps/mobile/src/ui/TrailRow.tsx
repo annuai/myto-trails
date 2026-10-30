@@ -1,6 +1,6 @@
 import { Image, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, type Tint } from '@/theme/tokens';
+import { radius, type Tint, space, media } from '@/theme/tokens';
 import { asText, distanceKm } from '@/lib/units';
 import { Measure } from './Measure';
 import { RouteArt } from './RouteArt';
@@ -17,11 +17,11 @@ const Thumb = ({ trail, size }: { trail: TrailLike; size: number }) => trail.cov
 export function TrailRow({ trail, onPress }: { trail: TrailLike; onPress: () => void }) {
   const { c } = useTheme();
   return (
-    <ScalePressable scaleTo={0.98} accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 16, padding: 12, borderRadius: radius.card, backgroundColor: pressed ? c.raised : c.card })}>
-      <View style={{ width: 76, height: 76, borderRadius: radius.thumb, overflow: 'hidden' }}>
+    <ScalePressable scaleTo={0.98} accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space[4], padding: space[3], borderRadius: radius.card, backgroundColor: pressed ? c.raised : c.card })}>
+      <View style={{ width: media.trailThumb, height: media.trailThumb, borderRadius: radius.thumb, overflow: 'hidden' }}>
         <Thumb trail={trail} size={76} />
       </View>
-      <View style={{ flex: 1, gap: 4 }}>
+      <View style={{ flex: 1, gap: space[1] }}>
         <Text variant="bodyMedium">{trail.name}</Text>
         <Text variant="data" tone="muted">{asText(distanceKm(trail.km))} · {trail.time} · {trail.difficulty}</Text>
         <StatusChip status={trail.status} label={trail.statusLabel} />
@@ -33,9 +33,9 @@ export function TrailRow({ trail, onPress }: { trail: TrailLike; onPress: () => 
 export function TrailTile({ trail, onPress }: { trail: TrailLike; onPress: () => void }) {
   const { c } = useTheme();
   return (
-    <ScalePressable scaleTo={0.98} accessibilityRole="button" onPress={onPress} style={{ width: 176, borderRadius: radius.card, backgroundColor: c.card, overflow: 'hidden' }}>
-      <View style={{ height: 120, overflow: 'hidden' }}>{trail.cover ? <Image source={{ uri: trail.cover }} accessibilityLabel={trail.coverAlt} style={{ width: '100%', height: 120 }} resizeMode="cover" /> : <RouteArt seed={trail.seed} tint={trail.tint} height={120} />}</View>
-      <View style={{ padding: 16, gap: 4 }}>
+    <ScalePressable scaleTo={0.98} accessibilityRole="button" onPress={onPress} style={{ width: media.trailTileW, borderRadius: radius.card, backgroundColor: c.card, overflow: 'hidden' }}>
+      <View style={{ height: media.trailTileH, overflow: 'hidden' }}>{trail.cover ? <Image source={{ uri: trail.cover }} accessibilityLabel={trail.coverAlt} style={{ width: '100%', height: media.trailTileH }} resizeMode="cover" /> : <RouteArt seed={trail.seed} tint={trail.tint} height={120} />}</View>
+      <View style={{ padding: space[4], gap: space[1] }}>
         <Measure parts={distanceKm(trail.km)} />
         <Text variant="label" tone="muted" numberOfLines={1}>{trail.name}</Text>
       </View>

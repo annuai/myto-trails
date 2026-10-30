@@ -9,7 +9,7 @@ import { Geist_400Regular, Geist_500Medium, Geist_600SemiBold } from '@expo-goog
 import { GeistMono_400Regular, GeistMono_500Medium } from '@expo-google-fonts/geist-mono';
 import { Michroma_400Regular } from '@expo-google-fonts/michroma';
 import { Theme } from '@/theme/ThemeProvider';
-import { fixed, light } from '@/theme/tokens';
+import { fixed, light, layout } from '@/theme/tokens';
 import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
@@ -66,7 +66,7 @@ export default function Root() {
         {Platform.OS === 'web' ? (
           // On the web, show the app at phone width so a laptop test matches a phone.
           <View style={{ flex: 1, backgroundColor: fixed.frame, alignItems: 'center' }}>
-            <View style={{ flex: 1, width: '100%', maxWidth: width > height ? 932 : 430, backgroundColor: light.paper, overflow: 'hidden' }}>{app}</View>
+            <View style={{ flex: 1, width: '100%', maxWidth: width > height ? layout.frameLandscape : layout.frame, backgroundColor: light.paper, overflow: 'hidden' }}>{app}</View>
           </View>
         ) : app}
       </SafeAreaProvider>
