@@ -4,6 +4,7 @@ import { Field } from '@/ui/Field';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { hasLink } from '@/lib/community';
+import { useOnChange } from '@/lib/useOnChange';
 
 /**
  * One text box in a sheet: a reply, a comment edit, a report. The text is cleared each time the sheet opens, and kept if the
@@ -14,7 +15,7 @@ export function TextSheet({ open, title, label, hint, submitLabel, initial = '',
   busy?: boolean; problem?: string; onSubmit: (text: string) => void; onClose: () => void;
 }) {
   const [text, setText] = useState(initial);
-  useEffect(() => { if (open) setText(initial); }, [open, initial]);
+  useOnChange(`${open}|${initial}`, () => { if (open) setText(initial); });
   const t = text.trim();
   const linkProblem = noLinks && hasLink(t) ? 'Please leave web addresses out.' : undefined;
   return (

@@ -49,6 +49,7 @@ import { Pressable } from 'react-native';
 import { Icon } from '@/ui/Icon';
 import { fixed, opacity, radius, size, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
+import { nowMs } from '@/lib/clock';
 
 /** Live riding: dark, no tab bar, big numbers, nothing that needs text input. */
 export default function Live() {
@@ -80,10 +81,11 @@ function LiveBody() {
   // The dot follows the live GPS fix straight away; on a simulated ride it follows the simulated track.
   const last = r.source === 'sim' ? lastPoint : fix ? { lat: fix.lat, lng: fix.lng } : lastPoint;
   const [, tick] = useState(0);
-  const [sos, setSos] = useState(false);
   // Help on a solo ride's lock screen card opens this screen with the SOS sheet up.
   const { sos: sosParam } = useLocalSearchParams<{ sos?: string }>();
-  useEffect(() => { if (sosParam) setSos(true); }, [sosParam]);
+  const [sos, setSos] = useState(!!sosParam);
+  const [seenSosParam, setSeenSosParam] = useState(sosParam);
+  if (sosParam !== seenSosParam) { setSeenSosParam(sosParam); if (sosParam) setSos(true); }
   // The screen stays on while the rider is looking at the ride (a bike mount). Locking the phone still records through the background task.
   useEffect(() => {
     if (r.paused) return;
@@ -101,9 +103,9 @@ function LiveBody() {
   const follow = useRef(startFollow);
   const j = useJournalActions(r.startedAt);
   const stopping = useRef(false);
-  const health = useRef(startGpsHealth);
-  const resumedAt = useRef(0);
-  useEffect(() => { const sub = AppState.addEventListener('change', (st) => { if (st === 'active') resumedAt.current = Date.now(); }); return () => sub.remove(); }, []);
+  const [health, setHealth] = useState(startGpsHealth);
+  const [resumedAt, setResumedAt] = useState(0);
+  useEffect(() => { const sub = AppState.addEventListener('change', (st) => { if (st === 'active') setResumedAt(nowMs()); }); return () => sub.remove(); }, []);
   useEffect(() => { const id = setInterval(() => tick((n) => n + 1), 1000); return () => clearInterval(id); }, []);
   useEffect(() => { if (r.status === 'idle' && !stopping.current) router.replace('/'); }, [r.status, router]);
   // Heading to the start, then along the trail. Off the route for 20 seconds (only once on the trail): buzz and say so. Back within 60 m: clear it.
@@ -136,7 +138,7 @@ function LiveBody() {
   };
 
   const distance = distanceKm(r.meters / 1000);
-  const shown = r.paused ? 0 : r.source === 'sim' ? r.speedKmh : shownSpeedKmh(r.speedKmh, r.lastFixAt, Date.now());
+  const shown = r.paused ? 0 : r.source === 'sim' ? r.speedKmh : shownSpeedKmh(r.speedKmh, r.lastFixAt, nowMs());
   const speed = shown === null ? { value: '–', unit: speedKmh(0).unit } : speedKmh(shown);
   const stats = (
     <Card style={{ gap: landscape ? space[3] : space[5], paddingVertical: landscape ? space[4] : space[5] }}>
@@ -147,18 +149,19 @@ function LiveBody() {
         </View>
       </View>
       <View style={{ flexDirection: 'row' }}>
-        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{r.paused ? 'Paused' : 'Time'}</Text><Text variant={landscape ? 'liveSecondaryCompact' : 'liveSecondary'}>{clock(r.elapsedMs(Date.now()))}</Text></View>
+        <View style={{ flex: 1 }}><Text variant="label" tone="muted">{r.paused ? 'Paused' : 'Time'}</Text><Text variant={landscape ? 'liveSecondaryCompact' : 'liveSecondary'}>{clock(r.elapsedMs(nowMs()))}</Text></View>
         <View style={{ flex: 1 }}><Text variant="label" tone="muted">{`Speed (${speed.unit})`}</Text><Text variant={landscape ? 'liveSecondaryCompact' : 'liveSecondary'}>{speed.value}</Text></View>
       </View>
     </Card>
   );
-  const ageSec = r.lastFixAt ? Math.max(0, Math.round((Date.now() - r.lastFixAt) / 1000)) : 0;
+  const ageSec = r.lastFixAt ? Math.max(0, Math.round((nowMs() - r.lastFixAt) / 1000)) : 0;
   // Fixes keep coming while stopped, so a long silence is a real loss; the warning needs one to raise and a steady run of fixes to clear.
-  health.current = r.source === 'gps' && !r.paused ? stepGpsHealth(health.current, { now: Date.now(), lastFixAt: r.lastFixAt, resumedAt: resumedAt.current }) : startGpsHealth;
-  const lostSignal = health.current.lost;
+  const nextHealth = r.source === 'gps' && !r.paused ? stepGpsHealth(health, { now: nowMs(), lastFixAt: r.lastFixAt, resumedAt }) : startGpsHealth;
+  if (nextHealth.lost !== health.lost || nextHealth.freshSince !== health.freshSince) setHealth(nextHealth);
+  const lostSignal = nextHealth.lost;
   const weakSignal = !lostSignal && r.source === 'gps' && !r.paused && isWeak(fix?.accuracy);
   // The background task is what keeps recording with the screen locked; tell the rider when it is not running.
-  const foregroundOnly = r.source === 'gps' && !r.paused && Platform.OS !== 'web' && !r.backgrounded && Date.now() - r.startedAt > 3000;
+  const foregroundOnly = r.source === 'gps' && !r.paused && Platform.OS !== 'web' && !r.backgrounded && nowMs() - r.startedAt > 3000;
   const start = routeLine?.[0];
   const guideBanner = !guide || !start ? null
     : guide.phase === 'to_start' ? <Banner eyebrow="To the start" title={`${withUnit(shortDistanceM(guide.toStartM))} ${last ? compassWord(last, start) : ''} · tap for the road`} onPress={() => void Linking.openURL(mapsDirectionsUrl(start))} />
@@ -170,7 +173,7 @@ function LiveBody() {
       {lostSignal ? <Banner eyebrow="GPS" title="Lost GPS signal, still recording" /> : weakSignal ? <Banner eyebrow="GPS" title="Weak GPS signal. The route may be rough here." /> : null}
       {guideBanner}
       {off ? <Banner eyebrow="Route" title="You are off the route" /> : null}
-      {dropAt && Date.now() - dropAt < 6000 && r.waypoints.length ? (
+      {dropAt && nowMs() - dropAt < 6000 && r.waypoints.length ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
           {WAYPOINT_KINDS.map((k) => <ChoiceChip key={k} label={WAYPOINT_LABEL[k]} onPress={() => { void r.retypeLastWaypoint(k); setDropAt(0); }} />)}
         </View>
@@ -183,7 +186,7 @@ function LiveBody() {
     </View>
   );
   // The other riders of the group ride, with how far they are and a way to navigate to them (once stopped).
-  const groupTiles = group && live.riders.length > 1 ? <RiderTiles tiles={riderTiles(live.riders, live.me, last, Date.now())} canNavigate={canNavigate} /> : null;
+  const groupTiles = group && live.riders.length > 1 ? <RiderTiles tiles={riderTiles(live.riders, live.me, last, nowMs())} canNavigate={canNavigate} /> : null;
   const pauseBtn = (h: number) => (
     <Pressable accessibilityRole="button" accessibilityLabel={r.paused ? 'Resume ride' : 'Pause ride'} onPress={() => { (r.paused ? buzz.resume : buzz.pause)(); void (r.paused ? r.resume() : r.pause()); }} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: r.paused ? c.accent : pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
       <Icon icon={r.paused ? Play : Pause} size={h > 70 ? 26 : 22} />

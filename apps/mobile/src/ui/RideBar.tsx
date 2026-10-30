@@ -11,6 +11,7 @@ import { asText, distanceKm } from '@/lib/units';
 import { Text } from './Text';
 import { useLayout } from './useLayout';
 import { rideBar } from './RideBar.tokens';
+import { nowMs } from '@/lib/clock';
 
 /** Shown above the tab bar while a ride is recording; opens the live screen. */
 export function RideBar() {
@@ -31,7 +32,7 @@ export function RideBar() {
         style={{ position: 'absolute', alignSelf: 'center', width: '92%', maxWidth: layout.barMax, bottom: landscape ? rideBar.bottomLandscape : rideBar.bottom, height: size.button, borderRadius: radius.thumb, backgroundColor: fixed.ink, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space[5], ...shadow.ride }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
           <View style={{ width: size.dot, height: size.dot, borderRadius: radius.chip, backgroundColor: paused ? dark.muted : dark.stop }} />
-          <Text variant="data">{paused ? 'Paused' : 'Riding'} {clock(elapsedMs(Date.now()))} · {asText(distanceKm(meters / 1000))}</Text>
+          <Text variant="data">{paused ? 'Paused' : 'Riding'} {clock(elapsedMs(nowMs()))} · {asText(distanceKm(meters / 1000))}</Text>
         </View>
         <Text variant="labelMedium" tone="accent">Open</Text>
       </Pressable>

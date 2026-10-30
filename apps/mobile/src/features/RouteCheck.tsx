@@ -13,6 +13,7 @@ import { StatusChip } from '@/ui/Chip';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/tokens';
 import { deviceLocale } from '@/lib/locale';
+import { nowMs } from '@/lib/clock';
 
 /** More than this without a pump is worth planning around: a full tank of a small bike goes about this far. */
 const LONG_GAP_KM = 120;
@@ -45,7 +46,7 @@ export function RouteCheck({ line }: { line: LatLng[] }) {
           {result.days[0]?.sunsetMs ? (
             <View style={{ gap: space[2] }}>
               <Text variant="labelMedium">Daylight</Text>
-              <Text variant="label" tone="muted">{daylightText(daylightAdvice({ distanceKm: pathLength(line) / 1000, sunsetMs: result.days[0].sunsetMs, now: Date.now() }), Date.now())}</Text>
+              <Text variant="label" tone="muted">{daylightText(daylightAdvice({ distanceKm: pathLength(line) / 1000, sunsetMs: result.days[0].sunsetMs, now: nowMs() }), nowMs())}</Text>
             </View>
           ) : null}
           {result.days.length ? (

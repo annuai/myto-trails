@@ -18,6 +18,7 @@ import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { TimeStepper } from '@/ui/TimeStepper';
 import { space } from '@/theme/tokens';
+import { nowMs } from '@/lib/clock';
 
 const minutesOf = (t: number) => { const d = new Date(t); return d.getHours() * 60 + d.getMinutes(); };
 const shareLink = (name: string, expectedAt: number, url: string) =>
@@ -75,7 +76,7 @@ export function CheckinSheet({ open, onClose }: { open: boolean; onClose: () => 
       ) : checkin ? (
         <>
           <Text variant="label" tone="muted">
-            {checkinStatus(Date.now(), checkin.expectedAt) === 'overdue' ? `${checkin.contactName} can see you are overdue.` : `${checkin.contactName} will be able to see where you were last seen if you are not back by ${clockLabel(minutesOf(checkin.expectedAt))}.`}
+            {checkinStatus(nowMs(), checkin.expectedAt) === 'overdue' ? `${checkin.contactName} can see you are overdue.` : `${checkin.contactName} will be able to see where you were last seen if you are not back by ${clockLabel(minutesOf(checkin.expectedAt))}.`}
           </Text>
           <Button icon={Share2} label="Share the link again" onPress={() => void shareLink(riderName ?? 'A rider', checkin.expectedAt, checkin.url)} />
           <View style={{ flexDirection: 'row', gap: space[2] }}>

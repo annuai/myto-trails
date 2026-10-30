@@ -78,7 +78,7 @@ export default function FuelCosts() {
             </Card></ScalePressable>
           )) : hasRange ? <EmptyState icon={FuelIcon} title="No rides in these dates" body="Rides you record show up here with their cost." /> : null}
           <Button variant="soft" icon={Settings2} label="Mileage and petrol price" onPress={() => setSettings(true)} />
-          <Text variant="caption" tone="muted">Worked out from each ride's distance, at the mileage and price in force the day it started. Real use varies with load, traffic and riding.</Text>
+          <Text variant="caption" tone="muted">Worked out from each ride&apos;s distance, at the mileage and price in force the day it started. Real use varies with load, traffic and riding.</Text>
         </View>
       )}
     </Screen>

@@ -4,10 +4,11 @@ import type { LucideIcon } from 'lucide-react-native';
 import { fixed, radius, type Tone, space, scrim, size } from '@/theme/tokens';
 import { Icon } from './Icon';
 import { Text } from './Text';
+import { useAnimatedValue } from './useAnimatedValue';
 
 /** Stop and SOS need a held press so a glove or a bump cannot trigger them (docs/16 §3). A screen reader's double tap cannot hold, so it triggers the same action directly. */
 export function HoldButton({ label, icon, color, borderOnly, ms = 1000, onComplete, minHeight = 88, row, tone = 'onInk' }: { label: string; icon: LucideIcon; color: string; borderOnly?: boolean; ms?: number; onComplete: () => void; minHeight?: number; /** Icon and label side by side, for the smaller buttons in a row of three. */ row?: boolean; /** The icon's colour: on an outline-only button it must stand out from the screen, not from a filled button. */ tone?: Tone }) {
-  const fill = useRef(new Animated.Value(0)).current;
+  const fill = useAnimatedValue(0);
   const [holding, setHolding] = useState(false);
   const anim = useRef<Animated.CompositeAnimation | null>(null);
   const start = () => {

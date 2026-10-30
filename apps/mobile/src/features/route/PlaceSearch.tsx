@@ -18,6 +18,7 @@ export function PlaceSearch({ near, onPick }: { near?: LatLng; onPick: (p: Place
   const query = q.trim();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- starting a request: it has to mark itself as loading before the answer comes back
     setOffline(false);
     if (query.length < MIN_CHARS) { setFound(undefined); setBusy(false); return; }
     setBusy(true);

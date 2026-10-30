@@ -32,6 +32,7 @@ export function RouteBuilder({ onSave }: { onSave: (r: { name: string; points: L
 
   // Follow the roads between the stops. Until that arrives, or if it cannot, the stops are joined by straight lines.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- starting a request: it has to mark itself as loading before the answer comes back
     setRoad(undefined); setStraight(false);
     if (pins.length < 2) { setRouting(false); return; }
     setRouting(true);

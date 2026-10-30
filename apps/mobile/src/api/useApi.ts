@@ -23,8 +23,9 @@ function useFetch<T>(key: string | null, load: (signal: AbortSignal) => Promise<
   const [tick, setTick] = useState(0);
   const loadRef = useRef(load);
   const forceRef = useRef(false);
-  loadRef.current = load;
+  useEffect(() => { loadRef.current = load; });
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- starting a request: it has to mark itself as loading before the answer comes back
     if (!key) return set({ loading: false });
     const force = forceRef.current;
     forceRef.current = false;
@@ -118,9 +119,10 @@ export function useClubs(text: string) {
   const generation = useRef(0);
   const inFlight = useRef(false);
   const cursorRef = useRef<string | null>(null);
-  cursorRef.current = others.cursor;
+  useEffect(() => { cursorRef.current = others.cursor; });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- starting a request: it has to mark itself as loading before the answer comes back
     if (!token) { setOthers({ items: [], cursor: null, loading: false, loadingMore: false, loaded: false }); return; }
     const gen = ++generation.current;
     const ctl = new AbortController();

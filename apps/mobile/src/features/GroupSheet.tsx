@@ -19,6 +19,7 @@ import { shortDistanceM, withUnit } from '@/lib/units';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/tokens';
+import { nowMs } from '@/lib/clock';
 
 const SIGNALS: GroupStatus[] = ['ok', 'wait_up', 'fuel', 'break', 'help'];
 /** Long enough to paste a whole invite link into the code field; a link is turned into its code as it lands. */
@@ -63,7 +64,7 @@ export function GroupSheet({ open, onClose, position, defaultName }: { open: boo
   const pin = (p: LatLng | null) => token && group && run(() => setRegroup(token, group.id, p));
 
   const me = live.me;
-  const now = Date.now();
+  const now = nowMs();
   const toLeader = me ? distanceToLeaderM(live.riders, me) : null;
 
   return (

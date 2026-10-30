@@ -17,7 +17,7 @@ export function useFirstRun(): 'checking' | 'show' | 'skip' {
   const done = useOnboarding((s) => s.done);
   const [state, setState] = useState<'checking' | 'show' | 'skip'>(done ? 'skip' : 'checking');
   useEffect(() => {
-    if (done) { setState('skip'); return; }
+    if (done) return;
     let live = true;
     void Promise.all([hydrated(useOnboarding), hydrated(useRides), hydrated(useTrips), hydrated(useTodos), hydrated(useProfile)]).then(() => {
       if (!live) return;
@@ -28,5 +28,5 @@ export function useFirstRun(): 'checking' | 'show' | 'skip' {
     });
     return () => { live = false; };
   }, [done]);
-  return state;
+  return done ? 'skip' : state;
 }

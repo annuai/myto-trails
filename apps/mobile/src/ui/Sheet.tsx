@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Animated, Dimensions, Keyboard, PanResponder, Platform, Pressable, ScrollView, View } from 'react-native';
 import { X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,8 @@ import { useLayout } from './useLayout';
 
 import { space, layout, radius, scrim } from '@/theme/tokens';
 import { sheet } from './Sheet.tokens';
+import { useAnimatedValue } from './useAnimatedValue';
+import { useLatest } from '@/lib/useLatest';
 /**
  * Bottom sheet drawn in the screen's own tree (not a native Modal), so on the web it stays inside the phone frame.
  * Render it as the `overlay` of <Screen>.
@@ -32,10 +34,9 @@ export function Sheet({ open, title, onClose, children, footer }: { open: boolea
   const insets = useSafeAreaInsets();
   const { landscape } = useLayout();
   const reduced = useReducedMotion();
-  const t = useRef(new Animated.Value(0)).current;
-  const drag = useRef(new Animated.Value(0)).current;
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  const t = useAnimatedValue(0);
+  const drag = useAnimatedValue(0);
+  const close = useLatest(onClose);
   const pan = useMemo(() => {
     const back = () => Animated.spring(drag, { toValue: 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start();
     return PanResponder.create({
@@ -45,11 +46,11 @@ export function Sheet({ open, title, onClose, children, footer }: { open: boolea
       onPanResponderMove: (_, g) => drag.setValue(dragOffset(g.dy)),
       onPanResponderRelease: (_, g) => {
         if (!shouldDismiss(g.dy, g.vy)) return back();
-        Animated.timing(drag, { toValue: Dimensions.get('window').height, duration: 200, easing: EASE, useNativeDriver: true }).start(() => onCloseRef.current());
+        Animated.timing(drag, { toValue: Dimensions.get('window').height, duration: 200, easing: EASE, useNativeDriver: true }).start(() => close());
       },
       onPanResponderTerminate: back,
     });
-  }, [drag]);
+  }, [drag, close]);
   const [keyboard, setKeyboard] = useState(0);
   useEffect(() => {
     if (Platform.OS !== 'ios') return;

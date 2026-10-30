@@ -7,13 +7,14 @@ import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/tokens';
 import { hasLink } from '@/lib/community';
+import { useOnChange } from '@/lib/useOnChange';
 
 /** Start a club. The rider becomes its admin. */
 export function CreateClubSheet({ open, busy, problem, onSubmit, onClose }: { open: boolean; busy: boolean; problem?: string; onSubmit: (b: { name: string; description: string; womenOnly: boolean }) => void; onClose: () => void }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [womenOnly, setWomenOnly] = useState(false);
-  useEffect(() => { if (open) { setName(''); setDescription(''); setWomenOnly(false); } }, [open]);
+  useOnChange(open, (o) => { if (o) { setName(''); setDescription(''); setWomenOnly(false); } });
   const n = name.trim();
   const linky = hasLink(n) || hasLink(description);
   return (

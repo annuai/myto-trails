@@ -11,6 +11,8 @@ import { PullQuote } from './PullQuote';
 import { EASE, Reveal } from './motion';
 import { tabBarFade } from './tabBarFade';
 import { CONTENT_MAX, useLayout } from './useLayout';
+import { useAnimatedValue } from './useAnimatedValue';
+import { useLatest } from '@/lib/useLatest';
 
 export const TAB_BAR_HEIGHT = 100;
 export const TAB_BAR_HEIGHT_LANDSCAPE = 84;
@@ -20,7 +22,7 @@ type Props = { children: ReactNode; overlay?: ReactNode; tabs?: boolean; scroll?
 
 /** Page frame: safe-area top, 20 px side margins, scrolls, leaves room for the tab bar. */
 export function Screen({ children, overlay, tabs = false, scroll = true, footer, brand = false, fadeTabs = false, endCap, onNearEnd }: Props) {
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollY = useAnimatedValue(0);
   const bar = useRef({ prevY: 0, content: 0, layout: 0, value: 1, touch: null as { x: number; y: number } | null }).current;
   /** Height of the fixed end picture, and the page's own size: together they say how much of the picture the content has uncovered. */
   const [capHeight, setCapHeight] = useState(0);
@@ -46,21 +48,20 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   const maxY = Math.max(0, page.content - page.layout);
   const measured = capHeight > 0 && page.content > 0 && page.layout > 0;
   const uncovered = measured ? scrollY.interpolate({ inputRange: [maxY - capHeight, maxY], outputRange: [0, capHeight], extrapolate: 'clamp' }) : 0;
+  /** The scroll handler is made once; `useLatest` keeps it reading the current props. */
+  const onScrollEvent = useLatest((e: { nativeEvent: { contentOffset: { y: number }; contentSize: { height: number }; layoutMeasurement: { height: number } } }) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    if (onNearEnd && contentSize.height - (contentOffset.y + layoutMeasurement.height) < layoutMeasurement.height) onNearEnd();
+    if (!fadeTabs) return;
+    const y = e.nativeEvent.contentOffset.y;
+    const next = fadeTarget({ y, prevY: bar.prevY, maxY: Math.max(0, bar.content - bar.layout), current: bar.value });
+    bar.prevY = y;
+    if (next !== bar.value) setBar(next, next > bar.value);
+  });
   const body = scroll ? (
     <Animated.ScrollView
       scrollEventThrottle={16}
-      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-        useNativeDriver: false,
-        listener: (e: { nativeEvent: { contentOffset: { y: number }; contentSize: { height: number }; layoutMeasurement: { height: number } } }) => {
-          const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-          if (onNearEnd && contentSize.height - (contentOffset.y + layoutMeasurement.height) < layoutMeasurement.height) onNearEnd();
-          if (!fadeTabs) return;
-          const y = e.nativeEvent.contentOffset.y;
-          const next = fadeTarget({ y, prevY: bar.prevY, maxY: Math.max(0, bar.content - bar.layout), current: bar.value });
-          bar.prevY = y;
-          if (next !== bar.value) setBar(next, next > bar.value);
-        },
-      })}
+      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false, listener: onScrollEvent })}
       onLayout={fadeTabs || endCap || onNearEnd ? (e) => { const h = e.nativeEvent.layout.height; bar.layout = h; if (endCap) setPage((p) => ({ ...p, layout: h })); } : undefined}
       onContentSizeChange={fadeTabs || endCap || onNearEnd ? (_w, h) => { bar.content = h; if (endCap) setPage((p) => ({ ...p, content: h })); if (onNearEnd && bar.layout > 0 && h < bar.layout * 2) onNearEnd(); } : undefined}
       onTouchStart={fadeTabs ? (e) => { bar.touch = touchPoint(e.nativeEvent); } : undefined}

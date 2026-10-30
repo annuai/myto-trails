@@ -48,7 +48,7 @@ export default function NotificationSettings() {
       <PageTitle sub="Reminders are scheduled on this phone. Nothing about them is sent anywhere.">Reminders</PageTitle>
       {permission === 'granted' ? null : permission === 'denied' ? (
         <>
-          <Text variant="label" tone="muted">Notifications are off for Myto Moto in the phone's settings.</Text>
+          <Text variant="label" tone="muted">Notifications are off for Myto Moto in the phone&apos;s settings.</Text>
           <Button label="Open phone settings" onPress={() => notifier.openSettings()} />
         </>
       ) : permission === 'undetermined' ? (

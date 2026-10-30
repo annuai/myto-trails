@@ -20,6 +20,7 @@ import { Field } from '@/ui/Field';
 import { Text } from '@/ui/Text';
 import { ConfirmSheet } from './ConfirmSheet';
 import { TextSheet } from './TextSheet';
+import { useOnChange } from '@/lib/useOnChange';
 
 type Target = { kind: 'new' } | { kind: 'reply' | 'edit' | 'report' | 'delete'; comment: TrailComment };
 
@@ -58,7 +59,7 @@ function CommentView({ c: comment, isReply, ...actions }: { c: TrailComment; isR
 function CommentSheet({ open, busy, problem, onSubmit, onClose }: { open: boolean; busy: boolean; problem?: string; onSubmit: (b: { body: string; tag: CommentTag | null }) => void; onClose: () => void }) {
   const [body, setBody] = useState('');
   const [tag, setTag] = useState<CommentTag | null>(null);
-  useEffect(() => { if (open) { setBody(''); setTag(null); } }, [open]);
+  useOnChange(open, (o) => { if (o) { setBody(''); setTag(null); } });
   const t = body.trim();
   return (
     <Sheet open={open} title="Add a comment" onClose={onClose} footer={<Button label={busy ? 'Posting…' : 'Post comment'} disabled={busy || t.length < 2 || hasLink(t)} onPress={() => onSubmit({ body: t, tag })} />}>
