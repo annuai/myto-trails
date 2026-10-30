@@ -19,8 +19,8 @@ faces, no gradients, no photo realism. One rider (black full-face helmet, dark j
 | `welcome` | Every ride, remembered. | Alpine ridge | Side, mid-height | Dawn, cream sky | Medium, left | Jacket and sun ring |
 | `record` | Tap Ride. We do the rest. | Farmland and a river | Straight down from above | Midday, flat | Tiny | The recorded route line |
 | `trails` | Know before you go. | Pine forest, stream crossing | Eye level, no horizon | Misty morning | Medium, centre | Tag on a trail post |
-| `safety` | Someone always knows. | Open plateau road | Low, close, from behind | Night, deep slate sky | Large | The helmet |
-| `setup` | Set up in a few taps. | Plateau road to a mountain range | Symmetrical, centred | Calm, cream sky | None | The road's dashed centre line |
+| `safety` | Someone always knows. | Dirt road above a lake | High, looking down the road | Day, cream sky | A group: two ride on, two help a rider | Red sonar rings on the rider being helped |
+| `setup` | Set up in a few taps. | Coast road, with the world behind | Over the rider's shoulder | Day, cream sky | Medium, lower left | A red dot on the home country |
 
 ## Making a new one (ChatGPT image generation)
 
