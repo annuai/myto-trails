@@ -11,3 +11,6 @@ coverage
 public/vendor
 .storage
 .reference/
+
+# Personal data from a local database dump; never commit
+/apps/web/data.sql
