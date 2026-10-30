@@ -150,7 +150,7 @@ export async function querySitemapEntries(
   const counts = (await sql`
     select country_slug, state_slug, district_slug, count(*)::int as n from public_trails
     where (${!opts.excludeSample} or not is_sample)
-    group by state_slug, district_slug`) as Row[];
+    group by country_slug, state_slug, district_slug`) as Row[];
 
   const stateCounts = new Map<string, number>();
   const regions: { path: string }[] = [];
