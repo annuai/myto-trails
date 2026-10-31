@@ -6,6 +6,7 @@ import { AppState, Linking, Platform, Share, Vibration, View } from 'react-nativ
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, Flag, Megaphone, Mic, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
+import { DocumentsSheet } from '@/features/DocumentsSheet';
 import { useEmergency } from '@/features/emergency/useEmergency';
 import { GroupSheet } from '@/features/GroupSheet';
 import { NoteSheet } from '@/features/NoteSheet';
@@ -84,6 +85,7 @@ function LiveBody() {
   const { sos: sosParam } = useLocalSearchParams<{ sos?: string }>();
   useEffect(() => { if (sosParam) setSos(true); }, [sosParam]);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(false);
@@ -205,6 +207,7 @@ function LiveBody() {
       <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={last} />
       <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={last} />
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
+      <DocumentsSheet open={docsOpen} onClose={() => setDocsOpen(false)} />
       <NoteSheet open={noteOpen} canType={j.canType} onSave={j.addNote} onClose={() => setNoteOpen(false)} />
       <Sheet open={journalOpen} title="Ride journal" onClose={() => setJournalOpen(false)}>
         <Button icon={j.recording ? Square : Mic} label={j.recording ? `Stop recording ${Math.floor(j.seconds / 60)}:${String(j.seconds % 60).padStart(2, '0')}` : 'Record a voice note'} onPress={() => void j.toggleVoice()} />
@@ -230,6 +233,7 @@ function LiveBody() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Group</Text></Pressable> : null}
+          <Pressable accessibilityRole="button" onPress={() => setDocsOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Documents</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Journal</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
         </View>

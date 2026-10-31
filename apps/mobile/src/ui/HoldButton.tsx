@@ -21,7 +21,7 @@ export function HoldButton({ label, icon, color, borderOnly, ms = 1000, onComple
       style={{ minHeight, borderRadius: radius.control, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', gap: 6, backgroundColor: borderOnly ? 'transparent' : color, borderWidth: borderOnly ? 1.5 : 0, borderColor: color, flex: 1 }}>
       <Animated.View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.28)', width: fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
       <View style={{ alignItems: 'center', gap: 6 }}>
-        <Icon icon={icon} size={26} tone="onInk" />
+        <Icon icon={icon} size={26} color={fixed.white} />
         <Text variant="labelMedium" style={{ color: fixed.white }}>{holding ? 'Keep holding' : label}</Text>
       </View>
     </Pressable>

@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Linking, ScrollView, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AlertTriangle, Bookmark, CalendarPlus, CloudOff, Download, Navigation, Stamp, Trash2 } from 'lucide-react-native';
+import { AlertTriangle, Bookmark, CalendarPlus, CloudOff, Download, Stamp, Trash2 } from 'lucide-react-native';
 import { accessOf, conditionOf, dur, headline, verificationOf } from '@/api/status';
 import { toLatLng } from '@/api/types';
 import { setSaved, useSaved, useTrail } from '@/api/useApi';
 import { useTrailCommentsSection } from '@/features/community/useTrailCommentsSection';
 import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
+import { RideStartActions } from '@/features/trip/RideStartActions';
+import { recordNow } from '@/features/trip/startTrip';
 import { RiderReports } from '@/features/RiderReports';
 import { markRidden, unmarkRidden } from '@/api/ridden';
 import { useRidden } from '@/features/passport/useRidden';
@@ -14,7 +16,6 @@ import { ElevationChart } from '@/ui/ElevationChart';
 import { RouteCheck } from '@/features/RouteCheck';
 import { deleteTiles, downloadTiles, hasTiles, tilesAvailable } from '@/lib/offlineTiles';
 import { formatDate } from '@/lib/dates';
-import { mapsDirectionsUrl } from '@/lib/navigate';
 import { asText, distanceKm, elevationM } from '@/lib/units';
 import { useAuth } from '@/store/auth';
 import { useTrailStore } from '@/store/trails';
@@ -29,7 +30,6 @@ import { ListCard, Row } from '@/ui/ListCard';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { RouteArt } from '@/ui/RouteArt';
 import { Screen } from '@/ui/Screen';
-import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/tokens';
 
@@ -45,7 +45,6 @@ export default function TrailDetail() {
   const saved = useSaved();
   const { offline, downloading, download, removeDownload, planTrip } = useTrailStore();
   const [planning, setPlanning] = useState(false);
-  const [rideChoice, setRideChoice] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
   const comments = useTrailCommentsSection(slug);
@@ -74,8 +73,6 @@ export default function TrailDetail() {
   const heroUri = hero?.variants['1200'] ?? hero?.variants['800'] ?? detail.cover?.variants['800'];
   const gallery = photos.filter((m) => m !== hero);
 
-  const start = detail.location ?? (Number.isFinite(detail.lat) && Number.isFinite(detail.lon) ? { lat: detail.lat, lon: detail.lon } : null);
-  const openInMaps = () => { if (start) void Linking.openURL(mapsDirectionsUrl({ lat: start.lat, lng: start.lon })).catch(() => setProblem('Could not open Google Maps.')); };
 
   const toggleSave = async () => {
     if (!token) return router.push('/you');
@@ -151,6 +148,7 @@ export default function TrailDetail() {
   </>);
   const actionsEl = (<>
       <View style={{ marginTop: 28, gap: 12 }}>
+        <RideStartActions route={{ kind: 'trail', slug, name: detail.name, status: h.status, statusLabel: h.label }} label="Start ride" onNavigate={() => planTrip(detail)} onStart={() => { planTrip(detail); recordNow(router); }} />
         {pack ? (
           <Button variant="soft" icon={Trash2} label="Remove offline copy" trailing={mb(pack.bytes)} onPress={dropPack} />
         ) : (
@@ -158,20 +156,13 @@ export default function TrailDetail() {
         )}
         <Button variant="soft" icon={Bookmark} label={isSaved ? 'Saved. Tap to remove' : token ? 'Save this trail' : 'Sign in to save'} disabled={busy} onPress={toggleSave} />
         <Button variant="soft" icon={Stamp} label={iRode ? "Ridden. Tap to undo" : token ? "I've ridden this" : 'Sign in to mark as ridden'} disabled={busy} onPress={() => void toggleRidden()} />
-        {start ? <Button variant="soft" icon={Navigation} label="Navigate to the start" onPress={openInMaps} /> : null}
         <Button variant="soft" icon={CalendarPlus} label="Plan a trip" arrow onPress={() => setPlanning(true)} />
-        <Button label="Ride this trail" onPress={() => setRideChoice(true)} />
       </View>
       {problem ? <Text variant="label" tone="stop" style={{ marginTop: 16 }}>{problem}</Text> : null}
   </>);
 
   return (
     <Screen overlay={<>
-      <Sheet open={rideChoice} title="Ride this trail" onClose={() => setRideChoice(false)}>
-        <Text variant="label" tone="muted">Ride it now, or pick a day and a start time and you get a reminder before it starts.</Text>
-        <Button label="Ride now" onPress={() => { planTrip(detail); setRideChoice(false); router.push('/ride'); }} />
-        <Button variant="soft" label="Pick a date and time" onPress={() => { setRideChoice(false); setPlanning(true); }} />
-      </Sheet>
       <PlanTripSheet open={planning} onClose={() => setPlanning(false)} name={detail.name} route={{ kind: 'trail', slug, name: detail.name, status: h.status, statusLabel: h.label }} onCreated={(tripId) => router.push(`/trips/${tripId}`)} />
       {comments.overlay}
     </>}>

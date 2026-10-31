@@ -1,29 +1,36 @@
 import { useRouter } from 'expo-router';
-import { Bike, IdCard, Siren } from 'lucide-react-native';
-import { daysUntil, formatDate } from '@/lib/dates';
+import { Bike, IdCard, ShieldCheck, Siren, Wind } from 'lucide-react-native';
+import { formatDate } from '@/lib/dates';
+import { paperStatus, type Paper } from '@/lib/documentEntries';
 import { useProfile } from '@/store/profile';
 import { StatusChip, type Status } from '@/ui/Chip';
-import { BackHeader, PageTitle } from '@/ui/Header';
+import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
 
-function expiry(iso?: string): { status: Status; word: string } {
-  if (!iso) return { status: 'unknown', word: 'No date' };
-  const d = daysUntil(iso);
-  return d < 0 ? { status: 'stop', word: 'Expired' } : d <= 30 ? { status: 'caution', word: `${d} days left` } : { status: 'good', word: `Valid till ${formatDate(iso)}` };
+const ICON = { licence: IdCard, rc: Bike, insurance: ShieldCheck, puc: Wind } as const;
+
+function chip(p: Paper): { status: Status; label: string } {
+  if (p.state === 'missing') return { status: 'caution', label: 'Add' };
+  if (p.state === 'expired') return { status: 'stop', label: 'Expired' };
+  if (p.state === 'soon') return { status: 'caution', label: `${p.daysLeft} days left` };
+  return { status: 'good', label: p.validTill ? `Valid till ${formatDate(p.validTill)}` : 'Added' };
 }
 
 export default function Documents() {
   const router = useRouter();
   const { licence, vehicle, contacts } = useProfile();
-  const lic = expiry(licence?.validTill);
+  const papers = paperStatus(licence, vehicle);
   return (
     <Screen>
       <BackHeader title="You" />
       <PageTitle sub="Stored on this device only. Expiry dates become reminders in your to-do list.">Documents and emergency</PageTitle>
+      <SectionTitle>Your papers</SectionTitle>
       <ListCard>
-        <Row icon={IdCard} label="Driving licence" sub={licence ? licence.classes.join(', ') || 'Added' : 'Add your licence details'} right={licence ? <StatusChip {...lic} label={lic.word} /> : undefined} onPress={() => router.push('/documents/licence')} />
-        <Row icon={Bike} label="Vehicle, registration and insurance" sub={vehicle ? `${vehicle.regNo} · ${vehicle.model}` : 'Add your bike and its papers'} onPress={() => router.push('/documents/vehicle')} />
+        {papers.map((p) => <Row key={p.kind} icon={ICON[p.kind]} label={p.label} sub={p.state === 'missing' ? 'Optional. Add it once and it stays here.' : p.detail || undefined} right={<StatusChip {...chip(p)} />} onPress={() => router.push(p.kind === 'licence' ? '/documents/licence' : '/documents/vehicle')} />)}
+      </ListCard>
+      <SectionTitle>Emergency</SectionTitle>
+      <ListCard>
         <Row icon={Siren} label="Emergency contacts" sub={contacts.length ? `${contacts.length} added` : 'Who should we call if something goes wrong'} right={contacts.length ? <StatusChip status="good" label="Set" /> : <StatusChip status="caution" label="Add one" />} onPress={() => router.push('/documents/contacts')} />
       </ListCard>
     </Screen>

@@ -1,25 +1,25 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BookOpen, Camera, ClipboardList, Luggage, MoreHorizontal, Route as RouteIcon, Trash2 } from 'lucide-react-native';
+import { BookOpen, CalendarClock, Camera, ClipboardList, Luggage, MoreHorizontal, Route as RouteIcon, Trash2 } from 'lucide-react-native';
 import { groupByRide, summarise } from '@/lib/journalEntries';
 import { journalDate, journalTitle } from '@/lib/journalTitle';
 import { notifier } from '@/lib/notifier';
 import { usePermission } from '@/lib/usePermission';
+import { useRideLocationAccess } from '@/lib/useRideLocationAccess';
 import { syncReminders } from '@/NotificationHost';
 import { useJournal } from '@/store/journal';
 import { useNotifications } from '@/store/notifications';
-import { toTrailLike } from '@/api/status';
-import { useTrailSearch } from '@/api/useApi';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { GroupSheet } from '@/features/GroupSheet';
 import { checkinStatus } from '@/lib/checkinCore';
 import { clockLabel } from '@/lib/community';
 import { useCompanion } from '@/store/companion';
 import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
-import { startTodaysRide, startTrip } from '@/features/trip/startTrip';
+import { RideStartActions } from '@/features/trip/RideStartActions';
+import { chooseDayRoute, recordNow, startTodaysRide, startTrip } from '@/features/trip/startTrip';
 import { TripCard } from '@/features/trip/TripCard';
-import { dayIndexOn, soonestTrip, tripStatus } from '@/lib/tripPlan';
+import { dayIndexOn, rangeText, soonestTrip, startTimeText, tripStatus, whenText } from '@/lib/tripPlan';
 import { todayISO } from '@/lib/dates';
 import { useTrips } from '@/store/trips';
 import { space } from '@/theme/tokens';
@@ -38,7 +38,6 @@ import { Banner } from '@/ui/Banner';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Columns } from '@/ui/Columns';
-import { useLayout } from '@/ui/useLayout';
 import { StatusChip } from '@/ui/Chip';
 import { EmptyState } from '@/ui/EmptyState';
 import { SectionTitle } from '@/ui/Header';
@@ -50,11 +49,10 @@ import { ScalePressable } from '@/ui/motion';
 import { Screen } from '@/ui/Screen';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
-import { TrailTile } from '@/ui/TrailRow';
+import { TextButton } from '@/ui/TextButton';
 
 export default function Home() {
   const router = useRouter();
-  const { landscape } = useLayout();
   const rides = useRides((s) => s.rides);
   useDistanceUnit(); // re-draws the distances when the unit changes
   const nextTrip = useTrailStore((s) => s.nextTrip);
@@ -66,7 +64,6 @@ export default function Home() {
   const saveRecovered = async () => { const id = await finishRide().catch(() => undefined); await useRecorder.getState().checkRecoverable(); setRecoverOpen(false); if (id) { useTrips.getState().attachToActive(id); router.push(`/story/${id}`); } };
   const continueRecovered = async () => { await useRecorder.getState().recover(); setRecoverOpen(false); router.push('/ride/live'); };
   const discardRecovered = async () => { await useRecorder.getState().discardRecovered(); setRecoverOpen(false); };
-  const near = useTrailSearch('');
   const km_ = totalKm(rides);
   const todos = useTodos((s) => s.todos);
   const contacts = useProfile((s) => s.contacts);
@@ -75,7 +72,11 @@ export default function Home() {
   const today = todayISO();
   const nextTripPlan = soonestTrip(trips, today);
   const planStatus = nextTripPlan ? tripStatus(nextTripPlan, today) : undefined;
+  // Every trip still to ride, nearest first, so a second or third one is never hidden behind the featured card.
+  const planned = trips.filter((t) => ['active', 'ready', 'upcoming'].includes(tripStatus(t, today))).sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''));
   const [planTripOpen, setPlanTripOpen] = useState(false);
+  // Nothing planned and nothing ridden yet: the whole top of the Dash asks for the first trip.
+  const firstTimer = trips.length === 0 && rides.length === 0 && !trail;
   const packs = todos.filter((t) => t.category === 'pack' && !t.tripId);
   const dues = todos.map((t) => ({ t, d: dueInfo(t, km_) })).filter(({ d }) => d.state !== 'done').sort((a, b) => a.d.sortKey - b.d.sortKey);
   const overdue = dues.filter(({ t, d }) => d.state === 'overdue' && !t.tripId);
@@ -91,6 +92,7 @@ export default function Home() {
   const journals = groupByRide(useJournal((s) => s.entries)).slice(0, 3);
   const journalTitles = useJournal((s) => s.titles);
   const { permission, refresh } = usePermission();
+  const location = useRideLocationAccess();
   const asked = useNotifications((s) => s.asked);
   const [remindOpen, setRemindOpen] = useState(false);
   const [checkinOpen, setCheckinOpen] = useState(false);
@@ -139,13 +141,22 @@ export default function Home() {
           <Banner eyebrow="Group ride" title={`${group.name} · code ${group.code}`} onPress={() => setGroupOpen(true)} />
         </View>
       ) : null}
+      {location.access !== 'always' ? (
+        <View style={{ marginBottom: space[3] }}>
+          <Banner eyebrow="Location" title={location.access === 'unknown' ? 'Allow location Always, so your rides keep recording when the screen locks' : location.access === 'denied' ? 'Location is off. Turn it on in Settings and choose Always.' : 'Location is set to While Using. Choose Always so rides record with the screen locked.'} onPress={() => void location.ask()} />
+        </View>
+      ) : null}
       {permission === 'undetermined' && !asked ? (
         <View style={{ marginBottom: space[3] }}>
           <Banner eyebrow="Reminders" title="Get a nudge before a to-do is due or a ride starts" onPress={() => setRemindOpen(true)} />
         </View>
       ) : null}
       {nextTripPlan ? (
-        <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} />
+        <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} footer={planStatus === 'ready' || planStatus === 'active' ? (
+          <RideStartActions noSkip route={nextTripPlan.days?.[dayIndexOn(nextTripPlan, today) ?? 0]?.route} onNavigate={() => chooseDayRoute(nextTripPlan.id)}
+            label={planStatus === 'ready' ? 'Start trip' : `Record day ${(dayIndexOn(nextTripPlan, today) ?? 0) + 1}`}
+            onStart={() => (planStatus === 'ready' ? startTrip(nextTripPlan.id, router) : startTodaysRide(nextTripPlan.id, router))} />
+        ) : undefined} />
       ) : trail ? (
         <HeroCard eyebrow={trail.date ? `Next ride · ${trail.date}` : 'Next ride'} title={trail.name} action={<IconButton icon={MoreHorizontal} label="Next ride options" onPress={() => setMenu(true)} plain />}>
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
@@ -159,21 +170,40 @@ export default function Home() {
           ) : null}
         </HeroCard>
       ) : (
-        <HeroCard eyebrow="Next ride" title="Plan your next ride">
-          <Text variant="label" tone="muted">Plan a trip with a date and a route for each day, or pick a trail. It shows up here with its checklist.</Text>
-        </HeroCard>
+        firstTimer ? (
+          <HeroCard eyebrow="Start here" title="Plan your first trip">
+            <Text variant="body" tone="muted">Choose a day and a route. We remind you before you leave, show whether the trail is open, keep a pack list, and record the ride when you start.</Text>
+            <Button big label="Plan a trip" arrow onPress={() => setPlanTripOpen(true)} />
+            <TextButton label="Or just start riding" tone="ink" onPress={() => router.push('/ride')} />
+          </HeroCard>
+        ) : (
+          <HeroCard eyebrow="Next ride" title="Plan your next ride">
+            <Text variant="label" tone="muted">Plan a trip with a date and a route for each day, or pick a trail. It shows up here with its checklist.</Text>
+          </HeroCard>
+        )
       )}
       <View style={{ marginTop: space[3], gap: space[3] }}>
-        {nextTripPlan && planStatus === 'ready' ? <Button variant="accent" label="Start trip" arrow onPress={() => startTrip(nextTripPlan.id, router)} />
-          : nextTripPlan && planStatus === 'active' ? <Button variant="accent" label={`Record day ${(dayIndexOn(nextTripPlan, today) ?? 0) + 1}`} arrow onPress={() => startTodaysRide(nextTripPlan.id, router)} />
+        {nextTripPlan && (planStatus === 'ready' || planStatus === 'active') ? null
+          : trail && !nextTripPlan ? <RideStartActions noSkip route={{ kind: 'trail', slug: trail.slug, name: trail.name, status: trail.status, statusLabel: trail.statusLabel }} label="Start ride" onStart={() => recordNow(router)} />
+          : firstTimer ? null
           : <Button label={trail ? 'Start ride' : 'Find a trail'} arrow onPress={() => router.push(trail ? '/ride' : '/trails')} />}
-        <Button variant="soft" label="Plan a trip" onPress={() => setPlanTripOpen(true)} />
+        {firstTimer ? null : <Button variant="soft" label="Plan a trip" onPress={() => setPlanTripOpen(true)} />}
         {overdue.length ? (
           <Banner eyebrow="Needs attention" title={overdue.length === 1 ? `${overdue[0].t.title}: ${overdue[0].d.text.toLowerCase()}` : `${overdue.length} things are overdue`} onPress={() => router.push('/todos')} />
         ) : contacts.length === 0 ? (
           <Banner eyebrow="Safety" title="Add an emergency contact so SOS can reach someone" onPress={() => router.push('/documents/contacts')} />
         ) : null}
       </View>
+
+      {planned.length ? (
+        <>
+          <SectionTitle>Planned trips</SectionTitle>
+          <ListCard>
+            {planned.slice(0, 4).map((t) => <Row key={t.id} icon={CalendarClock} label={t.name} sub={[rangeText(t), t.startTime !== undefined ? startTimeText(t.startTime) : ''].filter(Boolean).join(' · ')} value={whenText(t, today)} onPress={() => router.push(`/trips/${t.id}`)} />)}
+          </ListCard>
+          <View style={{ marginTop: space[3] }}><Button variant="soft" label={planned.length > 4 ? `All ${planned.length} planned trips` : 'Planned trips'} arrow onPress={() => router.push('/trips')} /></View>
+        </>
+      ) : null}
 
       <SectionTitle onAdd={() => router.push(`/journal/${Date.now()}`)} addLabel="Start a journal">Recent journals</SectionTitle>
       {journals.length ? (
@@ -199,12 +229,6 @@ export default function Home() {
 
         </>}
         right={<>
-      <SectionTitle>Near you</SectionTitle>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 20 }} style={landscape ? undefined : { marginHorizontal: -20, paddingLeft: 20 }}>
-        {(near.data?.items ?? []).slice(0, 8).map((t) => <TrailTile key={t.slug} trail={toTrailLike(t)} onPress={() => router.push(`/trail/${t.slug}`)} />)}
-        {!near.data ? <Text variant="label" tone="muted">{near.error ?? 'Finding trails near you…'}</Text> : near.data.items.length === 0 ? <Text variant="label" tone="muted">No trails near you yet. Browse them all in the Trails tab.</Text> : null}
-      </ScrollView>
-
       <SectionTitle>Your latest ride</SectionTitle>
       {latest ? (
         <ScalePressable accessibilityRole="button" accessibilityLabel={`Open ride story: ${latest.name}`} onPress={() => router.push(`/story/${latest.id}`)}>

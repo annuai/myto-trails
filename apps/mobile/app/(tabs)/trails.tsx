@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CloudOff, Search } from 'lucide-react-native';
 import { toTrailLike } from '@/api/status';
 import type { TrailSummary } from '@/api/types';
 import { useSaved, useTrailSearch } from '@/api/useApi';
+import { haversine } from '@/lib/geo';
+import { roadDistancesKm } from '@/lib/roadDistance';
 import { useAuth } from '@/store/auth';
+import { useLocation } from '@/store/location';
 import { useDistanceUnit } from '@/store/region';
 import { useTrailStore } from '@/store/trails';
 import { space } from '@/theme/tokens';
@@ -14,12 +17,12 @@ import { NotOpenNotice } from '@/ui/NotOpenNotice';
 import { ChoiceChip } from '@/ui/Chip';
 import { EmptyState } from '@/ui/EmptyState';
 import { Field } from '@/ui/Field';
-import { PageTitle } from '@/ui/Header';
+import { PageTitle, SectionTitle } from '@/ui/Header';
 import { Reveal } from '@/ui/motion';
 import { Screen } from '@/ui/Screen';
 import { useLayout } from '@/ui/useLayout';
 import { Text } from '@/ui/Text';
-import { TrailRow } from '@/ui/TrailRow';
+import { TrailRow, TrailTile } from '@/ui/TrailRow';
 
 const filters = ['All', 'Open', 'Saved', 'Offline'] as const;
 
@@ -35,6 +38,25 @@ export default function Trails() {
   useEffect(() => { const id = setTimeout(() => setQ(text), 350); return () => clearTimeout(id); }, [text]);
   const search = useTrailSearch(q);
   const saved = useSaved();
+  // Trails nearest the rider first, with how far each is. It needs a position, so the page watches for one.
+  const fix = useLocation((s) => s.fix);
+  const gpsError = useLocation((s) => s.error);
+  useEffect(() => useLocation.getState().acquire(), []);
+  const nearest = useMemo(() => (fix ? (search.data?.items ?? []).map((t) => ({ t, km: haversine({ lat: fix.lat, lng: fix.lng }, { lat: t.lat, lng: t.lon }) / 1000 })).sort((a, b) => a.km - b.km).slice(0, 8) : []), [fix, search.data]);
+  // The straight line picks and orders the eight; the road distance replaces it once the router answers, and stays the straight line if it never does.
+  // Asked again only when the rider has moved about 2 km, so a list is not re-routed on every GPS fix.
+  const [road, setRoad] = useState<Map<string, number>>(new Map());
+  const cell = fix ? `${(fix.lat * 50).toFixed(0)},${(fix.lng * 50).toFixed(0)}` : '';
+  const slugs = nearest.map((n) => n.t.slug).join();
+  useEffect(() => {
+    if (!fix || !nearest.length) return;
+    const ctl = new AbortController();
+    void roadDistancesKm({ lat: fix.lat, lng: fix.lng }, nearest.map((n) => ({ lat: n.t.lat, lng: n.t.lon })), ctl.signal)
+      .then((km) => km && setRoad(new Map(nearest.flatMap((n, i) => (km[i] == null ? [] : [[n.t.slug, km[i]!] as const])))))
+      .catch(() => undefined);
+    return () => ctl.abort();
+  }, [cell, slugs]); // eslint-disable-line react-hooks/exhaustive-deps
+  const near = useMemo(() => nearest.map((n) => ({ ...n, km: road.get(n.t.slug) ?? n.km, byRoad: road.has(n.t.slug) })).sort((a, b) => a.km - b.km), [nearest, road]);
 
   const source: TrailSummary[] | undefined =
     f === 'Offline' ? Object.values(offline).map((o) => o.detail)
@@ -48,6 +70,16 @@ export default function Trails() {
     <Screen tabs brand>
       <PageTitle>Trails</PageTitle>
       <NotOpenNotice />
+      {!q.trim() && f === 'All' ? (
+        <>
+          <SectionTitle>Near you</SectionTitle>
+          {near.length ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space[3], paddingRight: space[5] }} style={landscape ? undefined : { marginHorizontal: -space[5], paddingLeft: space[5] }}>
+              {near.map(({ t, km, byRoad }) => <TrailTile key={t.slug} trail={toTrailLike(t)} awayKm={km} byRoad={byRoad} onPress={() => router.push(`/trail/${t.slug}`)} />)}
+            </ScrollView>
+          ) : <Text variant="label" tone={gpsError ? 'caution' : 'muted'}>{gpsError ?? (fix ? 'Finding trails near you…' : 'Finding your location…')}</Text>}
+        </>
+      ) : null}
       <Field label="Search" placeholder="Trail, town or place" value={text} onChangeText={setText} returnKeyType="search" />
       <View style={{ flexDirection: 'row', gap: 8, marginVertical: 20, flexWrap: 'wrap' }}>
         {filters.map((x) => <ChoiceChip key={x} label={x} selected={f === x} onPress={() => setF(x)} />)}
