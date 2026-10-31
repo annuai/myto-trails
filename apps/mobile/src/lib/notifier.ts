@@ -1,5 +1,6 @@
 import { Linking, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { AndroidImportance } from 'expo-notifications';
 import type { Notifier, Permission, Shown } from './reminderSync';
 
 const CHANNEL = 'reminders';
@@ -12,7 +13,7 @@ Notifications.setNotificationHandler({
 
 let channel: Promise<unknown> | undefined;
 /** Android needs a channel to show anything. */
-const ensureChannel = () => (Platform.OS === 'android' ? (channel ??= Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: Notifications.AndroidImportance.DEFAULT })) : Promise.resolve());
+const ensureChannel = () => (Platform.OS === 'android' ? (channel ??= Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: AndroidImportance.DEFAULT })) : Promise.resolve());
 
 const content = (n: Shown): Notifications.NotificationContentInput => ({ title: n.title, body: n.body, data: { route: n.route }, ...(n.loud ? { sound: 'default' } : {}) });
 

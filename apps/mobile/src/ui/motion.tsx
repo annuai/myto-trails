@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { useAnimatedValue } from './useAnimatedValue';
 
 /** Respect the system's "reduce motion" setting: animations collapse to nothing. */
 export function useReducedMotion(): boolean {
@@ -18,7 +19,7 @@ export const EASE = Easing.bezier(0.4, 0, 0.2, 1); // the same curve as the webs
 /** Fade and rise into place on mount. `delay` staggers a list. */
 export function Reveal({ children, delay = 0, distance = 14, style }: { children: ReactNode; delay?: number; distance?: number; style?: StyleProp<ViewStyle> }) {
   const reduced = useReducedMotion();
-  const v = useRef(new Animated.Value(reduced ? 1 : 0)).current;
+  const v = useAnimatedValue(reduced ? 1 : 0);
   useEffect(() => {
     if (reduced) return v.setValue(1);
     Animated.timing(v, { toValue: 1, duration: 320, delay, easing: EASE, useNativeDriver: true }).start();
@@ -31,7 +32,7 @@ const APressable = Animated.createAnimatedComponent(Pressable);
 /** A Pressable that gives a little under the finger. Same props as Pressable. */
 export const ScalePressable = forwardRef<React.ComponentRef<typeof Pressable>, PressableProps & { scaleTo?: number }>(function ScalePressable({ style, onPressIn, onPressOut, scaleTo = 0.97, ...rest }, ref) {
   const reduced = useReducedMotion();
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useAnimatedValue(1);
   const [pressed, setPressed] = useState(false);
   const to = (value: number) => { if (!reduced) Animated.spring(scale, { toValue: value, speed: 50, bounciness: 0, useNativeDriver: true }).start(); };
   // Animated components cannot take a style function, so the pressed state is tracked here and the style resolved by hand.

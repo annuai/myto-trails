@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["42XYUS7TVE.com.myto-moto.myto"],
+        "components": [
+          { "/": "/join/*", "comment": "Group ride invites. Add a path only when the app has a screen for it." }
+        ]
+      }
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 import { countryConfig } from '@moto-trails/domain';
-import { countryEntry } from './countryList';
+import { COUNTRY_CURRENCY } from './countryData';
 
 /** The phone's language and region as a BCP 47 tag ("en-IN"). Hermes and every browser have Intl, so no native module is needed. */
 export const deviceLocale = (): string => {
@@ -30,6 +30,6 @@ const MILE_REGIONS = new Set(['US', 'GB', 'LR', 'MM']);
 export const defaultDistanceUnit = (region: string | null | undefined): 'km' | 'mi' =>
   countryConfig(region)?.distanceUnit ?? (region && MILE_REGIONS.has(region.toUpperCase()) ? 'mi' : 'km');
 
-/** The currency for a region: the country's own setting when the app has one, else the country list's, else null (amounts are then plain numbers). */
+/** The currency fuel is paid for in: the country's own setting, else the bundled table (every country the app lists). Unknown regions get null. */
 export const currencyFor = (region: string | null | undefined): string | null =>
-  countryConfig(region)?.currency ?? countryEntry(region)?.currency ?? null;
+  countryConfig(region)?.currency ?? (region ? COUNTRY_CURRENCY[region.toUpperCase()] ?? null : null);

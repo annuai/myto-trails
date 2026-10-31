@@ -33,6 +33,8 @@ import { distanceKm, durationParts, speedKmh } from '@/lib/units';
 import { useProfile } from '@/store/profile';
 import { useDistanceUnit } from '@/store/region';
 import { totalKm, useRides } from '@/store/rides';
+import { justFinishedRide } from '@/lib/justFinished';
+import { ScalePressable } from '@/ui/motion';
 import { useTodos } from '@/store/todos';
 import { Banner } from '@/ui/Banner';
 import { Button } from '@/ui/Button';
@@ -45,11 +47,11 @@ import { HeroCard, ProgressBar } from '@/ui/HeroCard';
 import { ListCard } from '@/ui/ListCard';
 import { Row } from '@/ui/ListCard';
 import { RideMap } from '@/ui/RideMap';
-import { ScalePressable } from '@/ui/motion';
 import { Screen } from '@/ui/Screen';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
 import { TextButton } from '@/ui/TextButton';
+import { nowMs as readClock } from '@/lib/clock';
 
 export default function Home() {
   const router = useRouter();
@@ -99,7 +101,8 @@ export default function Home() {
   const [groupOpen, setGroupOpen] = useState(false);
   const checkin = useCompanion((s) => s.checkin);
   const group = useCompanion((s) => s.group);
-  const nowMs = Date.now();
+  const nowMs = readClock();
+  const finished = justFinishedRide(rides, nowMs);
 
   return (
     <Screen tabs brand overlay={<>
@@ -151,6 +154,15 @@ export default function Home() {
           <Banner eyebrow="Reminders" title="Get a nudge before a to-do is due or a ride starts" onPress={() => setRemindOpen(true)} />
         </View>
       ) : null}
+      {finished ? (
+        <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`Open the story of ${finished.name}`} onPress={() => router.push(`/story/${finished.id}`)} style={{ marginBottom: space[3] }}>
+        <HeroCard eyebrow="Just finished" title={finished.name}>
+          <View style={{ flexDirection: 'row' }}>
+            <Stat parts={durationParts(finished.durationSec)} label="Duration" /><Stat parts={distanceKm(finished.distanceKm)} label="Distance" /><Stat parts={speedKmh(finished.maxKmh)} label="Top speed" />
+          </View>
+        </HeroCard>
+        </ScalePressable>
+      ) : null}
       {nextTripPlan ? (
         <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} footer={planStatus === 'ready' || planStatus === 'active' ? (
           <RideStartActions noSkip route={nextTripPlan.days?.[dayIndexOn(nextTripPlan, today) ?? 0]?.route} onNavigate={() => chooseDayRoute(nextTripPlan.id)}
@@ -159,11 +171,11 @@ export default function Home() {
         ) : undefined} />
       ) : trail ? (
         <HeroCard eyebrow={trail.date ? `Next ride · ${trail.date}` : 'Next ride'} title={trail.name} action={<IconButton icon={MoreHorizontal} label="Next ride options" onPress={() => setMenu(true)} plain />}>
-          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          <View style={{ flexDirection: 'row', gap: space[2], flexWrap: 'wrap' }}>
             <StatusChip status={trail.status} label={trail.statusLabel} />
           </View>
           {packs.length ? (
-            <View style={{ gap: 8 }}>
+            <View style={{ gap: space[2] }}>
               <ProgressBar value={packs.filter((p) => p.done).length} max={packs.length} label="Packed" />
               <Text variant="label" tone="muted">{packs.filter((p) => p.done).length} of {packs.length} packed</Text>
             </View>
@@ -225,16 +237,16 @@ export default function Home() {
           ))}
         </ListCard>
       ) : <EmptyState icon={ClipboardList} title="You're all caught up" body="Add a reminder for your PUC, insurance or a chain lube and we'll nudge you in time." />}
-      <View style={{ marginTop: 12 }}><Button variant="soft" label="See all" arrow onPress={() => router.push('/todos')} /></View>
+      <View style={{ marginTop: space[3] }}><Button variant="soft" label="See all" arrow onPress={() => router.push('/todos')} /></View>
 
         </>}
         right={<>
       <SectionTitle>Your latest ride</SectionTitle>
       {latest ? (
-        <ScalePressable accessibilityRole="button" accessibilityLabel={`Open ride story: ${latest.name}`} onPress={() => router.push(`/story/${latest.id}`)}>
+        <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`Open the story of ${latest.name}`} onPress={() => router.push(`/story/${latest.id}`)}>
         <Card padded={false}>
           <RideMap points={latest.points} breaks={latest.breaks} />
-          <View style={{ padding: 20, gap: 16 }}>
+          <View style={{ padding: space[5], gap: space[4] }}>
             <Text variant="bodyMedium">{latest.name}{latest.sample ? ' (sample)' : ''}</Text>
             <View style={{ flexDirection: 'row' }}>
               <Stat parts={durationParts(latest.durationSec)} label="Duration" /><Stat parts={distanceKm(latest.distanceKm)} label="Distance" /><Stat parts={speedKmh(latest.maxKmh)} label="Top speed" />
@@ -243,7 +255,7 @@ export default function Home() {
         </Card>
         </ScalePressable>
       ) : <EmptyState icon={RouteIcon} title="Your first ride starts here" body="Tap Ride below and go. We keep the route, the distance and what it cost." />}
-      {latest ? <View style={{ marginTop: 12, gap: 12 }}>
+      {latest ? <View style={{ marginTop: space[3], gap: space[3] }}>
         <Button variant="soft" label="All rides" arrow onPress={() => router.push('/rides')} />
       </View> : null}
         </>}

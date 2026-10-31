@@ -19,7 +19,9 @@ import { useRecorder } from '@/store/recorder';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { dueInfo } from '@/lib/todos';
 import { papersSummary, paperStatus } from '@/lib/documentEntries';
-import type { TripRoute } from '@/lib/tripPlan';
+import { todayISO } from '@/lib/dates';
+import { dayIndexOn, tripStatus, type TripRoute } from '@/lib/tripPlan';
+import { tripChecks } from '@/lib/tripReadiness';
 import { useProfile } from '@/store/profile';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
@@ -58,6 +60,9 @@ export default function RideReady() {
   // Planned rides for today, closest to the time now first. A trail picked on its own page (no trip) gets a card too.
   const slots = useMemo(() => plannedSlots(trips, new Map(trips.map((t) => [t.id, rides.filter((r) => t.rideIds.includes(r.id)).map((r) => r.startedAt)]))), [trips, rides]);
   const loneTrail = trail && !slots.some((s) => { const r = s.trip.days?.[s.dayIndex]?.route; return r?.kind === 'trail' && r.slug === trail.slug; }) ? trail : undefined;
+  // The trip under way (or ready to start) adds its own rows: today's route and how much of the pack list is done.
+  const trip = useTrips((s) => s.trips.find((t) => { const st = tripStatus(t, todayISO()); return st === 'active' || st === 'ready'; }));
+  const pack = todos.filter((t) => !!trip && t.tripId === trip.id);
   const fix = useLocation((s) => s.fix);
   const gpsError = useLocation((s) => s.error);
   // Start looking for the rider as soon as this screen opens, so a fix is ready by the time the ride starts.
@@ -75,6 +80,10 @@ export default function RideReady() {
   // Papers are a one-time, optional setup. Here they are one row, and only while something needs the rider's attention.
   const papers = papersSummary(paperStatus(licence, vehicle));
   if (papers) checks.push({ label: 'Documents', status: papers.status, word: papers.word, go: '/documents' });
+  if (trip) {
+    const day = trip.days?.[dayIndexOn(trip, todayISO()) ?? 0];
+    for (const c of tripChecks({ route: day?.route, pack: { total: pack.length, done: pack.filter((t) => t.done).length } })) checks.push({ ...c, go: `/trips/${trip.id}` });
+  }
   if (trail) checks.push(offline[trail.slug] ? { label: `Offline pack: ${trail.name}`, status: 'good', word: 'Ready' } : { label: `Offline pack: ${trail.name}`, status: 'caution', word: 'Not downloaded', go: `/trail/${trail.slug}` });
 
   // The answers to "Where are you going?", closest planned ride first. The first is chosen until the rider picks another.
@@ -147,10 +156,16 @@ export default function RideReady() {
       </ListCard>
       </>} right={<>
       <SectionTitle>Location</SectionTitle>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: space[2] }}>
         <ChoiceChip label="Phone GPS" selected={source === 'gps'} onPress={() => setSource('gps')} />
         <ChoiceChip label="Simulated (testing)" selected={source === 'sim'} onPress={() => setSource('sim')} />
       </View>
+      <Text variant="caption" tone="muted" style={{ marginTop: space[3] }}>
+        {source === 'sim' ? 'Moves along a test loop so you can try recording on a laptop. Not a real ride.'
+          : fix ? 'Your position is shown below. It is only saved once you start.'
+          : gpsError ?? 'Finding your location. If asked, allow location access.'}
+      </Text>
+      {source === 'gps' ? <View style={{ marginTop: space[4] }}><OsmMap height={220} radius={24} follow position={here} /></View> : null}
       </>} />
     </Screen>
   );

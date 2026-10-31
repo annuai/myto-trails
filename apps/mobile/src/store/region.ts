@@ -5,7 +5,7 @@ import { setDistanceUnit, type DistanceUnit } from '@/lib/units';
 import { storage } from './persist';
 
 type State = {
-  /** Where the rider lives (ISO 3166-1 alpha-2). Null follows the phone's region. Sets the default unit and currency. */
+  /** Where the rider lives (ISO 3166-1 alpha-2). Null follows the phone's region. Sets the currency and, when open, which country's trails and clubs the lists show. */
   home: string | null;
   /** The rider's choice of kilometres or miles. Null means kilometres: the default everywhere. */
   unit: DistanceUnit | null;

@@ -10,6 +10,7 @@ import { ChoiceChip } from '@/ui/Chip';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/tokens';
+import { nowMs } from '@/lib/clock';
 
 /** The few trails nearest a position, so a report can say which trail it is about without the rider typing anything. */
 function useNearbyTrails(at: LatLng | undefined, enabled: boolean): TrailSummary[] {
@@ -43,14 +44,14 @@ export function ReportSheet({ open, onClose, at }: { open: boolean; onClose: () 
   const send = (kind: ConditionKind) => {
     if (!target) return;
     const { outbox, setOutbox } = useCompanion.getState();
-    setOutbox(enqueue(outbox, { slug: target, kind, at: new Date().toISOString(), ...(at ? { lat: at.lat, lng: at.lng } : {}) }, Date.now()));
+    setOutbox(enqueue(outbox, { slug: target, kind, at: new Date().toISOString(), ...(at ? { lat: at.lat, lng: at.lng } : {}) }, nowMs()));
     setSent(CONDITION_CHOICES.find((c) => c.kind === kind)?.label);
   };
 
   return (
     <Sheet open={open} title="Report the trail" onClose={close}>
       {sent ? (
-        <Text variant="bodyMedium">Thanks. "{sent}" is saved and goes to other riders as soon as you have a signal.</Text>
+        <Text variant="bodyMedium">Thanks. &quot;{sent}&quot; is saved and goes to other riders as soon as you have a signal.</Text>
       ) : choices.length === 0 ? (
         <Text variant="label" tone="muted">{at ? 'No trail found close to here. Plan a trail first, or try again when you have a signal.' : 'Waiting for your position…'}</Text>
       ) : (

@@ -35,3 +35,6 @@ export const canEditComment = (createdAt: string, now: number = Date.now()) => n
 
 /** Club posts and trail comments may not carry web addresses; the server enforces it, this saves a round trip. */
 export const hasLink = (s: string) => /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|in|org|net|co|io|app|dev|me|ly)\b\/?)/i.test(s);
+
+/** The same ride plan a week later, as an ISO instant. Ride times here are India time, which has no daylight saving, so seven days is the same clock time. */
+export const nextWeek = (iso: string): string => new Date(new Date(iso).getTime() + 7 * 86_400_000).toISOString();

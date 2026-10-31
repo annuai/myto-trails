@@ -13,6 +13,7 @@ import { Stack } from '@/ui/layout';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 
+import { space } from '@/theme/tokens';
 type DateKey = 'rcValidTill' | 'insuranceValidTill' | 'pucValidTill';
 const dates: { key: DateKey; label: string; source: string; todo: string }[] = [
   { key: 'rcValidTill', label: 'Registration (RC) valid till', source: 'rc', todo: 'Registration (RC) renewal' },
@@ -44,7 +45,7 @@ export default function VehicleForm() {
     >
       <BackHeader title="Documents" />
       <PageTitle>Vehicle and papers</PageTitle>
-      <View style={{ gap: 20 }}>
+      <View style={{ gap: space[5] }}>
         <Field label="Registration number" value={f.regNo} onChangeText={(regNo) => setF({ ...f, regNo })} autoCapitalize="characters" autoCorrect={false} />
         <Field label="Make and model" value={f.model} onChangeText={(model) => setF({ ...f, model })} />
         <Field label="Owner name (optional)" value={f.ownerName} onChangeText={(ownerName) => setF({ ...f, ownerName })} />
@@ -52,7 +53,7 @@ export default function VehicleForm() {
         <DocumentPhotoField docKind="rc" label="Registration certificate (RC)" />
       </View>
       <SectionTitle>Insurance</SectionTitle>
-      <View style={{ gap: 20 }}>
+      <View style={{ gap: space[5] }}>
         <Field label="Insurer (optional)" value={f.insurer ?? ''} onChangeText={(insurer) => setF({ ...f, insurer })} />
         <Field label="Policy number (optional)" value={f.policyNo ?? ''} onChangeText={(policyNo) => setF({ ...f, policyNo })} autoCapitalize="characters" autoCorrect={false} />
         <DateField label={dates[1].label} value={f.insuranceValidTill} onPress={() => setPicking('insuranceValidTill')} />
@@ -63,8 +64,8 @@ export default function VehicleForm() {
         <DateField label={dates[2].label} value={f.pucValidTill} onPress={() => setPicking('pucValidTill')} hint="Dates become reminders in your to-do list" />
         <DocumentPhotoField docKind="puc" label="PUC certificate" />
       </Stack>
-      {error ? <Text variant="label" tone="stop" style={{ marginTop: 16 }}>{error}</Text> : null}
-      {vehicle ? <View style={{ marginTop: 24 }}><Button variant="danger" icon={Trash2} label="Remove vehicle" onPress={remove} /></View> : null}
+      {error ? <Text variant="label" tone="stop" style={{ marginTop: space[4] }}>{error}</Text> : null}
+      {vehicle ? <View style={{ marginTop: space[6] }}><Button variant="danger" icon={Trash2} label="Remove vehicle" onPress={remove} /></View> : null}
     </Screen>
   );
 }

@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space, size } from '@/theme/tokens';
+import { radius, space, size } from '@/theme/tokens';
 import { addDays, MONTHS, monthGrid, monthLabel, todayISO } from '@/lib/dates';
 import { pageLabel, pageStartFor, YEARS_PER_PAGE, yearPage } from '@/lib/yearPage';
 import { ChoiceChip } from './Chip';
 import { Icon } from './Icon';
 import { Text } from './Text';
-
 const WEEK = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const WEEKS = 6;
 /** The days are six rows of this height; the month and year cells are laid out over the same area. */
@@ -50,19 +49,19 @@ export function DatePicker({ value, onChange, past, chips = true }: { value?: st
   );
   const today = todayISO();
   return (
-    <View style={{ gap: 16 }}>
-      {chips ? <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+    <View style={{ gap: space[4] }}>
+      {chips ? <View style={{ flexDirection: 'row', gap: space[2], flexWrap: 'wrap' }}>
         {(past ? [['Today', 0], ['Yesterday', -1], ['A week ago', -7]] : [['Tomorrow', 1], ['In a week', 7], ['In a month', 30]] as [string, number][]).map(([label, n]) => (
           <ChoiceChip key={label as string} label={label as string} onPress={() => onChange(addDays(today, n as number))} selected={value === addDays(today, n as number)} />
         ))}
       </View> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={back} onPress={() => move(-1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><Icon icon={ChevronLeft} /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={back} onPress={() => move(-1)} style={{ width: size.target, height: size.target, alignItems: 'center', justifyContent: 'center' }}><Icon icon={ChevronLeft} /></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel={mode === 'day' ? `${title}. Choose month or year` : title} disabled={mode === 'year'} onPress={openTitle} style={{ minHeight: size.target, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[1] }}>
           <Text variant="bodyMedium">{title}</Text>
           {mode === 'year' ? null : <Icon icon={ChevronDown} size={18} tone="muted" />}
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={forward} onPress={() => move(1)} style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><Icon icon={ChevronRight} /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={forward} onPress={() => move(1)} style={{ width: size.target, height: size.target, alignItems: 'center', justifyContent: 'center' }}><Icon icon={ChevronRight} /></Pressable>
       </View>
       <View style={{ minHeight: bodyH }} onLayout={(e) => setBodyH((h) => Math.max(h, e.nativeEvent.layout.height))}>
       {mode === 'year' ? (
@@ -81,11 +80,11 @@ export function DatePicker({ value, onChange, past, chips = true }: { value?: st
       {grid.map((week, wi) => (
         <View key={wi} style={{ flexDirection: 'row' }}>
           {week.map((iso, di) => {
-            if (!iso) return <View key={di} style={{ flex: 1, height: 48 }} />;
+            if (!iso) return <View key={di} style={{ flex: 1, height: size.target }} />;
             const selected = iso === value;
             return (
-              <Pressable key={di} accessibilityRole="button" accessibilityLabel={iso} accessibilityState={{ selected }} onPress={() => onChange(iso)} style={{ flex: 1, height: 48, alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: selected ? c.ink : 'transparent', borderWidth: iso === today && !selected ? 1.5 : 0, borderColor: c.muted }}>
+              <Pressable key={di} accessibilityRole="button" accessibilityLabel={iso} accessibilityState={{ selected }} onPress={() => onChange(iso)} style={{ flex: 1, height: size.target, alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: size.compact, height: size.compact, borderRadius: radius.chip, alignItems: 'center', justifyContent: 'center', backgroundColor: selected ? c.ink : 'transparent', borderWidth: iso === today && !selected ? size.outline : 0, borderColor: c.muted }}>
                   <Text variant="data" tone={selected ? 'onInk' : 'ink'}>{+iso.slice(8)}</Text>
                 </View>
               </Pressable>

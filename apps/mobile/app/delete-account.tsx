@@ -56,7 +56,7 @@ export default function DeleteAccount() {
             <SectionTitle>What stays</SectionTitle>
             <Card><Stack gap={2}>{STAYS.map((t) => <Text key={t} variant="label">• {t}</Text>)}</Stack></Card>
           </Stack>
-          <Text variant="caption" tone="muted">Your rides, journal, documents and emergency contacts on this phone are not touched. Use "Erase all my data" in the Danger zone for those.</Text>
+          <Text variant="caption" tone="muted">Your rides, journal, documents and emergency contacts on this phone are not touched. Use &quot;Erase all my data&quot; in the Danger zone for those.</Text>
           <Field label="Type delete to confirm" value={typed} onChangeText={setTyped} autoCapitalize="none" autoCorrect={false} />
           {error ? <Text variant="label" tone="stop">{error}</Text> : null}
         </Stack>

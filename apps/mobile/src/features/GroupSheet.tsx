@@ -19,6 +19,7 @@ import { shortDistanceM, withUnit } from '@/lib/units';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/tokens';
+import { nowMs } from '@/lib/clock';
 
 const SIGNALS: GroupStatus[] = ['ok', 'wait_up', 'fuel', 'break', 'help'];
 /** Long enough to paste a whole invite link into the code field; a link is turned into its code as it lands. */
@@ -29,13 +30,14 @@ const km = (m: number) => withUnit(shortDistanceM(m));
  * Ride together: one rider starts a group and shares the six-character code, the others join with it. Everyone sees everyone
  * on the map, and a few quick signals ("Wait up", "Fuel stop") replace typing. The leader can drop a regroup pin.
  */
-export function GroupSheet({ open, onClose, position }: { open: boolean; onClose: () => void; position?: LatLng }) {
+/** `defaultName` pre-fills the name of a new ride, for one made from a trip. */
+export function GroupSheet({ open, onClose, position, defaultName }: { open: boolean; onClose: () => void; position?: LatLng; defaultName?: string }) {
   const router = useRouter();
   const token = useAuth((s) => s.token);
   const user = useAuth((s) => s.user);
   const group = useCompanion((s) => s.group);
   const live = useCompanion((s) => s.live);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(defaultName ?? '');
   const [code, setCode] = useState('');
   const { busy, problem, run } = useAction();
   const leader = group?.role === 'leader';
@@ -62,7 +64,7 @@ export function GroupSheet({ open, onClose, position }: { open: boolean; onClose
   const pin = (p: LatLng | null) => token && group && run(() => setRegroup(token, group.id, p));
 
   const me = live.me;
-  const now = Date.now();
+  const now = nowMs();
   const toLeader = me ? distanceToLeaderM(live.riders, me) : null;
 
   return (

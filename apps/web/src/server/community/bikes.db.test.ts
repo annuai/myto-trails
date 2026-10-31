@@ -65,7 +65,7 @@ describe("a rider's bike and the one-image rule", () => {
     expect(await getBike(db.sql, u)).toEqual({ name: "Scram 411", modelYear: 2023, photoUrl: IMAGE["400"], ownPhoto: false, bikeModelId: id });
 
     const [media] = await db.sql`
-      insert into media (uploaded_by, alt_text, variants) values (${u}, 'My bike', ${db.sql.json({ "400": "own-400" })}) returning id`;
+      insert into media (role, uploaded_by, alt_text, variants) values ('gallery', ${u}, 'My bike', ${db.sql.json({ "400": "own-400" })}) returning id`;
     expect(await saveBike(db.sql, { userId: u, name: "My Scram", modelYear: 2023, photoMediaId: media!.id })).toEqual({ ok: true });
     expect(await getBike(db.sql, u)).toMatchObject({ name: "My Scram", photoUrl: "own-400", ownPhoto: true, bikeModelId: id });
 

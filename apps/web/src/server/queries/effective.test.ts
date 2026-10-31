@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeTrail } from "@/features/trail/test-trail";
-import { applyNow } from "./effective";
+import { applyNow, applyNowToSearch } from "./effective";
 
 describe("applyNow", () => {
   const cached = makeTrail({
@@ -29,5 +29,16 @@ describe("applyNow", () => {
     expect(cached.condition).toBe("temporarily_closed");
     expect(out.name).toBe(cached.name);
     expect(out).not.toBe(cached);
+  });
+});
+
+describe("applyNowToSearch", () => {
+  it("re-evaluates every item and keeps the paging fields", () => {
+    const item = { ...makeTrail({ condition: "temporarily_closed", rawCondition: "temporarily_closed", conditionExpectedUntil: "2026-06-01" }), lon: null, lat: null, distanceFromKm: null, travel: null };
+    const cachedResult = { items: [item], total: 41, page: 2, pageSize: 20, origin: null };
+    const out = applyNowToSearch(cachedResult, new Date("2026-06-03T00:00:00Z"));
+    expect(out.items[0]?.condition).toBe("unknown");
+    expect(item.condition).toBe("temporarily_closed");
+    expect(out).toMatchObject({ total: 41, page: 2, pageSize: 20, origin: null });
   });
 });

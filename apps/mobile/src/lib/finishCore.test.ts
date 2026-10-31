@@ -7,12 +7,12 @@ const M = 1 / 111_320;
 const T0 = 1_700_000_000_000;
 const pt = (north: number, tSec: number): LatLng => ({ lat: 13 + north * M, lng: 77.6, t: T0 + tSec * 1000 });
 
-async function setup(opts: { persist?: () => Promise<void>; existing?: string; fixes?: LatLng[] } = {}) {
+async function setup(opts: { persist?: () => Promise<void>; existing?: string; fixes?: LatLng[]; rideId?: string } = {}) {
   const journal = createMemoryJournal();
-  await journal.begin({ startedAt: T0, source: 'gps' });
+  await journal.begin({ startedAt: T0, source: 'gps', ...(opts.rideId ? { rideId: opts.rideId } : {}) });
   for (const f of opts.fixes ?? [pt(0, 0), pt(100, 10), pt(200, 20)]) await journal.append(f);
   const calls: string[] = [];
-  const addRide = vi.fn(() => { calls.push('add'); return 'ride-1'; });
+  const addRide = vi.fn((_r: unknown, _id?: string) => { calls.push('add'); return 'ride-1'; });
   const deps = {
     journal, addRide,
     stopBackground: vi.fn(async () => { calls.push('stop'); }),
@@ -62,5 +62,16 @@ describe('finishing a ride', () => {
     await expect(finish()).rejects.toThrow();
     fail = false;
     expect(await finish()).toBe('ride-1');
+  });
+
+  it('saves the ride under the id it was given when it started', async () => {
+    const { finish, addRide } = await setup({ rideId: 'ride-abc' });
+    await finish();
+    expect(addRide).toHaveBeenCalledWith(expect.objectContaining({ startedAt: T0 }), 'ride-abc');
+  });
+  it('a recording from before ride ids still saves, with no id given', async () => {
+    const { finish, addRide } = await setup();
+    await finish();
+    expect(addRide).toHaveBeenCalledWith(expect.objectContaining({ startedAt: T0 }), undefined);
   });
 });

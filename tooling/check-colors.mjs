@@ -9,10 +9,10 @@ const offenders = [];
 
 function walk(dir) {
   for (const name of readdirSync(dir)) {
-    if (name === "node_modules" || name === ".next") continue;
+    if (name === "node_modules" || name === ".next" || name === "dist") continue; // dist is build output (git-ignored)
     const path = join(dir, name);
     if (statSync(path).isDirectory()) walk(path);
-    else if (exts.some((e) => name.endsWith(e)) && !/\.test\.[tj]sx?$/.test(name)) {
+    else if (exts.some((e) => name.endsWith(e)) && !/\.test\.[tj]sx?$/.test(name) && !/\.tokens\.[tj]sx?$/.test(name)) { // *.tokens.* files hold values a widget body cannot import, as in check:tokens
       const found = findHardcodedColors(readFileSync(path, "utf8"));
       if (found.length) offenders.push(`${relative(root, path)}: ${found.join(", ")}`);
     }

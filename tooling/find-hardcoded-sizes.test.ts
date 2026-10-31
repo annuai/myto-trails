@@ -16,4 +16,12 @@ describe("findHardcodedSizes", () => {
   it("ignores comments and type annotations", () => {
     expect(findHardcodedSizes("// padding: 20\n/* gap: 12 */ type P = { height: number }")).toEqual([]);
   });
+  it("finds literals hidden in a condition, and shadow and layer values", () => {
+    expect(findHardcodedSizes("{ gap: landscape ? 12 : space[5], maxWidth: wide ? space[8] : 520, shadowRadius: 24, elevation: 8, zIndex: 3 }")).toEqual([
+      "gap: landscape ? 12", "maxWidth: wide ? space[8] : 520", "shadowRadius: 24", "elevation: 8", "zIndex: 3",
+    ]);
+  });
+  it("allows 0 and 1 in a condition, and tokens on both sides", () => {
+    expect(findHardcodedSizes("{ marginTop: first ? 0 : rhythm.betweenSections, opacity: busy ? opacity.disabled : 1, zIndex: 1, paddingBottom: keyboard ? keyboard + space[4] : 0 }")).toEqual([]);
+  });
 });

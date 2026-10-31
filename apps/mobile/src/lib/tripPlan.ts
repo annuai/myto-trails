@@ -1,11 +1,12 @@
 import { clockLabel } from './community';
 import { addDays, daysUntil, formatShort, todayISO } from './dates';
+import type { TripStop } from './tripStops';
 
 /** Where a day of a trip goes: a published trail (kept as it was when chosen) or a route the rider made. */
 export type TripRoute =
   | { kind: 'trail'; slug: string; name: string; status: 'good' | 'caution' | 'stop' | 'unknown'; statusLabel: string }
   | { kind: 'mine'; id: string; name: string };
-export type TripDay = { id: string; note?: string; route?: TripRoute };
+export type TripDay = { id: string; note?: string; route?: TripRoute; /** Fuel, food and rest stops along the day, in order. */ stops?: TripStop[] };
 
 /**
  * A trip with a start date is planned ahead; one without (made before dates existed) is only a record of rides. A trip that was

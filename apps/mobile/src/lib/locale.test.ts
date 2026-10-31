@@ -19,6 +19,9 @@ describe('locale', () => {
     expect(currencyFor('IN')).toBe('INR');
     expect(currencyFor('us')).toBe('USD');
     expect(currencyFor('DE')).toBe('EUR');
+    expect(currencyFor('BR')).toBe('BRL');
+    expect(currencyFor('ch')).toBe('CHF');
+    expect(currencyFor('JP')).toBe('JPY');
     expect(currencyFor('ZZ')).toBeNull();
     expect(currencyFor(null)).toBeNull();
   });

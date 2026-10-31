@@ -17,6 +17,7 @@ import { BackHeader } from '@/ui/Header';
 import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import { useOnChange } from '@/lib/useOnChange';
 
 const HERO_WIDTH = 800;
 
@@ -35,13 +36,12 @@ export default function Bike() {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
 
-  useEffect(() => {
-    const b = me.data?.bike;
+  useOnChange(me.data?.bike, (b) => {
     if (!b) return;
     setName(b.name); setYear(b.modelYear ? String(b.modelYear) : '');
     setPhoto({ uri: b.ownPhoto ? b.photoUrl : null });
     setModel({ id: b.bikeModelId, preset: b.ownPhoto ? null : b.photoUrl });
-  }, [me.data?.bike]);
+  }, { onFirstDraw: true });
 
   const fail = (e: unknown) => setProblem(e instanceof ApiFailure ? e.message : 'Something went wrong.');
   const pick = (m: BikeModel) => {

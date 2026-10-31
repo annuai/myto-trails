@@ -275,6 +275,21 @@ describe('moving while paused', () => {
     vi.restoreAllMocks();
   });
 
+  it('gives each ride an id when it starts, keeps it in the journal, and restores it after a kill', async () => {
+    const j = createMemoryJournal();
+    const first = createRecorder(j);
+    await first.getState().start('gps');
+    const id = first.getState().rideId;
+    expect(id).not.toBe('');
+    expect((await j.read())!.meta.rideId).toBe(id);
+    const second = createRecorder(j);
+    await second.getState().start('gps');
+    await second.getState().recover();
+    expect(second.getState().rideId).toBe(id);
+    const other = createRecorder(createMemoryJournal());
+    await other.getState().start('gps');
+    expect(other.getState().rideId).not.toBe(id);
+  });
   describe('speed while standing still', () => {
     const at = (north: number, tSec: number, speed: number | null, acc = 5): LatLng => ({ ...pt(north, tSec, acc), speed });
     const rideThenStop = async () => {
@@ -307,6 +322,5 @@ describe('live top speed', () => {
     await rec.getState().start('gps');
     for (let i = 0; i < 12; i++) await rec.getState().ingest({ ...pt(i * 10, i, 5), speed: i === 6 ? 45 : 10 });
     expect(rec.getState().maxKmh).toBeLessThan(40);
-    expect(rec.getState().maxKmh).toBeGreaterThan(30);
-  });
+    expect(rec.getState().maxKmh).toBeGreaterThan(30);  });
 });

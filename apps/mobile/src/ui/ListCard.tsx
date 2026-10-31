@@ -7,6 +7,7 @@ import { Icon } from './Icon';
 import { Text } from './Text';
 import { ScalePressable } from './motion';
 
+import { space, size } from '@/theme/tokens';
 /** A card of rows with hairline dividers. */
 export function ListCard({ children }: { children: ReactNode }) {
   const { c } = useTheme();
@@ -15,7 +16,7 @@ export function ListCard({ children }: { children: ReactNode }) {
     <Card padded={false}>
       {items.map((child, i) => (
         <Fragment key={i}>
-          {i > 0 ? <View style={{ height: 1, backgroundColor: c.line, marginHorizontal: 20 }} /> : null}
+          {i > 0 ? <View style={{ height: 1, backgroundColor: c.line, marginHorizontal: space[5] }} /> : null}
           {child}
         </Fragment>
       ))}
@@ -31,9 +32,9 @@ type RowProps = {
 export function Row({ label, sub, value, right, icon, onPress, mono, chevron, tone = 'ink' }: RowProps) {
   const { c } = useTheme();
   const content = (pressed: boolean) => (
-    <View style={{ minHeight: 64, paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: pressed ? c.raised : 'transparent' }}>
+    <View style={{ minHeight: size.row, paddingHorizontal: space[5], paddingVertical: space[3], flexDirection: 'row', alignItems: 'center', gap: space[4], backgroundColor: pressed ? c.raised : 'transparent' }}>
       {icon ? <Icon icon={icon} size={22} tone={tone === 'stop' ? 'stop' : 'muted'} /> : null}
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={{ flex: 1, gap: space.half }}>
         <Text variant="body" tone={tone}>{label}</Text>
         {sub ? <Text variant="label" tone="muted">{sub}</Text> : null}
       </View>

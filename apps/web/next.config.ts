@@ -20,6 +20,8 @@ const nextConfig: NextConfig = {
           publicAssetBase: process.env.R2_PUBLIC_BASE_URL,
         }),
       },
+      // Apple fetches this extensionless file and wants JSON. It only does anything once the app is built with the Associated Domains entitlement (docs/universal-links.md).
+      { source: "/.well-known/apple-app-site-association", headers: [{ key: "Content-Type", value: "application/json" }] },
       // Pages that are the key to a rider's check-in, a shared route or a group ride invite must never sit in a shared cache.
       { source: "/track/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
       { source: "/route/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },

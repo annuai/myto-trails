@@ -10,10 +10,10 @@ export function useRidden() {
   const [error, setError] = useState<string>();
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    if (!token) { setItems(undefined); return; }
+    if (!token) return;
     let on = true;
     listMyRidden(token).then((r) => { if (on) { setItems(r); setError(undefined); } }).catch((e: unknown) => { if (on) setError(e instanceof ApiFailure ? e.message : 'Something went wrong.'); });
     return () => { on = false; };
   }, [token, tick]);
-  return { items, error, reload: useCallback(() => setTick((n) => n + 1), []) };
+  return { items: token ? items : undefined, error, reload: useCallback(() => setTick((n) => n + 1), []) };
 }

@@ -1,0 +1,32 @@
+name: Check-in sweep
+
+# "I haven't arrived" emails a rider's contact when a check-in turns overdue. Vercel Hobby runs its own cron only once a day
+# (vercel.json), which could make that email about a day late. This calls the same endpoint every ten minutes, for free.
+# GitHub may start a scheduled run a few minutes late, so treat this as "within about fifteen minutes", not exact.
+#
+# One-time set-up in the repository settings, Secrets and variables, Actions:
+#   Secret    CRON_SECRET  the same value as the CRON_SECRET the site uses (at least 32 characters)
+#   Variable  SITE_URL     the site's address, for example https://moto-trails.com (no trailing slash)
+# Without both, the job does nothing and says so.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Call the sweep
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$CRON_SECRET" ] || [ -z "$SITE_URL" ]; then
+            echo "CRON_SECRET or SITE_URL is not set in this repository; nothing was called. See the comment at the top of this file."
+            exit 0
+          fi
+          curl --fail --silent --show-error --max-time 60 -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/cron/checkins"

@@ -19,6 +19,7 @@ import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 
+import { space } from '@/theme/tokens';
 type Draft = { title: string; category: Todo['category']; kind: 'date' | 'service'; due: string; everyKm: string; everyMonths: string; lastDate: string; custom: boolean };
 const iconFor = { document: FileText, service: Wrench, pack: Package, other: PenLine } as const;
 const fromTemplate = (t: Template): Draft => ({ title: t.title, category: t.category, kind: t.kind, due: addDays(todayISO(), 7), everyKm: t.everyKm ? String(Math.round(fromKm(t.everyKm))) : '', everyMonths: String(t.everyMonths ?? 1), lastDate: todayISO(), custom: false });
@@ -44,26 +45,26 @@ export default function NewTodo() {
 
   return (
     <Screen overlay={
-      <Sheet open={!!draft} title={draft?.custom ? 'Your own to-do' : draft?.title ?? ''} onClose={() => { setDraft(null); setError(undefined); }} footer={<View style={{ gap: 8 }}>{error ? <Text variant="label" tone="stop">{error}</Text> : null}<Button label="Add to list" onPress={save} /></View>}>
+      <Sheet open={!!draft} title={draft?.custom ? 'Your own to-do' : draft?.title ?? ''} onClose={() => { setDraft(null); setError(undefined); }} footer={<View style={{ gap: space[2] }}>{error ? <Text variant="label" tone="stop">{error}</Text> : null}<Button label="Add to list" onPress={save} /></View>}>
         {draft ? (
-          <View style={{ gap: 20 }}>
+          <View style={{ gap: space[5] }}>
             {draft.custom ? <Field label="Name" value={draft.title} onChangeText={(title) => set({ title })} placeholder="What needs doing? e.g. Replace brake pads" /> : null}
             {draft.custom ? (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={{ flexDirection: 'row', gap: space[2] }}>
                 <ChoiceChip label="On a date" selected={draft.kind === 'date'} onPress={() => set({ kind: 'date' })} icon={CalendarClock} />
                 <ChoiceChip label={`Every ${unit === 'mi' ? 'mile' : 'km'} or months`} selected={draft.kind === 'service'} onPress={() => set({ kind: 'service' })} icon={Wrench} />
               </View>
             ) : null}
             {draft.kind === 'date' ? (
-              <View style={{ gap: 12 }}><Text variant="labelMedium">Due on {formatDate(draft.due)}</Text><DatePicker value={draft.due} onChange={(due) => set({ due })} /></View>
+              <View style={{ gap: space[3] }}><Text variant="labelMedium">Due on {formatDate(draft.due)}</Text><DatePicker value={draft.due} onChange={(due) => set({ due })} /></View>
             ) : (
-              <View style={{ gap: 20 }}>
+              <View style={{ gap: space[5] }}>
                 <Text variant="label" tone="muted">Due after whichever comes first. Only rides recorded in Myto Moto count towards the distance, so keep the months limit too.</Text>
-                <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flexDirection: 'row', gap: space[3] }}>
                   <View style={{ flex: 1 }}><Field label={`Every (${unit === 'mi' ? 'miles' : 'km'})`} keyboardType="numeric" value={draft.everyKm} onChangeText={(everyKm) => set({ everyKm: everyKm.replace(/\D/g, '') })} placeholder="500" /></View>
                   <View style={{ flex: 1 }}><Field label="Or months" keyboardType="numeric" value={draft.everyMonths} onChangeText={(everyMonths) => set({ everyMonths: everyMonths.replace(/\D/g, '') })} placeholder="1" /></View>
                 </View>
-                <View style={{ gap: 12 }}><Text variant="labelMedium">Last done {formatDate(draft.lastDate)}</Text><DatePicker past value={draft.lastDate} onChange={(lastDate) => set({ lastDate })} /></View>
+                <View style={{ gap: space[3] }}><Text variant="labelMedium">Last done {formatDate(draft.lastDate)}</Text><DatePicker past value={draft.lastDate} onChange={(lastDate) => set({ lastDate })} /></View>
               </View>
             )}
           </View>

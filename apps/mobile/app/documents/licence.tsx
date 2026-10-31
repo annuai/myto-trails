@@ -14,6 +14,7 @@ import { Stack } from '@/ui/layout';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 
+import { space } from '@/theme/tokens';
 const classes = [['MCWG', 'Motorcycle with gear'], ['MCWOG', 'Motorcycle without gear'], ['LMV', 'Light motor vehicle']] as const;
 
 export default function LicenceForm() {
@@ -40,7 +41,7 @@ export default function LicenceForm() {
     >
       <BackHeader title="Documents" />
       <PageTitle>Driving licence</PageTitle>
-      <View style={{ gap: 20 }}>
+      <View style={{ gap: space[5] }}>
         <Field label="Name on licence" value={f.holder} onChangeText={(holder) => setF({ ...f, holder })} autoComplete="name" />
         <Field label="Licence number" value={f.number} onChangeText={(number) => setF({ ...f, number })} autoCapitalize="characters" autoCorrect={false} hint="As printed on the card" />
         <Field label="Issuing RTO (optional)" value={f.rto ?? ''} onChangeText={(rto) => setF({ ...f, rto })} />
@@ -52,9 +53,9 @@ export default function LicenceForm() {
         <DocumentPhotoField docKind="licence" side="back" label="Back of licence" />
       </Stack>
       <SectionTitle>Vehicle classes</SectionTitle>
-      <View style={{ gap: 8 }}>{classes.map(([k, l]) => <ChoiceChip key={k} label={`${k} · ${l}`} selected={f.classes.includes(k)} onPress={() => toggle(k)} />)}</View>
-      {error ? <Text variant="label" tone="stop" style={{ marginTop: 16 }}>{error}</Text> : null}
-      {licence ? <View style={{ marginTop: 24 }}><Button variant="danger" icon={Trash2} label="Remove licence" onPress={remove} /></View> : null}
+      <View style={{ gap: space[2] }}>{classes.map(([k, l]) => <ChoiceChip key={k} label={`${k} · ${l}`} selected={f.classes.includes(k)} onPress={() => toggle(k)} />)}</View>
+      {error ? <Text variant="label" tone="stop" style={{ marginTop: space[4] }}>{error}</Text> : null}
+      {licence ? <View style={{ marginTop: space[6] }}><Button variant="danger" icon={Trash2} label="Remove licence" onPress={remove} /></View> : null}
     </Screen>
   );
 }

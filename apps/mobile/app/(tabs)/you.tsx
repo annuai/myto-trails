@@ -71,7 +71,7 @@ export default function You() {
     <Screen tabs brand fadeTabs endCap={<RiderBanner />}>
       <PageTitle>You</PageTitle>
       <Columns rightStartsWithSection left={<>
-      <Card style={{ padding: 24, gap: 6 }}>
+      <Card style={{ padding: space[6], gap: space[2] }}>
         <Text variant="label" tone="muted">Ridden with Myto Moto</Text>
         <Measure parts={distanceKm(totalKm(rides))} size="liveSecondary" />
         <Text variant="label" tone="muted">{real} ride{real === 1 ? '' : 's'} recorded</Text>

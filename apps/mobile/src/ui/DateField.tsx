@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { Calendar } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius } from '@/theme/tokens';
+import { radius, space, size } from '@/theme/tokens';
 import { formatDate } from '@/lib/dates';
 import { Button } from './Button';
 import { DatePicker } from './DatePicker';
@@ -14,10 +14,10 @@ import { ScalePressable } from './motion';
 export function DateField({ label, value, onPress, hint }: { label: string; value?: string; onPress: () => void; hint?: string }) {
   const { c } = useTheme();
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: space[2] }}>
       <Text variant="labelMedium">{label}</Text>
       <ScalePressable scaleTo={0.99} accessibilityRole="button" accessibilityLabel={`${label}: ${value ? formatDate(value) : 'not set'}`} onPress={onPress}
-        style={{ minHeight: 56, borderRadius: radius.control, paddingHorizontal: 18, backgroundColor: c.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        style={{ minHeight: size.button, borderRadius: radius.control, paddingHorizontal: space[5], backgroundColor: c.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text variant="body" tone={value ? 'ink' : 'muted'}>{value ? formatDate(value) : 'Pick a date'}</Text>
         <Icon icon={Calendar} size={20} tone="muted" />
       </ScalePressable>

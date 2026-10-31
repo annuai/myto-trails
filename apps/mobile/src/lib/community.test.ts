@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canEditComment, clockLabel, formatPosted, formatRideWhen, hasLink, rideAtISO } from './community';
+import { canEditComment, clockLabel, formatPosted, formatRideWhen, hasLink, nextWeek, rideAtISO } from './community';
 
 describe('ride times (India time)', () => {
   it('builds the instant the server expects', () => {
@@ -32,5 +32,12 @@ describe('comments', () => {
     expect(hasLink('see example.com/x')).toBe(true);
     expect(hasLink('https://a.b')).toBe(true);
     expect(hasLink('Gate is locked at 5pm')).toBe(false);
+  });
+});
+
+describe('repeating a ride plan', () => {
+  it('moves it exactly one week on, at the same time of day', () => {
+    expect(nextWeek('2026-11-01T04:30:00.000Z')).toBe('2026-11-08T04:30:00.000Z');
+    expect(nextWeek('2026-12-28T00:00:00.000Z')).toBe('2027-01-04T00:00:00.000Z');
   });
 });

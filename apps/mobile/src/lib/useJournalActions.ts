@@ -7,6 +7,7 @@ import { useJournal } from '@/store/journal';
 import { useMotion } from '@/store/motion';
 import { useRecorder } from '@/store/recorder';
 import { useVoice } from '@/store/voice';
+import { nowMs } from '@/lib/clock';
 
 /**
  * Add a note, a voice note or a photo to one ride's journal. Voice and photos are always available. Typing is allowed
@@ -45,5 +46,5 @@ export function useJournalActions(rideKey: number) {
       setProblem('Could not save the photo.');
     }
   };
-  return { canType, addNote, toggleVoice, addPhoto, recording, seconds: recording ? Math.round((Date.now() - startedAt) / 1000) : 0, problem: problem ?? voiceError };
+  return { canType, addNote, toggleVoice, addPhoto, recording, seconds: recording ? Math.round((nowMs() - startedAt) / 1000) : 0, problem: problem ?? voiceError };
 }

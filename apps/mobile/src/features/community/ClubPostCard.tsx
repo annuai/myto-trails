@@ -11,11 +11,13 @@ import { Text } from '@/ui/Text';
 import { size, space } from '@/theme/tokens';
 
 /** A club post or ride plan, with its replies and Going / Maybe. Replies are rows inside the card, never cards of their own. */
-export function ClubPostCard({ post, canRemove, busy, group, onRespond, onReply, onRemove }: {
+export function ClubPostCard({ post, canRemove, busy, group, onRespond, onReply, onRemove, onRepeat }: {
   post: ClubPost; canRemove: boolean; busy: boolean;
   /** Start the group ride for this plan, or join the one that is on. Only shown on a ride plan. */
   group?: { label: string; onPress: () => void };
   onRespond: (r: 'going' | 'maybe' | null) => void; onReply: () => void; onRemove: () => void;
+  /** Post this ride plan again a week later. Only given to whoever may manage the post. */
+  onRepeat?: () => void;
 }) {
   const { c } = useTheme();
   const plan = post.kind === 'ride_plan' && post.at;
@@ -35,6 +37,7 @@ export function ClubPostCard({ post, canRemove, busy, group, onRespond, onReply,
           <ChoiceChip label={`Maybe (${post.maybe})`} selected={post.myResponse === 'maybe'} onPress={() => !busy && onRespond(post.myResponse === 'maybe' ? null : 'maybe')} />
         </View>
       ) : null}
+      {plan && onRepeat ? <Button variant="soft" label="Repeat next week" disabled={busy} onPress={onRepeat} /> : null}
       {plan && group ? <Button variant="soft" icon={Users} label={group.label} disabled={busy} onPress={group.onPress} /> : null}
       {post.replies.length ? (
         <View style={{ gap: space[3], borderLeftWidth: size.rule, borderLeftColor: c.line, paddingLeft: space[4] }}>
