@@ -46,8 +46,12 @@ export type ClubView = ClubSummary & { myHandle: string };
 export type ClubMember = { handle: string; name: string; role: "admin" | "member"; avatarUrl: string | null; bike: Bike | null };
 export type ClubDetail = { club: ClubView; members: ClubMember[] | null };
 
-/** The private fields of your own profile. `gender` is never sent to any other rider. */
-export type MyProfile = { displayName: string; public: boolean; bio: string | null; gender: "male" | "female" | "other" | null };
+/**
+ * The private fields of your own profile. `gender` and `phone` are never sent to any other rider. `phone` is the rider's
+ * optional number in international form ("+919812345678"), not verified. `welcomeDone` is true once the 18+ and driving
+ * licence declaration has been made (until then community writes answer 403 not_member).
+ */
+export type MyProfile = { displayName: string; public: boolean; bio: string | null; gender: "male" | "female" | "other" | null; phone: string | null; welcomeDone: boolean };
 export type MeProfile = { displayName: string; email: string; scopes: string[]; avatarUrl: string | null; bike: Bike | null; profile: MyProfile };
 
 /** A reply under a club post. */

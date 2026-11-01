@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizePhone } from "./phone";
+import { normalizePhone, parsePhoneInput } from "./phone";
 
 describe("normalizePhone", () => {
   it.each([
@@ -17,4 +17,19 @@ describe("normalizePhone", () => {
     expect(normalizePhone("+919812345678", "US")).toBe("+919812345678");
   });
   it.each([["12345"], ["abcdefghij"], ["0000000000"], ["+0123456789"], [""]])("rejects %j", (raw) => expect(normalizePhone(raw)).toBeNull());
+});
+
+describe("parsePhoneInput", () => {
+  it("normalizes a number and treats blank or missing as none", () => {
+    expect(parsePhoneInput(" 98123 45678 ")).toBe("+919812345678");
+    expect(parsePhoneInput("")).toBeNull();
+    expect(parsePhoneInput("   ")).toBeNull();
+    expect(parsePhoneInput(null)).toBeNull();
+    expect(parsePhoneInput(undefined)).toBeNull();
+  });
+  it("refuses text that is not a number and values that are not text", () => {
+    expect(parsePhoneInput("12345")).toBe("invalid");
+    expect(parsePhoneInput("call me")).toBe("invalid");
+    expect(parsePhoneInput(9812345678)).toBe("invalid");
+  });
 });

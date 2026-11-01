@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/server/auth/session";
-import { getMemberState } from "@/server/community/members";
+import { getMemberState, getMyPhone } from "@/server/community/members";
 import { getAvatarUrl, getBike } from "@/server/community/profile";
 import { getSql } from "@/server/db/client";
+import { PHONE_INVALID_MESSAGE } from "@/server/community/phone";
 import { BikeFields } from "@/features/bikes/BikeFields";
 import { GenderFields } from "@/features/community/GenderFields";
 import { ImagePicker } from "@/features/media/ImagePicker";
@@ -18,7 +19,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const user = await requireUser("/account");
   const sp = await searchParams;
   const sql = getSql();
-  const [member, avatarUrl, bike] = await Promise.all([getMemberState(sql, user.id), getAvatarUrl(sql, user.id), getBike(sql, user.id)]);
+  const [member, avatarUrl, bike, phone] = await Promise.all([getMemberState(sql, user.id), getAvatarUrl(sql, user.id), getBike(sql, user.id), getMyPhone(sql, user.id)]);
   return (
     <section className="flex flex-col gap-10 py-(--space-section)">
       <h1 className="font-display text-3xl leading-tight">Account</h1>
@@ -69,8 +70,12 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <label htmlFor="bio" className="text-sm font-medium">About you <span className="text-muted">(shown on your rider page if you are public)</span></label>
         <textarea id="bio" name="bio" rows={3} maxLength={300} defaultValue={member?.bio ?? ""} className="w-full rounded-lg border border-foreground/40 bg-background px-3 py-2" />
         <GenderFields value={member?.gender ?? "none"} />
+        <label htmlFor="phone" className="text-sm font-medium">Phone number (optional)</label>
+        <input id="phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" defaultValue={phone ?? ""} aria-describedby="phone-help" className="min-h-12 rounded-lg border border-foreground/40 bg-background px-3" />
+        <p id="phone-help" className="text-sm text-muted">Private: no other rider can see it, and it is not verified. Leave it empty to remove it.</p>
         <p className="text-sm text-muted">Comments always show your display name, whatever you choose here.</p>
         {sp.privacy === "saved" ? <p role="status" className="text-sm font-medium text-status-good">Saved.</p> : null}
+        {sp.privacy === "phone" ? <p role="status" className="text-sm font-medium text-status-stop">{PHONE_INVALID_MESSAGE}</p> : null}
         {sp.privacy === "error" ? <p role="status" className="text-sm font-medium text-status-stop">We could not save that.</p> : null}
         <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover">Save privacy</SubmitButton>
       </form>

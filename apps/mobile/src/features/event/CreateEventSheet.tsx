@@ -7,13 +7,13 @@ import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAuth } from '@/store/auth';
 import { eventCover } from './CreateEventSheet.tokens';
 import { hasLink, rideAtISO } from '@/lib/community';
-import { addDays, formatDate, todayISO } from '@/lib/dates';
+import { addDays, todayISO } from '@/lib/dates';
 import type { Place } from '@/lib/placeSearch';
 import { useOnChange } from '@/lib/useOnChange';
 import { PlaceSearch } from '@/features/route/PlaceSearch';
 import { Button } from '@/ui/Button';
 import { ChoiceChip } from '@/ui/Chip';
-import { DatePicker } from '@/ui/DatePicker';
+import { DateField } from '@/ui/DateField';
 import { Field } from '@/ui/Field';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
@@ -66,10 +66,7 @@ export function CreateEventSheet({ open, clubId, clubName, busy, problem, onSubm
         {photoProblem ? <Text variant="label" tone="stop">{photoProblem}</Text> : null}
       </View>
       <Field label="Name of the ride" value={title} onChangeText={setTitle} maxLength={80} error={hasLink(name) ? 'Please leave web addresses out.' : undefined} />
-      <View style={{ gap: space[2] }}>
-        <Text variant="labelMedium">Day: {formatDate(date)}</Text>
-        <DatePicker value={date} onChange={setDate} />
-      </View>
+      <DateField label="Day" title="Choose day of the ride" value={date} min={todayISO()} onChange={setDate} />
       <TimeField label="Start time (India time)" value={minutes} onChange={setMinutes} />
       {place ? (
         <View style={{ gap: space[2] }}>

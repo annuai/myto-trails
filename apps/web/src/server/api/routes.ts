@@ -16,7 +16,8 @@ import { clubPageSize } from "../community/club-paging";
 import { getClub, listMembers, searchClubs, setClubCover } from "../community/clubs";
 import { parseGender } from "../community/gender";
 import { getWomenSafe, markWomenSafe, unmarkWomenSafe } from "../community/women-safe";
-import { getMemberState, updateMemberPrivacy, type MemberState } from "../community/members";
+import { completeWelcome, getMemberState, getMyPhone, updateMemberPrivacy, type MemberState } from "../community/members";
+import { parsePhoneInput, PHONE_INVALID_MESSAGE } from "../community/phone";
 import { updateDisplayName } from "../auth/auth";
 import { getAvatarUrl, getBike, removeBike, saveBike, setAvatar } from "../community/profile";
 import { communityRoutes } from "./community-routes";
@@ -43,7 +44,11 @@ const mediaIdOf = (v: unknown, field = "mediaId"): string | null => {
   if (typeof v !== "string") throw new ApiError(400, "invalid_request", `${field} must be a string or null.`);
   return v;
 };
-const profileOf = (m: MemberState | null) => ({ displayName: m?.displayName ?? "", public: m?.profilePublic === true, bio: m?.bio ?? null, gender: m?.gender ?? null });
+const profileOf = (m: MemberState | null, phone: string | null) => ({ displayName: m?.displayName ?? "", public: m?.profilePublic === true, bio: m?.bio ?? null, gender: m?.gender ?? null, phone, welcomeDone: m?.confirmed === true });
+/** The owner's own profile, with their private phone number. Only ever built for the token's owner. */
+const myProfile = async (c: Ctx) => profileOf(await getMemberState(c.sql, c.userId), await getMyPhone(c.sql, c.userId));
+const phoneField = (b: Record<string, unknown>): string | null | undefined | "invalid" => ("phone" in b ? parsePhoneInput(b.phone) : undefined);
+const badPhone = () => fail(422, "validation_failed", PHONE_INVALID_MESSAGE, { fields: { phone: PHONE_INVALID_MESSAGE } });
 const noContent = () => new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 
 function searchRaw(url: URL) {
@@ -184,11 +189,11 @@ export const routes: RouteDef[] = [
     method: "GET", path: "/me", access: "token", summary: "Who the token belongs to",
     async handler(c) {
       const [u] = await c.sql`select display_name, email from app_user where id = ${c.userId}`;
-      return ok({ displayName: u?.display_name ?? "", email: u?.email ?? "", scopes: c.auth!.scopes, avatarUrl: await getAvatarUrl(c.sql, c.userId), bike: await getBike(c.sql, c.userId), profile: profileOf(await getMemberState(c.sql, c.userId)) });
+      return ok({ displayName: u?.display_name ?? "", email: u?.email ?? "", scopes: c.auth!.scopes, avatarUrl: await getAvatarUrl(c.sql, c.userId), bike: await getBike(c.sql, c.userId), profile: await myProfile(c) });
     },
   },
   {
-    method: "PUT", path: "/me/profile", access: "write:submission", summary: "Set your display name (2 to 40 characters), whether your rider page is public, your bio (up to 300 characters, no web addresses, or null) and your private gender (male, female, other or null for prefer not to say). All four keys are needed. 403 not_member until you have finished the website's welcome step. Returns the profile as GET /me does",
+    method: "PUT", path: "/me/profile", access: "write:submission", summary: "Set your display name (2 to 40 characters), whether your rider page is public, your bio (up to 300 characters, no web addresses, or null) and your private gender (male, female, other or null for prefer not to say). The first four keys are needed; phone (optional, stored encrypted, private, not verified) is left unchanged when the key is missing and cleared when it is null or empty (422 for an invalid number). 403 not_member until the welcome step is done (POST /me/welcome). Returns the profile as GET /me does",
     async handler(c) {
       const b = await asObject(c);
       const name = typeof b.displayName === "string" ? b.displayName.trim() : "";
@@ -198,10 +203,31 @@ export const routes: RouteDef[] = [
       if (!("gender" in b)) throw new ApiError(400, "invalid_request", "gender must be male, female, other or null.");
       const gender = parseGender(b.gender);
       if (gender === "invalid") throw new ApiError(400, "invalid_request", "gender must be male, female, other or null.");
-      const r = await updateMemberPrivacy(c.sql, { userId: c.userId, profilePublic: b.public, gender, bio: b.bio });
-      if (!r.ok) return r.reason === "not_member" ? fail(403, "not_member", "Finish the welcome step on moto-trails.com first.") : fail(422, "validation_failed", "Keep your bio to 300 characters, without web addresses.");
+      const phone = phoneField(b);
+      if (phone === "invalid") return badPhone();
+      const r = await updateMemberPrivacy(c.sql, { userId: c.userId, profilePublic: b.public, gender, bio: b.bio, phone });
+      if (!r.ok) return r.reason === "invalid_phone" ? badPhone() : r.reason === "not_member" ? fail(403, "not_member", "Finish the welcome step on moto-trails.com first.") : fail(422, "validation_failed", "Keep your bio to 300 characters, without web addresses.");
       await updateDisplayName(c.sql, c.userId, name);
-      return ok(profileOf(await getMemberState(c.sql, c.userId)));
+      return ok(await myProfile(c));
+    },
+  },
+  {
+    method: "POST", path: "/me/welcome", access: "write:submission", summary: "Finish the welcome step from the app (body: confirmed true for the 18+ and driving-licence declaration, displayName 2 to 40 characters, public true or false, gender male|female|other|null, phone optional string or null). Safe to repeat: the time of the first declaration is kept. Returns the profile as GET /me does",
+    async handler(c) {
+      const b = await asObject(c);
+      if (typeof b.public !== "boolean") throw new ApiError(400, "invalid_request", "public must be true or false.");
+      const gender = parseGender(b.gender);
+      if (gender === "invalid") throw new ApiError(400, "invalid_request", "gender must be male, female, other or null.");
+      const phone = phoneField(b);
+      if (phone === "invalid") return badPhone();
+      const r = await completeWelcome(c.sql, { userId: c.userId, confirmed: b.confirmed === true, displayName: typeof b.displayName === "string" ? b.displayName : "", profilePublic: b.public, gender, phone });
+      if (!r.ok) {
+        if (r.reason === "declaration_required") return fail(422, "declaration_required", "Please confirm the declaration to continue.");
+        if (r.reason === "invalid_phone") return badPhone();
+        if (r.reason === "invalid") return fail(422, "validation_failed", "Use 2 to 40 characters for your name.");
+        return fail(404, "not_found", "No such account.");
+      }
+      return ok(await myProfile(c));
     },
   },
 

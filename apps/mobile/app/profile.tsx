@@ -5,7 +5,7 @@ import { Bike, Camera, Trash2 } from 'lucide-react-native';
 import { api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import type { MyProfile } from '@/api/types';
-import { BIO_MAX, GENDER_CHOICES, NAME_MAX, profileProblem } from '@/lib/profileForm';
+import { BIO_MAX, GENDER_CHOICES, NAME_MAX, phonePatch, phoneProblem, profileProblem } from '@/lib/profileForm';
 import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAction } from '@/lib/useAction';
 import { useOnChange } from '@/lib/useOnChange';
@@ -31,24 +31,27 @@ export default function Profile() {
   const [isPublic, setIsPublic] = useState(false);
   const [bio, setBio] = useState('');
   const [gender, setGender] = useState<MyProfile['gender']>(null);
+  const [phone, setPhone] = useState('');
   const [saved, setSaved] = useState(false);
   const save = useAction();
   const picture = useAction();
 
   useOnChange(me.data?.profile, (p) => {
     if (!p) return;
-    setName(p.displayName); setIsPublic(p.public); setBio(p.bio ?? ''); setGender(p.gender);
+    setName(p.displayName); setIsPublic(p.public); setBio(p.bio ?? ''); setGender(p.gender); setPhone(p.phone ?? '');
   }, { onFirstDraw: true });
 
-  const invalid = profileProblem({ name, bio });
+  const invalid = profileProblem({ name, bio }) ?? phoneProblem(phone);
+  const welcomeDone = me.data?.profile.welcomeDone !== false;
   const edit = <T,>(set: (v: T) => void) => (v: T) => { set(v); setSaved(false); };
 
   const onSave = async () => {
-    if (!token || !me.data) return;
+    const current = me.data;
+    if (!token || !current) return;
     setSaved(false);
-    const r = await save.run(() => api<MyProfile>('/me/profile', { method: 'PUT', token, body: { displayName: name.trim(), public: isPublic, bio: bio.trim() || null, gender } }));
+    const r = await save.run(() => api<MyProfile>('/me/profile', { method: 'PUT', token, body: { displayName: name.trim(), public: isPublic, bio: bio.trim() || null, gender, ...phonePatch(current.profile.phone, phone) } }));
     if (!r) return;
-    useAuth.getState().setSession(token, { displayName: r.value.displayName, email: user?.email ?? me.data.email });
+    useAuth.getState().setSession(token, { displayName: r.value.displayName, email: user?.email ?? current.email });
     forgetProfile(); me.reload(); setSaved(true);
   };
 
@@ -63,8 +66,10 @@ export default function Profile() {
   };
 
   return (
-    <Screen footer={<Button label={save.busy ? 'Saving…' : 'Save profile'} disabled={save.busy || !me.data || !!invalid} onPress={() => void onSave()} />}>
+    <Screen footer={welcomeDone ? <Button label={save.busy ? 'Saving…' : 'Save profile'} disabled={save.busy || !me.data || !!invalid} onPress={() => void onSave()} /> : undefined}>
       <BackHeader title="Profile settings" />
+      {welcomeDone ? (
+        <>
       <Card style={{ gap: space[5] }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
           <Avatar name={name.trim() || 'Rider'} url={me.data?.avatarUrl} own size={media.avatarLg} />
@@ -97,9 +102,22 @@ export default function Profile() {
         <Text variant="label" tone="muted">Private. Only used for women-only clubs, and never shown to anyone.</Text>
       </Card>
 
+      <SectionTitle>Phone number</SectionTitle>
+      <Card style={{ gap: space[4] }}>
+        <Field onCard label="Phone number (optional)" value={phone} onChangeText={edit(setPhone)} keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" hint="Private, and not verified. Leave it empty if you prefer." />
+      </Card>
+
       {save.problem ? <Text variant="label" tone="stop" style={{ marginTop: space[4] }}>{save.problem}</Text> : null}
-      {!save.problem && invalid && (name || bio) ? <Text variant="label" tone="stop" style={{ marginTop: space[4] }}>{invalid}</Text> : null}
+      {!save.problem && invalid && (name || bio || phone) ? <Text variant="label" tone="stop" style={{ marginTop: space[4] }}>{invalid}</Text> : null}
       {saved ? <Text variant="label" tone="good" style={{ marginTop: space[4] }}>Saved.</Text> : null}
+        </>
+      ) : (
+        <Card style={{ gap: space[4] }}>
+          <Text variant="title">Finish setting up your account</Text>
+          <Text variant="body" tone="muted">Confirm your name and the driving licence declaration once, then you can edit your profile here.</Text>
+          <Button label="Finish setting up" onPress={() => router.push('/onboarding?step=profile')} />
+        </Card>
+      )}
 
       <View style={{ marginTop: space[6] }} />
       <ListCard>

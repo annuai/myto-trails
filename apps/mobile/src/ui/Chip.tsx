@@ -3,6 +3,7 @@ import { AlertTriangle, Check, CircleHelp, X, type LucideIcon } from 'lucide-rea
 import { useTheme } from '@/theme/ThemeProvider';
 import { Icon } from './Icon';
 import { Text } from './Text';
+import { InkFill } from './InkFill';
 import { ScalePressable } from './motion';
 
 import { space, radius, size } from '@/theme/tokens';
@@ -28,9 +29,10 @@ export function ChoiceChip({ label, selected, onPress, icon, raised }: { label: 
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
       onPress={onPress}
-      style={{ minHeight: size.compact, paddingHorizontal: space[5], borderRadius: radius.chip, flexDirection: 'row', alignItems: 'center', gap: space[2], backgroundColor: selected ? c.ink : raised ? c.raised : c.card }}
+      style={{ minHeight: size.compact, paddingHorizontal: space[5], borderRadius: radius.chip, flexDirection: 'row', alignItems: 'center', gap: space[2], backgroundColor: selected ? undefined : raised ? c.raised : c.card }}
     >
-      {icon ? <Icon icon={icon} size={18} tone={selected ? 'onInk' : 'ink'} /> : null}
+      {selected ? <InkFill layer style={{ borderRadius: radius.chip }} /> : null}
+      {icon ? <View><Icon icon={icon} size={18} tone={selected ? 'onInk' : 'ink'} /></View> : null}
       <Text variant="labelMedium" tone={selected ? 'onInk' : 'ink'}>{label}</Text>
     </ScalePressable>
   );

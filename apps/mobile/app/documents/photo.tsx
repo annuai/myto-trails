@@ -5,7 +5,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { photoUri } from '@/lib/localMedia';
-import { fixed, space } from '@/theme/tokens';
+import { inkSolid, space } from '@/theme/tokens';
 import { documentPhoto } from '@/ui/DocumentPhotoField.tokens';
 import { IconButton } from '@/ui/IconButton';
 import { Text } from '@/ui/Text';
@@ -29,7 +29,7 @@ export default function DocumentPhotoViewer() {
   useEffect(() => { void unlock().then(setAllowed, () => setAllowed(false)); }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: fixed.ink }}>
+    <View style={{ flex: 1, backgroundColor: inkSolid }}>
       {allowed ? (
         <ScrollView
           style={{ flex: 1 }} contentContainerStyle={{ width, height, justifyContent: 'center' }}

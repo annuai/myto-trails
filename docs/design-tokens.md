@@ -32,6 +32,38 @@ Colours come from the palette (`useTheme().c`, `fixed`, `dark`, `light`); `check
 
 `c.riders` is the group-ride rider palette: eight muted, earthy hues (teal, plum, olive, indigo, sienna, rose, sage, violet), each at least 4.5:1 on its theme's paper and raised colours, with a lighter set for dark. Map labels are white, so `riderColor(slot)` uses the light set there; lists pass `c.riders`. A rider's slot comes from their id, so every phone agrees.
 
+## Ink fill (`inkFill`)
+
+Every surface the app used to paint with plain ink (the primary button, a selected chip, the sliding tab indicator, a solid badge, a ticked checkbox, the progress bar and page dots, the ride bar, the action banner, the share cards) takes its fill from one token, drawn by one component, `<InkFill>` (`src/ui/InkFill.tsx`). Text and icons on it are `onInk`.
+
+```ts
+type InkFill = { colors: readonly string[]; start: { x: number; y: number }; end: { x: number; y: number } };
+```
+
+`colors` is spread evenly along the line from `start` to `end` (0 to 1 of the shape's width and height). **One colour is a plain solid fill** (`InkFill` renders a `View`); two or more are a gradient (`expo-linear-gradient`; iOS, Android and the web build).
+
+The values live in `packages/tokens/src/mobile.ts`:
+
+| Value | Used by | Look |
+|---|---|---|
+| `inkFillBlack` | the light palette's `inkFill`, and `fixed.inkFill` (surfaces that are dark in both themes: ride bar, banner, share cards) | near-black `#0b0d12` with a deep blue-teal glow (`#12303f`) drifting down to the right and back to near-black |
+| `inkFillCream` | the dark palette's `inkFill` | the same drift in cream (the dark theme flips ink to cream, so its selected chips are light) |
+| `inkSolid` | places that cannot show a gradient: a map pin and its icon, behind a full-screen photo, the backing under a share card | `#0b0d12`, the first stop of `inkFillBlack` |
+
+**Back to one colour:** set `colors` to one entry, for example `colors: ["#0b0d12"]`. **A different gradient:** edit the stops, `start` and `end`. Keep `inkSolid` equal to the first stop of `inkFillBlack`.
+
+**Rules for a new colour.** `contrast.test.ts` fails if `onInk` is under 7:1 on any stop, or if a stop is under 3:1 against paper, card and raised. Do not set `backgroundColor: c.ink` on a surface; use `<InkFill>`:
+
+- on a `Pressable` or `View` with content, put `<InkFill layer style={{ borderRadius: radius.x }} />` as its first child. `layer` fills the parent behind the content and ignores touches, so size, press feedback and layout stay as they were. On the web, wrap a bare icon in a `View` so it paints above the layer;
+- `always` uses the dark fill in either theme (for a surface inside `<Theme mode="dark">`);
+- where the parent casts a shadow or is captured as an image, also give it `backgroundColor: inkSolid` under the layer.
+
+Not converted on purpose: the 7% ink tint behind the pull-down quote (`PullQuote`), and strokes and text that use `fixed.ink` (the route line on the share card, map waypoint rings, a label on a white pin).
+
+## Colour contrast (`theme/contrast.test.ts`)
+
+The test computes WCAG 2.2 ratios for every text tone on every surface, in both themes: text 4.5:1, icons and outlines 3:1, `onInk` on the ink fill 7:1. Two tokens exist because of it: `tabLabel` (the unselected labels of the tab bar: `muted` is 5.7:1 on the bar, `tabLabel` 7.7:1) and `edge` (the resting outline of a text box, 3:1; `line` is only for dividers).
+
 ## Rules
 
 1. **Look for a token first.** If the value is on the `space` scale, use `space[n]`. If a role exists (`size.target`, `radius.card`), use that.

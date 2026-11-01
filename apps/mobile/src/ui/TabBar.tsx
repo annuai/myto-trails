@@ -60,7 +60,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
             <Highlight on={on} color={c.paper} radius={(h - 12) / 2} />
             <View style={{ position: 'relative', zIndex: 1, alignItems: 'center', gap: landscape ? space.half : space[1] }}>
               <Icon icon={it.icon} size={24} tone={on ? 'ink' : 'muted'} strokeWidth={on ? 2.25 : 1.75} />
-              <Text variant="caption" tone={on ? 'ink' : 'muted'} style={{ fontFamily: 'Geist_500Medium' }}>{it.label}</Text>
+              <Text variant="caption" tone="ink" style={{ fontFamily: 'Geist_500Medium', color: on ? c.ink : c.tabLabel }}>{it.label}</Text>
             </View>
           </ScalePressable>
         );

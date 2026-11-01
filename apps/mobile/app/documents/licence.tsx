@@ -6,7 +6,8 @@ import { useProfile, type Licence } from '@/store/profile';
 import { useTodos } from '@/store/todos';
 import { Button } from '@/ui/Button';
 import { ChoiceChip } from '@/ui/Chip';
-import { DateField, DatePickSheet } from '@/ui/DateField';
+import { addMonths, todayISO } from '@/lib/dates';
+import { DateField } from '@/ui/DateField';
 import { DocumentPhotoField } from '@/ui/DocumentPhotoField';
 import { Field } from '@/ui/Field';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
@@ -21,7 +22,6 @@ export default function LicenceForm() {
   const router = useRouter();
   const { licence, setLicence } = useProfile();
   const [f, setF] = useState<Licence>(licence ?? { holder: '', number: '', classes: ['MCWG'] });
-  const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string>();
   const toggle = (k: string) => setF((x) => ({ ...x, classes: x.classes.includes(k) ? x.classes.filter((c) => c !== k) : [...x.classes, k] }));
 
@@ -35,17 +35,14 @@ export default function LicenceForm() {
   const remove = () => { setLicence(undefined); useTodos.getState().syncSource('licence', '', undefined); router.back(); };
 
   return (
-    <Screen
-      footer={<Button label="Save licence" onPress={save} />}
-      overlay={<DatePickSheet open={picking} title="Licence valid till" value={f.validTill} onPick={(validTill) => setF((x) => ({ ...x, validTill: validTill || undefined }))} onClose={() => setPicking(false)} />}
-    >
+    <Screen footer={<Button label="Save licence" onPress={save} />}>
       <BackHeader title="Documents" />
       <PageTitle>Driving licence</PageTitle>
       <View style={{ gap: space[5] }}>
         <Field label="Name on licence" value={f.holder} onChangeText={(holder) => setF({ ...f, holder })} autoComplete="name" />
         <Field label="Licence number" value={f.number} onChangeText={(number) => setF({ ...f, number })} autoCapitalize="characters" autoCorrect={false} hint="As printed on the card" />
         <Field label="Issuing RTO (optional)" value={f.rto ?? ''} onChangeText={(rto) => setF({ ...f, rto })} />
-        <DateField label="Valid till" value={f.validTill} onPress={() => setPicking(true)} hint="You get a reminder in your to-do list" />
+        <DateField label="Valid till" title="Licence valid till" value={f.validTill} max={addMonths(todayISO(), 12 * 40)} clearable onChange={(validTill) => setF((x) => ({ ...x, validTill: validTill || undefined }))} hint="You get a reminder in your to-do list" />
       </View>
       <SectionTitle>Photos</SectionTitle>
       <Stack gap={5}>

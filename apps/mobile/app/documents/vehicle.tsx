@@ -5,7 +5,8 @@ import { Trash2 } from 'lucide-react-native';
 import { useProfile, type Vehicle } from '@/store/profile';
 import { useTodos } from '@/store/todos';
 import { Button } from '@/ui/Button';
-import { DateField, DatePickSheet } from '@/ui/DateField';
+import { addMonths, todayISO } from '@/lib/dates';
+import { DateField } from '@/ui/DateField';
 import { DocumentPhotoField } from '@/ui/DocumentPhotoField';
 import { Field } from '@/ui/Field';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
@@ -14,6 +15,8 @@ import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 
 import { space } from '@/theme/tokens';
+/** Papers can run for decades (a registration is fifteen years), so the year wheel goes further ahead than usual. */
+const farthest = () => addMonths(todayISO(), 12 * 30);
 type DateKey = 'rcValidTill' | 'insuranceValidTill' | 'pucValidTill';
 const dates: { key: DateKey; label: string; source: string; todo: string }[] = [
   { key: 'rcValidTill', label: 'Registration (RC) valid till', source: 'rc', todo: 'Registration (RC) renewal' },
@@ -25,7 +28,6 @@ export default function VehicleForm() {
   const router = useRouter();
   const { vehicle, setVehicle } = useProfile();
   const [f, setF] = useState<Vehicle>(vehicle ?? { regNo: '', model: '', ownerName: '' });
-  const [picking, setPicking] = useState<DateKey | null>(null);
   const [error, setError] = useState<string>();
 
   const save = () => {
@@ -36,32 +38,28 @@ export default function VehicleForm() {
     router.back();
   };
   const remove = () => { setVehicle(undefined); for (const d of dates) useTodos.getState().syncSource(d.source, '', undefined); router.back(); };
-  const current = picking ? dates.find((d) => d.key === picking) : undefined;
 
   return (
-    <Screen
-      footer={<Button label="Save vehicle" onPress={save} />}
-      overlay={<DatePickSheet open={!!picking} title={current?.label ?? ''} value={picking ? f[picking] : undefined} onPick={(v) => picking && setF((x) => ({ ...x, [picking]: v || undefined }))} onClose={() => setPicking(null)} />}
-    >
+    <Screen footer={<Button label="Save vehicle" onPress={save} />}>
       <BackHeader title="Documents" />
       <PageTitle>Vehicle and papers</PageTitle>
       <View style={{ gap: space[5] }}>
         <Field label="Registration number" value={f.regNo} onChangeText={(regNo) => setF({ ...f, regNo })} autoCapitalize="characters" autoCorrect={false} />
         <Field label="Make and model" value={f.model} onChangeText={(model) => setF({ ...f, model })} />
         <Field label="Owner name (optional)" value={f.ownerName} onChangeText={(ownerName) => setF({ ...f, ownerName })} />
-        <DateField label={dates[0].label} value={f.rcValidTill} onPress={() => setPicking('rcValidTill')} />
+        <DateField label={dates[0].label} title={dates[0].label} value={f.rcValidTill} max={farthest()} clearable onChange={(v) => setF((x) => ({ ...x, rcValidTill: v || undefined }))} />
         <DocumentPhotoField docKind="rc" label="Registration certificate (RC)" />
       </View>
       <SectionTitle>Insurance</SectionTitle>
       <View style={{ gap: space[5] }}>
         <Field label="Insurer (optional)" value={f.insurer ?? ''} onChangeText={(insurer) => setF({ ...f, insurer })} />
         <Field label="Policy number (optional)" value={f.policyNo ?? ''} onChangeText={(policyNo) => setF({ ...f, policyNo })} autoCapitalize="characters" autoCorrect={false} />
-        <DateField label={dates[1].label} value={f.insuranceValidTill} onPress={() => setPicking('insuranceValidTill')} />
+        <DateField label={dates[1].label} title={dates[1].label} value={f.insuranceValidTill} max={farthest()} clearable onChange={(v) => setF((x) => ({ ...x, insuranceValidTill: v || undefined }))} />
         <DocumentPhotoField docKind="insurance" label="Insurance policy" />
       </View>
       <SectionTitle>Pollution certificate</SectionTitle>
       <Stack gap={5}>
-        <DateField label={dates[2].label} value={f.pucValidTill} onPress={() => setPicking('pucValidTill')} hint="Dates become reminders in your to-do list" />
+        <DateField label={dates[2].label} title={dates[2].label} value={f.pucValidTill} max={farthest()} clearable onChange={(v) => setF((x) => ({ ...x, pucValidTill: v || undefined }))} hint="Dates become reminders in your to-do list" />
         <DocumentPhotoField docKind="puc" label="PUC certificate" />
       </Stack>
       {error ? <Text variant="label" tone="stop" style={{ marginTop: space[4] }}>{error}</Text> : null}

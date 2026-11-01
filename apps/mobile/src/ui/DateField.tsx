@@ -1,36 +1,34 @@
+import { useState } from 'react';
 import { View } from 'react-native';
 import { Calendar } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space, size } from '@/theme/tokens';
 import { formatDate } from '@/lib/dates';
-import { Button } from './Button';
-import { DatePicker } from './DatePicker';
+import { DateDialog } from './DateDialog';
 import { Icon } from './Icon';
-import { Sheet } from './Sheet';
 import { Text } from './Text';
+import { TextButton } from './TextButton';
 import { ScalePressable } from './motion';
 
-/** A field that shows a date; tapping it asks the screen to open <DatePickSheet>. */
-export function DateField({ label, value, onPress, hint }: { label: string; value?: string; onPress: () => void; hint?: string }) {
+/**
+ * A field that shows a date; tapping it opens the date dialog (three wheels, Cancel and OK). `value` and `onChange` are 'YYYY-MM-DD';
+ * an empty value shows `placeholder`. `title` is the dialog's heading. With `clearable` a set date can be removed: `onChange('')`.
+ * `min` and `max` bound the dialog.
+ */
+export function DateField({ label, value, onChange, title, min, max, hint, placeholder = 'Pick a date', clearable }: { label: string; value?: string; onChange: (iso: string) => void; title?: string; min?: string; max?: string; hint?: string; placeholder?: string; clearable?: boolean }) {
   const { c } = useTheme();
+  const [open, setOpen] = useState(false);
   return (
     <View style={{ gap: space[2] }}>
       <Text variant="labelMedium">{label}</Text>
-      <ScalePressable scaleTo={0.99} accessibilityRole="button" accessibilityLabel={`${label}: ${value ? formatDate(value) : 'not set'}`} onPress={onPress}
+      <ScalePressable scaleTo={0.99} accessibilityRole="button" accessibilityLabel={`${label}: ${value ? formatDate(value) : 'not set'}`} accessibilityHint="Opens the date chooser" onPress={() => setOpen(true)}
         style={{ minHeight: size.button, borderRadius: radius.control, paddingHorizontal: space[5], backgroundColor: c.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text variant="body" tone={value ? 'ink' : 'muted'}>{value ? formatDate(value) : 'Pick a date'}</Text>
+        <Text variant="body" tone={value ? 'ink' : 'muted'}>{value ? formatDate(value) : placeholder}</Text>
         <Icon icon={Calendar} size={20} tone="muted" />
       </ScalePressable>
       {hint ? <Text variant="caption" tone="muted">{hint}</Text> : null}
+      {clearable && value ? <View style={{ alignItems: 'flex-start' }}><TextButton label="Clear date" onPress={() => onChange('')} /></View> : null}
+      <DateDialog open={open} title={title ?? 'Choose date'} value={value} min={min} max={max} onCancel={() => setOpen(false)} onConfirm={(iso) => { onChange(iso); setOpen(false); }} />
     </View>
-  );
-}
-
-export function DatePickSheet({ open, title, value, onPick, onClose }: { open: boolean; title: string; value?: string; onPick: (iso: string) => void; onClose: () => void }) {
-  return (
-    <Sheet open={open} title={title} onClose={onClose}>
-      <DatePicker value={value} onChange={(iso) => { onPick(iso); onClose(); }} />
-      {value ? <Button variant="soft" label="Clear date" onPress={() => { onPick(''); onClose(); }} /> : null}
-    </Sheet>
   );
 }

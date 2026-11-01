@@ -3,11 +3,12 @@ import { useDistanceUnit } from '@/store/region';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Theme } from '@/theme/ThemeProvider';
-import { dark, fixed, space, layout, radius, shadow, size } from '@/theme/tokens';
+import { dark, inkSolid, space, layout, radius, shadow, size } from '@/theme/tokens';
 import { useChrome } from '@/store/chrome';
 import { useRecorder } from '@/store/recorder';
 import { clock } from '@/lib/format';
 import { asText, distanceKm } from '@/lib/units';
+import { InkFill } from './InkFill';
 import { Text } from './Text';
 import { useLayout } from './useLayout';
 import { rideBar } from './RideBar.tokens';
@@ -29,7 +30,8 @@ export function RideBar() {
   return (
     <Theme mode="dark">
       <Pressable accessibilityRole="button" accessibilityLabel="Open the live ride" onPress={() => router.push('/ride/live')}
-        style={{ position: 'absolute', alignSelf: 'center', width: '92%', maxWidth: layout.barMax, bottom: landscape ? rideBar.bottomLandscape : rideBar.bottom, height: size.button, borderRadius: radius.thumb, backgroundColor: fixed.ink, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space[5], ...shadow.ride }}>
+        style={{ position: 'absolute', alignSelf: 'center', width: '92%', maxWidth: layout.barMax, bottom: landscape ? rideBar.bottomLandscape : rideBar.bottom, height: size.button, borderRadius: radius.thumb, backgroundColor: inkSolid, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space[5], ...shadow.ride }}>
+        <InkFill always layer style={{ borderRadius: radius.thumb }} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
           <View style={{ width: size.dot, height: size.dot, borderRadius: radius.chip, backgroundColor: paused ? dark.muted : dark.stop }} />
           <Text variant="data">{paused ? 'Paused' : 'Riding'} {clock(elapsedMs(nowMs()))} · {asText(distanceKm(meters / 1000))}</Text>

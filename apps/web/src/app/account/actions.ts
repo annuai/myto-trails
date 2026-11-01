@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/server/auth/session";
 import { getSql } from "@/server/db/client";
 import { parseGender } from "@/server/community/gender";
 import { updateMemberPrivacy } from "@/server/community/members";
+import { parsePhoneInput } from "@/server/community/phone";
 import { removeBike, saveBike, setAvatar } from "@/server/community/profile";
 
 export async function signOutAction(): Promise<void> {
@@ -41,9 +42,12 @@ export async function updatePrivacyAction(formData: FormData): Promise<void> {
   if (!user) redirect("/sign-in?next=%2Faccount");
   const gender = parseGender(formData.get("gender"));
   if (gender === "invalid") redirect("/account?privacy=error");
+  const phone = parsePhoneInput(formData.get("phone"));
+  if (phone === "invalid") redirect("/account?privacy=phone");
   const sql = getSql();
   const r = await updateMemberPrivacy(sql, {
     userId: user.id,
+    phone,
     profilePublic: formData.get("visibility") === "public",
     gender,
     bio: String(formData.get("bio") ?? "").trim() || null,
