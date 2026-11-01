@@ -19,8 +19,23 @@ export const initialCrash: CrashState = { speeds: [] };
 
 export const MOVING_KMH = 25;
 export const IMPACT_G = 4;
+/** Road reacts to smaller impacts at lower speeds; off-road shrugs off the knocks of rough trails. */
+export const ROAD_IMPACT_G = 3;
+export const ROAD_MOVING_KMH = 20;
+export const OFFROAD_IMPACT_G = 6;
+export const OFFROAD_MOVING_KMH = 30;
 export const STOPPED_KMH = 8;
 export const RIDING_KMH = 15;
+export type CrashPreset = 'road' | 'mixed' | 'offroad';
+export const CRASH_PRESETS: CrashPreset[] = ['road', 'mixed', 'offroad'];
+const TUNING: Record<CrashPreset, { impactG: number; movingKmh: number }> = {
+  road: { impactG: ROAD_IMPACT_G, movingKmh: ROAD_MOVING_KMH },
+  mixed: { impactG: IMPACT_G, movingKmh: MOVING_KMH },
+  offroad: { impactG: OFFROAD_IMPACT_G, movingKmh: OFFROAD_MOVING_KMH },
+};
+/** The impact and speed thresholds for a kind of riding. `mixed` is the original behaviour. */
+export function tuning(p: CrashPreset): { impactG: number; movingKmh: number } { return TUNING[p]; }
+
 const LOOKBACK_MS = 12_000;
 /** A fix this soon after the impact window may still carry the speed from before it. */
 const SETTLE_MS = 1_000;
@@ -30,7 +45,7 @@ const CONFIRM_MS = 12_000;
 const GIVE_UP_MS = 30_000;
 
 /** One step. `crash` is true once, on the evidence that completes the picture; the impact is then forgotten. */
-export function stepCrash(s: CrashState, e: CrashEvidence): { state: CrashState; crash: boolean } {
+export function stepCrash(s: CrashState, e: CrashEvidence, t = tuning('mixed')): { state: CrashState; crash: boolean } {
   const speeds = e.k === 'window' ? s.speeds : [...s.speeds, ...(e.k === 'gps' ? [{ t: e.t, kmh: e.kmh }] : [])].filter((p) => e.t - p.t <= LOOKBACK_MS);
   let suspect = s.suspect;
 
@@ -43,9 +58,9 @@ export function stepCrash(s: CrashState, e: CrashEvidence): { state: CrashState;
   if (e.k === 'window') {
     if (suspect) {
       if (e.stepHz > 0 && e.t - suspect.t >= RIDE_ON_AFTER_MS) suspect = undefined;
-    } else if (e.peak >= IMPACT_G) {
+    } else if (e.peak >= t.impactG) {
       const before = Math.max(0, ...s.speeds.filter((p) => e.t - p.t <= LOOKBACK_MS).map((p) => p.kmh));
-      if (before >= MOVING_KMH) suspect = { t: e.t, stopped: false };
+      if (before >= t.movingKmh) suspect = { t: e.t, stopped: false };
     }
   }
 

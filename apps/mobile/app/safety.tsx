@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 import { ShieldAlert } from 'lucide-react-native';
+import { CRASH_PRESETS, type CrashPreset } from '@/lib/crashDetect';
 import { useCrash } from '@/store/crash';
 import { useCompanion } from '@/store/companion';
 import { useProfile } from '@/store/profile';
@@ -7,16 +8,25 @@ import { space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Checkbox } from '@/ui/Checkbox';
+import { ChoiceChip } from '@/ui/Chip';
+import { Stack } from '@/ui/layout';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { useRouter } from 'expo-router';
 
+const PRESETS: Record<CrashPreset, { label: string; sub: string }> = {
+  road: { label: 'Road', sub: 'Smooth highways and city streets. Reacts to smaller impacts.' },
+  mixed: { label: 'Mixed', sub: 'A bit of everything.' },
+  offroad: { label: 'Off-road', sub: 'Rough trails. Reacts only to big impacts.' },
+};
+
 /** Crash detection: the switch, what it does and does not do, and a way to see the alert without crashing. */
 export default function Safety() {
   const router = useRouter();
   const enabled = useCrash((s) => s.enabled);
+  const preset = useCrash((s) => s.preset);
   const group = useCompanion((s) => !!s.group);
   const contacts = useProfile((s) => s.contacts.length);
 
@@ -28,6 +38,15 @@ export default function Safety() {
         <Row icon={ShieldAlert} label="Watch for crashes while I ride" sub="Uses the phone's motion sensors and GPS. Off by default." chevron={false}
           right={<Checkbox checked={enabled} label="Watch for crashes while I ride" onChange={(v) => useCrash.getState().setEnabled(v)} />} />
       </ListCard>
+      <SectionTitle>How rough are your rides?</SectionTitle>
+      <Stack gap={3}>
+        {CRASH_PRESETS.map((p) => (
+          <Stack key={p} gap={2} align="flex-start">
+            <ChoiceChip label={PRESETS[p].label} selected={preset === p} onPress={() => useCrash.getState().setPreset(p)} />
+            <Text variant="label" tone="muted">{PRESETS[p].sub}</Text>
+          </Stack>
+        ))}
+      </Stack>
       <SectionTitle>What happens</SectionTitle>
       <Card style={{ gap: space[3] }}>
         <Text variant="label" tone="muted">If a hard impact at speed is followed by the bike stopping dead and staying still, the phone buzzes and asks &ldquo;Are you OK?&rdquo; for 60 seconds. Tap I&rsquo;m OK, on the screen or on the lock screen notification, to cancel.</Text>
