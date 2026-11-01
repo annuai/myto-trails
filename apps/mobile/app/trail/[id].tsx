@@ -9,6 +9,8 @@ import { useTrailCommentsSection } from '@/features/community/useTrailCommentsSe
 import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
 import { RideStartActions } from '@/features/trip/RideStartActions';
 import { recordNow } from '@/features/trip/startTrip';
+import { TrailCarry } from '@/features/trail/TrailCarry';
+import { WomenSafe } from '@/features/trail/WomenSafe';
 import { RiderReports } from '@/features/RiderReports';
 import { markRidden, unmarkRidden } from '@/api/ridden';
 import { useRidden } from '@/features/passport/useRidden';
@@ -133,6 +135,8 @@ export default function TrailDetail() {
           </Card>
         </>
       ) : null}
+      <WomenSafe slug={slug} marks={t.fromOffline ? undefined : detail.womenSafe} token={token} reload={t.reload} />
+      <TrailCarry carry={detail.carry} />
       {gallery.length ? (
         <>
           <SectionTitle>Photos</SectionTitle>

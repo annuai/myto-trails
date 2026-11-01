@@ -6,8 +6,8 @@ const e = (at: number, data: unknown = { n: 1 }) => ({ data, at });
 
 describe('cachePersist', () => {
   it('saves only public keys, never anything that belongs to an account', () => {
-    for (const k of ['trail:a', 'search:q=x', 'bikes:makes', 'countries']) expect(isPersistable(k)).toBe(true);
-    for (const k of ['saved', 'me', 'clubs', 'club:1', 'club:1:posts', 'comments:a:in', 'comments:a:out', 'checkin:1']) expect(isPersistable(k)).toBe(false);
+    for (const k of ['trail:a', 'trail:a:out', 'search:q=x', 'bikes:makes', 'countries']) expect(isPersistable(k)).toBe(true);
+    for (const k of ['saved', 'me', 'clubs', 'club:1', 'club:1:posts', 'comments:a:in', 'comments:a:out', 'checkin:1', 'trail:a:in']) expect(isPersistable(k)).toBe(false);
   });
   it('keeps the newest entries up to the limit and drops the old and the oversize', () => {
     const entries: [string, { data: unknown; at: number }][] = [];

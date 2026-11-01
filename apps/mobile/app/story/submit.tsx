@@ -2,13 +2,15 @@ import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Send } from 'lucide-react-native';
-import { ACCESS_BASES, INDIA_STATES, TERRAINS } from '@moto-trails/domain';
+import { ACCESS_BASES, CARRY_ITEMS, CARRY_ITEM_LABEL, INDIA_STATES, TERRAINS } from '@moto-trails/domain';
+import type { CarryItem } from '@moto-trails/domain';
 import { ApiFailure } from '@/api/client';
 import { asText, distanceKm } from '@/lib/units';
 import { newUuid } from '@/lib/uuid';
 import { pathLength, trimEnds } from '@/lib/geo';
 import { startSignIn } from '@/lib/signIn';
 import { submitRide } from '@/lib/submit';
+import { ARRIVAL_NOTE_MAX, CARRY_NOTES_MAX, carryFields, carryProblem } from '@/lib/trailCarry';
 import { useAuth } from '@/store/auth';
 import { useRides } from '@/store/rides';
 import { Button } from '@/ui/Button';
@@ -20,6 +22,7 @@ import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
+import { TimeField } from '@/ui/TimeField';
 import { Text } from '@/ui/Text';
 
 import { space } from '@/theme/tokens';
@@ -29,6 +32,9 @@ const SHAPES = [['loop', 'Loop'], ['out_and_back', 'Out and back'], ['point_to_p
 const ACCESS = [['unknown', 'Not sure'], ['public', 'Public'], ['permission_required', 'Permission needed'], ['restricted', 'Restricted']] as const;
 const BASIS = ACCESS_BASES.filter((b) => b !== 'none');
 const TRIMS = [0, 200, 500] as const;
+/** Where the best-time window starts when a rider adds one: 6:00 AM to 8:00 AM, in minutes after midnight. */
+const DEFAULT_FROM = 360;
+const DEFAULT_TO = 480;
 
 const Chips = ({ children }: { children: React.ReactNode }) => <View style={{ flexDirection: 'row', gap: space[2], flexWrap: 'wrap' }}>{children}</View>;
 
@@ -50,6 +56,11 @@ export default function Submit() {
   const [basis, setBasis] = useState<string>('rider_observed');
   const [evidence, setEvidence] = useState('');
   const [permission, setPermission] = useState('');
+  const [water, setWater] = useState('');
+  const [items, setItems] = useState<CarryItem[]>([]);
+  const [carryNotes, setCarryNotes] = useState('');
+  const [arrival, setArrival] = useState<{ from: number; to: number } | null>(null);
+  const [arrivalNote, setArrivalNote] = useState('');
   const [trim, setTrim] = useState<number>(200);
   const [agreed, setAgreed] = useState(false);
   const [picking, setPicking] = useState(false);
@@ -69,6 +80,8 @@ export default function Submit() {
     if (!terrain.length) return 'Choose at least one terrain.';
     if (access !== 'unknown' && !evidence.trim()) return 'Say how you know the access, in a few words.';
     if (access === 'permission_required' && permission.trim().length < 10) return 'Explain how a rider gets permission.';
+    const carryIssue = carryProblem({ water, notes: carryNotes, arrival, arrivalNote });
+    if (carryIssue) return carryIssue;
     if (points.length < 2) return 'Nothing is left of the track after trimming. Choose a smaller trim.';
     if (!agreed) return 'Accept the contribution licence to submit.';
     return undefined;
@@ -83,6 +96,7 @@ export default function Submit() {
       const res = await submitRide(token, {
         clientId, name: name.trim(), summary: summary.trim(), state: state.slug, district: district.trim(), nearestTown: town.trim(), difficulty, terrain, routeShape: shape,
         accessClass: access, basis, evidence: evidence.trim(), permissionInstructions: permission.trim(), points, waypoints: ride.waypoints,
+        carry: carryFields({ water, items, notes: carryNotes, arrival, arrivalNote }),
       }, setBusy);
       useRides.getState().setSubmission(ride.id, { status: 'submitted', at: Date.now(), trailName: name.trim(), slug: res.slug, clientId });
       router.replace(`/story/${ride.id}`);
@@ -130,6 +144,23 @@ export default function Submit() {
           {access === 'permission_required' ? <Field label="How does a rider get permission?" value={permission} onChangeText={setPermission} multiline /> : null}
         </View>
       ) : null}
+      <SectionTitle>What to carry (optional)</SectionTitle>
+      <View style={{ gap: space[4] }}>
+        <Field label="Water per rider, in litres" value={water} onChangeText={setWater} keyboardType="decimal-pad" placeholder="e.g. 2" />
+        <Chips>{CARRY_ITEMS.map((i) => <ChoiceChip key={i} label={CARRY_ITEM_LABEL[i]} selected={items.includes(i)} onPress={() => setItems((x) => (x.includes(i) ? x.filter((y) => y !== i) : [...x, i]))} />)}</Chips>
+        <Field label="Anything else to carry?" value={carryNotes} onChangeText={setCarryNotes} multiline maxLength={CARRY_NOTES_MAX} />
+      </View>
+      <SectionTitle>Best time to reach (optional)</SectionTitle>
+      <View style={{ gap: space[3] }}>
+        <Chips><ChoiceChip label={arrival ? 'Remove the best time' : 'Add a best time'} selected={!!arrival} onPress={() => setArrival(arrival ? null : { from: DEFAULT_FROM, to: DEFAULT_TO })} /></Chips>
+        {arrival ? (
+          <>
+            <TimeField label="From" value={arrival.from} onChange={(from) => setArrival({ ...arrival, from })} />
+            <TimeField label="To" value={arrival.to} onChange={(to) => setArrival({ ...arrival, to })} />
+            <Field label="Why then?" value={arrivalNote} onChangeText={setArrivalNote} maxLength={ARRIVAL_NOTE_MAX} placeholder="e.g. Cooler, and the river crossing is low" />
+          </>
+        ) : null}
+      </View>
       <SectionTitle>Hide the start and end</SectionTitle>
       <Chips>{TRIMS.map((t) => <ChoiceChip key={t} label={t ? `${t} m` : 'None'} selected={trim === t} onPress={() => setTrim(t)} />)}</Chips>
       <Card style={{ marginTop: space[4] }}><Text variant="label" tone="muted">The file sent has {points.length} points and {asText(distanceKm(km))}. Trimming keeps your home or work out of it.</Text></Card>

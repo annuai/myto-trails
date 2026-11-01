@@ -1,4 +1,5 @@
 import type { LatLng } from '@/lib/geo';
+import type { TrailCarry, WomenSafe } from '@moto-trails/domain';
 
 export type Cover = { variants: Record<string, string>; altText: string; width: number; height: number };
 export type TrailSummary = {
@@ -16,6 +17,10 @@ export type TrailDetail = TrailSummary & {
   restrictions: string[]; permissionInstructions: string | null; conditionNote: string | null; hasGpx: boolean;
   /** Where the trail starts; only the approximate public point for a sensitive trail. */
   location?: { lat: number; lon: number } | null;
+  /** What to carry and when to arrive. Absent on copies saved before the API sent it; null when the trail has none. */
+  carry?: TrailCarry | null;
+  /** Women-safe marks, for the viewer who asked. Absent on older saved copies. */
+  womenSafe?: WomenSafe;
 };
 export type RouteDto = { distanceKm: number; elevGainM: number; elevLossM: number; minElevM: number; maxElevM: number; pointCount: number; profile: { d: number; e: number }[]; line: [number, number][] };
 export type SearchResult = { items: TrailSummary[]; total: number; page: number; pageSize: number };
