@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Animated, View } from 'react-native';
-import { useTheme } from '@/theme/ThemeProvider';
 import { Card } from './Card';
+import { InkFill } from './InkFill';
 import { EASE } from './motion';
 import { Text } from './Text';
 
@@ -23,13 +23,12 @@ export function HeroCard({ eyebrow, title, children, action }: { eyebrow: string
 }
 
 export function ProgressBar({ value, max, label }: { value: number; max: number; label: string }) {
-  const { c } = useTheme();
   const pct = max ? Math.min(1, value / max) : 0;
   const w = useAnimatedValue(0);
   useEffect(() => { Animated.timing(w, { toValue: pct, duration: 500, easing: EASE, useNativeDriver: false }).start(); }, [pct, w]);
   return (
     <View accessibilityRole="progressbar" accessibilityLabel={label} accessibilityValue={{ min: 0, max, now: value }} style={{ height: heroCard.track, borderRadius: radius.chip, backgroundColor: scrim.track, overflow: 'hidden' }}>
-      <Animated.View style={{ width: w.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), height: '100%', borderRadius: radius.chip, backgroundColor: c.ink }} />
+      <Animated.View style={{ width: w.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), height: '100%', borderRadius: radius.chip }}><InkFill layer style={{ borderRadius: radius.chip }} /></Animated.View>
     </View>
   );
 }

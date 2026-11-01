@@ -22,7 +22,7 @@ export function Field({ label, hint, error, multiline, onCard, ...rest }: Props)
         style={{
           minHeight: multiline ? size.textArea : size.button, borderRadius: radius.control, paddingHorizontal: space[5], paddingVertical: multiline ? space[4] : 0,
           backgroundColor: onCard ? c.field : c.card, color: c.ink, fontFamily: font.regular, fontSize: type.body.fontSize,
-          borderWidth: size.rule, borderColor: error ? c.stop : focus ? c.accent : 'transparent', textAlignVertical: multiline ? 'top' : 'center',
+          borderWidth: size.rule, borderColor: error ? c.stop : focus ? c.accent : c.edge, textAlignVertical: multiline ? 'top' : 'center',
           // web only: drop the browser's default outline, the border shows focus
           outlineStyle: 'none' as unknown as 'solid',
         }}

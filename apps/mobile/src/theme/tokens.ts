@@ -1,9 +1,9 @@
 // Values mirror packages/tokens (light) plus the app-only dark palette from docs/16 §3.
 // TODO: generate this file from packages/tokens (docs/16 §7) instead of copying.
-import { dark, fixed, light, tints, type Palette } from '@moto-trails/tokens/mobile';
+import { dark, fixed, inkFillBlack, inkFillCream, inkSolid, light, tints, type InkFill, type Palette } from '@moto-trails/tokens/mobile';
 
-export { dark, fixed, light, tints };
-export type { Palette };
+export { dark, fixed, inkFillBlack, inkFillCream, inkSolid, light, tints };
+export type { InkFill, Palette };
 export type Tone = 'ink' | 'muted' | 'accent' | 'good' | 'caution' | 'stop' | 'unknown' | 'onInk';
 export type Tint = keyof typeof tints;
 

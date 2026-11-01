@@ -3,6 +3,7 @@ import { Animated, StyleSheet, View } from 'react-native';
 import { segmentFrame } from '@/lib/segments';
 import { radius, size } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
+import { InkFill } from './InkFill';
 import { EASE, ScalePressable, useReducedMotion } from './motion';
 import { segmentedTabs } from './SegmentedTabs.tokens';
 import { Text } from './Text';
@@ -31,7 +32,7 @@ export function SegmentedTabs<T extends string>({ tabs, value, onChange, label }
   return (
     <View accessibilityRole="tablist" accessibilityLabel={label} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
       style={{ flexDirection: 'row', padding: segmentedTabs.pad, borderRadius: radius.chip, backgroundColor: c.raised }}>
-      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: segmentedTabs.pad, left: 0, width: frame.width, height: size.target, borderRadius: radius.chip, backgroundColor: c.ink, transform: [{ translateX: x }] }} />
+      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: segmentedTabs.pad, left: 0, width: frame.width, height: size.target, borderRadius: radius.chip, transform: [{ translateX: x }] }}><InkFill layer style={{ borderRadius: radius.chip }} /></Animated.View>
       {tabs.map((t, i) => {
         const on = t.key === value;
         // The label turns light as the indicator arrives under it and dark as it leaves, so it is never light on the page or dark on the ink.

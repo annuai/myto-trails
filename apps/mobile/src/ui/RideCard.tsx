@@ -4,7 +4,8 @@ import Svg, { G, Path, Polyline, Text as SvgText, TSpan } from 'react-native-svg
 import { ATTRIBUTION, CARD_PAD, mapBoxOf, TILE, type CardMapLayout } from '@/lib/cardMap';
 import type { CardModel } from '@/lib/rideCard';
 import { cardTokens } from '@/lib/rideCard.tokens';
-import { fixed } from '@/theme/tokens';
+import { fixed, inkSolid } from '@/theme/tokens';
+import { InkFill } from './InkFill';
 import { LOGO_PATHS, LOGO_RATIO, LOGO_VIEWBOX } from './logoPaths';
 
 const PAD = CARD_PAD;
@@ -47,7 +48,8 @@ export const RideCard = forwardRef<ComponentRef<typeof View>, { model: CardModel
   const colW = (W - PAD * 2) / Math.max(1, model.stats.length);
   const logoW = LOGO_H * LOGO_RATIO;
   return (
-    <View ref={ref} collapsable={false} style={{ width, height: (width * H) / W, backgroundColor: fixed.ink, overflow: 'hidden' }}>
+    <View ref={ref} collapsable={false} style={{ width, height: (width * H) / W, backgroundColor: inkSolid, overflow: 'hidden' }}>
+      <InkFill always layer />
       {map ? (
         <View style={{ position: 'absolute', left: box.x * k, top: box.y * k, width: box.width * k, height: box.height * k, borderRadius: cardTokens.mapRadius * k, overflow: 'hidden', backgroundColor: fixed.mapDay }}>
           {map.tiles.map((t) => <Image key={t.url + t.left + t.top} source={{ uri: t.url }} onLoad={tileDone} onError={tileDone} style={{ position: 'absolute', left: t.left * k, top: t.top * k, width: Math.ceil(TILE * k) + 1, height: Math.ceil(TILE * k) + 1 }} />)}

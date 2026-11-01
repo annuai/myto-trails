@@ -2,7 +2,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { MapPin, X } from 'lucide-react-native';
 import { clusterLabel, type RiderCluster, type RiderMark } from '@/lib/riderClusters';
 import { useTheme } from '@/theme/ThemeProvider';
-import { fixed, light, radius, size, space } from '@/theme/tokens';
+import { fixed, inkSolid, light, radius, size, space } from '@/theme/tokens';
 import { IconButton } from '../IconButton';
 import { Text } from '../Text';
 
@@ -25,7 +25,7 @@ export function RiderPin({ mark }: { mark: RiderMark }) {
 /** Riders too close to name one by one: the first rider's name and how many others, in a round-ended badge. Tapping it lists them. */
 export function ClusterPin({ cluster }: { cluster: RiderCluster }) {
   return (
-    <View style={{ minHeight: size.chip, paddingHorizontal: space[3], borderRadius: radius.chip, backgroundColor: fixed.ink, borderWidth: size.rule, borderColor: fixed.white, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ minHeight: size.chip, paddingHorizontal: space[3], borderRadius: radius.chip, backgroundColor: inkSolid, borderWidth: size.rule, borderColor: fixed.white, alignItems: 'center', justifyContent: 'center' }}>
       <Text variant="labelMedium" numberOfLines={1} style={{ color: fixed.white }}>{clusterLabel(cluster)}</Text>
     </View>
   );
@@ -40,7 +40,7 @@ export function DestinationPin({ name }: { name?: string }) {
           <Text variant="labelMedium" numberOfLines={1} style={{ color: fixed.ink }}>{name}</Text>
         </View>
       ) : null}
-      <MapPin size={size.pin} color={fixed.white} fill={fixed.ink} strokeWidth={size.outline} />
+      <MapPin size={size.pin} color={fixed.white} fill={inkSolid} strokeWidth={size.outline} />
     </View>
   );
 }
