@@ -1,10 +1,11 @@
-import type { Sql, TransactionSql } from "postgres";
+import type { Row, Sql, TransactionSql } from "postgres";
 import type { DeclineReason, EventInput, EventResponse, EventRole, EventStatus, RideEvent, RideEventDetail, RosterRow } from "@moto-trails/domain";
 import { DEFAULT_TIME_ZONE } from "@/lib/time-zone";
 import { createGroupRide, joinGroupRide } from "../rides/group-rides";
 import { cleanBody, LINK } from "./comments";
 import { checkInVerdict, seatDecision, validStart, type CheckInVerdict } from "./eventRules";
 import { isMember } from "./members";
+import { ownsMedia, pickVariant } from "./profile";
 
 type Db = Sql | TransactionSql;
 type Fail<R extends string> = { ok: false; reason: R };
@@ -12,6 +13,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const HOUR = 3_600_000;
 const EVENTS_PER_DAY = 5;
 const LIST_MAX = 50;
+const COVER_WIDTH = 1200;
 const REASONS: readonly DeclineReason[] = ["work", "bike", "distance", "other"];
 const ROLES: readonly EventRole[] = ["captain", "marshal", "medic", "sweep"];
 const line = (v: unknown, max: number, min = 1) => {
@@ -21,8 +23,6 @@ const line = (v: unknown, max: number, min = 1) => {
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
 // ---- reading -----------------------------------------------------------------------------------------------
-
-type Row = Record<string, any>;
 
 /** An event is visible to anyone when open, and otherwise to its host and its club's members. Unknown and hidden look identical. */
 const visibleTo = (sql: Db, userId: string) => sql`(e.audience = 'open' or e.host_id = ${userId} or exists (select 1 from club_member cm where cm.club_id = e.club_id and cm.user_id = ${userId}))`;
@@ -35,11 +35,12 @@ function statusOf(r: Row, now: Date): EventStatus {
 
 const listRow = (r: Row, userId: string, now: Date): RideEvent => ({
   id: r.public_id, title: r.title, startsAt: (r.starts_at as Date).toISOString(), timeZone: r.time_zone, placeName: r.place_name, audience: r.audience, status: statusOf(r, now),
-  clubId: r.club_public_id ?? null, clubName: r.club_name ?? null, hostName: r.host_name, going: r.going, capacity: r.capacity, myResponse: r.my_response ?? null, mine: r.host_id === userId,
+  clubId: r.club_public_id ?? null, clubName: r.club_name ?? null, hostName: r.host_name, coverUrl: pickVariant(r.cover, COVER_WIDTH), going: r.going, capacity: r.capacity, myResponse: r.my_response ?? null, mine: r.host_id === userId,
 });
 
 const SELECT = (sql: Db, userId: string) => sql`
   select e.*, g.ended_at as ride_ended_at, c.public_id as club_public_id, c.name as club_name, h.display_name as host_name,
+    (select cm.variants from media cm where cm.id = coalesce(e.cover_media_id, c.cover_media_id)) as cover,
     (select count(*)::int from ride_event_rsvp x where x.event_id = e.id and x.response = 'going') as going,
     (select x.response from ride_event_rsvp x where x.event_id = e.id and x.user_id = ${userId}) as my_response
   from ride_event e join app_user h on h.id = e.host_id left join club c on c.id = e.club_id left join group_ride g on g.id = e.group_ride_id`;
@@ -93,7 +94,7 @@ export async function getEvent(sql: Sql, i: { userId: string; eventId: string; n
 
 // ---- creating ----------------------------------------------------------------------------------------------
 
-export function parseEventInput(b: Record<string, unknown>, now: Date): { ok: true; v: Required<Omit<EventInput, "clubId" | "capacity">> & { clubId: string | null; capacity: number | null; startsAtDate: Date } } | Fail<"invalid"> {
+export function parseEventInput(b: Record<string, unknown>, now: Date): { ok: true; v: Required<Omit<EventInput, "clubId" | "capacity" | "coverMediaId">> & { clubId: string | null; capacity: number | null; coverMediaId: string | null; startsAtDate: Date } } | Fail<"invalid"> {
   const title = line(b.title, 80, 3);
   const place = line(b.placeName, 120);
   const description = b.description === undefined || b.description === "" ? "" : cleanBody(b.description);
@@ -102,6 +103,7 @@ export function parseEventInput(b: Record<string, unknown>, now: Date): { ok: tr
   const capacity = b.capacity === undefined || b.capacity === null ? null : b.capacity;
   const clubId = b.clubId === undefined || b.clubId === null ? null : b.clubId;
   const audience = b.audience;
+  const cover = b.coverMediaId === undefined || b.coverMediaId === null ? null : b.coverMediaId;
   const timeZone = typeof b.timeZone === "string" && b.timeZone ? b.timeZone : DEFAULT_TIME_ZONE;
   if (!title || !place || description.length > 500 || LINK.test(description)) return { ok: false, reason: "invalid" };
   if (!startsAt || Number.isNaN(startsAt.getTime()) || !validStart(startsAt, now)) return { ok: false, reason: "invalid" };
@@ -111,9 +113,10 @@ export function parseEventInput(b: Record<string, unknown>, now: Date): { ok: tr
   if (audience !== "open" && audience !== "members") return { ok: false, reason: "invalid" };
   if (clubId !== null && (typeof clubId !== "string" || !UUID.test(clubId))) return { ok: false, reason: "invalid" };
   if (audience === "members" && clubId === null) return { ok: false, reason: "invalid" };
+  if (cover !== null && (typeof cover !== "string" || !UUID.test(cover))) return { ok: false, reason: "invalid" };
   return {
     ok: true,
-    v: { title, description, startsAt: startsAt.toISOString(), startsAtDate: startsAt, timeZone, placeName: place, lat: b.lat, lng: b.lng, radiusM: radius as number, audience, capacity: capacity as number | null, clubId: clubId as string | null },
+    v: { title, description, startsAt: startsAt.toISOString(), startsAtDate: startsAt, timeZone, placeName: place, lat: b.lat, lng: b.lng, radiusM: radius as number, audience, capacity: capacity as number | null, clubId: clubId as string | null, coverMediaId: cover as string | null },
   };
 }
 
@@ -121,9 +124,10 @@ export function parseEventInput(b: Record<string, unknown>, now: Date): { ok: tr
 export async function createEvent(
   sql: Sql,
   i: { userId: string; input: NonNullable<ReturnType<typeof parseEventInput> & { ok: true }>["v"]; now: Date },
-): Promise<{ ok: true; id: string } | Fail<"not_member" | "not_found" | "not_admin" | "rate_limited">> {
+): Promise<{ ok: true; id: string } | Fail<"not_member" | "not_found" | "not_admin" | "rate_limited" | "invalid">> {
   if (!(await isMember(sql, i.userId))) return { ok: false, reason: "not_member" };
   const v = i.input;
+  if (v.coverMediaId !== null && !(await ownsMedia(sql, i.userId, v.coverMediaId))) return { ok: false, reason: "invalid" };
   return sql.begin(async (tx) => {
     let clubId: string | null = null;
     if (v.clubId) {
@@ -135,8 +139,8 @@ export async function createEvent(
     const [hit] = await tx`select rate_limit_hit(${`event-create:${i.userId}`}, ${EVENTS_PER_DAY}, 86400) as ok`;
     if (!hit!.ok) return { ok: false, reason: "rate_limited" } as const;
     const [e] = await tx`
-      insert into ride_event (host_id, club_id, title, description, starts_at, time_zone, place_name, lat, lng, radius_m, audience, capacity)
-      values (${i.userId}, ${clubId}, ${v.title}, ${v.description}, ${v.startsAtDate}, ${v.timeZone}, ${v.placeName}, ${v.lat}, ${v.lng}, ${v.radiusM}, ${v.audience}, ${v.capacity})
+      insert into ride_event (host_id, club_id, title, description, starts_at, time_zone, place_name, lat, lng, radius_m, audience, capacity, cover_media_id)
+      values (${i.userId}, ${clubId}, ${v.title}, ${v.description}, ${v.startsAtDate}, ${v.timeZone}, ${v.placeName}, ${v.lat}, ${v.lng}, ${v.radiusM}, ${v.audience}, ${v.capacity}, ${v.coverMediaId})
       returning id, public_id`;
     await tx`insert into ride_event_rsvp (event_id, user_id, response) values (${e!.id}, ${i.userId}, 'going')`;
     return { ok: true, id: e!.public_id as string } as const;
@@ -306,6 +310,19 @@ export async function joinEventRide(sql: Sql, i: { userId: string; eventId: stri
   return { ok: true, rideId: r.id, name: r.name, code: e.code as string, role: r.role };
 }
 
+/** The host sets the event's own cover, or removes it with null (a club event then shows the club's). */
+export async function setEventCover(sql: Sql, i: { hostId: string; eventId: string; mediaId: string | null }): Promise<{ ok: true; coverUrl: string | null } | Fail<"not_found" | "not_host" | "invalid" | "closed">> {
+  if (!UUID.test(i.eventId)) return { ok: false, reason: "not_found" };
+  const [e] = await sql`select host_id, status from ride_event where public_id = ${i.eventId}`;
+  if (!e) return { ok: false, reason: "not_found" };
+  if (e.host_id !== i.hostId) return { ok: false, reason: "not_host" };
+  if (e.status === "cancelled") return { ok: false, reason: "closed" };
+  if (i.mediaId !== null && !(await ownsMedia(sql, i.hostId, i.mediaId))) return { ok: false, reason: "invalid" };
+  await sql`update ride_event set cover_media_id = ${i.mediaId} where public_id = ${i.eventId}`;
+  const [r] = await sql`select (select cm.variants from media cm where cm.id = coalesce(e.cover_media_id, c.cover_media_id)) as cover from ride_event e left join club c on c.id = e.club_id where e.public_id = ${i.eventId}`;
+  return { ok: true, coverUrl: pickVariant(r?.cover, COVER_WIDTH) };
+}
+
 export async function cancelEvent(sql: Sql, i: { hostId: string; eventId: string }): Promise<{ ok: true } | Fail<"not_found" | "not_host" | "closed">> {
   if (!UUID.test(i.eventId)) return { ok: false, reason: "not_found" };
   const [e] = await sql`select host_id, status from ride_event where public_id = ${i.eventId}`;
@@ -318,15 +335,16 @@ export async function cancelEvent(sql: Sql, i: { hostId: string; eventId: string
 
 // ---- the public page ---------------------------------------------------------------------------------------
 
-export type PublicEvent = { title: string; startsAt: Date; timeZone: string; placeName: string; clubName: string | null; going: number; status: EventStatus };
+export type PublicEvent = { coverUrl: string | null; title: string; startsAt: Date; timeZone: string; placeName: string; clubName: string | null; going: number; status: EventStatus };
 
 /** What anyone with the link may see: an open event's name, time, place and how many are going. Members-only and unknown events are null. */
 export async function getPublicEvent(sql: Sql, eventId: string, now: Date): Promise<PublicEvent | null> {
   if (!UUID.test(eventId)) return null;
   const [r] = await sql`
     select e.title, e.starts_at, e.time_zone, e.place_name, e.status, g.ended_at as ride_ended_at, c.name as club_name,
+      (select cm.variants from media cm where cm.id = coalesce(e.cover_media_id, c.cover_media_id)) as cover,
       (select count(*)::int from ride_event_rsvp x where x.event_id = e.id and x.response = 'going') as going
     from ride_event e left join club c on c.id = e.club_id left join group_ride g on g.id = e.group_ride_id
     where e.public_id = ${eventId} and e.audience = 'open'`;
-  return r ? { title: r.title, startsAt: r.starts_at, timeZone: r.time_zone, placeName: r.place_name, clubName: r.club_name ?? null, going: r.going, status: statusOf(r, now) } : null;
+  return r ? { coverUrl: pickVariant(r.cover, COVER_WIDTH), title: r.title, startsAt: r.starts_at, timeZone: r.time_zone, placeName: r.place_name, clubName: r.club_name ?? null, going: r.going, status: statusOf(r, now) } : null;
 }

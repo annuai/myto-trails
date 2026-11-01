@@ -65,7 +65,7 @@ export type EventStatus = "scheduled" | "live" | "ended" | "cancelled";
 /** A ride event in a list. `mine` is true for the host. */
 export type RideEvent = {
   id: string; title: string; startsAt: string; timeZone: string; placeName: string; audience: "open" | "members"; status: EventStatus;
-  clubId: string | null; clubName: string | null; hostName: string; going: number; capacity: number | null; myResponse: EventResponse | null; mine: boolean;
+  clubId: string | null; clubName: string | null; hostName: string; /** The event's own cover, or its club's, or null. */ coverUrl: string | null; going: number; capacity: number | null; myResponse: EventResponse | null; mine: boolean;
 };
 /** One reply on the roster. The host alone receives the roster, with reasons and notes. */
 export type RosterRow = { id: string; name: string; response: EventResponse; reason: DeclineReason | null; note: string | null; checkedIn: boolean; role: EventRole | null };
@@ -75,7 +75,7 @@ export type RideEventDetail = RideEvent & {
 };
 export type EventInput = {
   title: string; description?: string; startsAt: string; timeZone?: string; placeName: string; lat: number; lng: number; radiusM?: number;
-  audience: "open" | "members"; capacity?: number | null; clubId?: string | null;
+  audience: "open" | "members"; capacity?: number | null; clubId?: string | null; /** A completed image upload by the host. */ coverMediaId?: string | null;
 };
 
 export type CommentTag = "gate_closed" | "water_high" | "blocked" | "good_condition" | "tip";

@@ -19,3 +19,4 @@ export const setEventRole = (token: string, id: string, riderId: string, role: E
 export const startEvent = (token: string, id: string, stretchKm?: number) => api<void>(`/events/${id}/start`, { method: 'POST', token, body: stretchKm ? { stretchKm } : {} });
 export const joinEventRide = (token: string, id: string) => api<{ id: string; name: string; code: string; role: 'leader' | 'member' }>(`/events/${id}/join-ride`, { method: 'POST', token });
 export const cancelEvent = (token: string, id: string) => api<void>(`/events/${id}/cancel`, { method: 'POST', token });
+export const setEventCover = (token: string, id: string, mediaId: string | null) => api<{ coverUrl: string | null }>(`/events/${id}/cover`, { method: 'PUT', token, body: { mediaId } });

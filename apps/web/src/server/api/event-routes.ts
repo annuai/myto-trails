@@ -1,4 +1,4 @@
-import { cancelEvent, checkIn, createEvent, getEvent, joinEventRide, listEvents, markArrived, parseEventInput, respond, setRole, startEvent, type EventScope } from "../community/events";
+import { cancelEvent, checkIn, createEvent, getEvent, joinEventRide, listEvents, markArrived, parseEventInput, respond, setEventCover, setRole, startEvent, type EventScope } from "../community/events";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 
 const asObject = async (c: Ctx): Promise<Record<string, unknown>> => {
@@ -30,6 +30,7 @@ const EVENT: Reasons = {
   inaccurate: [409, "Your location isn't precise enough. Move to open sky and try again."],
   not_checked_in: [409, "Check in at the meeting point first."],
   not_live: [409, "The ride hasn't started."],
+  // A cover must be one of the host's own completed image uploads.
 };
 
 const SCOPES: readonly EventScope[] = ["discover", "club", "mine"];
@@ -106,6 +107,16 @@ export const eventRoutes: RouteDef[] = [
       const [u] = await c.sql`select display_name from app_user where id = ${c.userId}`;
       const r = await joinEventRide(c.sql, { userId: c.userId, eventId: c.params.id!, displayName: String(u?.display_name ?? ""), now: c.now });
       return r.ok ? ok({ id: r.rideId, name: r.name, code: r.code, role: r.role }) : failWith(EVENT, r.reason);
+    },
+  },
+  {
+    method: "PUT", path: "/events/{id}/cover", access: "write:submission", summary: "Host sets the event's cover image (body: mediaId from a completed image upload, or null to go back to the club's cover or the placeholder)",
+    async handler(c) {
+      const b = await asObject(c);
+      const mediaId = b.mediaId === null || typeof b.mediaId === "string" ? (b.mediaId as string | null) : undefined;
+      if (mediaId === undefined) return failWith(EVENT, "invalid");
+      const r = await setEventCover(c.sql, { hostId: c.userId, eventId: c.params.id!, mediaId });
+      return r.ok ? ok({ coverUrl: r.coverUrl }) : failWith({ ...EVENT, invalid: [422, "That photo is not one of your uploads."] }, r.reason);
     },
   },
   {

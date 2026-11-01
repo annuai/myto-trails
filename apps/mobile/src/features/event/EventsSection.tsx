@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { Image } from 'react-native';
 import { CalendarClock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import type { Async } from '@/api/useApi';
@@ -8,7 +8,7 @@ import { Card } from '@/ui/Card';
 import { SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Text } from '@/ui/Text';
-import { space } from '@/theme/tokens';
+import { media, radius, space } from '@/theme/tokens';
 import { rowValue, whenAndWhere } from './labels';
 
 /** A titled list of events: loading, error with retry, an honest empty line, or one row each. Tapping a row opens the event. */
@@ -23,7 +23,7 @@ export function EventsSection({ title, events, empty, onAdd, addLabel, first }: 
       : events.data.length === 0 ? <Text variant="label" tone="muted">{empty}</Text>
       : (
         <ListCard>
-          {events.data.map((e) => <Row key={e.id} icon={CalendarClock} label={e.title} sub={whenAndWhere(e)} value={rowValue(e)} onPress={() => router.push(`/event/${e.id}`)} />)}
+          {events.data.map((e) => <Row key={e.id} icon={CalendarClock} label={e.title} sub={whenAndWhere(e)} value={rowValue(e)} right={e.coverUrl ? <Image source={{ uri: e.coverUrl }} accessibilityLabel={`${e.title} cover`} style={{ width: media.avatarMd, height: media.avatarMd, borderRadius: radius.thumb }} /> : undefined} onPress={() => router.push(`/event/${e.id}`)} />)}
         </ListCard>
       )}
     </>

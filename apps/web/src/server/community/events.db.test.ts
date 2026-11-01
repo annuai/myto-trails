@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDatabase } from "../testing/db";
 import { makeUser } from "../testing/submission-fixture";
 import { createClub } from "./clubs";
-import { cancelEvent, checkIn, createEvent, getEvent, getPublicEvent, joinEventRide, listEvents, markArrived, parseEventInput, respond, setRole, startEvent } from "./events";
+import { cancelEvent, checkIn, createEvent, getEvent, getPublicEvent, joinEventRide, listEvents, markArrived, parseEventInput, respond, setEventCover, setRole, startEvent } from "./events";
 import { completeWelcome } from "./members";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
@@ -142,5 +142,19 @@ describe("starting the ride", () => {
     const h = await host();
     await startEvent(db.sql, { hostId: h.hostId, eventId: h.id, now: new Date(startsAt.getTime() - 30 * 60_000) });
     expect(await cancelEvent(db.sql, { hostId: h.hostId, eventId: h.id })).toEqual({ ok: false, reason: "closed" });
+  });
+});
+
+describe("cover photo", () => {
+  const stranger = "11111111-1111-4111-8111-111111111111";
+  it("lets only the host set it, and only with one of their own uploads", async () => {
+    const h = await host();
+    expect(await setEventCover(db.sql, { hostId: await rider("NotHost"), eventId: h.id, mediaId: null })).toEqual({ ok: false, reason: "not_host" });
+    expect(await setEventCover(db.sql, { hostId: h.hostId, eventId: h.id, mediaId: stranger })).toEqual({ ok: false, reason: "invalid" });
+    expect(await setEventCover(db.sql, { hostId: h.hostId, eventId: h.id, mediaId: null })).toEqual({ ok: true, coverUrl: null });
+  });
+  it("refuses to create an event with someone else's upload as its cover", async () => {
+    const u = await rider("Cover host");
+    expect(await createEvent(db.sql, { userId: u, input: input({ coverMediaId: stranger }), now: t0 })).toEqual({ ok: false, reason: "invalid" });
   });
 });
