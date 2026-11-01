@@ -15,6 +15,7 @@ import { listBikeMakes, listBikeModels } from "../community/bikes";
 import { clubPageSize } from "../community/club-paging";
 import { getClub, listMembers, searchClubs, setClubCover } from "../community/clubs";
 import { parseGender } from "../community/gender";
+import { getWomenSafe, markWomenSafe, unmarkWomenSafe } from "../community/women-safe";
 import { getMemberState, updateMemberPrivacy, type MemberState } from "../community/members";
 import { updateDisplayName } from "../auth/auth";
 import { getAvatarUrl, getBike, removeBike, saveBike, setAvatar } from "../community/profile";
@@ -79,7 +80,9 @@ export const routes: RouteDef[] = [
       const t = await withPublicRole(c.sql, (tx) => queryTrailBySlug(tx, slug, c.now));
       if (!t) return fail(404, "not_found", "No such trail.");
       const media = await withPublicRole(c.sql, (tx) => queryTrailMedia(tx, slug));
-      return ok({ ...t, media });
+      // Per viewer: a request with a token is never shared-cached (see applyCachePolicy), so mine and canMark are safe here.
+      const womenSafe = await getWomenSafe(c.sql, { slug, viewerId: c.auth?.userId ?? null, now: c.now });
+      return ok({ ...t, media, womenSafe });
     },
   },
   {
@@ -107,6 +110,25 @@ export const routes: RouteDef[] = [
       if (r.reason === "not_found") return fail(404, "not_found", "No such trail.");
       if (r.reason === "rate_limited") return fail(429, "rate_limited", "Too many reports today.");
       return fail(422, "validation_failed", "Check the type and describe the problem in at least 20 characters.");
+    },
+  },
+  {
+    method: "PUT", path: "/trails/{slug}/women-safe", access: "write:submission", summary: "Mark a trail as safe for women riders. Only riders whose private gender is female can; 403 not_female otherwise, 403 not_member until the welcome step is done. One mark per rider, and nobody can see who marked. Marks count for 24 months",
+    async handler(c) {
+      const r = await markWomenSafe(c.sql, { userId: c.userId, slug: slugOf(c), now: c.now });
+      if (r.ok) return noContent();
+      const map = {
+        not_member: [403, "Finish the welcome step on moto-trails.com first."], not_female: [403, "Only women riders can mark a trail as safe."],
+        not_found: [404, "No such trail."], rate_limited: [429, "You are marking too fast. Try again tomorrow."],
+      } as const;
+      return fail(map[r.reason][0], r.reason, map[r.reason][1]);
+    },
+  },
+  {
+    method: "DELETE", path: "/trails/{slug}/women-safe", access: "write:submission", summary: "Remove your mark from a trail",
+    async handler(c) {
+      await unmarkWomenSafe(c.sql, { userId: c.userId, slug: slugOf(c) });
+      return noContent();
     },
   },
 

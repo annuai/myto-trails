@@ -19,6 +19,9 @@ import { getMemberState } from "@/server/community/members";
 import { listComments } from "@/server/community/comments";
 import { RiderReports } from "@/features/trail/RiderReports";
 import { listConditionReports } from "@/server/rides/condition-reports";
+import { getWomenSafe } from "@/server/community/women-safe";
+import { WomenSafe } from "@/features/trail/WomenSafe";
+import { markWomenSafeAction, unmarkWomenSafeAction } from "@/features/trail/women-safe-actions";
 import { getRiddenSummary } from "@/server/community/ridden";
 import { Skeleton } from "@/ui/Skeleton/Skeleton";
 import { getTrail, getTrailMedia, getTrailRoute, getTrailVideos } from "@/server/queries/trails";
@@ -65,6 +68,16 @@ async function TrailRiderReports({ slug }: { slug: string }) {
   return reports ? <RiderReports reports={reports} now={now} /> : null;
 }
 
+/** Whether women riders found the trail safe, and the button for a woman rider to add or remove her mark. */
+async function TrailWomenSafe({ slug, searchParams }: { slug: string; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const sp = await searchParams;
+  const code = typeof sp.c === "string" ? sp.c.slice(0, 40) : undefined;
+  await connection();
+  const user = await currentUserOrNull();
+  const summary = await getWomenSafe(getSql(), { slug, viewerId: user?.id ?? null, now: new Date() });
+  return <WomenSafe slug={slug} summary={summary} code={code} actions={{ mark: markWomenSafeAction, unmark: unmarkWomenSafeAction }} />;
+}
+
 async function TrailCommunity({ slug, searchParams }: { slug: string; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const code = typeof sp.c === "string" ? sp.c.slice(0, 40) : undefined;
@@ -97,6 +110,11 @@ export default async function TrailPage({ params, searchParams }: PageProps<"/tr
         media={media}
         videos={videos}
         route={route}
+        womenSafe={
+          <Suspense fallback={null}>
+            <TrailWomenSafe slug={slug} searchParams={searchParams} />
+          </Suspense>
+        }
         community={
           <>
             <Suspense fallback={null}>

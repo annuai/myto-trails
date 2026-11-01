@@ -65,6 +65,41 @@ describe("validateStep details", () => {
   });
 });
 
+describe("validateStep details: what to carry and when to arrive", () => {
+  const value = (patch: Record<string, unknown>) => {
+    const r = validateStep(3, { ...details, ...patch });
+    return r.ok ? r.value : null;
+  };
+  it("is all optional", () => {
+    const v = value({})!;
+    expect(v.carry).toEqual([]);
+    expect(v.waterLitres).toBeUndefined();
+    expect(v.arrivalFromMin).toBeUndefined();
+  });
+  it("accepts a full set", () => {
+    const v = value({ waterLitres: 2.5, carry: ["tool_kit", "torch", "torch"], carryNotes: " Fuel is 40 km back. ", arrivalFromMin: 360, arrivalToMin: 480, arrivalNote: "Gates open at 6" })!;
+    expect(v).toMatchObject({ waterLitres: 2.5, carry: ["tool_kit", "torch"], carryNotes: "Fuel is 40 km back.", arrivalFromMin: 360, arrivalToMin: 480, arrivalNote: "Gates open at 6" });
+  });
+  it("treats null like absent, as the app sends it", () => {
+    expect(value({ waterLitres: null, arrivalFromMin: null, arrivalToMin: null })).not.toBeNull();
+  });
+  it.each([
+    [{ waterLitres: 0.4 }, "waterLitres"],
+    [{ waterLitres: 20.5 }, "waterLitres"],
+    [{ carry: ["jetpack"] }, "carry"],
+    [{ carryNotes: "x".repeat(301) }, "carryNotes"],
+    [{ arrivalNote: "x".repeat(201) }, "arrivalNote"],
+    [{ arrivalFromMin: 360 }, "arrivalToMin"],
+    [{ arrivalToMin: 360 }, "arrivalToMin"],
+    [{ arrivalFromMin: 600, arrivalToMin: 360 }, "arrivalToMin"],
+    [{ arrivalFromMin: -1, arrivalToMin: 360 }, "arrivalFromMin"],
+    [{ arrivalFromMin: 0, arrivalToMin: 1440 }, "arrivalToMin"],
+    [{ arrivalFromMin: 360.5, arrivalToMin: 480 }, "arrivalFromMin"],
+  ])("rejects %j", (patch, field) => {
+    expect(errs(validateStep(3, { ...details, ...patch }))).toHaveProperty(field);
+  });
+});
+
 describe("validateStep access", () => {
   it("accepts a public claim with evidence and fixes the level at community_reported", () => {
     const r = validateStep(4, access);

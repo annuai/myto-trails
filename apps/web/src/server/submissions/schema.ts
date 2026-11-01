@@ -1,4 +1,4 @@
-import { ACCESS_BASES, ACCESS_CLASSES, DIFFICULTIES, EVIDENCE_KINDS, HAZARDS, RESTRICTIONS, ROUTE_SHAPES, SUITABILITIES, TERRAINS, isValidSlug } from "@moto-trails/domain";
+import { ACCESS_BASES, CARRY_ITEMS, ACCESS_CLASSES, DIFFICULTIES, EVIDENCE_KINDS, HAZARDS, RESTRICTIONS, ROUTE_SHAPES, SUITABILITIES, TERRAINS, isValidSlug } from "@moto-trails/domain";
 import { z } from "zod";
 
 export const MAX_PHOTOS = 8;
@@ -24,6 +24,8 @@ const route = z.object({
   routeShape: z.enum(ROUTE_SHAPES),
 });
 
+const minute = z.number().int().min(0).max(1439).nullish().transform((v) => v ?? undefined);
+
 const details = z.object({
   difficulty: z.enum(DIFFICULTIES),
   terrain: z.array(z.enum(TERRAINS)).min(1).max(TERRAINS.length),
@@ -33,6 +35,15 @@ const details = z.object({
   seasonNotes: optional(1000),
   surfaceNotes: optional(1000),
   description: optional(5000),
+  waterLitres: z.number().min(0.5).max(20).nullish().transform((v) => (v === null || v === undefined ? undefined : Math.round(v * 10) / 10)),
+  carry: z.array(z.enum(CARRY_ITEMS)).max(CARRY_ITEMS.length).default([]).transform((c) => [...new Set(c)]),
+  carryNotes: optional(300),
+  arrivalFromMin: minute,
+  arrivalToMin: minute,
+  arrivalNote: optional(200),
+}).superRefine((d, ctx) => {
+  if ((d.arrivalFromMin === undefined) !== (d.arrivalToMin === undefined)) ctx.addIssue({ code: "custom", path: ["arrivalToMin"], message: "Give both a start and an end time." });
+  else if (d.arrivalFromMin !== undefined && d.arrivalToMin !== undefined && d.arrivalFromMin > d.arrivalToMin) ctx.addIssue({ code: "custom", path: ["arrivalToMin"], message: "The end time must not be before the start time." });
 });
 
 const evidenceItem = z.object({

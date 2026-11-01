@@ -25,6 +25,12 @@ describe("parseStepForm", () => {
     expect(r).toMatchObject({ difficulty: "hard", terrain: ["gravel", "mud"], bestMonths: [11, 12], hazards: ["wildlife"], suitableFor: [] });
   });
 
+  it("reads what to carry and the arrival window, turning times into minutes and blanks into undefined", () => {
+    const r = parseStepForm(3, fd([["waterLitres", "2.5"], ["carry", "torch"], ["carry", "cash"], ["carryNotes", "Fuel 40 km back"], ["arrivalFrom", "06:00"], ["arrivalTo", "08:30"], ["arrivalNote", "Gates open at 6"]]));
+    expect(r).toMatchObject({ waterLitres: 2.5, carry: ["torch", "cash"], carryNotes: "Fuel 40 km back", arrivalFromMin: 360, arrivalToMin: 510, arrivalNote: "Gates open at 6" });
+    expect(parseStepForm(3, fd([["waterLitres", ""], ["arrivalFrom", ""], ["arrivalTo", "junk"]]))).toMatchObject({ waterLitres: undefined, carry: [], arrivalFromMin: undefined, arrivalToMin: undefined });
+  });
+
   it("reads access with evidence rows and skips empty rows", () => {
     const r = parseStepForm(4, fd([
       ["accessClass", "public"], ["basis", "rider_observed"], ["restrictions", "permit"],

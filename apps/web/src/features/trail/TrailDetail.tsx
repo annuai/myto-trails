@@ -9,12 +9,13 @@ import { LocationSection } from "./LocationSection";
 import { RouteSection } from "./RouteSection";
 import { SafetyInformation } from "./SafetyInformation";
 import { SeasonStrip } from "./SeasonStrip";
+import { TrailCarry } from "./TrailCarry";
 import { TrailMedia } from "./TrailMedia";
 import { TrailNotices } from "./TrailNotices";
 import { routeShapeLabel, suitabilityLabel, terrainLabel } from "./labels";
 
 /** Composition of the public trail page, in the order a rider needs it (docs/07 §4). */
-export function TrailDetail({ trail, media, videos = [], route = null, actions, community }: { trail: TrailDetailDto; media: MediaDto[]; videos?: VideoDto[]; route?: RouteDto | null; actions?: ReactNode; community?: ReactNode }) {
+export function TrailDetail({ trail, media, videos = [], route = null, actions, community, womenSafe }: { trail: TrailDetailDto; media: MediaDto[]; videos?: VideoDto[]; route?: RouteDto | null; actions?: ReactNode; community?: ReactNode; /** Per viewer, so it streams in after the cached content. */ womenSafe?: ReactNode }) {
   const crumbs: Crumb[] = [
     { label: "Home", href: "/" },
     { label: "Regions", href: "/regions" },
@@ -102,6 +103,8 @@ export function TrailDetail({ trail, media, videos = [], route = null, actions, 
       <LocationSection trail={trail} showMap={!route} />
       <SeasonStrip bestMonths={trail.bestMonths} />
       <SafetyInformation hazards={trail.hazards} safetyNotes={trail.safetyNotes} />
+      {womenSafe}
+      <TrailCarry carry={trail.carry} />
       <TrailMedia photos={media.filter((m) => m !== cover)} videos={videos} />
       <AccessDetails trail={trail} />
       {community}

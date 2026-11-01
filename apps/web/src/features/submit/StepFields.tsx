@@ -1,4 +1,4 @@
-import { ACCESS_BASES, ACCESS_CLASSES, DIFFICULTIES, EVIDENCE_KINDS, HAZARDS, RESTRICTIONS, ROUTE_SHAPES, SUITABILITIES, TERRAINS } from "@moto-trails/domain";
+import { ACCESS_BASES, ACCESS_CLASSES, CARRY_ITEMS, CARRY_ITEM_LABEL, DIFFICULTIES, EVIDENCE_KINDS, HAZARDS, RESTRICTIONS, ROUTE_SHAPES, SUITABILITIES, TERRAINS, minutesToHhmm } from "@moto-trails/domain";
 import { RouteMap } from "@/features/map/RouteMap";
 import { ElevationProfile } from "@/features/trail/ElevationProfile";
 import { formatKm, monthLabel } from "@/features/trail/labels";
@@ -22,6 +22,7 @@ const label = (v: string) => {
   return t.charAt(0).toUpperCase() + t.slice(1);
 };
 const str = (v: Values, k: string) => (typeof v[k] === "string" ? (v[k] as string) : typeof v[k] === "number" ? String(v[k]) : "");
+const time = (v: Values, k: string) => (typeof v[k] === "number" ? minutesToHhmm(v[k] as number) : "");
 const list = (v: Values, k: string): string[] => (Array.isArray(v[k]) ? (v[k] as unknown[]).map(String) : []);
 
 const ACCESS_HELP: Record<string, string> = {
@@ -120,6 +121,29 @@ export function StepFields({ step, values, errors, ctx }: { step: number; values
           <Field label="Longer description (optional)" name="description" error={e("description")}>
             <textarea id="description" name="description" defaultValue={str(values, "description")} maxLength={5000} rows={6} className={`${inputClass} py-2`} />
           </Field>
+          <Field label="Water per rider, in litres (optional)" name="waterLitres" error={e("waterLitres")} hint="From 0.5 to 20.">
+            <input id="waterLitres" name="waterLitres" type="number" min={0.5} max={20} step={0.5} inputMode="decimal" defaultValue={str(values, "waterLitres")} className={inputClass} />
+          </Field>
+          <Choices legend="What to carry (optional)" error={e("carry")}>
+            {CARRY_ITEMS.map((c) => <Choice key={c} type="checkbox" name="carry" value={c} label={CARRY_ITEM_LABEL[c]} defaultChecked={list(values, "carry").includes(c)} />)}
+          </Choices>
+          <Field label="Note on what to carry (optional)" name="carryNotes" error={e("carryNotes")} hint="For example: the next fuel is 40 km back.">
+            <textarea id="carryNotes" name="carryNotes" defaultValue={str(values, "carryNotes")} maxLength={300} rows={2} className={`${inputClass} py-2`} />
+          </Field>
+          <fieldset className="flex flex-col gap-4">
+            <legend className="text-sm font-medium">Best time of day to reach the trail (optional)</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="From" name="arrivalFrom" error={e("arrivalFromMin")}>
+                <input id="arrivalFrom" name="arrivalFrom" type="time" defaultValue={time(values, "arrivalFromMin")} className={inputClass} />
+              </Field>
+              <Field label="To" name="arrivalTo" error={e("arrivalToMin")}>
+                <input id="arrivalTo" name="arrivalTo" type="time" defaultValue={time(values, "arrivalToMin")} className={inputClass} />
+              </Field>
+            </div>
+            <Field label="Note on timing (optional)" name="arrivalNote" error={e("arrivalNote")} hint="For example: gates open at 6, hot after 11.">
+              <input id="arrivalNote" name="arrivalNote" defaultValue={str(values, "arrivalNote")} maxLength={200} className={inputClass} />
+            </Field>
+          </fieldset>
         </>
       );
     case 4: {

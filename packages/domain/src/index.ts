@@ -11,3 +11,4 @@ export * from "./api";
 export * from "./bikes";
 export * from "./legal";
 export * from "./countries";
+export * from "./trailCarry";

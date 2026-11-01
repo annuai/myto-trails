@@ -47,6 +47,7 @@ export function makeTrail(overrides: Partial<TrailDetailDto> = {}): TrailDetailD
     firstPublishedAt: "2026-01-15T00:00:00.000Z",
     openClosureReports: 0,
     hasGpx: false,
+    carry: null,
     ...overrides,
   };
 }
