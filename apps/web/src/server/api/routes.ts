@@ -14,6 +14,9 @@ import { exchangeAppCode } from "../auth/app-auth";
 import { listBikeMakes, listBikeModels } from "../community/bikes";
 import { clubPageSize } from "../community/club-paging";
 import { getClub, listMembers, searchClubs, setClubCover } from "../community/clubs";
+import { parseGender } from "../community/gender";
+import { getMemberState, updateMemberPrivacy, type MemberState } from "../community/members";
+import { updateDisplayName } from "../auth/auth";
 import { getAvatarUrl, getBike, removeBike, saveBike, setAvatar } from "../community/profile";
 import { communityRoutes } from "./community-routes";
 import { eventRoutes } from "./event-routes";
@@ -39,6 +42,7 @@ const mediaIdOf = (v: unknown, field = "mediaId"): string | null => {
   if (typeof v !== "string") throw new ApiError(400, "invalid_request", `${field} must be a string or null.`);
   return v;
 };
+const profileOf = (m: MemberState | null) => ({ displayName: m?.displayName ?? "", public: m?.profilePublic === true, bio: m?.bio ?? null, gender: m?.gender ?? null });
 const noContent = () => new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 
 function searchRaw(url: URL) {
@@ -158,7 +162,24 @@ export const routes: RouteDef[] = [
     method: "GET", path: "/me", access: "token", summary: "Who the token belongs to",
     async handler(c) {
       const [u] = await c.sql`select display_name, email from app_user where id = ${c.userId}`;
-      return ok({ displayName: u?.display_name ?? "", email: u?.email ?? "", scopes: c.auth!.scopes, avatarUrl: await getAvatarUrl(c.sql, c.userId), bike: await getBike(c.sql, c.userId) });
+      return ok({ displayName: u?.display_name ?? "", email: u?.email ?? "", scopes: c.auth!.scopes, avatarUrl: await getAvatarUrl(c.sql, c.userId), bike: await getBike(c.sql, c.userId), profile: profileOf(await getMemberState(c.sql, c.userId)) });
+    },
+  },
+  {
+    method: "PUT", path: "/me/profile", access: "write:submission", summary: "Set your display name (2 to 40 characters), whether your rider page is public, your bio (up to 300 characters, no web addresses, or null) and your private gender (male, female, other or null for prefer not to say). All four keys are needed. 403 not_member until you have finished the website's welcome step. Returns the profile as GET /me does",
+    async handler(c) {
+      const b = await asObject(c);
+      const name = typeof b.displayName === "string" ? b.displayName.trim() : "";
+      if (name.length < 2 || name.length > 40) return fail(422, "validation_failed", "Use 2 to 40 characters for your name.");
+      if (typeof b.public !== "boolean") throw new ApiError(400, "invalid_request", "public must be true or false.");
+      if (b.bio !== null && typeof b.bio !== "string") throw new ApiError(400, "invalid_request", "bio must be a string or null.");
+      if (!("gender" in b)) throw new ApiError(400, "invalid_request", "gender must be male, female, other or null.");
+      const gender = parseGender(b.gender);
+      if (gender === "invalid") throw new ApiError(400, "invalid_request", "gender must be male, female, other or null.");
+      const r = await updateMemberPrivacy(c.sql, { userId: c.userId, profilePublic: b.public, gender, bio: b.bio });
+      if (!r.ok) return r.reason === "not_member" ? fail(403, "not_member", "Finish the welcome step on moto-trails.com first.") : fail(422, "validation_failed", "Keep your bio to 300 characters, without web addresses.");
+      await updateDisplayName(c.sql, c.userId, name);
+      return ok(profileOf(await getMemberState(c.sql, c.userId)));
     },
   },
 

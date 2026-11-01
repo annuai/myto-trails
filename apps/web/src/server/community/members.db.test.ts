@@ -18,28 +18,28 @@ describe("completeWelcome", () => {
   it("records the declaration time, the display name and the privacy choices", async () => {
     const u = await makeUser(db.sql);
     expect(await isMember(db.sql, u)).toBe(false);
-    const r = await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "  Annuai  ", profilePublic: true, isWoman: false });
+    const r = await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "  Annuai  ", profilePublic: true, gender: null });
     expect(r).toEqual({ ok: true });
     expect(await isMember(db.sql, u)).toBe(true);
-    expect(await getMemberState(db.sql, u)).toMatchObject({ confirmed: true, displayName: "Annuai", profilePublic: true, isWoman: false });
+    expect(await getMemberState(db.sql, u)).toMatchObject({ confirmed: true, displayName: "Annuai", profilePublic: true, isWoman: false, gender: null });
   });
 
   it("refuses without the declaration, with a bad name, or for unknown users, and changes nothing", async () => {
     const u = await makeUser(db.sql);
-    expect(await completeWelcome(db.sql, { userId: u, confirmed: false, displayName: "Fine Name", profilePublic: true, isWoman: false })).toEqual({ ok: false, reason: "declaration_required" });
-    expect(await completeWelcome(db.sql, { userId: u, confirmed: "true" as never, displayName: "Fine Name", profilePublic: true, isWoman: false })).toEqual({ ok: false, reason: "declaration_required" });
-    expect(await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "x", profilePublic: true, isWoman: false })).toEqual({ ok: false, reason: "invalid" });
-    expect(await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "y".repeat(41), profilePublic: true, isWoman: false })).toEqual({ ok: false, reason: "invalid" });
-    expect(await completeWelcome(db.sql, { userId: crypto.randomUUID(), confirmed: true, displayName: "Fine Name", profilePublic: false, isWoman: false })).toEqual({ ok: false, reason: "not_found" });
+    expect(await completeWelcome(db.sql, { userId: u, confirmed: false, displayName: "Fine Name", profilePublic: true, gender: null })).toEqual({ ok: false, reason: "declaration_required" });
+    expect(await completeWelcome(db.sql, { userId: u, confirmed: "true" as never, displayName: "Fine Name", profilePublic: true, gender: null })).toEqual({ ok: false, reason: "declaration_required" });
+    expect(await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "x", profilePublic: true, gender: null })).toEqual({ ok: false, reason: "invalid" });
+    expect(await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "y".repeat(41), profilePublic: true, gender: null })).toEqual({ ok: false, reason: "invalid" });
+    expect(await completeWelcome(db.sql, { userId: crypto.randomUUID(), confirmed: true, displayName: "Fine Name", profilePublic: false, gender: null })).toEqual({ ok: false, reason: "not_found" });
     expect(await isMember(db.sql, u)).toBe(false);
     expect((await getMemberState(db.sql, u))!.profilePublic).toBe(false);
   });
 
   it("keeps the first declaration time when repeated", async () => {
     const u = await makeUser(db.sql);
-    await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "First Name", profilePublic: false, isWoman: false });
+    await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "First Name", profilePublic: false, gender: null });
     const [a] = await db.sql`select adult_confirmed_at from app_user where id = ${u}`;
-    await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "Second Name", profilePublic: true, isWoman: false });
+    await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "Second Name", profilePublic: true, gender: null });
     const [b] = await db.sql`select adult_confirmed_at from app_user where id = ${u}`;
     expect(b!.adult_confirmed_at).toEqual(a!.adult_confirmed_at);
   });
@@ -48,7 +48,7 @@ describe("completeWelcome", () => {
 describe("isMember", () => {
   it("is false for suspended or unknown users and for junk ids", async () => {
     const u = await makeUser(db.sql);
-    await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "Some Name", profilePublic: false, isWoman: false });
+    await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "Some Name", profilePublic: false, gender: null });
     await db.sql`update app_user set status = 'suspended' where id = ${u}`;
     expect(await isMember(db.sql, u)).toBe(false);
     expect(await isMember(db.sql, crypto.randomUUID())).toBe(false);
@@ -59,19 +59,21 @@ describe("isMember", () => {
 describe("updateMemberPrivacy", () => {
   it("changes visibility, the private women-rider setting and the bio, only for members", async () => {
     const u = await makeUser(db.sql);
-    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, isWoman: true, bio: "Weekend rider" })).toEqual({ ok: false, reason: "not_member" });
-    await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "Some Name", profilePublic: false, isWoman: false });
-    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, isWoman: true, bio: " Weekend rider " })).toEqual({ ok: true });
-    expect(await getMemberState(db.sql, u)).toMatchObject({ profilePublic: true, isWoman: true, bio: "Weekend rider" });
-    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, isWoman: true, bio: "x".repeat(301) })).toEqual({ ok: false, reason: "invalid" });
-    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, isWoman: true, bio: "see www.spam.example" })).toEqual({ ok: false, reason: "invalid" });
+    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, gender: "female", bio: "Weekend rider" })).toEqual({ ok: false, reason: "not_member" });
+    await completeWelcome(db.sql, { userId: u, confirmed: true, displayName: "Some Name", profilePublic: false, gender: null });
+    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, gender: "female", bio: " Weekend rider " })).toEqual({ ok: true });
+    expect(await getMemberState(db.sql, u)).toMatchObject({ profilePublic: true, isWoman: true, gender: "female", bio: "Weekend rider" });
+    await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, gender: "other", bio: null });
+    expect(await getMemberState(db.sql, u)).toMatchObject({ gender: "other", isWoman: false });
+    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, gender: "female", bio: "x".repeat(301) })).toEqual({ ok: false, reason: "invalid" });
+    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: true, gender: "female", bio: "see www.spam.example" })).toEqual({ ok: false, reason: "invalid" });
   });
 });
 
 describe("getRiderProfile", () => {
   const member = async (name: string, pub: boolean) => {
     const id = await makeUser(db.sql, { name });
-    await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: name, profilePublic: pub, isWoman: false });
+    await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: name, profilePublic: pub, gender: null });
     const [{ public_id }] = await db.sql`select public_id from app_user where id = ${id}`;
     return { id, handle: public_id as string };
   };
@@ -79,7 +81,7 @@ describe("getRiderProfile", () => {
   it("shows a public rider's name, bio and trails to declared members only", async () => {
     const trail = await insertTrailFixture(db.sql, {});
     const rider = await member("Public Pia", true);
-    await updateMemberPrivacy(db.sql, { userId: rider.id, profilePublic: true, isWoman: false, bio: "Gravel and rain" });
+    await updateMemberPrivacy(db.sql, { userId: rider.id, profilePublic: true, gender: null, bio: "Gravel and rain" });
     await markRidden(db.sql, { userId: rider.id, slug: trail.slug, month: "2026-09", now: new Date("2026-10-24T00:00:00Z") });
     const viewer = await member("Viewer", false);
     expect(await getRiderProfile(db.sql, { viewerId: viewer.id, handle: rider.handle })).toMatchObject({ name: "Public Pia", bio: "Gravel and rain", trails: [{ slug: trail.slug }] });

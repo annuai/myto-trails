@@ -15,7 +15,7 @@ afterAll(async () => { await db.drop(); });
 
 const rider = async (name: string) => {
   const id = await makeUser(db.sql, { name });
-  await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: name, profilePublic: false, isWoman: false });
+  await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: name, profilePublic: false, gender: null });
   return id;
 };
 const place = { lat: 12.9716, lng: 77.5946 };

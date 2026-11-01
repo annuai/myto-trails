@@ -16,7 +16,7 @@ afterAll(async () => {
 });
 const member = async (o: { name?: string; pub?: boolean } = {}) => {
   const id = await makeUser(db.sql, { name: o.name });
-  await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: o.name ?? "Some Rider", profilePublic: o.pub ?? false, isWoman: false });
+  await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: o.name ?? "Some Rider", profilePublic: o.pub ?? false, gender: null });
   return id;
 };
 
@@ -95,7 +95,7 @@ describe("getRiddenSummary and unmarkRidden", () => {
     const u = await member({ pub: true });
     await markRidden(db.sql, { userId: u, slug: t.slug, now });
     expect((await getRiddenSummary(db.sql, t.slug, null)).riders).toHaveLength(1);
-    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: false, isWoman: false, bio: null })).toEqual({ ok: true });
+    expect(await updateMemberPrivacy(db.sql, { userId: u, profilePublic: false, gender: null, bio: null })).toEqual({ ok: true });
     const s = await getRiddenSummary(db.sql, t.slug, null);
     expect(s.riders).toHaveLength(0);
     expect(s.unlisted).toBe(1);

@@ -6,6 +6,7 @@ import { signOut, signOutEverywhere, updateDisplayName } from "@/server/auth/aut
 import { SESSION_COOKIE } from "@/server/auth/session-cookie";
 import { getCurrentUser } from "@/server/auth/session";
 import { getSql } from "@/server/db/client";
+import { parseGender } from "@/server/community/gender";
 import { updateMemberPrivacy } from "@/server/community/members";
 import { removeBike, saveBike, setAvatar } from "@/server/community/profile";
 
@@ -38,11 +39,13 @@ export async function updateNameAction(formData: FormData): Promise<void> {
 export async function updatePrivacyAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in?next=%2Faccount");
+  const gender = parseGender(formData.get("gender"));
+  if (gender === "invalid") redirect("/account?privacy=error");
   const sql = getSql();
   const r = await updateMemberPrivacy(sql, {
     userId: user.id,
     profilePublic: formData.get("visibility") === "public",
-    isWoman: formData.get("isWoman") === "on",
+    gender,
     bio: String(formData.get("bio") ?? "").trim() || null,
   });
   redirect(r.ok ? "/account?privacy=saved" : "/account?privacy=error");
