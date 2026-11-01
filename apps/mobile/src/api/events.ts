@@ -17,5 +17,5 @@ export const checkInEvent = (token: string, id: string, body: { lat: number; lng
 export const markArrived = (token: string, id: string, riderId: string) => api<void>(`/events/${id}/arrived/${riderId}`, { method: 'POST', token });
 export const setEventRole = (token: string, id: string, riderId: string, role: EventRole | null) => api<void>(`/events/${id}/roles/${riderId}`, { method: 'PUT', token, body: { role } });
 export const startEvent = (token: string, id: string, stretchKm?: number) => api<void>(`/events/${id}/start`, { method: 'POST', token, body: stretchKm ? { stretchKm } : {} });
-export const joinEventRide = (token: string, id: string) => api<{ id: string; name: string }>(`/events/${id}/join-ride`, { method: 'POST', token });
+export const joinEventRide = (token: string, id: string) => api<{ id: string; name: string; code: string; role: 'leader' | 'member' }>(`/events/${id}/join-ride`, { method: 'POST', token });
 export const cancelEvent = (token: string, id: string) => api<void>(`/events/${id}/cancel`, { method: 'POST', token });

@@ -47,3 +47,16 @@ export function primaryAction(ev: Pick<RideEventDetail, 'status' | 'myResponse' 
   if (nearEnough) return 'check_in';
   return ev.myResponse === 'going' || ev.mine ? 'none' : 'going';
 }
+
+/** How far from the leader a rider can be before the leader is warned, unless the host chose another distance. */
+export const DEFAULT_STRETCH_KM = 3;
+
+/** The leader is warned at most this often about a stretched group. */
+export const STRETCH_REPEAT_MS = 5 * 60_000;
+
+/** "Asha is far behind" / "Asha and Ravi are far behind" / "Asha and 2 others are far behind". */
+export function stretchMessage(names: string[]): string {
+  if (names.length === 1) return `${names[0]} is far behind.`;
+  if (names.length === 2) return `${names[0]} and ${names[1]} are far behind.`;
+  return `${names[0]} and ${names.length - 1} others are far behind.`;
+}

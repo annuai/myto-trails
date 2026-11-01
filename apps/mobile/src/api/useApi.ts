@@ -12,7 +12,7 @@ import { homeCountry, useRegion } from '@/store/region';
 import { fetchCountries, FALLBACK_COUNTRIES, type Country } from './countries';
 import { useTrailStore } from '@/store/trails';
 
-type Async<T> = { data?: T; error?: string; loading: boolean; reload: () => void };
+export type Async<T> = { data?: T; error?: string; loading: boolean; reload: () => void };
 
 // Signing out forgets the account's cached screens.
 useAuth.subscribe((s, prev) => { if (prev.token && !s.token) clearUserCache(); });

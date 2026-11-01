@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canCheckIn, primaryAction, stretchAlert } from './eventCore';
+import { canCheckIn, primaryAction, stretchAlert, stretchMessage } from './eventCore';
 import type { GroupRiderView } from './groupCore';
 
 const HOUR = 3_600_000;
@@ -60,5 +60,13 @@ describe('primaryAction', () => {
   it('offers nothing to a waitlisted rider or after the event', () => {
     expect(primaryAction({ ...base, myResponse: 'waitlisted' }, true)).toBe('none');
     expect(primaryAction({ ...base, status: 'cancelled' }, true)).toBe('none');
+  });
+});
+
+describe('stretchMessage', () => {
+  it('names one, two, or counts the rest', () => {
+    expect(stretchMessage(['Asha'])).toBe('Asha is far behind.');
+    expect(stretchMessage(['Asha', 'Ravi'])).toBe('Asha and Ravi are far behind.');
+    expect(stretchMessage(['Asha', 'Ravi', 'Meera', 'Dev'])).toBe('Asha and 3 others are far behind.');
   });
 });

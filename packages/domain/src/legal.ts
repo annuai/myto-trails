@@ -9,6 +9,8 @@ export type LegalSlug = "about" | "terms" | "privacy";
 export type LegalDoc = { slug: LegalSlug; title: string; updated: string; /** Draft text waits for a lawyer's review. */ draft: boolean; sections: Section[] };
 
 export const CONTACT_EMAIL = "clubmyto@gmail.com";
+/** The community Discord, where riders suggest improvements. */
+export const DISCORD_URL = "https://discord.gg/DsC3nW46";
 export const MYTO_URL = "https://myto-moto.com";
 export const MADE_IN_INDIA = "Proudly made in India";
 /** The word a person types to confirm deleting their account, on the website and in the app. */

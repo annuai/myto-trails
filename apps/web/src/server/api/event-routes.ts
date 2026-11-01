@@ -101,11 +101,11 @@ export const eventRoutes: RouteDef[] = [
     },
   },
   {
-    method: "POST", path: "/events/{id}/join-ride", access: "write:submission", summary: "A checked-in rider joins the live group ride. Returns the group ride id and name",
+    method: "POST", path: "/events/{id}/join-ride", access: "write:submission", summary: "A checked-in rider joins the live group ride. Returns the group ride id, name, code and your role",
     async handler(c) {
       const [u] = await c.sql`select display_name from app_user where id = ${c.userId}`;
       const r = await joinEventRide(c.sql, { userId: c.userId, eventId: c.params.id!, displayName: String(u?.display_name ?? ""), now: c.now });
-      return r.ok ? ok({ id: r.rideId, name: r.name }) : failWith(EVENT, r.reason);
+      return r.ok ? ok({ id: r.rideId, name: r.name, code: r.code, role: r.role }) : failWith(EVENT, r.reason);
     },
   },
   {

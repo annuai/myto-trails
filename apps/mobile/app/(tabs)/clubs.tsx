@@ -4,9 +4,12 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LogIn, Users } from 'lucide-react-native';
 import { createClub } from '@/api/community';
-import { useClubs } from '@/api/useApi';
-import type { ClubSummary } from '@/api/types';
+import { createEvent } from '@/api/events';
+import { useClubs, useEvents } from '@/api/useApi';
+import type { ClubSummary, EventInput } from '@/api/types';
 import { CreateClubSheet } from '@/features/community/CreateClubSheet';
+import { CreateEventSheet } from '@/features/event/CreateEventSheet';
+import { EventsSection } from '@/features/event/EventsSection';
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '@/store/auth';
 import { Button } from '@/ui/Button';
@@ -43,9 +46,11 @@ export default function Clubs() {
   const token = useAuth((s) => s.token);
   const signedIn = !!token;
   const [creating, setCreating] = useState(false);
+  const [hosting, setHosting] = useState(false);
   const [text, setText] = useState('');
   const act = useAction();
   const clubs = useClubs(text);
+  const events = useEvents('discover', undefined, signedIn);
   const { mine, others } = clubs;
   const searching = clubs.searched.length > 0;
   const open = (id: string) => router.push(`/club/${id}`);
@@ -53,8 +58,12 @@ export default function Clubs() {
     const r = await act.run(() => createClub(token!, b));
     if (r) { setCreating(false); clubs.reload(); open(r.value); }
   };
+  const host = async (b: EventInput) => {
+    const r = await act.run(() => createEvent(token!, b));
+    if (r) { setHosting(false); events.reload(); router.push(`/event/${r.value.id}`); }
+  };
   return (
-    <Screen tabs brand onNearEnd={signedIn && others.hasMore ? others.loadMore : undefined} overlay={<CreateClubSheet open={creating} busy={act.busy} problem={act.problem} onSubmit={(b) => void create(b)} onClose={() => { setCreating(false); act.clear(); }} />}>
+    <Screen tabs brand onNearEnd={signedIn && others.hasMore ? others.loadMore : undefined} overlay={<><CreateClubSheet open={creating} busy={act.busy} problem={act.problem} onSubmit={(b) => void create(b)} onClose={() => { setCreating(false); act.clear(); }} /><CreateEventSheet open={hosting} busy={act.busy} problem={act.problem} onSubmit={(b) => void host(b)} onClose={() => { setHosting(false); act.clear(); }} /></>}>
       <PageTitle>Clubs</PageTitle>
       <NotOpenNotice />
       {signedIn ? <Field label="Search" placeholder="Club name or what it is about" value={text} onChangeText={setText} returnKeyType="search" /> : null}
@@ -72,7 +81,8 @@ export default function Clubs() {
         <Text variant="body" tone="muted">Loading…</Text>
       ) : (
         <>
-          <SectionTitle first onAdd={() => setCreating(true)} addLabel="Start a club">Your clubs</SectionTitle>
+          {searching ? null : <EventsSection first title="Rides coming up" events={events} empty="No open rides yet. Host one with the + button." onAdd={() => setHosting(true)} addLabel="Host a ride" />}
+          <SectionTitle first={searching} onAdd={() => setCreating(true)} addLabel="Start a club">Your clubs</SectionTitle>
           {mine.data.length ? <View style={{ gap: space[3] }}>{mine.data.map((c) => <ClubCard key={c.clubId} club={c} onPress={() => open(c.clubId)} />)}</View>
             : searching ? null : <EmptyState icon={Users} title="Find your people" body="Ask to join a club below, or start your own with the + button." />}
           {others.items.length ? (

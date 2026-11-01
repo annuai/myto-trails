@@ -291,7 +291,7 @@ export async function startEvent(sql: Sql, i: { hostId: string; eventId: string;
 }
 
 /** A checked-in rider (or the host) joins the live ride; the host's job for them rides along. */
-export async function joinEventRide(sql: Sql, i: { userId: string; eventId: string; displayName: string; now: Date }): Promise<{ ok: true; rideId: string; name: string } | Fail<"not_member" | "not_found" | "not_checked_in" | "not_live" | "full">> {
+export async function joinEventRide(sql: Sql, i: { userId: string; eventId: string; displayName: string; now: Date }): Promise<{ ok: true; rideId: string; name: string; code: string; role: "leader" | "member" } | Fail<"not_member" | "not_found" | "not_checked_in" | "not_live" | "full">> {
   if (!UUID.test(i.eventId)) return { ok: false, reason: "not_found" };
   const [e] = await sql`
     select e.id, g.id as ride_id, g.code, g.ended_at, e.status from ride_event e left join group_ride g on g.id = e.group_ride_id
@@ -303,7 +303,7 @@ export async function joinEventRide(sql: Sql, i: { userId: string; eventId: stri
   const r = await joinGroupRide(sql, { userId: i.userId, code: e.code, displayName: i.displayName, now: i.now });
   if (!r.ok) return r.reason === "not_member" || r.reason === "full" ? { ok: false, reason: r.reason } : { ok: false, reason: "not_found" };
   await sql`update group_ride_member set event_role = ${mine.role} where ride_id = ${e.ride_id} and user_id = ${i.userId}`;
-  return { ok: true, rideId: r.id, name: r.name };
+  return { ok: true, rideId: r.id, name: r.name, code: e.code as string, role: r.role };
 }
 
 export async function cancelEvent(sql: Sql, i: { hostId: string; eventId: string }): Promise<{ ok: true } | Fail<"not_found" | "not_host" | "closed">> {
@@ -314,4 +314,19 @@ export async function cancelEvent(sql: Sql, i: { hostId: string; eventId: string
   if (e.status !== "scheduled") return { ok: false, reason: "closed" };
   await sql`update ride_event set status = 'cancelled' where public_id = ${i.eventId}`;
   return { ok: true };
+}
+
+// ---- the public page ---------------------------------------------------------------------------------------
+
+export type PublicEvent = { title: string; startsAt: Date; timeZone: string; placeName: string; clubName: string | null; going: number; status: EventStatus };
+
+/** What anyone with the link may see: an open event's name, time, place and how many are going. Members-only and unknown events are null. */
+export async function getPublicEvent(sql: Sql, eventId: string, now: Date): Promise<PublicEvent | null> {
+  if (!UUID.test(eventId)) return null;
+  const [r] = await sql`
+    select e.title, e.starts_at, e.time_zone, e.place_name, e.status, g.ended_at as ride_ended_at, c.name as club_name,
+      (select count(*)::int from ride_event_rsvp x where x.event_id = e.id and x.response = 'going') as going
+    from ride_event e left join club c on c.id = e.club_id left join group_ride g on g.id = e.group_ride_id
+    where e.public_id = ${eventId} and e.audience = 'open'`;
+  return r ? { title: r.title, startsAt: r.starts_at, timeZone: r.time_zone, placeName: r.place_name, clubName: r.club_name ?? null, going: r.going, status: statusOf(r, now) } : null;
 }
