@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { CalendarClock } from 'lucide-react-native';
 import { hasLink, rideAtISO } from '@/lib/community';
-import { addDays, formatDate, todayISO } from '@/lib/dates';
+import { addDays, todayISO } from '@/lib/dates';
 import { Button } from '@/ui/Button';
 import { ChoiceChip } from '@/ui/Chip';
-import { DatePicker } from '@/ui/DatePicker';
+import { DateField } from '@/ui/DateField';
 import { Field } from '@/ui/Field';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
@@ -37,10 +37,7 @@ export function PostSheet({ open, busy, problem, onSubmit, onClose }: { open: bo
       </View>
       {ride ? (
         <View style={{ gap: space[4] }}>
-          <View style={{ gap: space[2] }}>
-            <Text variant="labelMedium">Day: {formatDate(date)}</Text>
-            <DatePicker value={date} onChange={setDate} />
-          </View>
+          <DateField label="Day" title="Choose day of the ride" value={date} min={todayISO()} onChange={setDate} />
           <TimeField label="Start time (India time)" value={minutes} onChange={setMinutes} />
           <Field label="Meeting place" value={place} onChangeText={setPlace} maxLength={120} error={hasLink(place) ? 'Please leave web addresses out.' : undefined} />
         </View>

@@ -10,7 +10,7 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Checkbox } from '@/ui/Checkbox';
 import { ChoiceChip } from '@/ui/Chip';
-import { DatePicker } from '@/ui/DatePicker';
+import { DateDialog } from '@/ui/DateDialog';
 import { Field } from '@/ui/Field';
 import { IconButton } from '@/ui/IconButton';
 import { TimeField } from '@/ui/TimeField';
@@ -56,10 +56,10 @@ export function PlanTripSheet({ open, onClose, onCreated, name: initialName = ''
         <View style={{ gap: space[3] }}>
           <Line label="Starts"><Text variant="data">{formatDate(startDate)}</Text></Line>
           <View style={{ flexDirection: 'row', gap: space[2], flexWrap: 'wrap' }}>
-            {QUICK.map(([label, n]) => <ChoiceChip key={label} label={label} selected={!picking && startDate === addDays(todayISO(), n)} onPress={() => { setStartDate(addDays(todayISO(), n)); setPicking(false); }} />)}
-            <ChoiceChip label="Pick a date" selected={picking || QUICK.every(([, n]) => startDate !== addDays(todayISO(), n))} onPress={() => setPicking(!picking)} />
+            {QUICK.map(([label, n]) => <ChoiceChip key={label} label={label} selected={startDate === addDays(todayISO(), n)} onPress={() => setStartDate(addDays(todayISO(), n))} />)}
+            <ChoiceChip label="Pick a date" selected={QUICK.every(([, n]) => startDate !== addDays(todayISO(), n))} onPress={() => setPicking(true)} />
           </View>
-          {picking ? <DatePicker chips={false} value={startDate} onChange={(d) => { setStartDate(d); setPicking(false); }} /> : null}
+          <DateDialog open={picking} title="Choose start day" value={startDate} min={todayISO()} onCancel={() => setPicking(false)} onConfirm={(d) => { setStartDate(d); setPicking(false); }} />
         </View>
         <Card style={{ gap: space[5] }}>
           <TimeField label="Start time" value={startTime} onChange={setStartTime} />

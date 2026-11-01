@@ -1,30 +1,30 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Clock } from 'lucide-react-native';
 import { clockLabel } from '@/lib/community';
 import { size, space } from '@/theme/tokens';
 import { Icon } from './Icon';
 import { Text } from './Text';
-import { TimeWheel } from './TimeWheel';
+import { TimeDialog } from './TimeWheel';
 import { ScalePressable } from './motion';
 
 /**
- * A time as one line: the label, and the time on the right. Tap it and a wheel opens right under it; scroll to the time. Tap again to
- * fold it away. It opens in place rather than in a second sheet, so it works inside a sheet and nothing covers the form.
+ * A time as one line: the label, and the time on the right. Tap it and the time dialog opens (hour, minute and AM or PM wheels,
+ * Cancel and OK). `value` is minutes after midnight; `title` is the dialog's heading.
  */
-export function TimeField({ label, value, onChange }: { label: string; value: number; onChange: (minutes: number) => void }) {
+export function TimeField({ label, value, onChange, title }: { label: string; value: number; onChange: (minutes: number) => void; title?: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <View style={{ gap: space[2] }}>
-      <ScalePressable scaleTo={0.99} accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={`${label}, ${clockLabel(value)}. ${open ? 'Close' : 'Change'}`} onPress={() => setOpen(!open)}
+    <View>
+      <ScalePressable scaleTo={0.99} accessibilityRole="button" accessibilityLabel={`${label}, ${clockLabel(value)}`} accessibilityHint="Opens the time chooser" onPress={() => setOpen(true)}
         style={{ minHeight: size.target, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[3] }}>
         <Text variant="labelMedium" style={{ flexShrink: 1 }}>{label}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
           <Text variant="dataLarge">{clockLabel(value)}</Text>
-          <Icon icon={open ? ChevronUp : ChevronDown} size={20} tone="muted" />
+          <Icon icon={Clock} size={20} tone="muted" />
         </View>
       </ScalePressable>
-      {open ? <TimeWheel label={label} value={value} onChange={onChange} /> : null}
+      <TimeDialog open={open} title={title ?? 'Choose time'} value={value} onCancel={() => setOpen(false)} onConfirm={(m) => { onChange(m); setOpen(false); }} />
     </View>
   );
 }

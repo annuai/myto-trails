@@ -5,13 +5,13 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CalendarClock, FileText, PenLine, Wrench, Package } from 'lucide-react-native';
 import { templates, type Template } from '@/data/todoTemplates';
-import { addDays, formatDate, todayISO } from '@/lib/dates';
+import { addDays, todayISO } from '@/lib/dates';
 import type { Todo } from '@/lib/todos';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { Button } from '@/ui/Button';
 import { ChoiceChip } from '@/ui/Chip';
-import { DatePicker } from '@/ui/DatePicker';
+import { DateField } from '@/ui/DateField';
 import { Field } from '@/ui/Field';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
@@ -56,7 +56,7 @@ export default function NewTodo() {
               </View>
             ) : null}
             {draft.kind === 'date' ? (
-              <View style={{ gap: space[3] }}><Text variant="labelMedium">Due on {formatDate(draft.due)}</Text><DatePicker value={draft.due} onChange={(due) => set({ due })} /></View>
+              <DateField label="Due on" title="Choose due date" value={draft.due} min={todayISO()} onChange={(due) => set({ due })} />
             ) : (
               <View style={{ gap: space[5] }}>
                 <Text variant="label" tone="muted">Due after whichever comes first. Only rides recorded in Myto Moto count towards the distance, so keep the months limit too.</Text>
@@ -64,7 +64,7 @@ export default function NewTodo() {
                   <View style={{ flex: 1 }}><Field label={`Every (${unit === 'mi' ? 'miles' : 'km'})`} keyboardType="numeric" value={draft.everyKm} onChangeText={(everyKm) => set({ everyKm: everyKm.replace(/\D/g, '') })} placeholder="500" /></View>
                   <View style={{ flex: 1 }}><Field label="Or months" keyboardType="numeric" value={draft.everyMonths} onChangeText={(everyMonths) => set({ everyMonths: everyMonths.replace(/\D/g, '') })} placeholder="1" /></View>
                 </View>
-                <View style={{ gap: space[3] }}><Text variant="labelMedium">Last done {formatDate(draft.lastDate)}</Text><DatePicker past value={draft.lastDate} onChange={(lastDate) => set({ lastDate })} /></View>
+                <DateField label="Last done" title="Choose date last done" value={draft.lastDate} max={todayISO()} onChange={(lastDate) => set({ lastDate })} />
               </View>
             )}
           </View>
