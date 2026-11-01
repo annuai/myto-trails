@@ -10,7 +10,7 @@ const MIN_CHARS = 3;
 const WAIT_MS = 350;
 
 /** Search as you type. Picking a result hands it up and clears the box, ready for the next stop. */
-export function PlaceSearch({ near, onPick }: { near?: LatLng; onPick: (p: Place) => void }) {
+export function PlaceSearch({ near, onPick, label = 'Add a place' }: { near?: LatLng; onPick: (p: Place) => void; label?: string }) {
   const [q, setQ] = useState('');
   const [found, setFound] = useState<Place[]>();
   const [busy, setBusy] = useState(false);
@@ -34,7 +34,7 @@ export function PlaceSearch({ near, onPick }: { near?: LatLng; onPick: (p: Place
 
   return (
     <>
-      <Field label="Add a place" value={q} onChangeText={setQ} placeholder="Search a town, viewpoint or address" autoCorrect={false} returnKeyType="search" />
+      <Field label={label} value={q} onChangeText={setQ} placeholder="Search a town, viewpoint or address" autoCorrect={false} returnKeyType="search" />
       {offline ? <Text variant="label" tone="stop">Search needs a connection. You can still tap the map to add points.</Text> : null}
       {found?.length ? (
         <ListCard>

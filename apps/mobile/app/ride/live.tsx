@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { asText, distanceKm, shortDistanceM, speedKmh, withUnit } from '@/lib/units';
 import { isWeak, startGpsHealth, stepGpsHealth } from '@/lib/gpsHealth';
@@ -7,6 +7,7 @@ import { AppState, Linking, Platform, Share, Vibration, View } from 'react-nativ
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, Flag, Megaphone, Mic, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
+import { DocumentsSheet } from '@/features/DocumentsSheet';
 import { useEmergency } from '@/features/emergency/useEmergency';
 import { GroupSheet } from '@/features/GroupSheet';
 import { NoteSheet } from '@/features/NoteSheet';
@@ -17,9 +18,10 @@ import { startFollow, stepFollow } from '@/lib/routeFollow';
 import { compassWord, prepareTrail, startGuide, stepGuide, type Guide } from '@/lib/trailGuide';
 import { mapsDirectionsUrl } from '@/lib/navigate';
 import { WAYPOINT_KINDS, WAYPOINT_LABEL } from '@/lib/waypointKinds';
+import { RiderSheet } from '@/features/group/RiderSheet';
 import { RiderTiles } from '@/features/group/RiderTiles';
 import { useCanNavigate } from '@/features/group/useCanNavigate';
-import { riderTiles } from '@/lib/groupCore';
+import { riderSlots, riderTiles, sortRiders } from '@/lib/groupCore';
 import { useCompanion } from '@/store/companion';
 import { useMyRoutes } from '@/store/myRoutes';
 import { useTrips } from '@/store/trips';
@@ -37,6 +39,10 @@ import { Card } from '@/ui/Card';
 import { buzz } from '@/lib/haptics';
 import { EmergencyEditor } from '@/ui/EmergencyEditor';
 import { HoldButton } from '@/ui/HoldButton';
+import { haversine, travelHeading } from '@/lib/geo';
+import type { RiderMark } from '@/lib/riderClusters';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDestinationRoute } from '@/features/group/useDestinationRoute';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { useRouteLine } from '@/api/useApi';
 import { useTrailStore } from '@/store/trails';
@@ -73,13 +79,37 @@ function LiveBody() {
   const group = useCompanion((s) => s.group);
   const live = useCompanion((s) => s.live);
   const canNavigate = useCanNavigate();
-  const others = useMemo(() => live.riders.filter((x) => x.id !== live.me && x.lat != null && x.lng != null).map((x) => ({ lat: x.lat!, lng: x.lng! })), [live.riders, live.me]);
+  const insets = useSafeAreaInsets();
+  const [full, setFull] = useState(false);
+  const openFull = useCallback(() => setFull(true), []);
+  const closeFull = useCallback(() => setFull(false), []);
+  /** The rider whose tile was tapped: the sheet shows where they are and how far they have to go. */
+  const [riderId, setRiderId] = useState<string>();
   const fix = useLocation((s) => s.fix);
   const gpsError = useLocation((s) => s.error);
   const lastPoint = r.points[r.points.length - 1];
   const breaks = useMemo(() => mergeBreaks(breaksOf(splitSegments(r.points)), r.pauseBreaks), [r.points.length, r.pauseBreaks]); // eslint-disable-line react-hooks/exhaustive-deps
   // The dot follows the live GPS fix straight away; on a simulated ride it follows the simulated track.
   const last = r.source === 'sim' ? lastPoint : fix ? { lat: fix.lat, lng: fix.lng } : lastPoint;
+  // The same spot as an object that only changes when the position does, so the map is not redrawn every second.
+  const lastSpot = useMemo(() => last, [last?.lat, last?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The riders of the group on the map: a colour each, the leader and anyone who needs help first. This phone is drawn at its own live position.
+  const riderMarks = useMemo<RiderMark[]>(() => {
+    if (!group || live.riders.length < 2) return [];
+    const slots = riderSlots(live.riders);
+    return sortRiders(live.riders, live.me ?? '').flatMap((x) => {
+      const mine = x.id === live.me;
+      const at = mine ? last : x.lat != null && x.lng != null ? { lat: x.lat, lng: x.lng } : undefined;
+      return at ? [{ id: x.id, name: mine ? 'You' : x.name, slot: slots.get(x.id) ?? 0, lat: at.lat, lng: at.lng }] : [];
+    });
+  }, [group, live.riders, live.me, last?.lat, last?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The group's destination, and the road to it from here.
+  const destination = useMemo(() => (live.regroup ? { lat: live.regroup.lat, lng: live.regroup.lng, name: live.regroup.note ?? undefined } : undefined), [live.regroup]);
+  const destRoute = useDestinationRoute(last, live.regroup);
+  const toDestinationKm = last && live.regroup ? (destRoute?.km ?? haversine(last, live.regroup) / 1000) : null;
+  // The map turns to face the way the rider is going, and keeps the last direction while stopped.
+  const lastHeading = useRef<number | undefined>(undefined);
+  const heading = useMemo(() => { const h = travelHeading(r.points); if (h !== undefined) lastHeading.current = h; return lastHeading.current; }, [r.points.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const [, tick] = useState(0);
   // Help on a solo ride's lock screen card opens this screen with the SOS sheet up.
   const { sos: sosParam } = useLocalSearchParams<{ sos?: string }>();
@@ -93,6 +123,7 @@ function LiveBody() {
     return () => { void deactivateKeepAwake('myto-live-screen'); };
   }, [r.paused]);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(false);
@@ -179,14 +210,16 @@ function LiveBody() {
         </View>
       ) : null}
       {checkin ? <Pressable accessibilityRole="button" onPress={() => setCheckinOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="label" tone="muted">Check-in on · back by {clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}</Text></Pressable> : null}
-      {live.regroup ? <Banner eyebrow="Group" title="The leader dropped a regroup pin" onPress={() => setGroupOpen(true)} /> : null}
+      {live.regroup ? <Banner eyebrow="Group destination" title={`${live.regroup.note ?? 'A spot on the map'}${toDestinationKm !== null ? ` · ${asText(distanceKm(toDestinationKm))}` : ''}`} onPress={() => setGroupOpen(true)} /> : null}
       {foregroundOnly ? <Banner eyebrow="Heads up" title="Recording stops if you lock the phone. Tap to allow Always in Settings." onPress={() => void Linking.openSettings()} /> : null}
       {r.source === 'gps' && !fix && gpsError ? <Text variant="label" tone="caution">{gpsError}</Text>
         : <Text variant="label" tone="muted" style={{ textAlign: landscape ? 'left' : 'center' }}>{r.paused ? 'Paused. Nothing is recorded until you resume.' : r.lastFixAt ? `Last fix ${ageSec} s ago${fix?.accuracy ? ` · GPS ±${Math.round(fix.accuracy)} m` : ''}` : 'Waiting for a GPS fix…'}</Text>}
     </View>
   );
   // The other riders of the group ride, with how far they are and a way to navigate to them (once stopped).
-  const groupTiles = group && live.riders.length > 1 ? <RiderTiles tiles={riderTiles(live.riders, live.me, last, nowMs())} canNavigate={canNavigate} /> : null;
+  const tiles = group ? riderTiles(live.riders, live.me, last, nowMs()) : [];
+  const groupTiles = group && live.riders.length > 1 ? <RiderTiles tiles={tiles} canNavigate={canNavigate} onSelect={(t) => setRiderId(t.id)} /> : null;
+  const picked = tiles.find((t) => t.id === riderId);
   const pauseBtn = (h: number) => (
     <Pressable accessibilityRole="button" accessibilityLabel={r.paused ? 'Resume ride' : 'Pause ride'} onPress={() => { (r.paused ? buzz.resume : buzz.pause)(); void (r.paused ? r.resume() : r.pause()); }} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: r.paused ? c.accent : pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
       <Icon icon={r.paused ? Play : Pause} size={h > 70 ? 26 : 22} />
@@ -209,11 +242,33 @@ function LiveBody() {
     </Pressable>
   );
 
+  // One map element for the page, and another for the full-screen view; only one is alive at a time.
+  const mapData = { line: routeLine, track: r.points, trackBreaks: breaks, position: lastSpot, waypoints: r.waypoints, riderMarks, destination, guide: destRoute?.line, heading };
+  const mapEl = (h: number) => (full ? <View style={{ height: h }} /> : <OsmMap height={h} radius={radius.card} follow {...mapData} onFullscreen={openFull} />);
+  const holdStop = (h: number) => <HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} minHeight={h} onComplete={stop} />;
+  const quickRow = (h: number) => <View style={{ flexDirection: 'row', gap: space[3] }}>{sosBtn(h)}{smallBtn('Report', Megaphone, () => setReportOpen(true), h)}{smallBtn('Group', Users, () => setGroupOpen(true), h)}</View>;
+  // The main actions stay at the foot of the screen, whatever else the page holds.
+  const actions = (h: number, q: number) => (
+    <View style={{ gap: space[3] }}>
+      <View style={{ flexDirection: 'row', gap: space[3] }}>{pauseBtn(h)}{waypointBtn(h)}{holdStop(h)}</View>
+      {quickRow(q)}
+    </View>
+  );
+
   return (
-    <Screen scroll={false} overlay={<>
+    <Screen scroll={!landscape} footer={landscape ? undefined : actions(88, size.button)} overlay={<>
+      {full ? (
+        <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, paddingTop: insets.top + space[2], paddingBottom: insets.bottom + space[4], paddingHorizontal: space[3], gap: space[3], backgroundColor: c.paper }}>
+          <OsmMap height="fill" radius={radius.card} follow {...mapData} fullscreen onFullscreen={closeFull} />
+          <Text variant="bodyMedium" style={{ textAlign: 'center' }}>{`${distance.value} ${distance.unit} · ${clock(r.elapsedMs(nowMs()))} · ${speed.value} ${speed.unit}`}</Text>
+          {actions(size.bigButton, size.button)}
+        </View>
+      ) : null}
       <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={last} />
-      <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={last} />
+      <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={last} onRider={(id) => { setGroupOpen(false); setRiderId(id); }} />
+      {picked ? <RiderSheet tile={picked} destination={destination} canNavigate={canNavigate} onClose={() => setRiderId(undefined)} /> : null}
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
+      <DocumentsSheet open={docsOpen} onClose={() => setDocsOpen(false)} />
       <NoteSheet open={noteOpen} canType={j.canType} onSave={j.addNote} onClose={() => setNoteOpen(false)} />
       <Sheet open={journalOpen} title="Ride journal" onClose={() => setJournalOpen(false)}>
         <Button icon={j.recording ? Square : Mic} label={j.recording ? `Stop recording ${Math.floor(j.seconds / 60)}:${String(j.seconds % 60).padStart(2, '0')}` : 'Record a voice note'} onPress={() => void j.toggleVoice()} />
@@ -239,6 +294,7 @@ function LiveBody() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[5] }}>
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Group</Text></Pressable> : null}
+          <Pressable accessibilityRole="button" onPress={() => setDocsOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Documents</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={() => setJournalOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Journal</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.replace('/')} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Minimise</Text></Pressable>
         </View>
@@ -248,7 +304,7 @@ function LiveBody() {
         <View style={{ flex: 1, flexDirection: 'row', gap: space[4] }}>
           <View style={{ flex: 1, gap: space[3] }}>{stats}{status}{groupTiles}</View>
           <View style={{ flex: 1.25, gap: space[3] }}>
-            <OsmMap height={Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16)} radius={radius.card} follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
+            {mapEl(Math.max(110, height - 48 - 16 - 76 - 12 - 12 - 16))}
             <View style={{ flexDirection: 'row', gap: space[3] }}>{pauseBtn(64)}{waypointBtn(64)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} minHeight={64} onComplete={stop} />{sosBtn(64)}</View>
           </View>
         </View>
@@ -256,12 +312,9 @@ function LiveBody() {
         <>
           <View style={{ marginTop: space[2] }}>{stats}</View>
           <View style={{ marginTop: space[3] }}>
-            <OsmMap height={200} radius={radius.card} follow line={routeLine} track={r.points} trackBreaks={breaks} position={last} waypoints={r.waypoints} riders={others} regroup={live.regroup ?? undefined} />
+            {mapEl(200)}
           </View>
           <View style={{ marginTop: space[3], gap: space[3] }}>{status}{groupTiles}</View>
-          <View style={{ flex: 1 }} />
-          <View style={{ flexDirection: 'row', gap: space[3] }}>{pauseBtn(88)}{waypointBtn(88)}<HoldButton label="Hold to stop" icon={Square} color={fixed.stopFill} onComplete={stop} /></View>
-          <View style={{ marginTop: space[3], flexDirection: 'row', gap: space[3] }}>{sosBtn(56)}{smallBtn('Report', Megaphone, () => setReportOpen(true), 56)}{smallBtn('Group', Users, () => setGroupOpen(true), 56)}</View>
         </>
       )}
     </Screen>

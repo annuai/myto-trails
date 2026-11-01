@@ -7,6 +7,21 @@ export function haversine(a: LatLng, b: LatLng): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+/** The compass bearing in degrees, 0 to 360, of the way from `a` to `b`. */
+export function bearing(a: LatLng, b: LatLng): number {
+  const rad = Math.PI / 180, dLng = (b.lng - a.lng) * rad;
+  const y = Math.sin(dLng) * Math.cos(b.lat * rad), x = Math.cos(a.lat * rad) * Math.sin(b.lat * rad) - Math.sin(a.lat * rad) * Math.cos(b.lat * rad) * Math.cos(dLng);
+  return ((Math.atan2(y, x) / rad) + 360) % 360;
+}
+
+/** The way the rider is travelling: from the newest point back to one at least `minM` away, so GPS jitter while stopped gives no heading. */
+export function travelHeading(points: LatLng[], minM = 15): number | undefined {
+  const end = points[points.length - 1];
+  if (!end) return undefined;
+  for (let i = points.length - 2; i >= Math.max(0, points.length - 21); i--) if (haversine(points[i]!, end) >= minM) return bearing(points[i]!, end);
+  return undefined;
+}
+
 export function pathLength(points: LatLng[]): number {
   let m = 0;
   for (let i = 1; i < points.length; i++) m += haversine(points[i - 1], points[i]);

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '@/lib/geo';
 import { ApiFailure, api } from './client';
-import { toLatLng, type BikeMakeList, type BikeModelPage, type ClubDetail, type ClubJoinRequest, type ClubPost, type ClubSummary, type Me, type RouteDto, type SavedItem, type SearchResult, type TrailComment, type TrailDetail } from './types';
+import { toLatLng, type BikeMakeList, type BikeModelPage, type ClubDetail, type ClubJoinRequest, type ClubPost, type ClubSummary, type Me, type RideEvent, type RideEventDetail, type RouteDto, type SavedItem, type SearchResult, type TrailComment, type TrailDetail } from './types';
 import { cacheDelete, cacheDeleteWhere, cacheGet, cacheSet, clearUserCache, isFresh } from './cacheStore';
 import { countryAt } from '@/lib/countryBoundaries';
 import { useDebounced } from '@/lib/useDebounced';
@@ -12,7 +12,7 @@ import { homeCountry, useRegion } from '@/store/region';
 import { fetchCountries, FALLBACK_COUNTRIES, type Country } from './countries';
 import { useTrailStore } from '@/store/trails';
 
-type Async<T> = { data?: T; error?: string; loading: boolean; reload: () => void };
+export type Async<T> = { data?: T; error?: string; loading: boolean; reload: () => void };
 
 // Signing out forgets the account's cached screens.
 useAuth.subscribe((s, prev) => { if (prev.token && !s.token) clearUserCache(); });
@@ -160,6 +160,18 @@ export function useClub(id: string): Async<ClubDetail> {
 export function useClubPosts(id: string, enabled: boolean): Async<ClubPost[]> {
   const token = useAuth((s) => s.token);
   return useFetch(token && enabled ? `club:${id}:posts` : null, async (signal) => (await api<{ posts: ClubPost[] }>(`/clubs/${id}/posts`, { token, signal })).posts);
+}
+
+/** Upcoming and live events: the open ones (discover), one club's, or those I host or answered. Pass `enabled` false to skip the request. */
+export function useEvents(scope: 'discover' | 'club' | 'mine', clubId?: string, enabled = true): Async<RideEvent[]> {
+  const token = useAuth((s) => s.token);
+  return useFetch(token && enabled ? `events:${scope}:${clubId ?? ''}` : null, async (signal) => (await api<{ items: RideEvent[] }>(`/events?scope=${scope}${clubId ? `&clubId=${clubId}` : ''}`, { token, signal })).items);
+}
+
+/** One event. The host's copy carries the roster. */
+export function useEvent(id: string): Async<RideEventDetail> {
+  const token = useAuth((s) => s.token);
+  return useFetch(token ? `event:${id}` : null, (signal) => api<RideEventDetail>(`/events/${id}`, { token, signal }));
 }
 
 /** Join requests with phone numbers. Club admins only. */

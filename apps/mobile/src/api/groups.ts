@@ -6,7 +6,7 @@ export type { GroupStatus };
 export type GroupRide = { id: string; code: string; name: string; expiresAt: string };
 export type JoinedGroup = { id: string; name: string; role: string };
 export type GroupRegroup = { lat: number; lng: number; note: string | null };
-export type GroupSync = { riders: GroupRiderView[]; regroup: GroupRegroup | null; ended: boolean; /** This rider's own handle in `riders`. */ me: string };
+export type GroupSync = { riders: GroupRiderView[]; regroup: GroupRegroup | null; ended: boolean; /** This rider's own handle in `riders`. */ me: string; /** Distance in km after which the leader is warned that the group is stretched. */ stretchKm?: number };
 export type SyncBody = { lat?: number; lng?: number; at?: string; status?: GroupStatus };
 
 export const createGroupRide = (token: string, body: { name: string; clubId?: string }) => api<GroupRide>('/group-rides', { method: 'POST', token, body });

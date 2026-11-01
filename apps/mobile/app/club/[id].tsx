@@ -6,7 +6,10 @@ import { decideRequest, leaveClub, postToClub, removeMember, removePost, request
 import { ApiFailure, api } from '@/api/client';
 import { createGroupRide, getClubGroupRide, joinGroupRide } from '@/api/groups';
 import type { ClubMember, ClubPost } from '@/api/types';
-import { forgetProfile, useClub, useClubPosts, useClubRequests } from '@/api/useApi';
+import { createEvent } from '@/api/events';
+import { forgetProfile, useClub, useClubPosts, useClubRequests, useEvents } from '@/api/useApi';
+import { CreateEventSheet } from '@/features/event/CreateEventSheet';
+import { EventsSection } from '@/features/event/EventsSection';
 import { ClubPostCard } from '@/features/community/ClubPostCard';
 import { nextWeek } from '@/lib/community';
 import { ConfirmSheet } from '@/features/community/ConfirmSheet';
@@ -29,7 +32,7 @@ import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { media, radius, space } from '@/theme/tokens';
 
-type Open = { kind: 'join' | 'post' | 'leave' } | { kind: 'reply' | 'removePost'; post: ClubPost } | { kind: 'manage' | 'removeMember'; member: ClubMember };
+type Open = { kind: 'join' | 'post' | 'leave' | 'event' } | { kind: 'reply' | 'removePost'; post: ClubPost } | { kind: 'manage' | 'removeMember'; member: ClubMember };
 
 export default function ClubScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,6 +42,7 @@ export default function ClubScreen() {
   const role = c.data?.club.role ?? null;
   const posts = useClubPosts(id, role !== null);
   const requests = useClubRequests(id, role === 'admin');
+  const events = useEvents('club', id);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string>();
   const [open, setOpen] = useState<Open>();
@@ -53,7 +57,7 @@ export default function ClubScreen() {
     return () => { on = false; };
   }, [token, id, role]);
   const close = () => { setOpen(undefined); act.clear(); };
-  const refresh = () => { c.reload(); posts.reload(); requests.reload(); };
+  const refresh = () => { c.reload(); posts.reload(); requests.reload(); events.reload(); };
   /** Runs a server action; on success the screen reloads and any open sheet closes. */
   const submit = async (fn: () => Promise<unknown>, then?: () => void) => {
     if (!token) return;
@@ -108,6 +112,8 @@ export default function ClubScreen() {
     <>
       <JoinSheet open={open?.kind === 'join'} clubName={club.name} busy={act.busy} problem={act.problem} onClose={close}
         onSubmit={(b) => void submit(() => requestJoin(ref, b))} />
+      <CreateEventSheet open={open?.kind === 'event'} clubId={clubId} clubName={club.name} busy={act.busy} problem={act.problem} onClose={close}
+        onSubmit={(b) => void submit(async () => { const r = await createEvent(token!, b); router.push(`/event/${r.id}`); })} />
       <PostSheet open={open?.kind === 'post'} busy={act.busy} problem={act.problem} onClose={close}
         onSubmit={(p) => void submit(() => postToClub(ref, p))} />
       <TextSheet open={open?.kind === 'reply'} title={`Reply to ${post?.authorName ?? ''}`} label="Your reply" submitLabel="Reply" max={1000} busy={act.busy} problem={act.problem} onClose={close}
@@ -176,6 +182,8 @@ export default function ClubScreen() {
           {requests.data?.length ? <Text variant="caption" tone="muted" style={{ marginTop: space[3] }}>Phone numbers are for deciding who joins. Please do not share them. They are deleted 7 days after you decide.</Text> : null}
         </>
       ) : null}
+
+      <EventsSection title="Rides" events={events} empty={isMember ? 'No rides planned. Admins can host one with the + button.' : 'No open rides planned. Members can see the club’s own rides.'} onAdd={isAdmin ? () => setOpen({ kind: 'event' }) : undefined} addLabel="Host a club ride" />
 
       {isMember ? (
         <>

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import type { WelcomeState } from "@/app/welcome/actions";
+import { GenderFields } from "./GenderFields";
 import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
 const input = "min-h-12 w-full rounded-lg border border-foreground/40 bg-background px-3";
@@ -38,10 +39,7 @@ export function WelcomeForm({ action, next, displayName }: { action: (prev: Welc
         </label>
       </fieldset>
 
-      <label className="flex min-h-11 items-start gap-3">
-        <input type="checkbox" name="isWoman" defaultChecked={v?.isWoman} className="mt-1 size-5" />
-        <span><span className="font-medium">I am a woman rider (optional)</span><span className="block text-sm text-muted">Private. Lets you create and join women-only clubs. It is never shown on your profile.</span></span>
-      </label>
+      <GenderFields value={v?.gender ?? "none"} />
 
       <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-6 text-sm font-medium text-white hover:bg-accent-hover">Continue</SubmitButton>
     </form>

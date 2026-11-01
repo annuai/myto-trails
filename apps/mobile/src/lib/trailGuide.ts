@@ -1,4 +1,4 @@
-import { haversine, type LatLng } from './geo';
+import { bearing, haversine, type LatLng } from './geo';
 import { nearestOnLine } from './routeFollow';
 
 /**
@@ -40,11 +40,6 @@ function locate(t: TrailLine, hint: number, p: LatLng, ahead: number = WINDOW_AH
   return all ? { distM: all.distM, alongM: all.alongM, segment: all.segment } : { distM: Infinity, alongM: 0, segment: 0 };
 }
 
-const bearing = (a: LatLng, b: LatLng) => {
-  const rad = Math.PI / 180, dLng = (b.lng - a.lng) * rad;
-  const y = Math.sin(dLng) * Math.cos(b.lat * rad), x = Math.cos(a.lat * rad) * Math.sin(b.lat * rad) - Math.sin(a.lat * rad) * Math.cos(b.lat * rad) * Math.cos(dLng);
-  return ((Math.atan2(y, x) / rad) + 360) % 360;
-};
 const COMPASS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
 /** The compass word for the way from `a` to `b`: "north-east". */
 export const compassWord = (a: LatLng, b: LatLng): string => COMPASS[Math.round(bearing(a, b) / 45) % 8]!;

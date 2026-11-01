@@ -20,7 +20,7 @@ afterAll(async () => {
 });
 const rider = async (name: string, o: { woman?: boolean; declared?: boolean } = {}) => {
   const id = await makeUser(db.sql, { name });
-  if (o.declared !== false) await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: name, profilePublic: false, isWoman: o.woman === true });
+  if (o.declared !== false) await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: name, profilePublic: false, gender: o.woman === true ? "female" : null });
   return id;
 };
 let n = 0;

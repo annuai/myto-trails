@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 import { Minus, Plus } from 'lucide-react-native';
 import { addDays, formatDate, todayISO } from '@/lib/dates';
@@ -7,13 +7,27 @@ import { useNotifications } from '@/store/notifications';
 import { useTrips, type Trip } from '@/store/trips';
 import { space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
+import { Card } from '@/ui/Card';
+import { Checkbox } from '@/ui/Checkbox';
 import { ChoiceChip } from '@/ui/Chip';
 import { DatePicker } from '@/ui/DatePicker';
 import { Field } from '@/ui/Field';
 import { IconButton } from '@/ui/IconButton';
-import { TimeStepper } from '@/ui/TimeStepper';
+import { TimeField } from '@/ui/TimeField';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+
+const QUICK: [string, number][] = [['Tomorrow', 1], ['In a week', 7], ['In a month', 30]];
+
+/** One line of the sheet: what it sets on the left, the control on the right. */
+function Line({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[3] }}>
+      <Text variant="labelMedium" style={{ flexShrink: 1 }}>{label}</Text>
+      {children}
+    </View>
+  );
+}
 
 /** Plan a trip: a name, the day it starts, how many days, and (optionally) the usual packing list. The first day can come with a route. */
 export function PlanTripSheet({ open, onClose, onCreated, name: initialName = '', route, trip }: { open: boolean; onClose: () => void; onCreated?: (id: string) => void; name?: string; route?: TripRoute; /** Change this trip instead of making a new one. */ trip?: Trip }) {
@@ -22,6 +36,7 @@ export function PlanTripSheet({ open, onClose, onCreated, name: initialName = ''
   const [startTime, setStartTime] = useState(trip?.startTime ?? DEFAULT_START_TIME);
   const [days, setDays] = useState(trip?.days?.length ?? 1);
   const [pack, setPack] = useState(true);
+  const [picking, setPicking] = useState(false);
   const lead = useNotifications((s) => s.prefs.tripLeadMin ?? REMIND_BEFORE_MIN);
 
   const save = () => {
@@ -36,23 +51,29 @@ export function PlanTripSheet({ open, onClose, onCreated, name: initialName = ''
 
   return (
     <Sheet open={open} title={trip ? 'Change the trip' : 'Plan a trip'} onClose={onClose} footer={<Button label={trip ? 'Save changes' : `Plan for ${formatDate(startDate)}`} disabled={!name.trim()} onPress={save} />}>
-      <Field label="Name" value={name} onChangeText={setName} placeholder="Ladakh in September" maxLength={60} />
-      <Text variant="labelMedium">Starts</Text>
-      <DatePicker value={startDate} onChange={setStartDate} />
-      <Text variant="labelMedium">Start time</Text>
-      <TimeStepper label="Start time" value={startTime} onChange={setStartTime} />
-      <Text variant="caption" tone="muted">{lead ? `You get a reminder ${leadLabel(lead)} before, to open the app and start the trip.` : 'Start reminders are off in Notifications.'} A trip you do not start records nothing. Change the reminder in Notifications.</Text>
-      <Text variant="labelMedium">Days</Text>
-      <View accessibilityRole="adjustable" accessibilityLabel={`${days} ${days === 1 ? 'day' : 'days'}`} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <IconButton icon={Minus} label="One day fewer" onPress={() => setDays((d) => Math.max(1, d - 1))} />
-        <Text variant="dataLarge">{days}</Text>
-        <IconButton icon={Plus} label="One day more" onPress={() => setDays((d) => Math.min(MAX_TRIP_DAYS, d + 1))} />
-      </View>
-      {trip ? null : (
-        <View style={{ flexDirection: 'row', gap: space[2] }}>
-          <ChoiceChip label="Add the usual packing list" selected={pack} onPress={() => setPack(!pack)} />
+      <View style={{ gap: space[6], paddingTop: space[2], paddingBottom: space[4] }}>
+        <Field label="Name" value={name} onChangeText={setName} placeholder="Ladakh in September" maxLength={60} />
+        <View style={{ gap: space[3] }}>
+          <Line label="Starts"><Text variant="data">{formatDate(startDate)}</Text></Line>
+          <View style={{ flexDirection: 'row', gap: space[2], flexWrap: 'wrap' }}>
+            {QUICK.map(([label, n]) => <ChoiceChip key={label} label={label} selected={!picking && startDate === addDays(todayISO(), n)} onPress={() => { setStartDate(addDays(todayISO(), n)); setPicking(false); }} />)}
+            <ChoiceChip label="Pick a date" selected={picking || QUICK.every(([, n]) => startDate !== addDays(todayISO(), n))} onPress={() => setPicking(!picking)} />
+          </View>
+          {picking ? <DatePicker chips={false} value={startDate} onChange={(d) => { setStartDate(d); setPicking(false); }} /> : null}
         </View>
-      )}
+        <Card style={{ gap: space[5] }}>
+          <TimeField label="Start time" value={startTime} onChange={setStartTime} />
+          <Line label="Days">
+            <View accessibilityRole="adjustable" accessibilityLabel={`${days} ${days === 1 ? 'day' : 'days'}`} style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+              <IconButton icon={Minus} label="One day fewer" onPress={() => setDays((d) => Math.max(1, d - 1))} />
+              <Text variant="dataLarge">{days}</Text>
+              <IconButton icon={Plus} label="One day more" onPress={() => setDays((d) => Math.min(MAX_TRIP_DAYS, d + 1))} />
+            </View>
+          </Line>
+          {trip ? null : <Line label="Add the usual packing list"><Checkbox checked={pack} onChange={setPack} label="Add the usual packing list" /></Line>}
+        </Card>
+        <Text variant="caption" tone="muted">{lead ? `Reminder ${leadLabel(lead)} before the start.` : 'Start reminders are off in Notifications.'} A trip you do not start records nothing.</Text>
+      </View>
     </Sheet>
   );
 }

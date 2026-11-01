@@ -44,7 +44,9 @@ export type ClubView = ClubSummary & { myHandle: string };
 export type ClubMember = { handle: string; name: string; role: "admin" | "member"; avatarUrl: string | null; bike: Bike | null };
 export type ClubDetail = { club: ClubView; members: ClubMember[] | null };
 
-export type MeProfile = { displayName: string; email: string; scopes: string[]; avatarUrl: string | null; bike: Bike | null };
+/** The private fields of your own profile. `gender` is never sent to any other rider. */
+export type MyProfile = { displayName: string; public: boolean; bio: string | null; gender: "male" | "female" | "other" | null };
+export type MeProfile = { displayName: string; email: string; scopes: string[]; avatarUrl: string | null; bike: Bike | null; profile: MyProfile };
 
 /** A reply under a club post. */
 export type ClubReply = { id: string; authorName: string; body: string; createdAt: string; mine: boolean };
@@ -55,6 +57,26 @@ export type ClubPost = {
 };
 /** Admins only. `phone` is null once its retention time has passed. */
 export type ClubJoinRequest = { id: string; name: string; phone: string | null; message: string | null; status: "pending" | "accepted" | "declined" | "withdrawn"; createdAt: string };
+
+export type EventRole = "captain" | "marshal" | "medic" | "sweep";
+export type EventResponse = "going" | "maybe" | "declined" | "waitlisted";
+export type DeclineReason = "work" | "bike" | "distance" | "other";
+export type EventStatus = "scheduled" | "live" | "ended" | "cancelled";
+/** A ride event in a list. `mine` is true for the host. */
+export type RideEvent = {
+  id: string; title: string; startsAt: string; timeZone: string; placeName: string; audience: "open" | "members"; status: EventStatus;
+  clubId: string | null; clubName: string | null; hostName: string; /** The event's own cover, or its club's, or null. */ coverUrl: string | null; going: number; capacity: number | null; myResponse: EventResponse | null; mine: boolean;
+};
+/** One reply on the roster. The host alone receives the roster, with reasons and notes. */
+export type RosterRow = { id: string; name: string; response: EventResponse; reason: DeclineReason | null; note: string | null; checkedIn: boolean; role: EventRole | null };
+export type RideEventDetail = RideEvent & {
+  description: string; lat: number; lng: number; radiusM: number; maybe: number; waitlisted: number; checkedInCount: number;
+  checkedIn: boolean; myRole: EventRole | null; rideLive: boolean; roster: RosterRow[] | null;
+};
+export type EventInput = {
+  title: string; description?: string; startsAt: string; timeZone?: string; placeName: string; lat: number; lng: number; radiusM?: number;
+  audience: "open" | "members"; capacity?: number | null; clubId?: string | null; /** A completed image upload by the host. */ coverMediaId?: string | null;
+};
 
 export type CommentTag = "gate_closed" | "water_high" | "blocked" | "good_condition" | "tip";
 /** A trail comment. `pending` comments are the viewer's own, waiting for a moderator. */

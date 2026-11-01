@@ -30,6 +30,8 @@ A screen should need almost no numbers of its own: it picks components and passe
 
 Colours come from the palette (`useTheme().c`, `fixed`, `dark`, `light`); `check:colors` rejects hex literals.
 
+`c.riders` is the group-ride rider palette: eight muted, earthy hues (teal, plum, olive, indigo, sienna, rose, sage, violet), each at least 4.5:1 on its theme's paper and raised colours, with a lighter set for dark. Map labels are white, so `riderColor(slot)` uses the light set there; lists pass `c.riders`. A rider's slot comes from their id, so every phone agrees.
+
 ## Rules
 
 1. **Look for a token first.** If the value is on the `space` scale, use `space[n]`. If a role exists (`size.target`, `radius.card`), use that.

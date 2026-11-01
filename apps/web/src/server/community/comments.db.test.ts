@@ -15,7 +15,7 @@ afterAll(async () => {
 });
 const member = async (o: { name?: string; pub?: boolean; role?: "moderator" } = {}) => {
   const id = await makeUser(db.sql, { name: o.name, role: o.role });
-  await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: o.name ?? "Some Rider", profilePublic: o.pub ?? false, isWoman: false });
+  await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: o.name ?? "Some Rider", profilePublic: o.pub ?? false, gender: null });
   return id;
 };
 /** A member whose first comments have already been approved. */

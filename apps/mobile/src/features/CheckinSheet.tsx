@@ -16,7 +16,7 @@ import { ChoiceChip } from '@/ui/Chip';
 import { Field } from '@/ui/Field';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
-import { TimeStepper } from '@/ui/TimeStepper';
+import { TimeField } from '@/ui/TimeField';
 import { space } from '@/theme/tokens';
 import { nowMs } from '@/lib/clock';
 
@@ -98,8 +98,7 @@ export function CheckinSheet({ open, onClose }: { open: boolean; onClose: () => 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
             {contacts.map((c) => <ChoiceChip key={c.id} label={c.name} selected={c.id === contactId} onPress={() => setContactId(c.id)} />)}
           </View>
-          <Text variant="labelMedium">Be back by</Text>
-          <TimeStepper label="Be back by" value={minutes} onChange={setMinutes} />
+          <TimeField label="Be back by" value={minutes} onChange={setMinutes} />
           <Field label="Their email (optional)" hint="They get an email too if you are overdue." value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
           <View style={{ flexDirection: 'row', gap: space[2] }}>
             <ChoiceChip icon={BellRing} label="Share my live position" selected={live} onPress={() => setLive(!live)} />

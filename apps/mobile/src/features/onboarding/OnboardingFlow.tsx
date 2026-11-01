@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState, type ComponentRef } from 'react';
-import { Animated, View, type ImageSourcePropType } from 'react-native';
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
+import { Animated, AppState, Linking, Platform, View, type ImageSourcePropType } from 'react-native';
 import { Globe, MapPin } from 'lucide-react-native';
-import { requestRideLocationAccess } from '@/lib/backgroundLocation';
+import { requestRideLocationAccess, rideLocationAccess } from '@/lib/backgroundLocation';
 import { countryName } from '@/lib/countryNames';
 import { useHomeCountry, useDistanceUnit, useRegion } from '@/store/region';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -21,7 +21,7 @@ import { driftStops, fadeInStops, fadeOutStops, fadeStops, frameHeights, type St
 import { SETUP_ART, SLIDES } from './slides';
 
 type Access = 'unknown' | 'always' | 'foreground' | 'denied';
-const ACCESS_WORD: Record<Access, string> = { unknown: 'Allow', always: 'Always on', foreground: 'While using', denied: 'Off' };
+const ACCESS_WORD: Record<Access, string> = { unknown: 'Allow', always: 'Always on', foreground: 'Open Settings', denied: 'Open Settings' };
 
 /** The measured heights with page `i`'s replaced; the same array when it did not change, so a repeated measurement does not draw again. */
 const withHeight = (all: number[], i: number, h: number): number[] => {
@@ -32,8 +32,9 @@ const withHeight = (all: number[], i: number, h: number): number[] => {
 };
 
 /**
- * The first thing a new rider sees: four pages on what the app is for, then a short setup (home country, units, location). Every
- * page can be skipped; nothing here is required, and everything can be changed later under You. `onDone` ends the flow.
+ * The first thing a new rider sees: four pages on what the app is for, then a short setup (home country, units, location). The
+ * pages can be skipped, but not the setup: Always location is required to finish, because a ride that stops recording when the
+ * screen locks is a lost ride. The rest can be changed later under You. `onDone` ends the flow.
  */
 export function OnboardingFlow({ onDone, onPickCountry }: { onDone: () => void; onPickCountry: () => void }) {
   const { c } = useTheme();
@@ -51,6 +52,8 @@ export function OnboardingFlow({ onDone, onPickCountry }: { onDone: () => void; 
   const unit = useDistanceUnit();
   const pages = SLIDES.length + 1;
   const last = index === pages - 1;
+  // The browser cannot grant background location, so the requirement is for phones only.
+  const blocked = Platform.OS !== 'web' && access !== 'always';
   const width = box.w;
   const ready = width > 0 && box.h > 0 && wordsH.length === SLIDES.length && wordsH.every((h) => h > 0) && setupH > 0;
   const { tall, short } = frameHeights({ container: box.h, wordsBelow: Math.max(0, ...wordsH), setupBelow: setupH, gap: space[6] });
@@ -83,13 +86,20 @@ export function OnboardingFlow({ onDone, onPickCountry }: { onDone: () => void; 
       style={{ position: 'absolute', top: 0, left: -width * drift, width: width * (1 + 2 * drift), height, opacity: motion?.pages[page]?.picture ?? 1, transform: [{ translateX: motion?.pages[page]?.shift ?? 0 }] }} />
   );
   const allow = async () => setAccess(await requestRideLocationAccess());
+  // Already allowed (a reinstall), or changed in Settings while the app was away: read it again whenever the app comes back.
+  useEffect(() => {
+    const read = () => void rideLocationAccess().then(setAccess).catch(() => undefined);
+    read();
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') read(); });
+    return () => sub.remove();
+  }, []);
 
   return (
     <View style={{ flex: 1, gap: space[4] }}>
       {/* The Skip button sets the height; the last page has none, and the header must not shrink there. */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: size.target }}>
         <Logo height={logo.onboarding} />
-        {last ? null : <TextButton label="Skip" onPress={onDone} />}
+        {last ? null : <TextButton label="Skip" onPress={() => go(pages - 1)} />}
       </View>
 
       <View style={{ flex: 1 }} onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
@@ -129,13 +139,13 @@ export function OnboardingFlow({ onDone, onPickCountry }: { onDone: () => void; 
                 </View>
                 <ListCard>
                   <Row icon={Globe} label="Home country" sub="Sets your trails, clubs and currency" value={home ? countryName(home) : 'Not set'} onPress={onPickCountry} />
-                  <Row icon={MapPin} label="Location" sub="Needed to record your rides" chevron={false} right={<Text variant="labelMedium" tone={access === 'unknown' || access === 'denied' ? 'accent' : 'muted'}>{access === 'denied' ? 'Try again' : ACCESS_WORD[access]}</Text>} onPress={access === 'unknown' || access === 'denied' ? () => void allow() : undefined} />
+                  <Row icon={MapPin} label="Location: Always" sub="Required, so rides keep recording when your screen locks" chevron={false} right={<Text variant="labelMedium" tone={access === 'always' ? 'muted' : 'accent'}>{ACCESS_WORD[access]}</Text>} onPress={access === 'always' ? undefined : () => void (access === 'unknown' ? allow() : Linking.openSettings())} />
                 </ListCard>
                 <View style={{ flexDirection: 'row', gap: space[2] }}>
                   <ChoiceChip label="Kilometres" selected={unit !== 'mi'} onPress={() => useRegion.getState().setUnit('km')} />
                   <ChoiceChip label="Miles" selected={unit === 'mi'} onPress={() => useRegion.getState().setUnit('mi')} />
                 </View>
-                {access === 'foreground' ? <Text variant="caption" tone="muted">Choose Always in Settings later so rides keep recording when the screen locks.</Text> : null}
+                {blocked ? <Text variant="caption" tone="muted">{access === 'unknown' ? 'Tap Location, then choose Always Allow. You cannot continue without it.' : 'Location is set to ' + (access === 'foreground' ? 'While Using' : 'Off') + '. In Settings, open Location and choose Always, then come back.'}</Text> : null}
               </Animated.View>
             </View>
           </Animated.ScrollView>
@@ -144,7 +154,7 @@ export function OnboardingFlow({ onDone, onPickCountry }: { onDone: () => void; 
 
       <View style={{ gap: space[4] }}>
         <PageDots count={pages} index={index} />
-        <Button big variant={last ? 'accent' : 'primary'} label={last ? 'Start riding' : 'Continue'} onPress={last ? onDone : () => go(index + 1)} />
+        <Button big variant={last ? 'accent' : 'primary'} disabled={last && blocked} label={last ? (blocked ? 'Allow Always location to continue' : 'Start riding') : 'Continue'} onPress={last ? onDone : () => go(index + 1)} />
       </View>
     </View>
   );

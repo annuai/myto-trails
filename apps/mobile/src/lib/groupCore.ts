@@ -2,7 +2,7 @@ import { haversine } from './geo';
 import { shortDistanceM, withUnit } from './units';
 
 export type GroupStatus = 'ok' | 'wait_up' | 'fuel' | 'break' | 'help';
-export type GroupRiderView = { id: string; name: string; role: string; lat: number | null; lng: number | null; /** ISO instant of the last position, null when none. */ at: string | null; status: GroupStatus };
+export type GroupRiderView = { id: string; name: string; role: string; /** The job the event host gave this rider, if any. */ eventRole?: 'captain' | 'marshal' | 'medic' | 'sweep' | null; lat: number | null; lng: number | null; /** ISO instant of the last position, null when none. */ at: string | null; status: GroupStatus };
 
 /** A rider whose last position is older than this is shown as "not seen". */
 export const STALE_MS = 2 * 60_000;
@@ -13,6 +13,14 @@ const ageOf = (r: GroupRiderView, now: number) => (r.at ? now - Date.parse(r.at)
 
 /** True when there is no position, or it is more than two minutes old. */
 export const isStale = (r: GroupRiderView, now: number): boolean => r.lat == null || r.lng == null || ageOf(r, now) > STALE_MS;
+
+/**
+ * Which of the group's colours each rider gets: the riders in order of their id, so every phone in the group agrees
+ * on who is which colour. More riders than colours wrap round.
+ */
+export function riderSlots(riders: { id: string }[]): Map<string, number> {
+  return new Map([...riders].sort((a, b) => a.id.localeCompare(b.id)).map((r, i) => [r.id, i] as const));
+}
 
 /** Who needs help first, then the leader, then you, then the others by name. */
 export function sortRiders(riders: GroupRiderView[], meId: string): GroupRiderView[] {
@@ -71,7 +79,7 @@ export function signalNotice(c: SignalChange): { title: string; body: string } |
   return { title: c.to === 'help' ? 'Group ride: help needed' : 'Group ride', body };
 }
 
-export type RiderTile = { id: string; name: string; isMe: boolean; role: string; status: GroupStatus; /** "350 m" or "1.2 km" (miles and feet in miles mode) from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
+export type RiderTile = { id: string; name: string; /** Which of the group's colours this rider is. */ slot: number; isMe: boolean; role: string; /** The job the event host gave this rider, if any. */ eventRole: 'captain' | 'marshal' | 'medic' | 'sweep' | null; status: GroupStatus; /** "350 m" or "1.2 km" (miles and feet in miles mode) from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
 
 const distanceText = (m: number) => withUnit(shortDistanceM(m));
 const seenText = (r: GroupRiderView, now: number) => {
@@ -82,8 +90,9 @@ const seenText = (r: GroupRiderView, now: number) => {
 
 /** What each rider's tile shows: who, how far from you, whether they asked for anything, and how fresh the position is. You come last, and a rider who needs help comes first. */
 export function riderTiles(riders: GroupRiderView[], meId: string | undefined, here: { lat: number; lng: number } | undefined, now: number): RiderTile[] {
+  const slots = riderSlots(riders);
   return sortRiders(riders, meId ?? '').map((r) => {
     const position = r.lat != null && r.lng != null ? { lat: r.lat, lng: r.lng } : null;
-    return { id: r.id, name: r.name, isMe: r.id === meId, role: r.role, status: r.status, distance: position && here && r.id !== meId ? distanceText(haversine(here, position)) : null, seen: seenText(r, now), stale: isStale(r, now), position };
+    return { id: r.id, name: r.name, slot: slots.get(r.id) ?? 0, isMe: r.id === meId, role: r.role, eventRole: r.eventRole ?? null, status: r.status, distance: position && here && r.id !== meId ? distanceText(haversine(here, position)) : null, seen: seenText(r, now), stale: isStale(r, now), position };
   }).sort((a, b) => Number(a.isMe) - Number(b.isMe));
 }

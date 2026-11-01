@@ -21,7 +21,7 @@ afterAll(async () => {
 });
 const member = async (name: string, pub = true) => {
   const id = await makeUser(db.sql, { name });
-  await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: name, profilePublic: pub, isWoman: false });
+  await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: name, profilePublic: pub, gender: null });
   const [u] = await db.sql`select public_id from app_user where id = ${id}`;
   return { id, handle: u!.public_id as string };
 };

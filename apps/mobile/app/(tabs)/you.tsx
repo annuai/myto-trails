@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, BookOpen, Globe, CalendarDays, ClipboardList, Download, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, ShieldAlert, Stamp, Route as RouteIcon, Share2, TriangleAlert, Upload } from 'lucide-react-native';
+import { Bell, BookOpen, Globe, CalendarDays, ClipboardList, Download, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, TriangleAlert, Upload } from 'lucide-react-native';
 import Constants from 'expo-constants';
-import { CONTACT_EMAIL, MYTO_URL, versionLabel } from '@moto-trails/domain';
-import { ApiFailure, api } from '@/api/client';
-import { forgetProfile, useMe } from '@/api/useApi';
+import { CONTACT_EMAIL, DISCORD_URL, MYTO_URL, versionLabel } from '@moto-trails/domain';
+import { useMe } from '@/api/useApi';
 import { countryName } from '@/lib/countryNames';
 import { signOut, startSignIn } from '@/lib/signIn';
-import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAuth } from '@/store/auth';
 import { asText, distanceKm } from '@/lib/units';
 import { yearRecap } from '@/lib/yearRecap';
@@ -32,7 +30,7 @@ import { Pronunciation } from '@/ui/Pronunciation';
 import { Screen } from '@/ui/Screen';
 import { SocialLinks } from '@/ui/SocialLinks';
 import { Text } from '@/ui/Text';
-import { media, opacity, space } from '@/theme/tokens';
+import { media, space } from '@/theme/tokens';
 import { ScalePressable } from '@/ui/motion';
 
 export default function You() {
@@ -48,19 +46,9 @@ export default function You() {
   const token = useAuth((s) => s.token);
   const signedIn = !!token;
   const me = useMe();
-  const [avatarBusy, setAvatarBusy] = useState(false);
   const [authError, setAuthError] = useState<string>();
   const real = rides.filter((r) => !r.sample).length;
   const docs = [licence && 'Licence', vehicle && 'Vehicle', contacts.length && `${contacts.length} contact${contacts.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ');
-
-  const changeAvatar = async () => {
-    if (!token) return;
-    setAvatarBusy(true); setAuthError(undefined);
-    try {
-      const r = await pickAndUploadImage(token, [1, 1]);
-      if (r) { await api('/me/avatar', { method: 'PUT', token, body: { mediaId: r.mediaId } }); forgetProfile(); me.reload(); }
-    } catch (e) { setAuthError(e instanceof ApiFailure ? e.message : 'Something went wrong.'); } finally { setAvatarBusy(false); }
-  };
 
   const reportProblem = () => {
     const body = `\n\n---\nMyto Moto ${versionLabel(Constants.expoConfig?.version)}\n${Platform.OS} ${Platform.Version}`;
@@ -84,10 +72,10 @@ export default function You() {
       ) : null}
       <SectionTitle>Account</SectionTitle>
       {signedIn ? (
-        // Just who you are: the picture and the name. Tap the picture to change it.
-        <ScalePressable scaleTo={0.985} accessibilityRole="button" accessibilityLabel="Change your profile picture" disabled={avatarBusy} onPress={() => void changeAvatar()}>
-          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space[4], opacity: avatarBusy ? opacity.disabled : 1 }}>
-            <Avatar name={user?.displayName || 'Rider'} url={me.data?.avatarUrl} size={media.avatarLg} />
+        // Just who you are: the picture and the name. Opens Profile settings.
+        <ScalePressable scaleTo={0.985} accessibilityRole="button" accessibilityLabel="Profile settings" onPress={() => router.push('/profile')}>
+          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
+            <Avatar name={user?.displayName || 'Rider'} url={me.data?.avatarUrl} own size={media.avatarLg} />
             <Text variant="bodyMedium" style={{ flex: 1 }}>{user?.displayName || 'Rider'}</Text>
           </Card>
         </ScalePressable>
@@ -115,6 +103,7 @@ export default function You() {
         <Row icon={ShieldAlert} label="Crash detection" sub="Beta. Asks if you are OK after a crash" onPress={() => router.push('/safety')} />
         <Row icon={Globe} label="Country and units" sub={`${home ? countryName(home) : 'Not set'} · ${unit === 'mi' ? 'miles' : 'kilometres'}`} onPress={() => router.push('/region')} />
         <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
+        <Row icon={MessagesSquare} label="Join our Discord" sub="Suggest improvements and chat with other riders" onPress={() => void Linking.openURL(DISCORD_URL)} />
         <Row icon={LifeBuoy} label="Report a problem" sub="Opens an email with your app version" onPress={reportProblem} />
       </ListCard>
       <SectionTitle>Backup</SectionTitle>

@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import { Bike as BikeIcon } from 'lucide-react-native';
 import type { Bike } from '@/api/types';
+import { useCachedImage } from '@/lib/imageCache';
 import { space } from '@/theme/tokens';
 import { Badge } from './Badge';
 import { BikeImage } from './BikeImage';
@@ -15,6 +16,7 @@ import { ScalePressable } from './motion';
  * invites the rider to add one. The whole card opens the bike screen.
  */
 export function BikeCard({ bike, onPress }: { bike: Bike | null | undefined; onPress: () => void }) {
+  const ownPhoto = useCachedImage('bike-photo', bike?.ownPhoto ? bike.photoUrl : null);
   if (!bike) {
     return (
       <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel="Add your bike" onPress={onPress}>
@@ -31,7 +33,7 @@ export function BikeCard({ bike, onPress }: { bike: Bike | null | undefined; onP
   return (
     <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`Your bike, ${bike.name}${bike.modelYear ? `, ${bike.modelYear}` : ''}. Edit`} onPress={onPress}>
       <Card style={{ gap: space[4] }}>
-        <BikeImage own={bike.ownPhoto ? bike.photoUrl : null} preset={bike.ownPhoto ? null : bike.photoUrl} want={bikeCard.imageWidth} label={bike.name} />
+        <BikeImage own={ownPhoto} preset={bike.ownPhoto ? null : bike.photoUrl} want={bikeCard.imageWidth} label={bike.name} />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
           <Badge label={bike.name} tone="solid" />
           {bike.modelYear ? <Badge label={String(bike.modelYear)} /> : null}

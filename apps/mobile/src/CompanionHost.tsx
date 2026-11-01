@@ -11,6 +11,7 @@ import { daylightAlertDue, fetchSunsetMs, sunsetClock } from '@/lib/daylight';
 import type { LatLng } from '@/lib/geo';
 import { shouldPing, type LastPing } from '@/lib/checkinCore';
 import { markFailed, markSent, nextBatch } from '@/lib/conditions';
+import { DEFAULT_STRETCH_KM, stretchAlert, stretchMessage, STRETCH_REPEAT_MS } from '@/lib/eventCore';
 import { pollIntervalMs, signalChanges, signalNotice } from '@/lib/groupCore';
 import { notifier } from '@/lib/notifier';
 import { startAutoPause, stepAutoPause } from '@/lib/autoPause';
@@ -72,6 +73,9 @@ function followedRouteEnd(): LatLng | undefined {
 /** Sends the rider's signal to the group now rather than at the next poll. Set while the host is mounted. */
 let pollGroupNow: (() => void) | undefined;
 export const syncGroupNow = () => pollGroupNow?.();
+
+/** When the leader was last told the group is stretched, so the warning does not repeat every poll. */
+let lastStretchAt = 0;
 
 /** What auto-arrive has seen for the open check-in. It starts afresh for each check-in. */
 const arriveWatch = { id: '', state: startArrive };
@@ -150,6 +154,12 @@ export function CompanionHost() {
         const before = useCompanion.getState().live.riders;
         useCompanion.getState().setLive({ riders: r.riders, me: r.me, regroup: r.regroup, error: undefined });
         tellAboutSignals(signalChanges(before, r.riders, r.me));
+        const now = Date.now();
+        const stretched = stretchAlert(r.riders, r.me, r.stretchKm ?? DEFAULT_STRETCH_KM, now);
+        if (stretched && now - lastStretchAt >= STRETCH_REPEAT_MS) {
+          lastStretchAt = now;
+          announce('stretch', 'The group is spreading out', stretchMessage(stretched.names), 'The group is spreading out', rec.status === 'running' ? '/ride/live' : '/ride');
+        }
         if (r.ended) useCompanion.getState().setGroup(null);
       } catch (e) {
         useCompanion.getState().setLive({ error: e instanceof ApiFailure ? e.message : 'Cannot reach the group.' });

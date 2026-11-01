@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { distanceToLeaderM, isStale, pollIntervalMs, riderTiles, signalChanges, signalNotice, sortRiders, type GroupRiderView } from './groupCore';
+import { distanceToLeaderM, isStale, pollIntervalMs, riderSlots, riderTiles, signalChanges, signalNotice, sortRiders, type GroupRiderView } from './groupCore';
 
 const now = Date.parse('2026-11-01T06:00:00Z');
 const rider = (o: Partial<GroupRiderView> & { id: string }): GroupRiderView => ({ name: o.id, role: 'member', lat: 12, lng: 77, at: '2026-11-01T05:59:30Z', status: 'ok', ...o });
@@ -87,5 +87,14 @@ describe('riderTiles', () => {
   });
   it('has no distances without your own position', () => {
     expect(riderTiles([rider({ id: 'a' })], 'me', undefined, now)[0]!.distance).toBeNull();
+  });
+});
+
+describe('riderSlots', () => {
+  it('gives each rider a colour by id, the same on every phone', () => {
+    const one = riderSlots([{ id: 'b' }, { id: 'a' }, { id: 'c' }]);
+    const other = riderSlots([{ id: 'c' }, { id: 'a' }, { id: 'b' }]);
+    expect([...one.entries()].sort()).toEqual([['a', 0], ['b', 1], ['c', 2]]);
+    expect(other.get('b')).toBe(1);
   });
 });

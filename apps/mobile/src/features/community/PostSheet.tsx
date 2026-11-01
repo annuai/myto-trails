@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { CalendarClock } from 'lucide-react-native';
-import { clockLabel, hasLink, rideAtISO } from '@/lib/community';
+import { hasLink, rideAtISO } from '@/lib/community';
 import { addDays, formatDate, todayISO } from '@/lib/dates';
 import { Button } from '@/ui/Button';
 import { ChoiceChip } from '@/ui/Chip';
@@ -9,7 +9,7 @@ import { DatePicker } from '@/ui/DatePicker';
 import { Field } from '@/ui/Field';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
-import { TimeStepper } from '@/ui/TimeStepper';
+import { TimeField } from '@/ui/TimeField';
 import { space } from '@/theme/tokens';
 import { useOnChange } from '@/lib/useOnChange';
 
@@ -41,10 +41,7 @@ export function PostSheet({ open, busy, problem, onSubmit, onClose }: { open: bo
             <Text variant="labelMedium">Day: {formatDate(date)}</Text>
             <DatePicker value={date} onChange={setDate} />
           </View>
-          <View style={{ gap: space[2] }}>
-            <Text variant="labelMedium">Start time (India time): {clockLabel(minutes)}</Text>
-            <TimeStepper label="Start time" value={minutes} onChange={setMinutes} />
-          </View>
+          <TimeField label="Start time (India time)" value={minutes} onChange={setMinutes} />
           <Field label="Meeting place" value={place} onChangeText={setPlace} maxLength={120} error={hasLink(place) ? 'Please leave web addresses out.' : undefined} />
         </View>
       ) : null}

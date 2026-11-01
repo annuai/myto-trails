@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { CalendarClock } from 'lucide-react-native';
 import { todayISO } from '@/lib/dates';
@@ -12,17 +13,21 @@ import { Icon } from '@/ui/Icon';
 import { ScalePressable } from '@/ui/motion';
 import { Text } from '@/ui/Text';
 
-/** The trip on the Dash: when it is, how many days, the access status of its first trail, and how much is packed. Tap for the trip. */
-export function TripCard({ trip, onOpen }: { trip: Trip; onOpen: () => void }) {
+/**
+ * A trip as a card: when it is, how many days, the access status of its trail, and how much is packed. Tap the card for the trip.
+ * `footer` sits inside the card under the details (the start button), outside the tap target. `eyebrow` and `dayIndex` let a card
+ * stand for one planned day of the trip rather than the trip as a whole.
+ */
+export function TripCard({ trip, onOpen, eyebrow: label, dayIndex, footer }: { trip: Trip; onOpen: () => void; eyebrow?: string; dayIndex?: number; footer?: ReactNode }) {
   const today = todayISO();
   const status = tripStatus(trip, today);
   const todos = useTodos((s) => s.todos).filter((t) => t.tripId === trip.id);
   const done = todos.filter((t) => t.done).length;
-  const trail = trip.days?.find((d) => d.route?.kind === 'trail')?.route;
-  const eyebrow = status === 'active' ? `In progress · ${whenText(trip, today)}` : status === 'ready' ? 'Trip day' : `Next trip · ${whenText(trip, today)}`;
+  const trail = (dayIndex === undefined ? trip.days?.find((d) => d.route?.kind === 'trail') : trip.days?.[dayIndex])?.route;
+  const eyebrow = label ?? (status === 'active' ? `In progress · ${whenText(trip, today)}` : status === 'ready' ? 'Trip day' : `Next trip · ${whenText(trip, today)}`);
   return (
-    <ScalePressable scaleTo={0.985} accessibilityRole="button" accessibilityLabel={`${trip.name}, ${eyebrow}. Open the trip`} onPress={onOpen}>
-      <Card style={{ gap: space[3] }}>
+    <Card style={{ gap: space[4] }}>
+      <ScalePressable scaleTo={0.985} accessibilityRole="button" accessibilityLabel={`${trip.name}, ${eyebrow}. Open the trip`} onPress={onOpen} style={{ gap: space[3] }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
           <Icon icon={CalendarClock} size={20} tone="muted" />
           <Text variant="label" tone="muted">{eyebrow}</Text>
@@ -38,7 +43,8 @@ export function TripCard({ trip, onOpen }: { trip: Trip; onOpen: () => void }) {
             <Text variant="label" tone="muted">{done} of {todos.length} packed</Text>
           </View>
         ) : null}
-      </Card>
-    </ScalePressable>
+      </ScalePressable>
+      {footer}
+    </Card>
   );
 }

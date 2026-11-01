@@ -17,7 +17,7 @@ afterAll(async () => {
 });
 const member = async (name = "Some Rider") => {
   const id = await makeUser(db.sql, { name });
-  await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: name, profilePublic: false, isWoman: false });
+  await completeWelcome(db.sql, { userId: id, confirmed: true, displayName: name, profilePublic: false, gender: null });
   return id;
 };
 const mod = () => makeUser(db.sql, { role: "moderator" });

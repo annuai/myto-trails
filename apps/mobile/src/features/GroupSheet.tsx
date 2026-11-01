@@ -9,6 +9,7 @@ import { distanceToLeaderM, riderTiles, STATUS_LABEL, type GroupStatus } from '@
 import { codeFromInvite, inviteUrl } from '@/lib/inviteLink';
 import { useAction } from '@/lib/useAction';
 import { RiderTiles } from '@/features/group/RiderTiles';
+import { PlaceSearch } from '@/features/route/PlaceSearch';
 import { useCanNavigate } from '@/features/group/useCanNavigate';
 import { useAuth } from '@/store/auth';
 import { useCompanion } from '@/store/companion';
@@ -31,7 +32,7 @@ const km = (m: number) => withUnit(shortDistanceM(m));
  * on the map, and a few quick signals ("Wait up", "Fuel stop") replace typing. The leader can drop a regroup pin.
  */
 /** `defaultName` pre-fills the name of a new ride, for one made from a trip. */
-export function GroupSheet({ open, onClose, position, defaultName }: { open: boolean; onClose: () => void; position?: LatLng; defaultName?: string }) {
+export function GroupSheet({ open, onClose, position, defaultName, onRider }: { open: boolean; onClose: () => void; position?: LatLng; defaultName?: string; /** Called with a rider's id when their tile is tapped; the page then shows where they are. */ onRider?: (id: string) => void }) {
   const router = useRouter();
   const token = useAuth((s) => s.token);
   const user = useAuth((s) => s.user);
@@ -61,7 +62,8 @@ export function GroupSheet({ open, onClose, position, defaultName }: { open: boo
     if (!token || !group) return;
     if (await run(() => (leader ? endGroupRide(token, group.id) : leaveGroupRide(token, group.id)))) { useCompanion.getState().setGroup(null); onClose(); }
   };
-  const pin = (p: LatLng | null) => token && group && run(() => setRegroup(token, group.id, p));
+  /** The group's one shared point: its destination, named when it came from a search. */
+  const pin = (p: LatLng | null, note?: string) => token && group && run(() => setRegroup(token, group.id, p && { lat: p.lat, lng: p.lng, note }));
 
   const me = live.me;
   const now = nowMs();
@@ -92,11 +94,13 @@ export function GroupSheet({ open, onClose, position, defaultName }: { open: boo
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
             {SIGNALS.map((s) => <ChoiceChip key={s} label={STATUS_LABEL[s]} selected={live.myStatus === s} onPress={() => signal(s)} />)}
           </View>
-          {live.riders.length ? <RiderTiles tiles={riderTiles(live.riders, me, position, now)} canNavigate={canNavigate} /> : null}
+          {live.riders.length ? <RiderTiles tiles={riderTiles(live.riders, me, position, now)} canNavigate={canNavigate} onSelect={onRider ? (t) => onRider(t.id) : undefined} /> : null}
+          {live.regroup ? <Text variant="label" tone="muted">{`Group destination: ${live.regroup.note ?? 'a spot on the map'}. Everyone sees the road to it.`}</Text> : null}
           {leader ? (
             <>
-              <Button variant="soft" icon={Flag} label={live.regroup ? 'Move the regroup pin here' : 'Drop a regroup pin here'} disabled={!position || busy} onPress={() => position && void pin(position)} />
-              {live.regroup ? <Button variant="soft" label="Remove the regroup pin" onPress={() => void pin(null)} /> : null}
+              <PlaceSearch label="Set the group destination" near={position} onPick={(p) => void pin(p.point, p.name)} />
+              <Button variant="soft" icon={Flag} label="Use my spot as the destination" disabled={!position || busy} onPress={() => position && void pin(position)} />
+              {live.regroup ? <Button variant="soft" label="Remove the destination" onPress={() => void pin(null)} /> : null}
             </>
           ) : null}
           <Button variant="danger" icon={LogOut} label={leader ? 'End the group ride for everyone' : 'Leave the group'} disabled={busy} onPress={() => void leave()} />

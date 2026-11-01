@@ -14,6 +14,13 @@ export type Palette = {
   bar: string;
   /** The Myto logo. */
   logo: string;
+  /**
+   * One colour for each rider of a group ride, so a rider is the same colour on the map and in the list. Muted, earthy hues in the
+   * Survey-sheet register, kept away from the accent blue and from the green, amber and red of status. Each reads as text (4.8:1 or
+   * more) on the paper and raised colours of its theme; the light set also reads on the white label chips of the map.
+   * Neighbouring entries differ in hue, so riders who sort next to each other are easy to tell apart. More riders than colours wrap round.
+   */
+  riders: readonly string[];
   /** Page background: the paper colour in the middle, a touch lighter and warmer at the top, a hint of survey blue at the bottom. */
   gradient: readonly [string, string, string];
 };
@@ -23,6 +30,7 @@ export const light: Palette = {
   accent: "#1f4a6b", accentInk: "#ffffff", accentSubtle: "#e3ebf1",
   good: "#2d6a3e", caution: "#8a5a00", stop: "#a32d1c", unknown: "#6b6560",
   onInk: "#ffffff", record: "#b0442e", bar: "#ffffff", logo: "#1a1a1a",
+  riders: ["#1e7380", "#a34393", "#5a6e1c", "#5241aa", "#89613e", "#b03b66", "#3d7157", "#8644a7"],
   gradient: ["#f8f4ef", "#f2ede8", "#e7ebee"],
 };
 
@@ -31,6 +39,7 @@ export const dark: Palette = {
   accent: "#8fbbdc", accentInk: "#121211", accentSubtle: "#223644",
   good: "#6fbf83", caution: "#e0a43a", stop: "#ec8272", unknown: "#a8a29b",
   onInk: "#121211", record: "#b0442e", bar: "#1c1c1a", logo: "#ffffff",
+  riders: ["#45c0d3", "#ca7dbd", "#afd147", "#988cd4", "#bb8f68", "#d47d9d", "#6aaf8c", "#b484cd"],
   gradient: ["#1b1b19", "#121211", "#0f1317"],
 };
 

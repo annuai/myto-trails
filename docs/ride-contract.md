@@ -16,6 +16,7 @@ A ride gets its `rideId` **when recording starts** (`recorderCore.start`). It is
 | Trip | `trip.rideIds[]`; a finished ride joins the active trip (`attachToActive`) | trip → ride. A ride's trip is found by searching trips for its id, not stored on the ride |
 | Trail submission | `ride.submission`, `ride.clientId` | ride → submission |
 | Group ride, check-in | `ride.groupId`, `ride.checkinId`, noted when the ride finishes (Phase 4), because the companion ends them as soon as recording stops | ride → server group / check-in id |
+| Ride event | `group_ride.event_id` on the server; the phone keeps only the group session (`id`, `code`, `role`) once the host starts the event and the rider joins | event → group ride (server) |
 | Moment's place | `entry.lat`, `entry.lng` when the phone had a fix from the last two minutes (Phase 3) | entry → place |
 
 ## Not linked yet (and where it is planned)
