@@ -72,7 +72,7 @@ export async function resolveCached(fs: CacheFs, dir: string, key: ImageKey, rem
     return hasCopy ? storedPath : null;
   }
   await fs.move(part, dir + file);
-  await fs.write(metaPath, JSON.stringify({ url: remoteUrl, file } satisfies Meta));
+  await fs.write(metaPath, JSON.stringify({ url: remoteUrl!, file } satisfies Meta));
   if (storedPath && storedPath !== dir + file) await fs.remove(storedPath);
   return dir + file;
 }
