@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, Linking, Platform } from 'react-native';
 import { requestRideLocationAccess, rideLocationAccess } from './backgroundLocation';
+import { needsSettings } from './rideAccess';
 
 export type RideAccess = 'always' | 'foreground' | 'denied' | 'unknown';
 
@@ -22,7 +23,7 @@ export function useRideLocationAccess() {
     const before = await rideLocationAccess().catch(() => 'unknown' as const);
     const now = await requestRideLocationAccess();
     setAccess(now);
-    if (now === 'denied' || (now === 'foreground' && before === 'foreground')) { await Linking.openSettings(); return false; }
+    if (needsSettings(before, now, Platform.OS)) { await Linking.openSettings(); return false; }
     return now === 'always';
   }, []);
   return { access, refresh, ask };

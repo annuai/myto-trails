@@ -10,6 +10,9 @@ export const pullQuote = {
   trigger: 6,
   /** Space reserved at the bottom of the strip so the text sits optically centred. */
   textInset: 20,
+  /** Android has no stretch past the top, so the strip opens on a pull and holds this long (ms) before it closes, and slides over this long. */
+  hold: 2600,
+  slide: 220,
   /** Side margins match the page. */
   inset: size.screenX,
 } as const;

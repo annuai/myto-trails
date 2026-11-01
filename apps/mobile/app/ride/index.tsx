@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, View } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BellRing, Pause, Route as RouteIcon, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
@@ -13,6 +13,7 @@ import { GroupSheet } from '@/features/GroupSheet';
 import { clockLabel } from '@/lib/community';
 import { useCompanion } from '@/store/companion';
 import { useMyRoutes } from '@/store/myRoutes';
+import { needsSettings } from '@/lib/rideAccess';
 import { needsAlwaysExplainer, requestRideLocationAccess, rideLocationAccess } from '@/lib/backgroundLocation';
 import { useLocation } from '@/store/location';
 import { useRecorder } from '@/store/recorder';
@@ -110,7 +111,7 @@ export default function RideReady() {
   // Before the system asks for Always location, say why: without it, recording stops when the phone locks.
   const start = async () => { if (!running && source === 'gps' && (await needsAlwaysExplainer())) setExplain(true); else await begin(); };
   // Always location is asked for; where the system will not ask again the rider goes to Settings, and presses Start when back.
-  const allow = async () => { setExplain(false); const before = await rideLocationAccess(); const now = await requestRideLocationAccess(); if (now === 'denied' || (now === 'foreground' && before === 'foreground')) { await Linking.openSettings(); return; } await begin(); };
+  const allow = async () => { setExplain(false); const before = await rideLocationAccess(); const now = await requestRideLocationAccess(); if (needsSettings(before, now, Platform.OS)) { await Linking.openSettings(); return; } await begin(); };
   // Start trip and Record day open this screen already decided: recording starts at once (the Always-location question still comes first).
   const autostarted = useRef(false);
   useEffect(() => { if (autostart === '1' && !autostarted.current && !running) { autostarted.current = true; void start(); } }); // eslint-disable-line react-hooks/exhaustive-deps
@@ -118,7 +119,7 @@ export default function RideReady() {
   return (
     <Screen footer={running ? <Button big variant="accent" label="Back to your ride" onPress={() => void start()} /> : <StartBar route={chosen.route} label={chosen.word} onNavigate={chosen.onNavigate} onStart={chosen.onStart} />} overlay={<>
       <Sheet open={explain} title="Keep recording when your phone is locked" onClose={() => setExplain(false)}>
-        <Text variant="label" tone="muted">Choose Always Allow on the next screen. Without it, your ride stops recording whenever the screen locks or another app, like Google Maps, is in front.</Text>
+        <Text variant="label" tone="muted">{Platform.OS === 'android' ? 'Settings opens next. Tap Permissions, then Location, then choose Allow all the time, and come back to press Start.' : 'Choose Always Allow on the next screen.'} Without it, your ride stops recording whenever the screen locks or another app, like Google Maps, is in front.</Text>
         <Button label="Allow always" onPress={() => void allow()} />
         <Button variant="soft" label="Not now" onPress={() => { setExplain(false); void begin(); }} />
       </Sheet>
@@ -136,7 +137,7 @@ export default function RideReady() {
           </DestinationOption>
         ))}
       </View> : null}
-      {source === 'gps' ? <View style={{ marginTop: space[4] }}><OsmMap height={220} radius={24} follow position={here} /></View> : null}
+      {source === 'gps' ? <View style={{ marginTop: space[4] }}><OsmMap height={220} radius={24} follow interactive={false} position={here} /></View> : null}
       <Text variant="caption" tone="muted" style={{ marginTop: space[2] }}>
         {source === 'sim' ? 'Moves along a test loop so you can try recording on a laptop. Not a real ride.'
           : fix ? 'Your position is shown above. It is only saved once you start.'
@@ -162,10 +163,9 @@ export default function RideReady() {
       </View>
       <Text variant="caption" tone="muted" style={{ marginTop: space[3] }}>
         {source === 'sim' ? 'Moves along a test loop so you can try recording on a laptop. Not a real ride.'
-          : fix ? 'Your position is shown below. It is only saved once you start.'
+          : fix ? 'Your position is shown above. It is only saved once you start.'
           : gpsError ?? 'Finding your location. If asked, allow location access.'}
       </Text>
-      {source === 'gps' ? <View style={{ marginTop: space[4] }}><OsmMap height={220} radius={24} follow position={here} /></View> : null}
       </>} />
     </Screen>
   );

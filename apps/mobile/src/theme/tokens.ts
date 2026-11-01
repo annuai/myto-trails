@@ -20,7 +20,7 @@ export const media = { avatarSm: 44, avatarMd: 52, avatarLg: 64, coverCard: 110,
  * Sizes of controls and rows. `target` is the smallest thing a thumb is asked to hit; `compact` is a small round or square control;
  * `chip` is a chip's height; `row` and `rowTall` are list rows; `dot` is the small unread marker on a bell; `rule` is a border line.
  */
-export const size = { target: 48, compact: 44, chip: 32, button: 56, bigButton: 72, textArea: 112, row: 64, rowTall: 72, ride: 88, screenX: 20, rule: 2, outline: 1.5, dot: 10, header: 56 } as const;
+export const size = { target: 48, compact: 44, chip: 32, button: 56, bigButton: 72, textArea: 112, row: 64, rowTall: 72, ride: 88, screenX: 20, rule: 2, outline: 1.5, dot: 10, header: 56, riderDot: 18, riderLabel: 120, pin: 40, clusterList: 220 } as const;
 /** Widest a floating bar or a bottom sheet gets, on a big screen or sideways (`wideMax`). `frame` is the width of the phone-shaped frame the web test build draws, upright and sideways. */
 export const layout = { barMax: 520, wideMax: 560, frame: 430, frameLandscape: 932 } as const;
 /** Translucent colours that sit over other things: behind a sheet, over a hold button as it fills, the empty part of a progress bar, and a header that is not yet a pill. */

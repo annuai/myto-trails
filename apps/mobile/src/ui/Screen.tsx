@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { Animated, View } from 'react-native';
+import { Animated, Platform, RefreshControl, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +7,7 @@ import { fadeTarget, isTap, touchPoint } from '@/lib/tabFade';
 import { useTheme } from '@/theme/ThemeProvider';
 import { size, space, layout } from '@/theme/tokens';
 import { FloatingHeader, HEADER_HEIGHT } from './FloatingHeader';
-import { PullQuote } from './PullQuote';
+import { PullQuote, QuoteStrip } from './PullQuote';
 import { EASE, Reveal } from './motion';
 import { tabBarFade } from './tabBarFade';
 import { CONTENT_MAX, useLayout } from './useLayout';
@@ -25,7 +25,12 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   const scrollY = useAnimatedValue(0);
   const bar = useRef({ prevY: 0, content: 0, layout: 0, value: 1, touch: null as { x: number; y: number } | null }).current;
   /** Height of the fixed end picture, and the page's own size: together they say how much of the picture the content has uncovered. */
+  /** Android: the pull-down line is opened by the system's pull-to-refresh, since the page cannot be stretched past its top there. */
+  const [quoting, setQuoting] = useState(false);
+  const quoteHeight = useAnimatedValue(0);
   const [capHeight, setCapHeight] = useState(0);
+  /** A footer's own height, so a tall one never covers the end of the page. */
+  const [footerHeight, setFooterHeight] = useState(88);
   const [page, setPage] = useState({ content: 0, layout: 0 });
   const setBar = (to: number, animate: boolean) => {
     bar.value = to;
@@ -40,7 +45,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   const { landscape } = useLayout();
   // Keep clear of the notch and rounded corners when the phone is turned.
   const padL = Math.max(size.screenX, insets.left + 12), padR = Math.max(size.screenX, insets.right + 12);
-  const bottom = (tabs ? (landscape ? TAB_BAR_HEIGHT_LANDSCAPE : TAB_BAR_HEIGHT) + 24 : insets.bottom + 24) + (footer ? 88 : 0);
+  const bottom = (tabs ? (landscape ? TAB_BAR_HEIGHT_LANDSCAPE : TAB_BAR_HEIGHT) + 24 : insets.bottom + 24) + (footer ? footerHeight : 0);
   const frame = (kids: ReactNode, fill = false) => <Reveal style={{ width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center', flex: fill ? 1 : undefined }}>{kids}</Reveal>;
   const top = insets.top + 8 + (brand ? HEADER_HEIGHT + 8 : 0);
   // The picture is uncovered from the bottom up as the page reaches its end: nothing until the transparent space after the content
@@ -58,6 +63,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
     bar.prevY = y;
     if (next !== bar.value) setBar(next, next > bar.value);
   });
+  const androidQuote = Platform.OS === 'android' && tabs && scroll;
   const body = scroll ? (
     <Animated.ScrollView
       scrollEventThrottle={16}
@@ -69,7 +75,9 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
       contentContainerStyle={{ paddingTop: top, paddingBottom: endCap ? 0 : bottom, paddingLeft: padL, paddingRight: padR }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      refreshControl={androidQuote ? <RefreshControl refreshing={false} onRefresh={() => setQuoting(true)} progressViewOffset={top} colors={[c.accent]} progressBackgroundColor={c.card} /> : undefined}
     >
+      {androidQuote ? <Animated.View style={{ height: quoteHeight }} /> : null}
       {frame(children)}
       {endCap ? <View style={{ height: capHeight }} /> : null}
     </Animated.ScrollView>
@@ -78,7 +86,8 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   );
   return (
     <LinearGradient colors={c.gradient as unknown as [string, string, string]} locations={[0, 0.45, 1]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={{ flex: 1, backgroundColor: c.paper }}>
-      {tabs && scroll ? <PullQuote scrollY={scrollY} top={top - 8} /> : null}
+      {tabs && scroll && Platform.OS !== 'android' ? <PullQuote scrollY={scrollY} top={top - 8} /> : null}
+      {androidQuote ? <QuoteStrip open={quoting} height={quoteHeight} top={top - 8} onClosed={() => setQuoting(false)} /> : null}
       {endCap ? (
         <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: uncovered, overflow: 'hidden' }}>
           <View onLayout={(e) => setCapHeight(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>{endCap}</View>
@@ -87,7 +96,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
       {body}
       {brand ? <FloatingHeader scrollY={scrollY} /> : null}
       {footer ? (
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingLeft: padL, paddingRight: padR, paddingTop: space[3], paddingBottom: insets.bottom + 16, backgroundColor: c.paper, borderTopWidth: 1, borderTopColor: c.line }}>
+        <View onLayout={(e) => setFooterHeight(Math.ceil(e.nativeEvent.layout.height))} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingLeft: padL, paddingRight: padR, paddingTop: space[3], paddingBottom: insets.bottom + 16, backgroundColor: c.paper, borderTopWidth: 1, borderTopColor: c.line }}>
           <View style={{ width: '100%', maxWidth: landscape ? layout.barMax : CONTENT_MAX, alignSelf: 'center' }}>{footer}</View>
         </View>
       ) : null}

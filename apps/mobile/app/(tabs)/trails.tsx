@@ -11,7 +11,7 @@ import { useAuth } from '@/store/auth';
 import { useLocation } from '@/store/location';
 import { useDistanceUnit } from '@/store/region';
 import { useTrailStore } from '@/store/trails';
-import { space } from '@/theme/tokens';
+import { rhythm, space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
 import { NotOpenNotice } from '@/ui/NotOpenNotice';
 import { ChoiceChip } from '@/ui/Chip';
@@ -72,7 +72,7 @@ export default function Trails() {
       <NotOpenNotice />
       {!q.trim() && f === 'All' ? (
         <>
-          <SectionTitle>Near you</SectionTitle>
+          <SectionTitle first>Near you</SectionTitle>
           {near.length ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space[3], paddingRight: space[5] }} style={landscape ? undefined : { marginHorizontal: -space[5], paddingLeft: space[5] }}>
               {near.map(({ t, km, byRoad }) => <TrailTile key={t.slug} trail={toTrailLike(t)} awayKm={km} byRoad={byRoad} onPress={() => router.push(`/trail/${t.slug}`)} />)}
@@ -80,7 +80,9 @@ export default function Trails() {
           ) : <Text variant="label" tone={gpsError ? 'caution' : 'muted'}>{gpsError ?? (fix ? 'Finding trails near you…' : 'Finding your location…')}</Text>}
         </>
       ) : null}
-      <Field label="Search" placeholder="Trail, town or place" value={text} onChangeText={setText} returnKeyType="search" />
+      <View style={!q.trim() && f === 'All' ? { marginTop: rhythm.betweenSections } : undefined}>
+        <Field label="Search" placeholder="Trail, town or place" value={text} onChangeText={setText} returnKeyType="search" />
+      </View>
       <View style={{ flexDirection: 'row', gap: space[2], marginVertical: space[5], flexWrap: 'wrap' }}>
         {filters.map((x) => <ChoiceChip key={x} label={x} selected={f === x} onPress={() => setF(x)} />)}
       </View>

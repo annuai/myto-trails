@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "./contrast";
+import { dark, light } from "./mobile";
 import { parseCssVariables } from "./parse";
 
 const read = (f: string) => readFileSync(new URL(`./${f}`, import.meta.url), "utf8");
@@ -69,5 +70,21 @@ describe("shared Myto values", () => {
     ["--color-stone", "#e3ddd4"],
   ])("%s is %s", (name, value) => {
     expect(shared[name]).toBe(value);
+  });
+});
+
+describe("rider colours", () => {
+  it("read as text on the paper and raised colours of each theme", () => {
+    for (const theme of [light, dark]) for (const colour of theme.riders) {
+      expect(contrastRatio(colour, theme.paper)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(colour, theme.raised)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+  it("read on the white label chips of the map (light set)", () => {
+    for (const colour of light.riders) expect(contrastRatio(colour, "#ffffff")).toBeGreaterThanOrEqual(4.5);
+  });
+  it("are all different, and the same number in both themes", () => {
+    expect(new Set(light.riders).size).toBe(light.riders.length);
+    expect(dark.riders).toHaveLength(light.riders.length);
   });
 });
