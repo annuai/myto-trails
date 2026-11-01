@@ -329,11 +329,13 @@ async function submitTx(tx: TransactionSql, i: { userId: string; id: string }): 
   const point = tx`ST_SetSRID(ST_MakePoint(${d.route.startPoint.lon}, ${d.route.startPoint.lat}), 4326)::geography`;
   const [rev] = await tx`
     insert into trail_revision (trail_id, version_no, state, name, summary, description, nearest_town, start_point, route_shape,
-      distance_km, elevation_gain_m, difficulty, terrain, suitable_for, best_months, season_notes, hazards, safety_notes, surface_notes, contributor_credit, country_unmatched)
+      distance_km, elevation_gain_m, difficulty, terrain, suitable_for, best_months, season_notes, hazards, safety_notes, surface_notes, contributor_credit, country_unmatched,
+      water_litres, carry, carry_notes, arrival_from_min, arrival_to_min, arrival_note)
     values (${trailId}, ${versionNo}, 'submitted', ${d.basics.name}, ${d.basics.summary}, ${d.details.description ?? null}, ${d.basics.nearestTown},
       ${point}, ${d.route.routeShape}, ${route ? Number(Number(route.distance_km).toFixed(1)) : null}, ${route?.elev_gain_m ?? null},
       ${d.details.difficulty}, ${d.details.terrain}, ${d.details.suitableFor}, ${d.details.bestMonths}, ${d.details.seasonNotes ?? null},
-      ${d.details.hazards}, ${d.review.safetyNotes ?? null}, ${d.details.surfaceNotes ?? null}, ${(user?.display_name as string | undefined) ?? null}, ${!where.ok})
+      ${d.details.hazards}, ${d.review.safetyNotes ?? null}, ${d.details.surfaceNotes ?? null}, ${(user?.display_name as string | undefined) ?? null}, ${!where.ok},
+      ${d.details.waterLitres ?? null}, ${d.details.carry}, ${d.details.carryNotes ?? null}, ${d.details.arrivalFromMin ?? null}, ${d.details.arrivalToMin ?? null}, ${d.details.arrivalNote ?? null})
     returning id`;
   const revisionId = rev!.id as string;
   if (row.revision_id) await tx`update trail_revision set state = 'superseded' where id = ${row.revision_id}`;

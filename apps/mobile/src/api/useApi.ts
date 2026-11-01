@@ -63,8 +63,10 @@ export function useTrailSearch(q: string): Async<SearchResult> {
 /** One trail. When the network fails, a downloaded copy is used if there is one. */
 export function useTrail(slug: string): Async<{ detail: TrailDetail; route: RouteDto | null }> & { fromOffline: boolean } {
   const offline = useTrailStore((s) => s.offline[slug]);
-  const r = useFetch(`trail:${slug}`, async (signal) => {
-    const [detail, route] = await Promise.all([api<TrailDetail>(`/trails/${slug}`, { signal }), api<RouteDto>(`/trails/${slug}/route`, { signal }).catch(() => null)]);
+  const token = useAuth((s) => s.token);
+  // The answer depends on who asks (womenSafe.mine and canMark), so a signed-in copy never serves an anonymous rider or the other way round.
+  const r = useFetch(`trail:${slug}:${token ? 'in' : 'out'}`, async (signal) => {
+    const [detail, route] = await Promise.all([api<TrailDetail>(`/trails/${slug}`, { token, signal }), api<RouteDto>(`/trails/${slug}/route`, { signal }).catch(() => null)]);
     return { detail, route };
   });
   if (!r.data && r.error && offline) return { ...r, data: { detail: offline.detail, route: offline.route }, error: undefined, fromOffline: true };

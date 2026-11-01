@@ -1,4 +1,4 @@
-import { effectiveCondition, effectiveVerificationLevel, isRegionIndexable, isValidSlug, type OperationalStatus, type VerificationLevel } from "@moto-trails/domain";
+import { effectiveCondition, effectiveVerificationLevel, isRegionIndexable, isValidSlug, type CarryItem, type OperationalStatus, type TrailCarry, type VerificationLevel } from "@moto-trails/domain";
 import type { Sql } from "postgres";
 import type { CoverDto, MediaDto, RouteDto, VideoDto, TrailDetailDto, TrailSummaryDto } from "./types";
 
@@ -10,6 +10,18 @@ type Row = Record<string, any>;
 
 const iso = (d: Date | string) => (d instanceof Date ? d.toISOString() : d);
 const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+
+/** The carry list and arrival window of a trail row, or null when every part is empty (never guessed). */
+export function mapCarry(r: Row): TrailCarry | null {
+  const carry: TrailCarry = {
+    waterLitres: num(r.water_litres),
+    items: (r.carry ?? []) as CarryItem[],
+    notes: r.carry_notes ?? null,
+    arrival: r.arrival_from_min === null || r.arrival_from_min === undefined || r.arrival_to_min === null || r.arrival_to_min === undefined ? null : { from: Number(r.arrival_from_min), to: Number(r.arrival_to_min) },
+    arrivalNote: r.arrival_note ?? null,
+  };
+  return carry.waterLitres === null && carry.items.length === 0 && carry.notes === null && carry.arrival === null && carry.arrivalNote === null ? null : carry;
+}
 
 export function mapSummary(r: Row, now: Date): TrailSummaryDto {
   return {
@@ -66,6 +78,7 @@ export async function queryTrailBySlug(sql: Sql, slug: string, now: Date): Promi
     firstPublishedAt: r.first_published_at ? iso(r.first_published_at) : null,
     openClosureReports: Number(r.open_closure_reports ?? 0),
     hasGpx: Boolean(r.has_gpx),
+    carry: mapCarry(r),
   };
 }
 

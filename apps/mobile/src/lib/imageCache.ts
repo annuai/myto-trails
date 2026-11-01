@@ -36,13 +36,14 @@ export function cachedImageUri(key: ImageKey, remoteUrl: string | null): Promise
 /** What to draw: the local copy, or the remote address until the copy is ready. */
 export function useCachedImage(key: ImageKey, remoteUrl: string | null): string | null | undefined {
   const id = `${key}|${remoteUrl ?? ''}`;
-  const [local, setLocal] = useState<string | null | undefined>(() => known.get(id));
+  // The copy found for one picture is remembered with its id, so a different picture never shows the previous one's copy.
+  const [found, setFound] = useState<{ id: string; uri: string | null }>();
   useEffect(() => {
     let live = true;
-    setLocal(known.get(id));
-    void cachedImageUri(key, remoteUrl).then((uri) => { if (live) setLocal(uri); });
+    void cachedImageUri(key, remoteUrl).then((uri) => { if (live) setFound({ id, uri }); });
     return () => { live = false; };
   }, [id, key, remoteUrl]);
+  const local = found?.id === id ? found.uri : known.get(id);
   return remoteUrl ? local ?? remoteUrl : null;
 }
 

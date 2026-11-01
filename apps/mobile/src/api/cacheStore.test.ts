@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FRESH_MS, cacheDelete, cacheGet, cacheSet, clearUserCache, isFresh } from './cacheStore';
 
-const keys = ['saved', 'me', 'clubs', 'club:1', 'club:1:posts', 'comments:a:in', 'comments:a:out', 'trail:a', 'search:q=x', 'bikes:makes'];
+const keys = ['saved', 'me', 'clubs', 'club:1', 'club:1:posts', 'comments:a:in', 'comments:a:out', 'trail:a', 'trail:a:in', 'trail:a:out', 'search:q=x', 'bikes:makes'];
 
 describe('cacheStore', () => {
   beforeEach(() => {
@@ -27,7 +27,7 @@ describe('cacheStore', () => {
   it('clearUserCache removes saved, me, clubs, club:* and signed-in comments but keeps public entries', () => {
     for (const k of keys) cacheSet(k, 1, 1_000);
     clearUserCache();
-    for (const k of ['saved', 'me', 'clubs', 'club:1', 'club:1:posts', 'comments:a:in']) expect(cacheGet(k)).toBeUndefined();
-    for (const k of ['comments:a:out', 'trail:a', 'search:q=x', 'bikes:makes']) expect(cacheGet(k)).toBeDefined();
+    for (const k of ['saved', 'me', 'clubs', 'club:1', 'club:1:posts', 'comments:a:in', 'trail:a:in']) expect(cacheGet(k)).toBeUndefined();
+    for (const k of ['comments:a:out', 'trail:a', 'trail:a:out', 'search:q=x', 'bikes:makes']) expect(cacheGet(k)).toBeDefined();
   });
 });

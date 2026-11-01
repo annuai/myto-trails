@@ -1,5 +1,5 @@
 import type {
-  AccessClass, Difficulty, OperationalStatus, RouteShape, Sensitivity, VerificationLevel,
+  TrailCarry, AccessClass, Difficulty, OperationalStatus, RouteShape, Sensitivity, VerificationLevel,
 } from "@moto-trails/domain";
 
 export type PlaceDto = { slug: string; name: string };
@@ -65,6 +65,8 @@ export type TrailDetailDto = TrailSummaryDto & {
   openClosureReports: number;
   /** A ready GPX is attached to the published revision (whether it may be downloaded is decided by canDownloadGpx). */
   hasGpx: boolean;
+  /** What to carry and the best time of day to arrive; null when the revision gives none of it. */
+  carry: TrailCarry | null;
 };
 
 export type RouteDto = {

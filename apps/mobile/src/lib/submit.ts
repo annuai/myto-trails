@@ -2,6 +2,7 @@ import { ApiFailure, api } from '@/api/client';
 import { SITE_BASE } from '@/api/config';
 import type { LatLng } from './geo';
 import { buildGpx } from './gpx';
+import type { carryFields } from './trailCarry';
 import { breaksOf, splitSegments } from './track';
 
 export type RideSubmission = {
@@ -9,6 +10,8 @@ export type RideSubmission = {
   difficulty: string; terrain: string[]; routeShape: string;
   accessClass: string; basis: string; evidence: string; permissionInstructions: string;
   points: LatLng[]; waypoints: { name: string; lat: number; lng: number }[]; contributorNote?: string;
+  /** The optional carry list and best time to reach, as the keys of step 3. */
+  carry?: ReturnType<typeof carryFields>;
 };
 export type Progress = (step: string) => void;
 
@@ -46,7 +49,7 @@ export async function submitRide(token: string, s: RideSubmission, progress: Pro
   const steps: [number, unknown][] = [
     [1, { name: s.name, summary: s.summary, state: s.state, district: s.district, nearestTown: s.nearestTown }],
     [2, { startPoint: { lat: start.lat, lon: start.lng }, routeShape: s.routeShape }],
-    [3, { difficulty: s.difficulty, terrain: s.terrain, suitableFor: [], bestMonths: [], hazards: [] }],
+    [3, { difficulty: s.difficulty, terrain: s.terrain, suitableFor: [], bestMonths: [], hazards: [], ...s.carry }],
     [4, {
       accessClass: s.accessClass, restrictions: [], basis: unknown ? 'none' : s.basis,
       evidence: unknown ? [] : [{ kind: 'other', description: s.evidence }],

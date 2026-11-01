@@ -27,11 +27,19 @@ const verification: Record<VerificationLevel, Status> = {
   unverified: { label: "Unverified", tone: "unknown", glyph: "open-circle" },
 };
 
+/** "Safe for women riders": confirmed once enough riders have marked the trail, until then only reported. */
+export type WomenSafeStatus = "confirmed" | "reported";
+const womenSafe: Record<WomenSafeStatus, Status> = {
+  confirmed: { label: "Safe for women riders", tone: "good", glyph: "check" },
+  reported: { label: "Reported safe by women riders", tone: "unknown", glyph: "open-circle" },
+};
+
 export function statusFor(kind: "access", value: AccessClass): Status;
 export function statusFor(kind: "condition", value: OperationalStatus): Status;
 export function statusFor(kind: "verification", value: VerificationLevel): Status;
-export function statusFor(kind: "access" | "condition" | "verification", value: string): Status {
-  const table: Record<string, Record<string, Status>> = { access, condition, verification };
+export function statusFor(kind: "women_safe", value: WomenSafeStatus): Status;
+export function statusFor(kind: "access" | "condition" | "verification" | "women_safe", value: string): Status {
+  const table: Record<string, Record<string, Status>> = { access, condition, verification, women_safe: womenSafe };
   const status = table[kind]?.[value];
   if (!status) throw new Error(`Unknown ${kind} value: ${value}`);
   return status;

@@ -1,5 +1,7 @@
 // Shapes the website's /api/v1 sends and the phone app reads. The server builds them and the app types its responses with
 // them, so the two cannot drift apart. Only the community and profile shapes live here so far; trail shapes follow.
+import type { CarryItem } from "./trailCarry";
+
 
 /**
  * A rider's bike. `photoUrl` is the one image to show: the rider's own photo, else the catalogue image of the model they
@@ -84,3 +86,19 @@ export type TrailComment = {
   id: string; body: string; tag: CommentTag | null; createdAt: string; editedAt: string | null; authorName: string; authorId: string | null;
   mine: boolean; pending: boolean; replies: TrailComment[];
 };
+
+/** What to carry and when to arrive, from the trail's published revision. null when every part is empty: existing trails show nothing. */
+export type TrailCarry = {
+  waterLitres: number | null;
+  items: CarryItem[];
+  notes: string | null;
+  /** Best time of day to reach the trail, in minutes after midnight (local time). */
+  arrival: { from: number; to: number } | null;
+  arrivalNote: string | null;
+};
+
+/**
+ * Riders who marked the trail safe for women riders (distinct, last 24 months). Nobody can see who marked.
+ * `mine` and `canMark` describe the viewer and are false for anyone not signed in.
+ */
+export type WomenSafe = { count: number; confirmed: boolean; mine: boolean; canMark: boolean };

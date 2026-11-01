@@ -1,3 +1,4 @@
+import { hhmmToMinutes } from "@moto-trails/domain";
 import type { Step } from "@/server/submissions/schema";
 
 const MAX_ROWS = 20;
@@ -35,6 +36,12 @@ export function parseStepForm(step: Step, f: FormData): Record<string, unknown> 
         seasonNotes: text(f, "seasonNotes"),
         surfaceNotes: text(f, "surfaceNotes"),
         description: text(f, "description"),
+        waterLitres: num(f, "waterLitres"),
+        carry: many(f, "carry"),
+        carryNotes: text(f, "carryNotes"),
+        arrivalFromMin: hhmmToMinutes(text(f, "arrivalFrom")) ?? undefined,
+        arrivalToMin: hhmmToMinutes(text(f, "arrivalTo")) ?? undefined,
+        arrivalNote: text(f, "arrivalNote"),
       };
     case 4: {
       const evidence: { kind: string; description: string; url: string }[] = [];

@@ -216,6 +216,29 @@ describe("submit", () => {
     expect(await db.sql`select 1 from public_trails where slug = ${r.slug}`).toHaveLength(0);
   });
 
+  it("stores what to carry and the arrival window on the revision, and nothing when they are left out", async () => {
+    const withCarry = await user();
+    const d = await createDraft(db.sql, { userId: withCarry, clientId: crypto.randomUUID() });
+    if (!d.ok) throw new Error(d.reason);
+    const steps: [1 | 2 | 3 | 4 | 5 | 6, unknown][] = [
+      [1, { ...basics, name: "Carry list trail" }], [2, route],
+      [3, { ...details, waterLitres: 2.5, carry: ["torch", "cash"], carryNotes: "Fuel is 40 km back.", arrivalFromMin: 360, arrivalToMin: 480, arrivalNote: "Hot after 11" }],
+      [4, access], [5, []], [6, review],
+    ];
+    for (const [step, input] of steps) expect((await saveStep(db.sql, { userId: withCarry, id: d.id, step, input })).ok).toBe(true);
+    const r = await submit(db.sql, { userId: withCarry, id: d.id, now });
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    const [rev] = await db.sql`select water_litres, carry, carry_notes, arrival_from_min, arrival_to_min, arrival_note from trail_revision where trail_id = (select id from trail where slug = ${r.slug})`;
+    expect(rev).toMatchObject({ carry: ["torch", "cash"], carry_notes: "Fuel is 40 km back.", arrival_from_min: 360, arrival_to_min: 480, arrival_note: "Hot after 11" });
+    expect(Number(rev!.water_litres)).toBe(2.5);
+
+    const plain = await user();
+    const r2 = await submit(db.sql, { userId: plain, id: await completeDraft(plain), now });
+    if (!r2.ok) throw new Error(JSON.stringify(r2));
+    const [none] = await db.sql`select water_litres, carry, carry_notes, arrival_from_min, arrival_to_min, arrival_note from trail_revision where trail_id = (select id from trail where slug = ${r2.slug})`;
+    expect(none).toEqual({ water_litres: null, carry: [], carry_notes: null, arrival_from_min: null, arrival_to_min: null, arrival_note: null });
+  });
+
   it("is idempotent: a second submit returns the same trail and creates nothing more", async () => {
     const userId = await user();
     const id = await completeDraft(userId);

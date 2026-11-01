@@ -1,11 +1,12 @@
 import type { AccessClass, OperationalStatus, VerificationLevel } from "@moto-trails/domain";
 import { formatDate } from "@/lib/format";
-import { statusFor, type Glyph, type Tone } from "./status-map";
+import { statusFor, type Glyph, type Tone, type WomenSafeStatus } from "./status-map";
 
-type Props = { date?: string; size?: "md" | "lg"; chip?: boolean } & (
+type Props = { date?: string; size?: "md" | "lg"; chip?: boolean; /** Replaces the status word, for a status that carries a number. */ label?: string } & (
   | { kind: "access"; value: AccessClass }
   | { kind: "condition"; value: OperationalStatus }
   | { kind: "verification"; value: VerificationLevel }
+  | { kind: "women_safe"; value: WomenSafeStatus }
 );
 
 const toneClass: Record<Tone, string> = {
@@ -34,7 +35,8 @@ function GlyphIcon({ glyph }: { glyph: Glyph }) {
 }
 
 export function StatusBadge(props: Props) {
-  const { label, tone, glyph } = statusFor(props.kind as "access", props.value as AccessClass);
+  const { label: word, tone, glyph } = statusFor(props.kind as "access", props.value as AccessClass);
+  const label = props.label ?? word;
   return (
     <span
       className={`inline-flex items-center font-medium ${props.chip ? "gap-1.5 rounded-full border border-current/25 bg-current/[0.07] px-2.5 py-1 text-xs" : `gap-2 ${props.size === "lg" ? "text-base" : "text-sm"}`} ${toneClass[tone]}`}

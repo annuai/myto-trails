@@ -5,6 +5,7 @@ const NO_CONTENT = new Set([
   "PUT /me/saved/{slug}", "DELETE /me/saved/{slug}", "POST /checkins/{id}/ping", "POST /checkins/{id}/extend", "POST /checkins/{id}/arrive", "POST /group-rides/{id}/regroup",
   "POST /group-rides/{id}/leave", "POST /group-rides/{id}/end", "POST /condition-reports/{id}/confirm", "DELETE /shared-routes/{id}",
   "POST /events/{id}/arrived/{riderId}", "PUT /events/{id}/roles/{riderId}", "POST /events/{id}/start", "POST /events/{id}/cancel",
+  "PUT /trails/{slug}/women-safe", "DELETE /trails/{slug}/women-safe",
 ]);
 const successStatus = (r: RouteDef) => (CREATES.has(`${r.method} ${r.path}`) ? "201" : NO_CONTENT.has(`${r.method} ${r.path}`) ? "204" : "200");
 /** Error statuses a route can return (422 carries extra `fields` or `steps`; GPX returns application/gpx+xml on success). */

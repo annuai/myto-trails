@@ -16,6 +16,8 @@ const cases = [
   ["verification", "moderator_verified", "Moderator verified", "good", "check"],
   ["verification", "community_reported", "Community reported", "caution", "triangle"],
   ["verification", "unverified", "Unverified", "unknown", "open-circle"],
+  ["women_safe", "confirmed", "Safe for women riders", "good", "check"],
+  ["women_safe", "reported", "Reported safe by women riders", "unknown", "open-circle"],
 ] as const;
 
 describe("statusFor", () => {

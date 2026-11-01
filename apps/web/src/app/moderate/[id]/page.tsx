@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CARRY_ITEM_LABEL, arrivalText } from "@moto-trails/domain";
 import { RouteMap } from "@/features/map/RouteMap";
 import { ElevationProfile } from "@/features/trail/ElevationProfile";
 import { getSql } from "@/server/db/client";
@@ -43,6 +44,9 @@ export default async function ReviewPage({ params, searchParams }: PageProps<"/m
         <p className="text-sm text-muted">{b?.nearestTown}, {b?.district}, {b?.state} · start {v.data.route?.startPoint.lat}, {v.data.route?.startPoint.lon} · {v.data.route?.routeShape?.replaceAll("_", " ")}</p>
         <p className="text-sm">Difficulty {d?.difficulty} · terrain {d?.terrain.join(", ")} · hazards {d?.hazards.join(", ") || "none listed"}</p>
         {d?.description ? <p className="whitespace-pre-line">{d.description}</p> : null}
+        {/* Drafts saved before these fields existed have no carry list. */}
+        {d && (d.waterLitres !== undefined || (d.carry ?? []).length > 0 || d.carryNotes) ? <p><span className="font-medium">What to carry: </span>{[d.waterLitres !== undefined ? `water ${d.waterLitres} L per rider` : null, ...(d.carry ?? []).map((c) => CARRY_ITEM_LABEL[c])].filter(Boolean).join(", ")}{d.carryNotes ? `. ${d.carryNotes}` : ""}</p> : null}
+        {d && (d.arrivalFromMin !== undefined && d.arrivalToMin !== undefined || d.arrivalNote) ? <p><span className="font-medium">Best time to reach: </span>{d.arrivalFromMin !== undefined && d.arrivalToMin !== undefined ? arrivalText(d.arrivalFromMin, d.arrivalToMin) : null}{d.arrivalNote ? `${d.arrivalFromMin !== undefined ? ". " : ""}${d.arrivalNote}` : ""}</p> : null}
         {v.data.review?.safetyNotes ? <p><span className="font-medium">Safety notes: </span>{v.data.review.safetyNotes}</p> : null}
         {v.contributorNote ? <p><span className="font-medium">Note to moderator: </span>{v.contributorNote}</p> : null}
       </section>

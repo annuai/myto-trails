@@ -6,7 +6,7 @@ export const MAX_ENTRIES = 40;
 const MAX_CHARS = 1_500_000;
 
 /** Only what any visitor would see. Anything tied to an account (saved, clubs, signed-in comments, check-ins) stays in memory. */
-export const isPersistable = (key: string): boolean => /^(trail:|search:|bikes:|countries)/.test(key);
+export const isPersistable = (key: string): boolean => /^(trail:|search:|bikes:|countries)/.test(key) && !/^trail:.*:in$/.test(key);
 
 /** The newest public entries as text, dropping the oldest until it fits. */
 export function snapshotOf(entries: [string, Entry][], now: number, maxChars = MAX_CHARS): string {
