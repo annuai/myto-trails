@@ -16,6 +16,7 @@ import { clubPageSize } from "../community/club-paging";
 import { getClub, listMembers, searchClubs, setClubCover } from "../community/clubs";
 import { getAvatarUrl, getBike, removeBike, saveBike, setAvatar } from "../community/profile";
 import { communityRoutes } from "./community-routes";
+import { eventRoutes } from "./event-routes";
 import { rideRoutes } from "./ride-routes";
 import { listCountries, registerInterest } from "../countries/countries";
 import { revokeToken } from "./tokens";
@@ -342,6 +343,7 @@ export const routes: RouteDef[] = [
   },
   ...communityRoutes,
   ...rideRoutes,
+  ...eventRoutes,
 ];
 
 // validateStep is re-exported so contract tests and clients can reuse the exact field rules.

@@ -56,6 +56,26 @@ export type ClubPost = {
 /** Admins only. `phone` is null once its retention time has passed. */
 export type ClubJoinRequest = { id: string; name: string; phone: string | null; message: string | null; status: "pending" | "accepted" | "declined" | "withdrawn"; createdAt: string };
 
+export type EventRole = "captain" | "marshal" | "medic" | "sweep";
+export type EventResponse = "going" | "maybe" | "declined" | "waitlisted";
+export type DeclineReason = "work" | "bike" | "distance" | "other";
+export type EventStatus = "scheduled" | "live" | "ended" | "cancelled";
+/** A ride event in a list. `mine` is true for the host. */
+export type RideEvent = {
+  id: string; title: string; startsAt: string; timeZone: string; placeName: string; audience: "open" | "members"; status: EventStatus;
+  clubId: string | null; clubName: string | null; hostName: string; going: number; capacity: number | null; myResponse: EventResponse | null; mine: boolean;
+};
+/** One reply on the roster. The host alone receives the roster, with reasons and notes. */
+export type RosterRow = { id: string; name: string; response: EventResponse; reason: DeclineReason | null; note: string | null; checkedIn: boolean; role: EventRole | null };
+export type RideEventDetail = RideEvent & {
+  description: string; lat: number; lng: number; radiusM: number; maybe: number; waitlisted: number; checkedInCount: number;
+  checkedIn: boolean; myRole: EventRole | null; rideLive: boolean; roster: RosterRow[] | null;
+};
+export type EventInput = {
+  title: string; description?: string; startsAt: string; timeZone?: string; placeName: string; lat: number; lng: number; radiusM?: number;
+  audience: "open" | "members"; capacity?: number | null; clubId?: string | null;
+};
+
 export type CommentTag = "gate_closed" | "water_high" | "blocked" | "good_condition" | "tip";
 /** A trail comment. `pending` comments are the viewer's own, waiting for a moderator. */
 export type TrailComment = {

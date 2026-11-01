@@ -141,8 +141,8 @@ export async function joinGroupRide(
   });
 }
 
-export type Rider = { id: string; name: string; role: "leader" | "member"; lat: number | null; lng: number | null; at: string | null; status: RiderStatus };
-export type SyncResult = { me: string; riders: Rider[]; regroup: { lat: number; lng: number; note: string | null } | null; ended: boolean };
+export type Rider = { id: string; name: string; role: "leader" | "member"; eventRole: "captain" | "marshal" | "medic" | "sweep" | null; lat: number | null; lng: number | null; at: string | null; status: RiderStatus };
+export type SyncResult = { me: string; riders: Rider[]; regroup: { lat: number; lng: number; note: string | null } | null; ended: boolean; stretchKm: number };
 
 /**
  * One round trip: store my position and signal (at most once every 5 seconds), return everyone's. A rider's id is their
@@ -162,7 +162,7 @@ export async function syncGroupRide(
   if (status === undefined) return { ok: false, reason: "invalid" };
   if (isExpired(g, i.now)) {
     if (g.endedAt === null) await wipe(sql, g.id, i.now);
-    return { me: me.public_id, riders: [], regroup: null, ended: true };
+    return { me: me.public_id, riders: [], regroup: null, ended: true, stretchKm: 3 };
   }
   if (hasPos || status) {
     await sql`
@@ -174,18 +174,19 @@ export async function syncGroupRide(
     await sql`update group_ride set last_activity_at = ${i.now} where id = ${g.id}`;
   }
   const rows = await sql`
-    select u.public_id, m.display_name, m.role, m.lat, m.lng, m.seen_at, m.status
+    select u.public_id, m.display_name, m.role, m.event_role, m.lat, m.lng, m.seen_at, m.status
     from group_ride_member m join app_user u on u.id = m.user_id
     where m.ride_id = ${g.id} and m.left_at is null order by m.role desc, m.joined_at`;
-  const [r] = await sql`select regroup_lat, regroup_lng, regroup_note from group_ride where id = ${g.id}`;
+  const [r] = await sql`select regroup_lat, regroup_lng, regroup_note, stretch_km from group_ride where id = ${g.id}`;
   return {
     me: me.public_id,
     riders: rows.map((m) => {
       const fresh = isFresh(m.seen_at, i.now);
-      return { id: m.public_id, name: m.display_name, role: m.role, lat: fresh ? m.lat : null, lng: fresh ? m.lng : null, at: fresh ? (m.seen_at as Date).toISOString() : null, status: m.status };
+      return { id: m.public_id, name: m.display_name, role: m.role, eventRole: m.event_role, lat: fresh ? m.lat : null, lng: fresh ? m.lng : null, at: fresh ? (m.seen_at as Date).toISOString() : null, status: m.status };
     }),
     regroup: r?.regroup_lat !== null && r?.regroup_lat !== undefined ? { lat: r.regroup_lat, lng: r.regroup_lng, note: r.regroup_note } : null,
     ended: false,
+    stretchKm: r?.stretch_km ?? 3,
   };
 }
 

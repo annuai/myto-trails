@@ -2,7 +2,7 @@ import { haversine } from './geo';
 import { shortDistanceM, withUnit } from './units';
 
 export type GroupStatus = 'ok' | 'wait_up' | 'fuel' | 'break' | 'help';
-export type GroupRiderView = { id: string; name: string; role: string; lat: number | null; lng: number | null; /** ISO instant of the last position, null when none. */ at: string | null; status: GroupStatus };
+export type GroupRiderView = { id: string; name: string; role: string; /** The job the event host gave this rider, if any. */ eventRole?: 'captain' | 'marshal' | 'medic' | 'sweep' | null; lat: number | null; lng: number | null; /** ISO instant of the last position, null when none. */ at: string | null; status: GroupStatus };
 
 /** A rider whose last position is older than this is shown as "not seen". */
 export const STALE_MS = 2 * 60_000;
