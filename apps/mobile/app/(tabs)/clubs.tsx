@@ -20,6 +20,7 @@ import { EmptyState } from '@/ui/EmptyState';
 import { Field } from '@/ui/Field';
 import { PageTitle, SectionTitle } from '@/ui/Header';
 import { Screen } from '@/ui/Screen';
+import { SegmentedTabs } from '@/ui/SegmentedTabs';
 import { Text } from '@/ui/Text';
 import { ScalePressable } from '@/ui/motion';
 import { media, space } from '@/theme/tokens';
@@ -47,10 +48,15 @@ export default function Clubs() {
   const signedIn = !!token;
   const [creating, setCreating] = useState(false);
   const [hosting, setHosting] = useState(false);
+  const [tab, setTab] = useState<'clubs' | 'rides'>('clubs');
   const [text, setText] = useState('');
   const act = useAction();
   const clubs = useClubs(text);
-  const events = useEvents('discover', undefined, signedIn);
+  const openRides = useEvents('discover', undefined, signedIn);
+  const myRides = useEvents('mine', undefined, signedIn);
+  const myRideIds = new Set(myRides.data?.map((e) => e.id));
+  // A ride you host or have answered is listed once, under Your rides.
+  const otherRides = { ...openRides, data: openRides.data?.filter((e) => !myRideIds.has(e.id)) };
   const { mine, others } = clubs;
   const searching = clubs.searched.length > 0;
   const open = (id: string) => router.push(`/club/${id}`);
@@ -60,18 +66,24 @@ export default function Clubs() {
   };
   const host = async (b: EventInput) => {
     const r = await act.run(() => createEvent(token!, b));
-    if (r) { setHosting(false); events.reload(); router.push(`/event/${r.value.id}`); }
+    if (r) { setHosting(false); openRides.reload(); myRides.reload(); router.push(`/event/${r.value.id}`); }
   };
   return (
-    <Screen tabs brand onNearEnd={signedIn && others.hasMore ? others.loadMore : undefined} overlay={<><CreateClubSheet open={creating} busy={act.busy} problem={act.problem} onSubmit={(b) => void create(b)} onClose={() => { setCreating(false); act.clear(); }} /><CreateEventSheet open={hosting} busy={act.busy} problem={act.problem} onSubmit={(b) => void host(b)} onClose={() => { setHosting(false); act.clear(); }} /></>}>
+    <Screen tabs brand onNearEnd={signedIn && tab === 'clubs' && others.hasMore ? others.loadMore : undefined} overlay={<><CreateClubSheet open={creating} busy={act.busy} problem={act.problem} onSubmit={(b) => void create(b)} onClose={() => { setCreating(false); act.clear(); }} /><CreateEventSheet open={hosting} busy={act.busy} problem={act.problem} onSubmit={(b) => void host(b)} onClose={() => { setHosting(false); act.clear(); }} /></>}>
       <PageTitle>Clubs</PageTitle>
       <NotOpenNotice />
-      {signedIn ? <Field label="Search" placeholder="Club name or what it is about" value={text} onChangeText={setText} returnKeyType="search" /> : null}
+      {signedIn ? <View style={{ marginBottom: space[4] }}><SegmentedTabs label="Clubs or rides" tabs={[{ key: 'clubs', label: 'Clubs' }, { key: 'rides', label: 'Rides' }]} value={tab} onChange={setTab} /></View> : null}
+      {signedIn && tab === 'clubs' ? <Field label="Search" placeholder="Club name or what it is about" value={text} onChangeText={setText} returnKeyType="search" /> : null}
       {!signedIn ? (
         <Card style={{ gap: space[4] }}>
           <Text variant="label" tone="muted">Sign in with the same email link as moto-trails.com to see your clubs.</Text>
           <Button icon={LogIn} label="Sign in" onPress={() => router.push('/you')} />
         </Card>
+      ) : tab === 'rides' ? (
+        <>
+          {myRides.data?.length ? <EventsSection first title="Your rides" events={myRides} empty="" /> : null}
+          <EventsSection first={!myRides.data?.length} title="Open rides" events={otherRides} empty="No open rides yet. Host one with the + button." onAdd={() => setHosting(true)} addLabel="Host a ride" />
+        </>
       ) : mine.error && !mine.data ? (
         <Card style={{ gap: space[4] }}>
           <Text variant="label" tone="stop">{mine.error}</Text>
@@ -81,8 +93,7 @@ export default function Clubs() {
         <Text variant="body" tone="muted">Loading…</Text>
       ) : (
         <>
-          {searching ? null : <EventsSection first title="Rides coming up" events={events} empty="No open rides yet. Host one with the + button." onAdd={() => setHosting(true)} addLabel="Host a ride" />}
-          <SectionTitle first={searching} onAdd={() => setCreating(true)} addLabel="Start a club">Your clubs</SectionTitle>
+          <SectionTitle first onAdd={() => setCreating(true)} addLabel="Start a club">Your clubs</SectionTitle>
           {mine.data.length ? <View style={{ gap: space[3] }}>{mine.data.map((c) => <ClubCard key={c.clubId} club={c} onPress={() => open(c.clubId)} />)}</View>
             : searching ? null : <EmptyState icon={Users} title="Find your people" body="Ask to join a club below, or start your own with the + button." />}
           {others.items.length ? (
