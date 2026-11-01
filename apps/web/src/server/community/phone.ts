@@ -12,3 +12,16 @@ export function normalizePhone(raw: string, defaultRegion: string = "IN"): strin
   const p = parsePhoneNumberFromString(t, region) ?? (t.startsWith(getCountryCallingCode(region)) ? parsePhoneNumberFromString(`+${t}`, region) : undefined);
   return p?.isValid() ? p.number : null;
 }
+
+/**
+ * A phone number typed into a profile form or sent to the API: a normalized number, null for none (null, undefined or
+ * blank), or "invalid" for text that is not a real number or a value that is not text.
+ */
+export function parsePhoneInput(v: unknown): string | null | "invalid" {
+  if (v === null || v === undefined) return null;
+  if (typeof v !== "string") return "invalid";
+  if (!v.trim()) return null;
+  return normalizePhone(v) ?? "invalid";
+}
+
+export const PHONE_INVALID_MESSAGE = "Enter a valid phone number (for India, 10 digits), or leave it empty.";

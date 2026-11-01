@@ -41,6 +41,12 @@ export function WelcomeForm({ action, next, displayName }: { action: (prev: Welc
 
       <GenderFields value={v?.gender ?? "none"} />
 
+      <div className="flex flex-col gap-1">
+        <label htmlFor="phone" className="text-sm font-medium">Phone number (optional)</label>
+        <input id="phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" defaultValue={v?.phone ?? ""} className={input} aria-describedby="phone-help" />
+        <p id="phone-help" className="text-sm text-muted">Private: no other rider can see it, and it is not verified.</p>
+      </div>
+
       <SubmitButton className="min-h-12 self-start rounded-lg bg-accent px-6 text-sm font-medium text-white hover:bg-accent-hover">Continue</SubmitButton>
     </form>
   );
