@@ -10,11 +10,14 @@
 export type InkFill = { colors: readonly string[]; start: { x: number; y: number }; end: { x: number; y: number } };
 
 /** Near-black with a deep blue-teal glow drifting down to the right, then back to near-black. Text on it is `onInk` (white): 7:1 or more on every stop. */
-export const inkFillBlack: InkFill = { colors: ["#0b0d12", "#0f1d28", "#12303f", "#0b0d12"], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } };
+/** The soft blue-teal glow: near-black drifting to deep teal and back. Not in use right now; to bring it back, point `inkFillBlack` at these colours. */
+export const inkFillGlow: InkFill = { colors: ["#0b0d12", "#0f1d28", "#12303f", "#0b0d12"], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } };
+/** The black fill in use: one colour, so every ink background is a plain solid. */
+export const inkFillBlack: InkFill = { colors: ["#13161c"], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } };
 /** The dark theme's ink fill. The dark theme flips ink to cream, so its selected chips are cream: the same drift, from warm paper to a cool pale teal. Text on it is `onInk` (near-black). */
 export const inkFillCream: InkFill = { colors: ["#f2ede8", "#e6eeee", "#d3e6ec", "#f2ede8"], start: { x: 0, y: 0 }, end: { x: 1, y: 1 } };
 /** The colour for places that cannot show a gradient (a map pin's icon, behind a full-screen photo, a share image's backing). Keep it the first colour of `inkFillBlack`. */
-export const inkSolid = "#0b0d12";
+export const inkSolid = "#13161c";
 
 export type Palette = {
   paper: string; card: string; raised: string;

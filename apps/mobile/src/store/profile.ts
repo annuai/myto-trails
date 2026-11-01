@@ -10,7 +10,8 @@ export type Vehicle = {
   insurer?: string; policyNo?: string; insuranceValidTill?: string; pucValidTill?: string; updatedAt?: number;
 };
 export type Contact = { id: string; name: string; phone: string; relation: string; primary: boolean; updatedAt?: number };
-export type Medical = { bloodGroup?: string; notes?: string; updatedAt?: number };
+/** `organDonor` is left unset until the rider answers, so a rider who never did is not shown as having said no. */
+export type Medical = { bloodGroup?: string; notes?: string; organDonor?: boolean; updatedAt?: number };
 
 type State = {
   licence?: Licence; vehicle?: Vehicle; contacts: Contact[]; medical: Medical; /** Metadata of the document photos; the files are in lib/localMedia. */ photos: DocPhoto[];

@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Linking, StyleSheet, Vibration, View } from 'react-native';
-import { Phone, ShieldAlert } from 'lucide-react-native';
+import { IdCard, Phone, ShieldAlert } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { syncGroupNow } from '@/CompanionHost';
+import { EmergencyCard } from '@/features/emergency/EmergencyCard';
 import { useEmergency, type EmergencyChoice } from '@/features/emergency/useEmergency';
 import { callTargets, secondsLeft, telUrl } from '@/lib/crashAlert';
+import { emergencyCard } from '@/lib/emergencyCard';
 import { CRASH_NOTICE_ID, crashAlertedNotice, crashNotice } from '@/lib/rideActions';
 import { clearRideNotice, showRideNotice } from '@/lib/rideNotification';
 import { useCompanion } from '@/store/companion';
+import { useAuth } from '@/store/auth';
 import { useCrash } from '@/store/crash';
 import { useProfile } from '@/store/profile';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -74,6 +77,10 @@ function CrashScreen({ phase, test, seconds, targets, emergency, group }: { phas
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const ok = () => useCrash.getState().cancel();
+  const [card, setCard] = useState(false);
+  const { licence, vehicle, medical, contacts } = useProfile();
+  const displayName = useAuth((s) => s.user?.displayName);
+  if (card) return <EmergencyCard data={emergencyCard({ displayName, licence, medical, vehicle, contacts })} onClose={() => setCard(false)} />;
   return (
     <View accessibilityViewIsModal style={[StyleSheet.absoluteFill, { backgroundColor: c.paper, paddingTop: insets.top + space[8], paddingBottom: insets.bottom + space[6], paddingHorizontal: space[6], gap: space[6], justifyContent: 'space-between' }]}>
       <View style={{ gap: space[4], alignItems: 'center' }}>
@@ -95,6 +102,7 @@ function CrashScreen({ phase, test, seconds, targets, emergency, group }: { phas
       <View style={{ gap: space[3] }}>
         <EmergencyEditor choice={emergency} />
         {phase === 'alerted' ? targets.map((t) => <Button key={t.phone} big variant="accent" icon={Phone} label={t.label} onPress={() => void Linking.openURL(telUrl(t.phone))} />) : null}
+        <Button big variant="soft" icon={IdCard} label="Show my emergency card" onPress={() => setCard(true)} />
         <Button big variant={phase === 'countdown' ? 'primary' : 'soft'} label={phase === 'countdown' ? "I'm OK" : "I'm OK, close this"} onPress={ok} />
       </View>
     </View>

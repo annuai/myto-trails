@@ -4,6 +4,7 @@ import { Phone, Plus, Star, Trash2 } from 'lucide-react-native';
 import { useProfile } from '@/store/profile';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { Checkbox } from '@/ui/Checkbox';
 import { ChoiceChip, StatusChip } from '@/ui/Chip';
 import { EmptyState } from '@/ui/EmptyState';
 import { Field } from '@/ui/Field';
@@ -73,6 +74,10 @@ export default function Contacts() {
         <Text variant="labelMedium">Blood group</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
           {blood.map((b) => <ChoiceChip raised key={b} label={b} selected={medical.bloodGroup === b} onPress={() => setMedical({ ...medical, bloodGroup: medical.bloodGroup === b ? undefined : b })} />)}
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[1] }}>
+          <Checkbox checked={medical.organDonor === true} onChange={(organDonor) => setMedical({ ...medical, organDonor })} label="Are you an organ donor?" />
+          <Text variant="body" style={{ flex: 1 }} onPress={() => setMedical({ ...medical, organDonor: medical.organDonor !== true })}>Are you an organ donor?</Text>
         </View>
         <Field onCard label="Allergies or conditions (optional)" value={medical.notes ?? ''} onChangeText={(notes) => setMedical({ ...medical, notes })} multiline />
       </Card>

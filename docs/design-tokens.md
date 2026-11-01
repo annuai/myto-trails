@@ -46,9 +46,10 @@ The values live in `packages/tokens/src/mobile.ts`:
 
 | Value | Used by | Look |
 |---|---|---|
-| `inkFillBlack` | the light palette's `inkFill`, and `fixed.inkFill` (surfaces that are dark in both themes: ride bar, banner, share cards) | near-black `#0b0d12` with a deep blue-teal glow (`#12303f`) drifting down to the right and back to near-black |
+| `inkFillBlack` | the light palette's `inkFill`, and `fixed.inkFill` (surfaces that are dark in both themes: ride bar, banner, share cards). **Currently one solid colour, `#13161c`.** | (was a near-black `#0b0d12` with a deep blue-teal glow (`#12303f`) drifting down to the right and back to near-black |
+| `inkFillGlow` | the soft blue-teal gradient, kept for later. Point `inkFillBlack` at its colours to switch back | near-black `#0b0d12` drifting to deep teal `#12303f` and back |
 | `inkFillCream` | the dark palette's `inkFill` | the same drift in cream (the dark theme flips ink to cream, so its selected chips are light) |
-| `inkSolid` | places that cannot show a gradient: a map pin and its icon, behind a full-screen photo, the backing under a share card | `#0b0d12`, the first stop of `inkFillBlack` |
+| `inkSolid` | places that cannot show a gradient: a map pin and its icon, behind a full-screen photo, the backing under a share card | `#13161c`, the colour of `inkFillBlack`; the first stop of `inkFillBlack` |
 
 **Back to one colour:** set `colors` to one entry, for example `colors: ["#0b0d12"]`. **A different gradient:** edit the stops, `start` and `end`. Keep `inkSolid` equal to the first stop of `inkFillBlack`.
 
