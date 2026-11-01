@@ -6,6 +6,7 @@ import { DELETE_CONFIRMATION } from '@moto-trails/domain';
 import { api } from '@/api/client';
 import { SITE_BASE } from '@/api/config';
 import { forgetProfile } from '@/api/useApi';
+import { wipeImageCache } from '@/lib/imageCache';
 import { useAuth } from '@/store/auth';
 import { safeReturnPath } from '@/lib/returnPath';
 
@@ -70,6 +71,7 @@ export async function finishSignIn(code: string, state: string): Promise<string>
 export async function signOut(): Promise<void> {
   const token = useAuth.getState().token;
   useAuth.getState().clear();
+  await wipeImageCache();
   if (token) await api('/auth/token', { method: 'DELETE', token }).catch(() => undefined); // revokes it on the server; offline just forgets it here
 }
 
@@ -80,4 +82,5 @@ export async function deleteAccount(): Promise<void> {
   await api('/me', { method: 'DELETE', token, body: { confirm: DELETE_CONFIRMATION } });
   useAuth.getState().clear();
   forgetProfile();
+  await wipeImageCache();
 }
