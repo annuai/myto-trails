@@ -75,7 +75,7 @@ export default function You() {
         // Just who you are: the picture and the name. Opens Profile settings.
         <ScalePressable scaleTo={0.985} accessibilityRole="button" accessibilityLabel="Profile settings" onPress={() => router.push('/profile')}>
           <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
-            <Avatar name={user?.displayName || 'Rider'} url={me.data?.avatarUrl} size={media.avatarLg} />
+            <Avatar name={user?.displayName || 'Rider'} url={me.data?.avatarUrl} own size={media.avatarLg} />
             <Text variant="bodyMedium" style={{ flex: 1 }}>{user?.displayName || 'Rider'}</Text>
           </Card>
         </ScalePressable>
