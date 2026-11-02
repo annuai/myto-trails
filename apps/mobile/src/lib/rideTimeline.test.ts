@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { JournalEntry } from './journalEntries';
-import { rideTimeline } from './rideTimeline';
+import { rideTimeline, rideWaits } from './rideTimeline';
 
 const T0 = 1_700_000_000_000;
 const M = 1 / 111_320;
@@ -45,3 +45,23 @@ describe('rideTimeline', () => {
     expect(tl[1]!.at).toBe(T0 + 100_000);
   });
 });
+
+describe('rideWaits', () => {
+  // Points stand still for the gap; saving a ride drops the points in between.
+  const still = [p(0, 0), p(100, 10), p(103, 100), p(200, 110), p(203, 500), p(300, 510)];
+  it('finds a stop of a minute or more where the bike barely moved', () => {
+    const w = rideWaits(still);
+    expect(w.waits.map((x) => x.durationSec)).toEqual([90, 390]);
+    expect(w).toMatchObject({ count: 2, longCount: 1, totalSec: 480 });
+  });
+  it('ignores a gap shorter than a minute, a gap that covered ground, and a gap the track marks as a break', () => {
+    expect(rideWaits([p(0, 0), p(100, 59)]).count).toBe(0);
+    expect(rideWaits([p(0, 0), p(2000, 120)]).count).toBe(0);
+    expect(rideWaits([p(0, 0), p(10, 120)], [1]).count).toBe(0);
+  });
+  it('shows only long waits in the timeline and leaves the short ones to the total', () => {
+    const tl = rideTimeline({ ...ride, points: still, waypoints: [] }, []);
+    expect(tl.filter((e) => e.kind === 'wait').map((e) => e.durationSec)).toEqual([390]);
+  });
+});
+
