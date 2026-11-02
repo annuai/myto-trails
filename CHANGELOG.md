@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.10.0](https://github.com/annuai/myto-trails/compare/v0.9.0...v0.10.0) (2026-11-02)
+
+
+### Features
+
+* Clubs/Rides tabs, ink gradient token, wheel date dialog, phone number and in-app sign-up ([086766e](https://github.com/annuai/myto-trails/commit/086766e67d4e364308bd4007c1779d299ada583a))
+* **db:** fill in what to carry and when to arrive for the four published trails ([7cfdd3a](https://github.com/annuai/myto-trails/commit/7cfdd3ad08822e5a982204b3fded5359760f2599))
+* event cover photo, falling back to the club's cover ([a60187b](https://github.com/annuai/myto-trails/commit/a60187b1731372c5405ccc01301206eadedd88b5))
+* **mobile:** Clubs and Rides as two tabs on the Clubs screen, with a new segmented tab control ([6f60d40](https://github.com/annuai/myto-trails/commit/6f60d40be7f938a8d2bbdbfc2bd79b00dee49125))
+* **mobile:** crash detection presets (road, mixed, off-road) ([f6443ab](https://github.com/annuai/myto-trails/commit/f6443abd6903943777f246b975e4802342da5b4e))
+* **mobile:** date and time pickers become a centred wheel dialog ([cc28b1a](https://github.com/annuai/myto-trails/commit/cc28b1a9660bd05cc1c9948fe7016f6b37dda276))
+* **mobile:** event screens, club and Clubs-tab events, roles, stretch alert, Discord link ([02876f6](https://github.com/annuai/myto-trails/commit/02876f6a1696803b189acf4883a31ba9e6bf5af5))
+* **mobile:** group destination, rider colours and clusters, live-map controls, Android fixes ([594fa42](https://github.com/annuai/myto-trails/commit/594fa4210665882fd0d1c0f5fec4a2d7c629e7d0))
+* **mobile:** keep the rider's own avatar and bike photo on the phone, wipe on sign-out ([c332641](https://github.com/annuai/myto-trails/commit/c3326416b94e591ddc40df08f6e14832c72fec8c))
+* **mobile:** new pictures for the record and setup pages; the setup picture is top-aligned ([6917534](https://github.com/annuai/myto-trails/commit/6917534d088fa721e55c0bf9376bcad02c7208ee))
+* **mobile:** onboarding swipe that dissolves between pages, larger logo, steady header, new pictures ([88c1345](https://github.com/annuai/myto-trails/commit/88c13454d55cb4e95bbd71de3c7594ce14502394))
+* **mobile:** one inkFill token and InkFill component for every ink background; contrast test with tabLabel and edge tokens ([e0e9080](https://github.com/annuai/myto-trails/commit/e0e9080a2fa71b65537b553dcdf96f3a56e8bd92))
+* **mobile:** optional sign-in and profile steps at the end of onboarding, phone number in Profile settings ([32a9bd1](https://github.com/annuai/myto-trails/commit/32a9bd19c9ed820f2371e80995591840e6a46bcf))
+* **mobile:** organ donor answer, an emergency card on the crash screen, and the black fill back to one colour ([#13161](https://github.com/annuai/myto-trails/issues/13161)c) ([28b7fcd](https://github.com/annuai/myto-trails/commit/28b7fcd041b3bb29099ade665e23a900f49ad58e))
+* **mobile:** planned rides, documents, time wheel, date picker, always-location, near-you distances ([0bbc5a2](https://github.com/annuai/myto-trails/commit/0bbc5a22d3e4f843232028d078b4908fbd99fb82))
+* **mobile:** ride timeline finds waits from the stored track; long waits get a row, all feed a total ([2ae8c86](https://github.com/annuai/myto-trails/commit/2ae8c86adf3fd63a8cc1386fe90d1b0902894fa4))
+* **mobile:** show the cached copy of your own profile picture on the You tab ([9c7a059](https://github.com/annuai/myto-trails/commit/9c7a05924a91ac3867ff302949e92de9cae8cf70))
+* **mobile:** trail carry list, best time to reach and women-safe marks ([7abd30c](https://github.com/annuai/myto-trails/commit/7abd30c6892a82969e67c4153901f0cff88cd9aa))
+* **mobile:** waits in the ride timeline ([34299a2](https://github.com/annuai/myto-trails/commit/34299a2ff8caf457ae2febfb791ee085fbe19f42))
+* organ donor answer, emergency card on the crash screen, black fill back to [#13161](https://github.com/annuai/myto-trails/issues/13161)c ([8ab8d53](https://github.com/annuai/myto-trails/commit/8ab8d5381cc2a9db236a69f99b5a0b303548f685))
+* private optional phone on the rider profile, and POST /me/welcome for the app ([c7b6b25](https://github.com/annuai/myto-trails/commit/c7b6b2582b3cfd4e67dcf028f3a690c95ad6a16b))
+* profile settings page in the app, and a private gender field ([8928c07](https://github.com/annuai/myto-trails/commit/8928c07183dc3ae63ae0013751bf8f842192a052))
+* ride events (server, routes, phone logic) ([0494681](https://github.com/annuai/myto-trails/commit/0494681842e45211936614d1d49df15782438d9a))
+* ride events, profile settings, crash presets and on-phone pictures ([eb57ca8](https://github.com/annuai/myto-trails/commit/eb57ca8f5a6354b21496c5d5af14ae7e927a89a1))
+* safe-for-women marks, what to carry and best time to reach for trails ([e68d6c4](https://github.com/annuai/myto-trails/commit/e68d6c474baa4622eb01f44ea6f8ea1cea66c287))
+* trail carry list, arrival window and 'safe for women riders' marks ([38ef27b](https://github.com/annuai/myto-trails/commit/38ef27b7a3de61f5ef6d191635d99e37c8d39a5c))
+
+
+### Bug Fixes
+
+* **mobile:** cached image hook no longer sets state synchronously in an effect ([1c6599b](https://github.com/annuai/myto-trails/commit/1c6599bac05d5355359df0bd33f096bc6261811c))
+* **mobile:** image cache type error ([bc809a2](https://github.com/annuai/myto-trails/commit/bc809a249dba6c21fba69c085dcb480235317529))
+* **mobile:** stop adding the sample ride, and remove it from phones that have it ([1ab577e](https://github.com/annuai/myto-trails/commit/1ab577e62789363aeb8c9772cb832b8ca59906e0))
+
 ## [0.9.0](https://github.com/annuai/myto-trails/compare/v0.8.0...v0.9.0) (2026-10-30)
 
 
