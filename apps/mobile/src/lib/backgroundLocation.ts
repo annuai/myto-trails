@@ -55,7 +55,8 @@ async function startNow(): Promise<boolean> {
     await Location.startLocationUpdatesAsync(TASK_NAME, {
       accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 0, timeInterval: 1000,
       pausesUpdatesAutomatically: false, showsBackgroundLocationIndicator: true, activityType: Location.ActivityType.AutomotiveNavigation,
-      foregroundService: { notificationTitle: 'Recording your ride', notificationBody: 'Myto Moto is recording your route.' },
+      // Android makes a running location service show this notice, so it cannot be hidden. The ride card carries the controls: this one only says why location is on.
+      foregroundService: { notificationTitle: 'Location is on', notificationBody: 'Myto Moto uses it to record your ride.' },
     });
     return true;
   } catch {
