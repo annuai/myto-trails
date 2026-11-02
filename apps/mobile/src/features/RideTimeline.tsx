@@ -28,8 +28,14 @@ export function RideTimeline({ ride }: { ride: Ride }) {
   const w = rideWaits(ride.points, ride.breaks);
   return (
     <ListCard>
-      {w.count ? <Row icon={Timer} label="Waiting" sub={`${w.count} ${w.count === 1 ? 'wait' : 'waits'} of a minute or more`} value={asText(durationParts(w.totalSec))} chevron={false} /> : null}
-      {events.map((e) => { const l = label(e); return <Row key={e.key} icon={ICON[e.kind]} label={l.label} sub={l.sub} value={clock(e.at)} mono chevron={false} />; })}
+      {events.map((e) => {
+        const l = label(e);
+        const row = <Row key={e.key} icon={ICON[e.kind]} label={l.label} sub={l.sub} value={clock(e.at)} mono chevron={false} />;
+        // The total sits right under the start, ahead of the stops it adds up.
+        return e.kind === 'start' && w.count
+          ? [row, <Row key="waiting" icon={Timer} label="Waiting" sub={`${w.count} ${w.count === 1 ? 'wait' : 'waits'} of a minute or more`} value={asText(durationParts(w.totalSec))} chevron={false} />]
+          : row;
+      })}
     </ListCard>
   );
 }
