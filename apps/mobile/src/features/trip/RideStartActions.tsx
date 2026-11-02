@@ -1,13 +1,12 @@
 import { useEffect } from 'react';
-import { Alert, Linking, Platform, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View } from 'react-native';
 import { Navigation, Play } from 'lucide-react-native';
 import { useTrail } from '@/api/useApi';
 import { haversine } from '@/lib/geo';
-import { mapsDirectionsUrl } from '@/lib/navigate';
 import { atTrailStart, distanceAway, trailStartPoint } from '@/lib/trailStart';
 import type { TripRoute } from '@/lib/tripPlan';
 import { useLocation } from '@/store/location';
+import { useNavigateChoice } from '@/store/navigateChoice';
 import { space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
 import { Text } from '@/ui/Text';
@@ -36,25 +35,14 @@ export function RideStartActions({ route, label, onStart, onNavigate, big, noSki
   return <TrailStartActions slug={route.slug} label={label} onStart={onStart} onNavigate={onNavigate} big={big} noSkip={noSkip} />;
 }
 
-/** Where a trail begins and how far the rider is from it. `navigate` asks where to be guided: in the app, or in Google Maps. */
+/** Where a trail begins and how far the rider is from it. `navigate` opens the sheet that asks how to get there. */
 function useTrailStart(slug: string) {
   const t = useTrail(slug);
   const fix = useLocation((s) => s.fix);
   useEffect(() => useLocation.getState().acquire(), []);
   const point = t.data ? trailStartPoint(t.data.detail) : undefined;
   const away = point && fix ? haversine({ lat: fix.lat, lng: fix.lng }, point) : undefined;
-  const router = useRouter();
-  const navigate = () => {
-    if (!point) return;
-    const inMaps = () => void Linking.openURL(mapsDirectionsUrl(point)).catch(() => undefined);
-    // The web has no Alert and no GPS to follow, so it goes straight to Google Maps.
-    if (Platform.OS === 'web') { inMaps(); return; }
-    Alert.alert('Navigate to start point', undefined, [
-      { text: 'In this app', onPress: () => router.push({ pathname: '/navigate', params: { lat: String(point.lat), lng: String(point.lng) } }) },
-      { text: 'Google Maps', onPress: inMaps },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
-  };
+  const navigate = () => { if (point) useNavigateChoice.getState().ask(point); };
   return { point, away, reached: atTrailStart(away), navigate };
 }
 

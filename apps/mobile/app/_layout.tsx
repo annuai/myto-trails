@@ -14,6 +14,7 @@ import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
 import { CrashHost } from '@/CrashHost';
+import { NavigateChoiceHost } from '@/NavigateChoiceHost';
 import { RideNotificationHost } from '@/RideNotificationHost';
 import { VoiceHost } from '@/VoiceHost';
 import { runRideIdMigration } from '@/lib/rideIdMigration.run';
@@ -58,6 +59,7 @@ export default function Root() {
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="ride/live" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
       </Stack>
+      <NavigateChoiceHost />
       <CrashHost />
     </Theme>
   );
