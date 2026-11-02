@@ -8,7 +8,7 @@ import type { LatLng } from '@/lib/geo';
 import { fixed, size, space } from '@/theme/tokens';
 import { clusterMarks } from '@/lib/riderClusters';
 import { IconButton } from '../IconButton';
-import { ClusterList, ClusterPin, DestinationPin, RiderPin } from './RiderPins';
+import { ClusterList, ClusterPin, DestinationPin, HeadingPointer, RiderPin } from './RiderPins';
 import { mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
 import { trackFeature } from './geojson';
 import { useMapStart } from './useMapStart';
@@ -23,7 +23,7 @@ const round = { 'line-cap': 'round', 'line-join': 'round' } as const;
 const FOLLOW_ZOOM = 15;
 const GUIDE_COLOR = fixed.position;
 
-function OsmMapView({ height, line: route, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, dark, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
+function OsmMapView({ height, line: route, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, pointer, dark, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
   const camera = useRef<CameraRef>(null);
   const [zoom, setZoom] = useState(FOLLOW_ZOOM);
   /** The camera follows the rider until the map is moved by hand; it then stays where it was left, and the live dots keep moving on it. */
@@ -36,6 +36,7 @@ function OsmMapView({ height, line: route, track, trackBreaks, position, waypoin
   const wptsData = useMemo(() => points(waypoints), [waypoints]);
   const ridersData = useMemo(() => points(riders), [riders]);
   const regroupData = useMemo(() => points(regroup ? [regroup] : []), [regroup]);
+  const arrow = !!pointer && follow && following && heading !== undefined && !!position;
   const showPos = !riderMarks?.length;
   const posData = useMemo(() => points(position && showPos ? [position] : []), [position?.lat, position?.lng, showPos]); // eslint-disable-line react-hooks/exhaustive-deps
   const clusters = useMemo(() => clusterMarks(riderMarks ?? [], zoom), [riderMarks, zoom]);
@@ -63,6 +64,7 @@ function OsmMapView({ height, line: route, track, trackBreaks, position, waypoin
         <GeoJSONSource id="riders" data={ridersData}><Layer id="riders-dot" type="circle" paint={{ 'circle-radius': 8, 'circle-color': fixed.route, 'circle-stroke-color': fixed.white, 'circle-stroke-width': 3 }} /></GeoJSONSource>
         <GeoJSONSource id="regroup" data={regroupData}><Layer id="regroup-ring" type="circle" paint={{ 'circle-radius': 11, 'circle-color': fixed.white, 'circle-stroke-color': fixed.track, 'circle-stroke-width': 5 }} /></GeoJSONSource>
         <GeoJSONSource id="pos" data={posData}><Layer id="pos-dot" type="circle" paint={{ 'circle-radius': 9, 'circle-color': fixed.position, 'circle-stroke-color': fixed.white, 'circle-stroke-width': 3 }} /></GeoJSONSource>
+        {arrow && position ? <Marker id="heading" lngLat={[position.lng, position.lat]}><HeadingPointer /></Marker> : null}
         {destination ? <Marker id="destination" lngLat={[destination.lng, destination.lat]} anchor="bottom"><DestinationPin name={destination.name} /></Marker> : null}
         {clusters.map((c) => c.marks.length > 1
           ? <Marker key={c.id} id={`riders-${c.id}`} lngLat={[c.lng, c.lat]} onPress={() => setOpenId(c.id)}><ClusterPin cluster={c} /></Marker>

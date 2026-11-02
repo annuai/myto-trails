@@ -1,5 +1,5 @@
 import { Pressable, ScrollView, View } from 'react-native';
-import { MapPin, X } from 'lucide-react-native';
+import { MapPin, Navigation2, X } from 'lucide-react-native';
 import { clusterLabel, type RiderCluster, type RiderMark } from '@/lib/riderClusters';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fixed, inkSolid, light, radius, size, space } from '@/theme/tokens';
@@ -66,5 +66,14 @@ export function ClusterList({ cluster, onClose }: { cluster: RiderCluster; onClo
         </ScrollView>
       </View>
     </>
+  );
+}
+
+/** The arrow for the way the rider is facing, like Google Maps'. The map is turned to the heading, so it always points up the screen. */
+export function HeadingPointer() {
+  return (
+    <View style={{ width: size.chip, height: size.chip, alignItems: 'center', justifyContent: 'center' }}>
+      <Navigation2 size={size.chip} color={fixed.white} fill={fixed.position} strokeWidth={size.rule} />
+    </View>
   );
 }

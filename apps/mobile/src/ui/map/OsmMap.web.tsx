@@ -8,7 +8,7 @@ import { fixed, size, space } from '@/theme/tokens';
 import { clusterMarks } from '@/lib/riderClusters';
 import { IconButton } from '../IconButton';
 import { Text } from '../Text';
-import { ClusterList, ClusterPin, DestinationPin, RiderPin } from './RiderPins';
+import { ClusterList, ClusterPin, DestinationPin, HeadingPointer, RiderPin } from './RiderPins';
 import { mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
 import { trackFeature } from './geojson';
 import { useMapStart } from './useMapStart';
@@ -19,7 +19,7 @@ const lineFeature = (pts?: LatLng[]) => ({ type: 'Feature' as const, properties:
 const pointsFeature = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 
 /** OpenStreetMap through MapLibre GL, the same stack as the website. Two-finger or Ctrl+scroll to move, so it never traps page scrolling. */
-function OsmMapView({ height, line, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, dark, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
+function OsmMapView({ height, line, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, pointer, dark, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
   const box = useRef<HTMLDivElement>(null);
   const start = useMapStart();
   const tap = useRef(onTap);
@@ -119,10 +119,12 @@ function OsmMapView({ height, line, track, trackBreaks, position, waypoints, rid
   /** Where a spot is on the screen now, or nothing before the map has loaded. */
   const screen = (p: { lat: number; lng: number }) => (ready ? map.current?.project([p.lng, p.lat]) : undefined);
   const dest = destination ? screen(destination) : undefined;
+  const me = pointer && follow && following && heading !== undefined && position ? screen(position) : undefined;
 
   return (
     <View style={{ height: height === 'fill' ? undefined : height, flex: height === 'fill' ? 1 : undefined, borderRadius: radius, overflow: 'hidden', backgroundColor: dark ? fixed.mapNight : fixed.mapDay }}>
       <div ref={box} style={{ width: '100%', height: '100%' }} />
+      {me ? <View pointerEvents="none" style={{ position: 'absolute', left: me.x - size.chip / 2, top: me.y - size.chip / 2 }}><HeadingPointer /></View> : null}
       {dest ? <View pointerEvents="none" style={{ position: 'absolute', left: dest.x - size.riderLabel / 2, top: dest.y - size.pin - size.chip, width: size.riderLabel, height: size.pin + size.chip, justifyContent: 'flex-end' }}><DestinationPin name={destination?.name} /></View> : null}
       {clusters.map((c) => {
         const at = screen(c);

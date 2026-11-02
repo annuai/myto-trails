@@ -10,7 +10,7 @@ import { asText, distanceKm, shortDistanceM, durationParts, withUnit } from '@/l
 import { fetchDirections, navigateStep, type Directions, type TurnKind } from '@/lib/turnByTurn';
 import { nowMs } from '@/lib/clock';
 import { useLocation } from '@/store/location';
-import { Theme, useTheme } from '@/theme/ThemeProvider';
+import { useTheme } from '@/theme/ThemeProvider';
 import { radius, size, space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
@@ -28,7 +28,7 @@ const HEADING_MIN_M = 15;
 
 /** In-app turn-by-turn to a point: the road from where the rider is, the next turn and how far it is, and a new road when they leave it. */
 export default function NavigateToPoint() {
-  return <Theme mode="dark"><Body /></Theme>;
+  return <Body />;
 }
 
 function Body() {
@@ -84,7 +84,7 @@ function Body() {
             {nav && nav.offM > OFF_ROUTE_M && !nav.arrived ? <Text variant="label" tone="caution">Off the road. Finding a new way…</Text> : null}
           </View>
         </View>
-        <OsmMap height="fill" radius={radius.card} follow line={dir?.line} position={here} destination={to} heading={heading} dark />
+        <OsmMap height="fill" radius={radius.card} follow line={dir?.line} position={here} destination={to} heading={heading} pointer />
         {nav && !nav.arrived ? <Text variant="bodyMedium" style={{ textAlign: 'center' }}>{`${asText(distanceKm(nav.remainingM / 1000))} to go · about ${asText(durationParts(Math.max(1, Math.round((dir!.etaMin * 60 * nav.remainingM) / Math.max(1, dir!.totalM)))))}`}</Text> : null}
         <Button variant={nav?.arrived ? 'accent' : 'soft'} label={nav?.arrived ? 'Done' : 'End navigation'} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
         <TextButton label="Open in Google Maps instead" onPress={openMaps} />

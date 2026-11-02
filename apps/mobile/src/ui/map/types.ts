@@ -29,6 +29,8 @@ export type OsmMapProps = {
   follow?: boolean;
   /** Fly the camera here when it changes (a place the rider searched for). */
   focus?: LatLng;
+  /** Draw an arrow for the way the rider faces instead of a dot. Only while the camera follows and a `heading` is known, since the map is then turned to it. */
+  pointer?: boolean;
   /** Turn the map so this bearing (degrees, 0 is north) points up. Only with `follow`; left as is when undefined. */
   heading?: number;
   /** Shows an enlarge button at the top right; it is called when pressed. */
