@@ -189,9 +189,11 @@ export default function Home() {
             <TextButton label="Or just start riding" tone="ink" onPress={() => router.push('/ride')} />
           </HeroCard>
         ) : (
-          <HeroCard eyebrow="Next ride" title="Plan your next ride">
-            <Text variant="label" tone="muted">Plan a trip with a date and a route for each day, or pick a trail. It shows up here with its checklist.</Text>
-          </HeroCard>
+          <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel="Plan your next ride" onPress={() => setPlanTripOpen(true)}>
+            <HeroCard eyebrow="Next ride" title="Plan your next ride">
+              <Text variant="label" tone="muted">Plan a trip with a date and a route for each day, or pick a trail. It shows up here with its checklist.</Text>
+            </HeroCard>
+          </ScalePressable>
         )
       )}
       <View style={{ marginTop: space[3], gap: space[3] }}>
