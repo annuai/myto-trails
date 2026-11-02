@@ -165,7 +165,7 @@ export default function Home() {
       ) : null}
       {nextTripPlan ? (
         <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} footer={planStatus === 'ready' || planStatus === 'active' ? (
-          <RideStartActions noSkip route={nextTripPlan.days?.[dayIndexOn(nextTripPlan, today) ?? 0]?.route} onNavigate={() => chooseDayRoute(nextTripPlan.id)}
+          <RideStartActions route={nextTripPlan.days?.[dayIndexOn(nextTripPlan, today) ?? 0]?.route} onNavigate={() => chooseDayRoute(nextTripPlan.id)}
             label={planStatus === 'ready' ? 'Start trip' : `Record day ${(dayIndexOn(nextTripPlan, today) ?? 0) + 1}`}
             onStart={() => (planStatus === 'ready' ? startTrip(nextTripPlan.id, router) : startTodaysRide(nextTripPlan.id, router))} />
         ) : undefined} />
@@ -198,7 +198,7 @@ export default function Home() {
       )}
       <View style={{ marginTop: space[3], gap: space[3] }}>
         {nextTripPlan && (planStatus === 'ready' || planStatus === 'active') ? null
-          : trail && !nextTripPlan ? <RideStartActions noSkip route={{ kind: 'trail', slug: trail.slug, name: trail.name, status: trail.status, statusLabel: trail.statusLabel }} label="Start ride" onStart={() => recordNow(router)} />
+          : trail && !nextTripPlan ? <RideStartActions route={{ kind: 'trail', slug: trail.slug, name: trail.name, status: trail.status, statusLabel: trail.statusLabel }} label="Start ride" onStart={() => recordNow(router)} />
           : firstTimer ? null
           : <Button label={trail ? 'Start ride' : 'Find a trail'} arrow onPress={() => router.push(trail ? '/ride' : '/trails')} />}
         {firstTimer ? null : <Button variant="soft" label="Plan a trip" onPress={() => setPlanTripOpen(true)} />}

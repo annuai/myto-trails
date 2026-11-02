@@ -133,7 +133,7 @@ export default function RideReady() {
         {choices.map((c) => (
           <DestinationOption key={c.key} title={c.title} sub={c.sub} selected={c.key === chosen.key} onSelect={() => setPicked(c.key)}>
             {c.chip ? <View style={{ flexDirection: 'row' }}><StatusChip status={c.chip.status} label={c.chip.label} /></View> : null}
-            {c.key === chosen.key && c.route?.kind === 'trail' ? <TrailHint slug={c.route.slug} onStart={c.onStart} /> : null}
+            {c.key === chosen.key && c.route?.kind === 'trail' ? <TrailHint slug={c.route.slug} onNavigate={() => { c.onNavigate?.(); }} /> : null}
           </DestinationOption>
         ))}
       </View> : null}

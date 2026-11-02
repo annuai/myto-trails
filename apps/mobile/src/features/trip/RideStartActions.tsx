@@ -19,20 +19,18 @@ type Props = {
   label: string;
   /** Begin recording. */
   onStart: () => void;
-  /** Called just before Maps opens, so the trail is chosen as the ride's route. */
+  /** Called just before the way to the start is offered, so the trail is chosen as the ride's route. */
   onNavigate?: () => void;
   big?: boolean;
-  /** Leave out the quiet "Start riding now instead": the Dash offers one way to start. */
-  noSkip?: boolean;
 };
 
 /**
- * The start control of a planned ride. A plain route starts recording. A published trail does not: Navigate to start point is the
- * main button until the rider is at the start (within 150 m), then it becomes the start button. Riding before then stays one quiet tap away.
+ * The start control of a planned ride. Start always records, from wherever the rider sets off: the whole ride is recorded, not just the
+ * trail. For a published trail Navigate to start point sits under it until the rider is at the start (within 150 m).
  */
-export function RideStartActions({ route, label, onStart, onNavigate, big, noSkip }: Props) {
+export function RideStartActions({ route, label, onStart, onNavigate, big }: Props) {
   if (route?.kind !== 'trail') return <Button variant="accent" big={big} icon={Play} label={label} onPress={onStart} />;
-  return <TrailStartActions slug={route.slug} label={label} onStart={onStart} onNavigate={onNavigate} big={big} noSkip={noSkip} />;
+  return <TrailStartActions slug={route.slug} label={label} onStart={onStart} onNavigate={onNavigate} big={big} />;
 }
 
 /** Where a trail begins and how far the rider is from it. `navigate` opens the sheet that asks how to get there. */
@@ -46,39 +44,34 @@ function useTrailStart(slug: string) {
   return { point, away, reached: atTrailStart(away), navigate };
 }
 
-function TrailStartActions({ slug, label, onStart, onNavigate, big, noSkip }: { slug: string; label: string; onStart: () => void; onNavigate?: () => void; big?: boolean; noSkip?: boolean }) {
+function TrailStartActions({ slug, label, onStart, onNavigate, big }: { slug: string; label: string; onStart: () => void; onNavigate?: () => void; big?: boolean }) {
   const s = useTrailStart(slug);
+  const start = <Button variant="accent" big={big} icon={Play} label={label} onPress={onStart} />;
   // No start point (not loaded, not published): there is nothing to navigate to, so it is a plain start.
-  if (!s.point) return <Button variant="accent" big={big} icon={Play} label={label} onPress={onStart} />;
-  if (s.reached) return <View style={{ gap: space[2] }}><Text variant="label" tone="muted">You are at the start.</Text><Button variant="accent" big={big} icon={Play} label={label} onPress={onStart} /></View>;
+  if (!s.point) return start;
+  if (s.reached) return <View style={{ gap: space[2] }}><Text variant="label" tone="muted">You are at the start.</Text>{start}</View>;
   return (
-    <View style={{ gap: space[1] }}>
-      <Button variant="accent" big={big} icon={Navigation} label="Navigate to start point" onPress={() => { onNavigate?.(); s.navigate(); }} />
-      <TrailHint slug={slug} onStart={noSkip ? undefined : onStart} />
+    <View style={{ gap: space[2] }}>
+      {start}
+      <Button variant="soft" big={big} icon={Navigation} label="Navigate to start point" onPress={() => { onNavigate?.(); s.navigate(); }} />
+      <TrailHint slug={slug} />
     </View>
   );
 }
 
-/** Under a trail the rider has picked: how far the start is, and the quiet way to ride before getting there. Nothing once they are at the start. */
-export function TrailHint({ slug, onStart }: { slug: string; onStart?: () => void }) {
+/** Under a trail the rider has picked: how far the start is, and the way to get there. Nothing once they are at the start. Recording does not wait for it. */
+export function TrailHint({ slug, onNavigate }: { slug: string; /** Shows a Navigate link too, for a screen that has no button for it. */ onNavigate?: () => void }) {
   const s = useTrailStart(slug);
   if (!s.point || s.reached) return null;
   return (
     <View style={{ gap: space[1] }}>
-      <Text variant="label" tone="muted" style={{ textAlign: 'center' }}>{s.away === undefined ? 'Recording starts once you are at the start.' : `${distanceAway(s.away)} from the start. Recording starts once you are there.`}</Text>
-      {onStart ? <TextButton label="Start riding now instead" onPress={onStart} /> : null}
+      <Text variant="label" tone="muted" style={{ textAlign: 'center' }}>{s.away === undefined ? 'The whole ride is recorded, from wherever you set off.' : `${distanceAway(s.away)} from the start. The whole ride is recorded, from wherever you set off.`}</Text>
+      {onNavigate ? <TextButton label="Navigate to start point" onPress={() => { onNavigate(); s.navigate(); }} /> : null}
     </View>
   );
 }
 
-/** The single start button of a screen where the rider picks first. A trail's button is Navigate until they are at the start. */
-export function StartBar({ route, label, onStart, onNavigate }: Props) {
-  if (route?.kind === 'trail') return <TrailStartBar slug={route.slug} label={label} onStart={onStart} onNavigate={onNavigate} />;
+/** The single start button of a screen where the rider picks first. It always records. */
+export function StartBar({ label, onStart }: Pick<Props, 'label' | 'onStart'> & { route?: TripRoute; onNavigate?: () => void }) {
   return <Button big variant="accent" label={label} onPress={onStart} />;
-}
-
-function TrailStartBar({ slug, label, onStart, onNavigate }: { slug: string; label: string; onStart: () => void; onNavigate?: () => void }) {
-  const s = useTrailStart(slug);
-  if (!s.point || s.reached) return <Button big variant="accent" label={label} onPress={onStart} />;
-  return <Button big variant="accent" icon={Navigation} label="Navigate to start point" onPress={() => { onNavigate?.(); s.navigate(); }} />;
 }
