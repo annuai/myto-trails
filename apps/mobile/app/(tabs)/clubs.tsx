@@ -21,6 +21,7 @@ import { Field } from '@/ui/Field';
 import { PageTitle, SectionTitle } from '@/ui/Header';
 import { Screen } from '@/ui/Screen';
 import { SegmentedTabs } from '@/ui/SegmentedTabs';
+import { SwipePanes } from '@/ui/SwipePanes';
 import { Text } from '@/ui/Text';
 import { ScalePressable } from '@/ui/motion';
 import { media, space } from '@/theme/tokens';
@@ -40,6 +41,9 @@ function ClubCard({ club, onPress }: { club: ClubSummary; onPress: () => void })
     </ScalePressable>
   );
 }
+
+const TABS = [{ key: 'clubs', label: 'Clubs' }, { key: 'rides', label: 'Rides' }] as const;
+const TAB_KEYS = TABS.map((t) => t.key);
 
 export default function Clubs() {
   useDistanceUnit(); // re-draws any distance when the unit changes
@@ -72,7 +76,8 @@ export default function Clubs() {
     <Screen tabs brand onNearEnd={signedIn && tab === 'clubs' && others.hasMore ? others.loadMore : undefined} overlay={<><CreateClubSheet open={creating} busy={act.busy} problem={act.problem} onSubmit={(b) => void create(b)} onClose={() => { setCreating(false); act.clear(); }} /><CreateEventSheet open={hosting} busy={act.busy} problem={act.problem} onSubmit={(b) => void host(b)} onClose={() => { setHosting(false); act.clear(); }} /></>}>
       <PageTitle>Clubs</PageTitle>
       <NotOpenNotice />
-      {signedIn ? <View style={{ marginBottom: space[4] }}><SegmentedTabs label="Clubs or rides" tabs={[{ key: 'clubs', label: 'Clubs' }, { key: 'rides', label: 'Rides' }]} value={tab} onChange={setTab} /></View> : null}
+      {signedIn ? <View style={{ marginBottom: space[4] }}><SegmentedTabs label="Clubs or rides" tabs={[...TABS]} value={tab} onChange={setTab} /></View> : null}
+      <SwipePanes keys={TAB_KEYS} value={tab} onChange={setTab} enabled={signedIn}>
       {signedIn && tab === 'clubs' ? <Field label="Search" placeholder="Club name or what it is about" value={text} onChangeText={setText} returnKeyType="search" /> : null}
       {!signedIn ? (
         <Card style={{ gap: space[4] }}>
@@ -109,6 +114,7 @@ export default function Clubs() {
           {searching && others.loaded && !others.loading && !mine.data.length && !others.items.length && !others.error ? <EmptyState icon={Users} title="No clubs match" body="Try another name, or start your own with the + button." /> : null}
         </>
       )}
+      </SwipePanes>
     </Screen>
   );
 }
