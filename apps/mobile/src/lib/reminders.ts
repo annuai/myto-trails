@@ -1,9 +1,10 @@
 import { addDays, addMonths } from './dates';
+import { habitReminders } from './habit';
 import type { Todo } from './todos';
 import { REMIND_BEFORE_MIN } from './tripPlan';
 
 /** What the rider has switched on. */
-export type ReminderPrefs = { todos: boolean; trips: boolean; paused: boolean; /** Minutes before a trip starts to be reminded to start it; 0 is off. Ten when not set. */ tripLeadMin?: number };
+export type ReminderPrefs = { todos: boolean; trips: boolean; paused: boolean; /** "Ready for your next ride?" before the time of day the rider usually sets off. Off when not set. */ habit?: boolean; /** Minutes before a trip starts to be reminded to start it; 0 is off. Ten when not set. */ tripLeadMin?: number };
 
 /** One notification the app wants to show. `title` and `body` are the full text; `lock` is what shows when details are hidden. */
 export type Reminder = { id: string; fireAt: number; title: string; body: string; lock: string; route: string; kind: 'todo' | 'trip' | 'ride' };
@@ -14,6 +15,8 @@ export type PlanInput = {
   trip?: { slug: string; name: string; iso?: string; /** Where a tap on its notification goes. Defaults to the trail page for `slug`. */ route?: string; /** Set for a planned trip: its pack to-dos are counted, and each of its days gets a morning reminder. */ tripId?: string; days?: { iso: string; title: string }[]; /** Minutes after midnight each day starts. With it, a reminder comes 10 minutes before, in place of the 7:30 morning one. */ startTime?: number; /** The rider has pressed Start trip: no "has not started" nudge. */ started?: boolean };
   /** Set while a ride recording is paused. */
   paused?: { since: number };
+  /** The rider's past rides, which the "ready for your next ride?" reminder learns their usual time from. */
+  rides?: { startedAt: number; sample?: boolean }[];
 };
 
 const PAUSE_REMINDER_MS = 30 * 60_000;
@@ -74,6 +77,11 @@ export function planReminders(i: PlanInput): Reminder[] {
   if (i.prefs.paused && i.paused) {
     const fireAt = i.paused.since + PAUSE_REMINDER_MS;
     if (!quiet(fireAt)) all.push({ id: `ride:paused:${i.paused.since}`, fireAt, title: 'Your ride is paused', body: 'Resume it or finish it so it is not lost', lock: 'Your ride is paused', route: '/ride/live', kind: 'ride' });
+  }
+  if (i.prefs.habit && i.rides) {
+    // A day with a planned trip already has its own start reminder, so it gets no second one.
+    const tripDays = new Set(i.trip ? [i.trip.iso, ...(i.trip.days ?? []).map((d) => d.iso)] : []);
+    all.push(...habitReminders(i.rides, i.now).filter((r) => !tripDays.has(r.id.slice(6, 16))));
   }
   return all.filter((r) => r.fireAt > i.now).sort((a, b) => a.fireAt - b.fireAt);
 }

@@ -5,10 +5,10 @@ import { REMIND_BEFORE_MIN } from '@/lib/tripPlan';
 
 /** A reminder that has come due, kept so the rider can read it again and clear it. */
 export type InboxItem = { id: string; title: string; body: string; route: string; kind: Reminder['kind']; at: number; read: boolean };
-export type Prefs = ReminderPrefs & { showDetails: boolean; /** Tell me when someone in my group ride changes their signal (help, wait up, fuel, break). */ groupSignals: boolean; /** Minutes of riding without a stop of ten minutes before a break reminder; 0 is off. Two hours when not set. */ breakEveryMin?: number; /** An alert about 45 minutes before sunset while riding. */ daylightAlert: boolean };
+export type Prefs = ReminderPrefs & { showDetails: boolean; /** Tell me when someone in my group ride changes their signal (help, wait up, fuel, break). */ groupSignals: boolean; /** Minutes of riding without a stop of ten minutes before a break reminder; 0 is off. Two hours when not set. */ breakEveryMin?: number; /** An alert about 45 minutes before sunset while riding. */ daylightAlert: boolean; /** "Ready for your next ride?" 10 minutes before the time of day I usually ride. */ habit: boolean };
 
 const MAX_INBOX = 100;
-const defaults = (): Prefs => ({ todos: true, trips: true, paused: true, tripLeadMin: REMIND_BEFORE_MIN, showDetails: false, groupSignals: true, breakEveryMin: DEFAULT_BREAK_MIN, daylightAlert: true });
+const defaults = (): Prefs => ({ todos: true, trips: true, paused: true, tripLeadMin: REMIND_BEFORE_MIN, showDetails: false, groupSignals: true, breakEveryMin: DEFAULT_BREAK_MIN, daylightAlert: true, habit: true });
 const toItem = (r: Reminder, at: number): InboxItem => ({ id: r.id, title: r.title, body: r.body, route: r.route, kind: r.kind, at, read: false });
 
 export type NotificationsState = {

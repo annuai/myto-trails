@@ -26,6 +26,7 @@ const syncer = createSyncer({
     return {
       todos: useTodos.getState().todos,
       appKm: totalKm(useRides.getState().rides),
+      rides: useRides.getState().rides,
       trip,
       paused: rec.status !== 'idle' && rec.paused ? { since: rec.pausedAt } : undefined,
     };

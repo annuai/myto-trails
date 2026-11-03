@@ -18,7 +18,7 @@ export type Notifier = {
 };
 
 /** What the plan is built from, read fresh on every sync. */
-export type World = Pick<PlanInput, 'todos' | 'appKm' | 'trip' | 'paused'>;
+export type World = Pick<PlanInput, 'todos' | 'appKm' | 'trip' | 'paused' | 'rides'>;
 
 /** iOS keeps at most 64 pending local notifications; the soonest 60 are scheduled and the rest are picked up at the next sync. */
 export const MAX_SCHEDULED = 60;

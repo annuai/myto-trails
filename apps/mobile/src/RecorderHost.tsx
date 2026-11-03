@@ -49,7 +49,7 @@ export function RecorderHost() {
     let cancelled = false;
     let unsub: (() => void) | undefined;
     // Paused: the map dot keeps moving, but nothing is recorded and the background task is not running.
-    if (paused) return () => { stopMotion(); release(); if (Platform.OS === 'web') void deactivateKeepAwake(KEEP_AWAKE); };
+    if (paused) return () => { stopMotion(); release(); if (Platform.OS === 'web') void Promise.resolve(deactivateKeepAwake(KEEP_AWAKE)).catch(() => undefined); };
     void startBackground().then((ok) => {
       if (cancelled) { if (ok) void stopBackground(); return; }
       setBackgrounded(ok);
@@ -67,7 +67,7 @@ export function RecorderHost() {
       release();
       setBackgrounded(false);
       void stopBackground();
-      if (Platform.OS === 'web') void deactivateKeepAwake(KEEP_AWAKE);
+      if (Platform.OS === 'web') void Promise.resolve(deactivateKeepAwake(KEEP_AWAKE)).catch(() => undefined);
     };
   }, [status, source, paused]);
   return null;

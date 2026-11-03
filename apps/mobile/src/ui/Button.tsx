@@ -13,11 +13,12 @@ type Variant = 'primary' | 'accent' | 'soft' | 'danger' | 'emergency';
 type Props = {
   label: string; onPress?: () => void; variant?: Variant; icon?: LucideIcon; arrow?: boolean;
   big?: boolean; disabled?: boolean; align?: 'center' | 'between'; trailing?: string; flex?: boolean;
+  /** Set when a soft button sits on a Card, so its fill differs from the card's. */ onCard?: boolean;
 };
 
-export function Button({ label, onPress, variant = 'primary', icon, arrow, big, disabled, align, trailing, flex }: Props) {
+export function Button({ label, onPress, variant = 'primary', icon, arrow, big, disabled, align, trailing, flex, onCard }: Props) {
   const { c } = useTheme();
-  const bg = { primary: undefined, accent: c.accent, soft: c.card, danger: c.card, emergency: fixed.stopFill }[variant];
+  const bg = { primary: undefined, accent: c.accent, soft: onCard ? c.raised : c.card, danger: onCard ? c.raised : c.card, emergency: fixed.stopFill }[variant];
   const fg = (variant === 'primary' ? 'onInk' : variant === 'accent' ? 'onInk' : variant === 'danger' ? 'stop' : 'ink') as 'onInk' | 'ink' | 'stop';
   const fgColor = variant === 'accent' ? c.accentInk : variant === 'emergency' ? fixed.white : undefined;
   const between = (align ?? (arrow || trailing ? 'between' : 'center')) === 'between';

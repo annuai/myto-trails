@@ -74,8 +74,8 @@ export default function Profile() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
           <Avatar name={name.trim() || 'Rider'} url={me.data?.avatarUrl} own size={media.avatarLg} />
           <View style={{ flex: 1, gap: space[2] }}>
-            <Button variant="soft" icon={Camera} label={me.data?.avatarUrl ? 'Change picture' : 'Choose a picture'} disabled={picture.busy} onPress={() => void setPicture(true)} />
-            {me.data?.avatarUrl ? <Button variant="soft" label="Remove picture" disabled={picture.busy} onPress={() => void setPicture(false)} /> : null}
+            <Button variant="soft" onCard icon={Camera} label={me.data?.avatarUrl ? 'Change picture' : 'Choose a picture'} disabled={picture.busy} onPress={() => void setPicture(true)} />
+            {me.data?.avatarUrl ? <Button variant="soft" onCard icon={Trash2} label="Remove picture" disabled={picture.busy} onPress={() => void setPicture(false)} /> : null}
           </View>
         </View>
         {picture.problem ? <Text variant="label" tone="stop">{picture.problem}</Text> : null}

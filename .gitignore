@@ -14,3 +14,8 @@ public/vendor
 
 # Personal data from a local database dump; never commit
 /apps/web/data.sql
+video/node_modules/
+video/out/
+*.apk
+.claude/
+apps/mobile/android/app/debug.keystore

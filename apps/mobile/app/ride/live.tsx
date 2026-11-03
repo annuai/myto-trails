@@ -120,7 +120,7 @@ function LiveBody() {
   useEffect(() => {
     if (r.paused) return;
     void activateKeepAwakeAsync('myto-live-screen').catch(() => undefined);
-    return () => { void deactivateKeepAwake('myto-live-screen'); };
+    return () => { void Promise.resolve(deactivateKeepAwake('myto-live-screen')).catch(() => undefined); };
   }, [r.paused]);
   const [journalOpen, setJournalOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
@@ -287,11 +287,11 @@ function LiveBody() {
       </Sheet>
     </>}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: size.target }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
+        <View style={{ flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
           <View style={{ width: size.dot, height: size.dot, borderRadius: radius.chip, backgroundColor: r.paused ? c.muted : c.stop }} />
-          <Text variant="labelMedium" tone="muted">{r.paused ? 'Paused' : r.source === 'sim' ? 'Recording (simulated)' : 'Recording'}</Text>
+          <Text variant="labelMedium" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>{r.paused ? 'Paused' : r.source === 'sim' ? 'Recording (simulated)' : 'Recording'}</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[5] }}>
+        <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setGroupOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Group</Text></Pressable> : null}
           <Pressable accessibilityRole="button" onPress={() => setDocsOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Documents</Text></Pressable>

@@ -153,3 +153,17 @@ describe('service by kilometres', () => {
     expect(serviceKmReminders([lube], 900, {}, NOW, { ...prefs, todos: false })).toEqual([]);
   });
 });
+
+describe('ready-for-your-next-ride reminders', () => {
+  const sat = [at('2026-10-10', 6), at('2026-10-17', 6), at('2026-10-24', 6)].map((startedAt) => ({ startedAt }));
+  const on = { ...prefs, habit: true };
+  it('is planned from past rides when the setting is on, and not otherwise', () => {
+    expect(planReminders(input({ rides: sat, prefs: on })).map((r) => r.id)).toEqual(['habit:2026-10-31:360']);
+    expect(planReminders(input({ rides: sat, prefs }))).toEqual([]);
+    expect(planReminders(input({ prefs: on }))).toEqual([]);
+  });
+  it('is left out on a day a planned trip already reminds the rider to start', () => {
+    const trip = { slug: 't', name: 'Trip', iso: '2026-10-31' };
+    expect(planReminders(input({ rides: sat, prefs: on, trip })).filter((r) => r.kind === 'ride')).toEqual([]);
+  });
+});

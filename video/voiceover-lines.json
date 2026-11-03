@@ -1,0 +1,13 @@
+[
+  { "file": "01", "at": 0.8,  "text": "You know that Friday feeling, when you're already planning Saturday's ride?" },
+  { "file": "02", "at": 6.4,  "text": "Pick a trail, and it tells you straight whether you can ride it." },
+  { "file": "03", "at": 11.8, "text": "Even the warnings, like slippery after rain, come from riders who've been there." },
+  { "file": "04", "at": 17.2, "text": "Then pick a place, and your route draws itself along real roads." },
+  { "file": "05", "at": 23.8, "text": "Check the distance, and you're ready to go." },
+  { "file": "06", "at": 28.0, "text": "Riding with friends? Start a group ride, and share the code." },
+  { "file": "07", "at": 32.8, "text": "Everyone shows up on the map, so you'll always know if someone's falling behind." },
+  { "file": "08", "at": 40.9, "text": "And if you ever need help..." },
+  { "file": "09", "at": 43.0, "text": "Just hold SOS. You can call for help, or share exactly where you are." },
+  { "file": "10", "at": 50.4, "text": "Every ride gets saved, so you can look back on your whole year." },
+  { "file": "11", "at": 55.0, "text": "See you on the trail." }
+]
