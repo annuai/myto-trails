@@ -33,7 +33,7 @@ export default function VehicleForm() {
   const save = () => {
     if (f.regNo.trim().length < 4) return setError('Enter the registration number.');
     if (f.model.trim().length < 2) return setError('Enter the make and model.');
-    setVehicle({ ...f, regNo: f.regNo.trim().toUpperCase(), model: f.model.trim() });
+    setVehicle({ ...f, regNo: f.regNo.trim().toUpperCase(), model: f.model.trim(), engineNo: f.engineNo?.trim().toUpperCase() || undefined, chassisNo: f.chassisNo?.trim().toUpperCase() || undefined });
     for (const d of dates) useTodos.getState().syncSource(d.source, d.todo, f[d.key] || undefined);
     router.back();
   };
@@ -46,6 +46,8 @@ export default function VehicleForm() {
       <View style={{ gap: space[5] }}>
         <Field label="Registration number" value={f.regNo} onChangeText={(regNo) => setF({ ...f, regNo })} autoCapitalize="characters" autoCorrect={false} />
         <Field label="Make and model" value={f.model} onChangeText={(model) => setF({ ...f, model })} />
+        <Field label="Engine number (optional)" value={f.engineNo ?? ''} onChangeText={(engineNo) => setF({ ...f, engineNo })} autoCapitalize="characters" autoCorrect={false} />
+        <Field label="Chassis number (optional)" value={f.chassisNo ?? ''} onChangeText={(chassisNo) => setF({ ...f, chassisNo })} autoCapitalize="characters" autoCorrect={false} />
         <Field label="Owner name (optional)" value={f.ownerName} onChangeText={(ownerName) => setF({ ...f, ownerName })} />
         <DateField label={dates[0].label} title={dates[0].label} value={f.rcValidTill} max={farthest()} clearable onChange={(v) => setF((x) => ({ ...x, rcValidTill: v || undefined }))} />
         <DocumentPhotoField docKind="rc" label="Registration certificate (RC)" />

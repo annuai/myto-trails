@@ -2,14 +2,14 @@ import { daysUntil } from './dates';
 import type { DocKind } from './localMedia/types';
 
 type Licence = { number: string; validTill?: string };
-type Vehicle = { regNo: string; rcValidTill?: string; insurer?: string; policyNo?: string; insuranceValidTill?: string; pucValidTill?: string };
+type Vehicle = { regNo: string; engineNo?: string; chassisNo?: string; rcValidTill?: string; insurer?: string; policyNo?: string; insuranceValidTill?: string; pucValidTill?: string };
 export type DocEntry = { kind: DocKind; label: string; detail: string; validTill?: string };
 
 /** The papers the rider has filled in, in the order a traffic stop asks for them. Papers they never added are left out. */
 export function documentEntries(licence?: Licence, vehicle?: Vehicle): DocEntry[] {
   const out: DocEntry[] = [];
   if (licence) out.push({ kind: 'licence', label: 'Driving licence', detail: licence.number, validTill: licence.validTill });
-  if (vehicle?.regNo) out.push({ kind: 'rc', label: 'Registration', detail: vehicle.regNo, validTill: vehicle.rcValidTill });
+  if (vehicle?.regNo) out.push({ kind: 'rc', label: 'Registration', detail: [vehicle.regNo, vehicle.engineNo && `Engine ${vehicle.engineNo}`, vehicle.chassisNo && `Chassis ${vehicle.chassisNo}`].filter(Boolean).join(' · '), validTill: vehicle.rcValidTill });
   if (vehicle?.policyNo || vehicle?.insuranceValidTill) out.push({ kind: 'insurance', label: 'Insurance', detail: [vehicle.insurer, vehicle.policyNo].filter(Boolean).join(' · '), validTill: vehicle.insuranceValidTill });
   if (vehicle?.pucValidTill) out.push({ kind: 'puc', label: 'PUC', detail: '', validTill: vehicle.pucValidTill });
   return out;

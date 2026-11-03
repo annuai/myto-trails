@@ -78,6 +78,11 @@ describe('backup file', () => {
     expect(back.photoFiles.p1).toBe(files.p1);
     expect(summarize(back)).toEqual({ rides: 1, todos: 1, contacts: 1, documents: 2, photos: 1, journalEntries: 0 });
   });
+  it('keeps the optional engine and chassis numbers of the vehicle', async () => {
+    const vehicle = { regNo: 'MH01AB1234', model: 'Himalayan', ownerName: '', engineNo: 'ENG123', chassisNo: 'CHS456', updatedAt: 10 };
+    const back = await openAll(await build(snapshot({ vehicle })));
+    expect(back.vehicle).toEqual(vehicle);
+  });
   it('skips photos whose file is gone', async () => {
     const s = snapshot({ photos: [...snapshot().photos, { id: 'gone', docKind: 'rc', width: 1, height: 1, addedAt: 1 }] });
     expect((await openAll(await build(s))).photos.map((p) => p.id)).toEqual(['p1']);

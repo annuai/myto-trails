@@ -7,6 +7,12 @@ describe('documentEntries', () => {
     expect(documentEntries({ number: 'KA01' }, { regNo: 'KA05', pucValidTill: '2027-01-01' }).map((e) => e.kind)).toEqual(['licence', 'rc', 'puc']);
   });
 });
+describe('registration entry', () => {
+  it('adds the engine and chassis numbers when the rider kept them, and only those', () => {
+    expect(documentEntries(undefined, { regNo: 'KA01AB1234' })[0].detail).toBe('KA01AB1234');
+    expect(documentEntries(undefined, { regNo: 'KA01AB1234', engineNo: 'E1', chassisNo: 'C1' })[0].detail).toBe('KA01AB1234 · Engine E1 · Chassis C1');
+  });
+});
 describe('expiredEntries', () => {
   it('returns only papers past their date', () => {
     const e = documentEntries({ number: 'x', validTill: '2026-01-01' }, { regNo: 'r', insuranceValidTill: '2027-06-01', policyNo: 'p' });

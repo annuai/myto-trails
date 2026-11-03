@@ -6,7 +6,7 @@ import { storage } from './persist';
 
 export type Licence = { holder: string; number: string; classes: string[]; validTill?: string; rto?: string; updatedAt?: number };
 export type Vehicle = {
-  regNo: string; model: string; ownerName: string; rcValidTill?: string;
+  regNo: string; model: string; ownerName: string; rcValidTill?: string; /** Optional, kept for easy reference. */ engineNo?: string; chassisNo?: string;
   insurer?: string; policyNo?: string; insuranceValidTill?: string; pucValidTill?: string; updatedAt?: number;
 };
 export type Contact = { id: string; name: string; phone: string; relation: string; primary: boolean; updatedAt?: number };
