@@ -18,7 +18,7 @@ export const joinGroupRide = (token: string, body: { code: string; displayName: 
 export const syncGroupRide = (token: string, id: string, body: SyncBody) => api<GroupSync>(`/group-rides/${id}/sync`, { method: 'POST', token, body });
 /** The leader's meeting point. Pass `null` to remove it. */
 export const setRegroup = (token: string, id: string, pin: { lat: number; lng: number; note?: string } | null) => api<void>(`/group-rides/${id}/regroup`, { method: 'POST', token, body: pin ?? { clear: true } });
-/** The leader gives a rider a title (captain, marshal, medic, sweep), or takes it away with `null`. Everyone sees it on their next sync. */
-export const setRiderTitle = (token: string, id: string, body: { rider: string; title: EventRole | null }) => api<void>(`/group-rides/${id}/titles`, { method: 'POST', token, body });
+/** The leader sets a rider's titles: any of captain, marshal, medic, sweep together, or none. Everyone sees them on their next sync. */
+export const setRiderTitles = (token: string, id: string, body: { rider: string; titles: EventRole[] }) => api<void>(`/group-rides/${id}/titles`, { method: 'POST', token, body });
 export const leaveGroupRide = (token: string, id: string) => api<void>(`/group-rides/${id}/leave`, { method: 'POST', token });
 export const endGroupRide = (token: string, id: string) => api<void>(`/group-rides/${id}/end`, { method: 'POST', token });

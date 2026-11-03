@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { expiresAt, generateCode, HARD_CAP_MS, IDLE_MS, isExpired, isFresh, normalizeCode, parseTitle, STALE_MS } from "./group-rides";
+import { expiresAt, generateCode, HARD_CAP_MS, IDLE_MS, isExpired, isFresh, normalizeCode, parseTitles, STALE_MS } from "./group-rides";
 
 const t0 = new Date("2026-11-01T06:00:00Z");
 const at = (ms: number) => new Date(t0.getTime() + ms);
@@ -47,12 +47,17 @@ describe("a rider's position", () => {
 });
 
 describe("rider titles", () => {
-  it("takes the four jobs, null or an empty string to remove one, and refuses anything else", () => {
-    for (const t of ["captain", "marshal", "medic", "sweep"]) expect(parseTitle(t)).toBe(t);
-    expect(parseTitle(null)).toBeNull();
-    expect(parseTitle("")).toBeNull();
-    expect(parseTitle("boss")).toBeUndefined();
-    expect(parseTitle(7)).toBeUndefined();
-    expect(parseTitle(undefined)).toBeUndefined();
+  it("takes any of the four jobs together, in their usual order and without repeats", () => {
+    expect(parseTitles(["medic", "sweep"])).toEqual(["medic", "sweep"]);
+    expect(parseTitles(["sweep", "medic", "sweep"])).toEqual(["medic", "sweep"]);
+    expect(parseTitles(["captain", "marshal", "medic", "sweep"])).toHaveLength(4);
+  });
+  it("takes an empty list to mean none, and refuses anything else", () => {
+    expect(parseTitles([])).toEqual([]);
+    expect(parseTitles(["boss"])).toBeUndefined();
+    expect(parseTitles(["medic", 7])).toBeUndefined();
+    expect(parseTitles("medic")).toBeUndefined();
+    expect(parseTitles(null)).toBeUndefined();
+    expect(parseTitles(Array(20).fill("medic"))).toBeUndefined();
   });
 });

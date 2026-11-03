@@ -1,7 +1,7 @@
 import { isValidSlug } from "@moto-trails/domain";
 import { arriveCheckin, extendCheckin, getMyCheckin, createCheckin, parseExpectedAt, parseNewCheckin, parsePosition, pingCheckin } from "../rides/checkins";
 import { confirmConditionReport, createConditionReport, listConditionReports } from "../rides/condition-reports";
-import { activeClubGroupRide, createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup, setRiderTitle, syncGroupRide } from "../rides/group-rides";
+import { activeClubGroupRide, createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup, setRiderTitles, syncGroupRide } from "../rides/group-rides";
 import { createSharedRoute, deleteSharedRoute, getSharedRoute, parseSharedRoute } from "../rides/shared-routes";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 
@@ -126,10 +126,12 @@ export const rideRoutes: RouteDef[] = [
     },
   },
   {
-    method: "POST", path: "/group-rides/{id}/titles", access: "write:submission", summary: "The leader gives a rider a title (body: rider, the rider's id from the sync; title captain|marshal|medic|sweep, or null to take it away). Everyone sees it on the next sync",
+    method: "POST", path: "/group-rides/{id}/titles", access: "write:submission", summary: "The leader sets a rider's titles (body: rider, the rider's id from the sync; titles, a list of any of captain, marshal, medic, sweep, empty to take them all away; a single `title` or null still works). Everyone sees them on the next sync",
     async handler(c) {
       const b = await asObject(c);
-      const r = await setRiderTitle(c.sql, { userId: c.userId, rideId: c.params.id!, rider: b.rider, title: b.title, now: c.now });
+      // An older app sends one `title`; the list is the same thing with one in it.
+      const titles = "titles" in b ? b.titles : b.title === null || b.title === "" ? [] : [b.title];
+      const r = await setRiderTitles(c.sql, { userId: c.userId, rideId: c.params.id!, rider: b.rider, titles, now: c.now });
       return r.ok ? noContent() : failWith(GROUP, r.reason);
     },
   },

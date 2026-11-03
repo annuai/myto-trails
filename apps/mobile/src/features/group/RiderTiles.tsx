@@ -33,7 +33,7 @@ export function RiderTiles({ tiles, canNavigate, onSelect }: { tiles: RiderTile[
                 <View style={{ borderRadius: radius.chip, borderWidth: size.rule, borderColor: riderColor(t.slot, c.riders) }}><Avatar name={t.name} size={media.avatarSm} /></View>
                 <View style={{ flex: 1 }}>
                   <Text variant="labelMedium" numberOfLines={1} style={{ color: riderColor(t.slot, c.riders) }}>{t.isMe ? 'You' : t.name}</Text>
-                  <Text variant="caption" tone="muted" numberOfLines={1}>{t.role === 'leader' ? (t.eventRole ? `Leader · ${ROLE_LABEL[t.eventRole]}` : 'Leader') : t.eventRole ? ROLE_LABEL[t.eventRole] : t.isMe ? 'Member' : t.seen}</Text>
+                  <Text variant="caption" tone="muted" numberOfLines={1}>{[...(t.role === 'leader' ? ['Leader'] : []), ...t.titles.map((x) => ROLE_LABEL[x])].join(' · ') || (t.isMe ? 'Rider' : t.seen)}</Text>
                 </View>
               </View>
               <Text variant="label" tone="muted" numberOfLines={1}>{t.isMe ? 'This phone' : t.distance ? `${t.distance} · ${t.seen}` : t.seen}</Text>

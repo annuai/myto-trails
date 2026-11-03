@@ -2,17 +2,14 @@ import { useState } from 'react';
 import { Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Flag, LogOut, Share2 } from 'lucide-react-native';
-import { createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup, setRiderTitle } from '@/api/groups';
-import type { EventRole } from '@/api/types';
-import { TitlesList } from '@/features/group/TitlesList';
-import { useSimRide } from '@/store/simRide';
-import { syncGroupNow } from '@/CompanionHost';
+import { createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup } from '@/api/groups';
 import { SITE_BASE } from '@/api/config';
 import type { LatLng } from '@/lib/geo';
-import { distanceToLeaderM, riderTiles, STATUS_LABEL, type GroupRiderView, type GroupStatus } from '@/lib/groupCore';
+import { distanceToLeaderM, riderTiles, STATUS_LABEL, type GroupStatus } from '@/lib/groupCore';
 import { SIM_GROUP_ID } from '@/lib/groupSim';
 import { codeFromInvite, inviteUrl } from '@/lib/inviteLink';
 import { useAction } from '@/lib/useAction';
+import { RiderSheet } from '@/features/group/RiderSheet';
 import { RiderTiles } from '@/features/group/RiderTiles';
 import { PlaceSearch } from '@/features/route/PlaceSearch';
 import { useCanNavigate } from '@/features/group/useCanNavigate';
@@ -47,9 +44,7 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
   const [code, setCode] = useState('');
   const { busy, problem, run } = useAction();
   const leader = group?.role === 'leader';
-  const [titlesOpen, setTitlesOpen] = useState(false);
-  /** The leader can give titles; so can the test group, so the feature can be tried without a real one. */
-  const canTitle = leader || group?.id === SIM_GROUP_ID;
+  const [pickedId, setPickedId] = useState<string>();
   const canNavigate = useCanNavigate();
 
   const start = async () => {
@@ -72,22 +67,18 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
     if (!token || !group) return;
     if (await run(() => (leader ? endGroupRide(token, group.id) : leaveGroupRide(token, group.id)))) { useCompanion.getState().setGroup(null); onClose(); }
   };
-  /** Gives a rider a title, or takes it away: sent to the server, shown at once, and made real for everyone at the next sync. */
-  const setTitle = async (rider: GroupRiderView, title: EventRole | null) => {
-    if (!group) return;
-    if (group.id === SIM_GROUP_ID) useSimRide.getState().setTitle(rider.id, title);
-    else if (!token || !(await run(() => setRiderTitle(token, group.id, { rider: rider.id, title })))) return;
-    useCompanion.getState().setLive({ riders: useCompanion.getState().live.riders.map((r) => (r.id === rider.id ? { ...r, eventRole: title } : r)) });
-    if (group.id !== SIM_GROUP_ID) syncGroupNow();
-  };
   /** The group's one shared point: its destination, named when it came from a search. */
   const pin = (p: LatLng | null, note?: string) => token && group && run(() => setRegroup(token, group.id, p && { lat: p.lat, lng: p.lng, note }));
 
   const me = live.me;
   const now = nowMs();
   const toLeader = me ? distanceToLeaderM(live.riders, me) : null;
+  const tiles = riderTiles(live.riders, me, position, now);
+  /** Without a screen of its own to open a rider on, the card opens from here. */
+  const picked = tiles.find((t) => t.id === pickedId);
 
   return (
+    <>
     <Sheet open={open} title={group ? group.name : 'Group ride'} onClose={onClose}>
       {!token && group?.id !== SIM_GROUP_ID ? (
         <>
@@ -112,13 +103,7 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
             {SIGNALS.map((s) => <ChoiceChip key={s} label={STATUS_LABEL[s]} selected={live.myStatus === s} onPress={() => signal(s)} />)}
           </View>
-          {live.riders.length ? <RiderTiles tiles={riderTiles(live.riders, me, position, now)} canNavigate={canNavigate} onSelect={onRider ? (t) => onRider(t.id) : undefined} /> : null}
-          {canTitle && live.riders.length ? (
-            <>
-              <Button variant="soft" label={titlesOpen ? 'Hide titles' : 'Give titles'} onPress={() => setTitlesOpen(!titlesOpen)} />
-              {titlesOpen ? <TitlesList riders={live.riders} meId={me} onSet={(r, t) => void setTitle(r, t)} /> : null}
-            </>
-          ) : null}
+          {live.riders.length ? <RiderTiles tiles={tiles} canNavigate={canNavigate} onSelect={(t) => { if (onRider) onRider(t.id); else { setPickedId(t.id); onClose(); } }} /> : null}
           {live.regroup ? <Text variant="label" tone="muted">{`Group destination: ${live.regroup.note ?? 'a spot on the map'}. Everyone sees the road to it.`}</Text> : null}
           {leader ? (
             <>
@@ -133,5 +118,7 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
       )}
       {problem ? <Text variant="label" tone="stop">{problem}</Text> : null}
     </Sheet>
+    {picked && !onRider ? <RiderSheet tile={picked} me={position} canNavigate={canNavigate} onClose={() => setPickedId(undefined)} /> : null}
+    </>
   );
 }

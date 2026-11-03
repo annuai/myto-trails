@@ -23,9 +23,7 @@ describe('simRiders', () => {
     expect(r.map((x) => x.name)).toEqual(['You', 'Pranab', 'Jithin', 'Abha']);
     expect(r.every((x) => x.lat !== null && x.lng !== null)).toBe(true);
   });
-  it('has exactly one leader, ahead of this phone at the start', () => {
-    const r = simRiders(0, 0, me);
-    expect(r.filter((x) => x.role === 'leader')).toHaveLength(1);
+  it('has Pranab ahead of this phone at the start', () => {
     expect(alongAt({ offsetM: 450, pace: 1.05 }, 0)).toBeGreaterThan(simMeAlong(0));
   });
   it('moves this phone along the route at its set speed and stops it at the end', () => {
@@ -56,13 +54,21 @@ describe('simRiders', () => {
 
 describe('titles in the simulated group', () => {
   const me = { name: 'You', status: 'ok' as const };
-  const title = (name: string, titles?: Record<string, 'captain' | 'marshal' | 'medic' | 'sweep' | null>) => simRiders(0, 0, me, undefined, undefined, titles).find((x) => x.name === name)!.eventRole;
-  it('starts with Pranab as the medic and Jithin as the sweep, and the leader can change them', () => {
-    expect(title('Pranab')).toBe('medic');
-    expect(title('Jithin')).toBe('sweep');
-    expect(title('Abha')).toBeNull();
-    expect(title('Pranab', { 'sim-pranab': 'marshal' })).toBe('marshal');
-    expect(title('Pranab', { 'sim-pranab': null })).toBeNull();
+  const titles = (name: string, over?: Record<string, ('captain' | 'marshal' | 'medic' | 'sweep')[]>) => simRiders(0, 0, me, undefined, undefined, over).find((x) => x.name === name)!.titles;
+  it('starts with Pranab as the medic and Jithin as the sweep, and nobody else titled', () => {
+    expect(titles('Pranab')).toEqual(['medic']);
+    expect(titles('Jithin')).toEqual(['sweep']);
+    expect(titles('Abha')).toEqual([]);
+    expect(titles('You')).toEqual([]);
+  });
+  it('lets the leader give a rider several titles, or none', () => {
+    expect(titles('Pranab', { 'sim-pranab': ['medic', 'marshal'] })).toEqual(['medic', 'marshal']);
+    expect(titles('Pranab', { 'sim-pranab': [] })).toEqual([]);
+    expect(titles('You', { 'sim-me': ['captain'] })).toEqual(['captain']);
+  });
+  it('makes Annuai, this phone, the leader of the group', () => {
+    const rs = simRiders(0, 0, me);
+    expect(rs.filter((x) => x.role === 'leader').map((x) => x.id)).toEqual(['sim-me']);
   });
 });
 

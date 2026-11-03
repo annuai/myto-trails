@@ -103,7 +103,7 @@ export function GroupRail({ tiles, onSelect, onAll }: { tiles: RiderTile[]; onSe
           const asking = t.status !== 'ok';
           const tone = t.status === 'help' ? 'stop' : 'caution';
           return (
-            <Pressable key={t.id} accessibilityRole="button" accessibilityLabel={`${t.name}${t.role === 'leader' ? ', leader' : ''}${t.eventRole ? `, ${ROLE_LABEL[t.eventRole]}` : ''}, ${t.distance ?? t.seen}${asking ? `, ${STATUS_LABEL[t.status]}` : ''}. Show where they are`} onPress={() => onSelect(t)}
+            <Pressable key={t.id} accessibilityRole="button" accessibilityLabel={`${t.name}${t.role === 'leader' ? ', leader' : ''}${t.titles.map((x) => `, ${ROLE_LABEL[x]}`).join('')}, ${t.distance ?? t.seen}${asking ? `, ${STATUS_LABEL[t.status]}` : ''}. Show where they are`} onPress={() => onSelect(t)}
               style={{ minHeight: size.target, borderRadius: radius.chip, paddingLeft: space[2], paddingRight: space[4], backgroundColor: inkSolid, flexDirection: 'row', alignItems: 'center', gap: space[2], borderWidth: size.rule, borderColor: asking ? c[tone] : inkSolid, opacity: t.stale ? fade2.stale : 1, ...shadow.ride }}>
               <View style={{ width: size.chip, height: size.chip, borderRadius: radius.chip, backgroundColor: riderColor(t.slot, c.riders), alignItems: 'center', justifyContent: 'center' }}>
                 <Text variant="labelMedium" style={{ color: inkSolid }}>{t.name.trim().charAt(0).toUpperCase()}</Text>
@@ -112,10 +112,10 @@ export function GroupRail({ tiles, onSelect, onAll }: { tiles: RiderTile[]; onSe
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[1] }}>
                   <Text variant="labelMedium" numberOfLines={1} style={{ color: fixed.white }}>{t.name.split(' ')[0]}</Text>
                   {t.role === 'leader' ? <Icon icon={Crown} size={size.chip / 2} tone="muted" /> : null}
-                  {t.eventRole ? <Icon icon={ROLE_ICON[t.eventRole]} size={size.chip / 2} tone="muted" /> : null}
+                  {t.titles.map((x) => <Icon key={x} icon={ROLE_ICON[x]} size={size.chip / 2} tone="muted" />)}
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: space[2] }}>
-                  {asking ? <Text variant="caption" tone={tone} numberOfLines={1}>{STATUS_LABEL[t.status]}</Text> : t.eventRole ? <Text variant="caption" tone="muted" numberOfLines={1}>{ROLE_LABEL[t.eventRole]}</Text> : null}
+                  {asking ? <Text variant="caption" tone={tone} numberOfLines={1}>{STATUS_LABEL[t.status]}</Text> : null}
                   <Text variant="data" tone="muted" numberOfLines={1}>{t.distance ?? t.seen}</Text>
                 </View>
               </View>

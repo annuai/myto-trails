@@ -2,12 +2,17 @@ import { haversine } from './geo';
 import { shortDistanceM, withUnit } from './units';
 
 export type GroupStatus = 'ok' | 'wait_up' | 'fuel' | 'break' | 'help';
-export type GroupRiderView = { id: string; name: string; role: string; /** The job the event host gave this rider, if any. */ eventRole?: 'captain' | 'marshal' | 'medic' | 'sweep' | null; lat: number | null; lng: number | null; /** ISO instant of the last position, null when none. */ at: string | null; status: GroupStatus };
+export type RiderTitle = 'captain' | 'marshal' | 'medic' | 'sweep';
+/** `titles` are the jobs the leader gave this rider, any number together. An older server sends only `eventRole`, the one job an event gave them. */
+export type GroupRiderView = { id: string; name: string; role: string; eventRole?: RiderTitle | null; titles?: RiderTitle[]; lat: number | null; lng: number | null; /** ISO instant of the last position, null when none. */ at: string | null; status: GroupStatus };
 
 /** A rider whose last position is older than this is shown as "not seen". */
 export const STALE_MS = 2 * 60_000;
 
 export const STATUS_LABEL: Record<GroupStatus, string> = { ok: 'All good', wait_up: 'Wait up', fuel: 'Fuel stop', break: 'Break', help: 'Needs help' };
+
+/** The titles a rider holds, from the list the leader set or else the one job an event gave them. */
+export const titlesOf = (r: Pick<GroupRiderView, 'titles' | 'eventRole'>): RiderTitle[] => r.titles ?? (r.eventRole ? [r.eventRole] : []);
 
 const ageOf = (r: GroupRiderView, now: number) => (r.at ? now - Date.parse(r.at) : Infinity);
 
@@ -79,7 +84,7 @@ export function signalNotice(c: SignalChange): { title: string; body: string } |
   return { title: c.to === 'help' ? 'Group ride: help needed' : 'Group ride', body };
 }
 
-export type RiderTile = { id: string; name: string; /** Which of the group's colours this rider is. */ slot: number; isMe: boolean; role: string; /** The job the event host gave this rider, if any. */ eventRole: 'captain' | 'marshal' | 'medic' | 'sweep' | null; status: GroupStatus; /** The same in metres, for ordering; null without both positions. */ distanceM: number | null; /** "350 m" or "1.2 km" (miles and feet in miles mode) from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
+export type RiderTile = { id: string; name: string; /** Which of the group's colours this rider is. */ slot: number; isMe: boolean; role: string; /** The jobs this rider holds, any number. */ titles: RiderTitle[]; status: GroupStatus; /** The same in metres, for ordering; null without both positions. */ distanceM: number | null; /** "350 m" or "1.2 km" (miles and feet in miles mode) from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
 
 const distanceText = (m: number) => withUnit(shortDistanceM(m));
 const seenText = (r: GroupRiderView, now: number) => {
@@ -93,7 +98,7 @@ export function riderTiles(riders: GroupRiderView[], meId: string | undefined, h
   const slots = riderSlots(riders);
   return sortRiders(riders, meId ?? '').map((r) => {
     const position = r.lat != null && r.lng != null ? { lat: r.lat, lng: r.lng } : null;
-    return { id: r.id, name: r.name, slot: slots.get(r.id) ?? 0, isMe: r.id === meId, role: r.role, eventRole: r.eventRole ?? null, status: r.status, distanceM: position && here && r.id !== meId ? haversine(here, position) : null, distance: position && here && r.id !== meId ? distanceText(haversine(here, position)) : null, seen: seenText(r, now), stale: isStale(r, now), position };
+    return { id: r.id, name: r.name, slot: slots.get(r.id) ?? 0, isMe: r.id === meId, role: r.role, titles: titlesOf(r), status: r.status, distanceM: position && here && r.id !== meId ? haversine(here, position) : null, distance: position && here && r.id !== meId ? distanceText(haversine(here, position)) : null, seen: seenText(r, now), stale: isStale(r, now), position };
   }).sort((a, b) => Number(a.isMe) - Number(b.isMe));
 }
 

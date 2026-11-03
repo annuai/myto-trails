@@ -152,7 +152,7 @@ export default function RideReady() {
   const begin = async () => {
     // false means an unfinished ride is still on disk: go home, where it is offered for saving or discarding.
     if (!running && source === 'sim' && simGroup) await prepareSim();
-    if (!running && source === 'sim' && simGroup) useCompanion.getState().setGroup({ id: SIM_GROUP_ID, code: 'SIMGRP', name: 'Simulated group ride', role: 'member' });
+    if (!running && source === 'sim' && simGroup) useCompanion.getState().setGroup({ id: SIM_GROUP_ID, code: 'SIMGRP', name: 'Simulated group ride', role: 'leader' });
     if (!running && chosen.key === 'place' && dest) useGuideTarget.getState().set(dest);
     const ok = running || (await useRecorder.getState().start(source));
     router.replace(ok ? '/ride/live' : '/');

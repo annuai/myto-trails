@@ -7,7 +7,7 @@ import { pointAt, prepareTrail, type TrailLine } from './trailGuide';
 /**
  * A made-up group ride for testing the live map without a group. The group's id marks it, so the app never sends it to the server.
  * Everything here is pure: the road to ride, the speed and the time since the start go in; where each rider is and what they signalled
- * comes out. This phone is Annuai; Pranab, Jithin and Abha are played from a script.
+ * comes out. This phone is Annuai, who made the group and leads it; Pranab, Jithin and Abha are played from a script.
  */
 export const SIM_GROUP_ID = 'sim-group';
 export const SIM_ME = 'sim-me';
@@ -36,10 +36,10 @@ export const SIM_TRAIL: TrailLine = prepareTrail(SIM_ROUTE);
 /** Where the group meets: the end of the road, named. */
 export const simRegroup = (trail: TrailLine, note: string): GroupRegroup => ({ ...trail.line[trail.line.length - 1]!, note });
 
-type Scripted = { id: string; name: string; role: string; /** The title the script gives them to begin with. */ title?: EventRole; /** Metres ahead (+) or behind (-) of the start. */ offsetM: number; /** Their speed as a share of the group's. */ pace: number; /** Seconds into the ride when the rider stands still, and for how long. */ stop?: { at: number; for: number }; signals?: { from: number; to: number; status: GroupStatus }[] };
+type Scripted = { id: string; name: string; role: string; /** The titles the script gives them to begin with. */ titles?: EventRole[]; /** Metres ahead (+) or behind (-) of the start. */ offsetM: number; /** Their speed as a share of the group's. */ pace: number; /** Seconds into the ride when the rider stands still, and for how long. */ stop?: { at: number; for: number }; signals?: { from: number; to: number; status: GroupStatus }[] };
 const RIDERS: Scripted[] = [
-  { id: 'sim-pranab', name: 'Pranab', role: 'leader', title: 'medic', offsetM: 450, pace: 1.05 },
-  { id: 'sim-jithin', name: 'Jithin', role: 'member', title: 'sweep', offsetM: -250, pace: 0.92, signals: [{ from: 40, to: 90, status: 'wait_up' }, { from: 150, to: 180, status: 'help' }] },
+  { id: 'sim-pranab', name: 'Pranab', role: 'member', titles: ['medic'], offsetM: 450, pace: 1.05 },
+  { id: 'sim-jithin', name: 'Jithin', role: 'member', titles: ['sweep'], offsetM: -250, pace: 0.92, signals: [{ from: 40, to: 90, status: 'wait_up' }, { from: 150, to: 180, status: 'help' }] },
   { id: 'sim-abha', name: 'Abha', role: 'member', offsetM: -100, pace: 1.03, stop: { at: 70, for: 50 }, signals: [{ from: 70, to: 120, status: 'fuel' }] },
 ];
 
@@ -56,12 +56,12 @@ export const simMePoint = (s: number, trail: TrailLine = SIM_TRAIL, speed: numbe
 const statusAt = (r: Scripted, s: number): GroupStatus => r.signals?.find((x) => s >= x.from && s < x.to)?.status ?? 'ok';
 
 /** Everyone in the simulated group `s` seconds in, as the server would send them: this phone first at its own point, then the scripted riders. */
-export function simRiders(s: number, now: number, me: { name: string; status: GroupStatus }, trail: TrailLine = SIM_TRAIL, speed: number = SIM_SPEED_MPS, titles: Record<string, EventRole | null> = {}): GroupRiderView[] {
+export function simRiders(s: number, now: number, me: { name: string; status: GroupStatus }, trail: TrailLine = SIM_TRAIL, speed: number = SIM_SPEED_MPS, titles: Record<string, EventRole[]> = {}): GroupRiderView[] {
   const at = new Date(now).toISOString();
   const mine = simMePoint(s, trail, speed);
   return [
-    { id: SIM_ME, name: me.name, role: 'member', lat: mine.lat, lng: mine.lng, at, status: me.status },
-    ...RIDERS.map((r): GroupRiderView => { const p = pointAt(trail, alongAt(r, s, trail, speed)); return { id: r.id, name: r.name, role: r.role, eventRole: titles[r.id] !== undefined ? titles[r.id] : r.title ?? null, lat: p.lat, lng: p.lng, at, status: statusAt(r, s) }; }),
+    { id: SIM_ME, name: me.name, role: 'leader', titles: titles[SIM_ME] ?? [], lat: mine.lat, lng: mine.lng, at, status: me.status },
+    ...RIDERS.map((r): GroupRiderView => { const p = pointAt(trail, alongAt(r, s, trail, speed)); return { id: r.id, name: r.name, role: r.role, titles: titles[r.id] ?? r.titles ?? [], lat: p.lat, lng: p.lng, at, status: statusAt(r, s) }; }),
   ];
 }
 

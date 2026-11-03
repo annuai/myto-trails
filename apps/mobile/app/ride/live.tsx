@@ -180,6 +180,7 @@ function LiveBody() {
   const { directions, failed: roadFailed } = useDirections(lastSpot, roadTo);
   // The position and heading the map and the turn card show are steadied, not raw: on a road they are the road's, elsewhere the fix and the smoothed direction of travel.
   const followLine = rescueSpot ? directions?.line : simRoad?.directions.line ?? (roadTo ? directions?.line : undefined) ?? routeLine;
+  const followRoad = useMemo(() => (followLine && followLine.length > 1 ? prepareTrail(followLine) : undefined), [followLine]);
   const smooth = useSmoothedRide({ position: lastSpot, speedMps: r.speedKmh / 3.6, course, line: followLine });
   const heading = smooth.heading;
   const spot = smooth.position ?? lastSpot;
@@ -303,7 +304,7 @@ function LiveBody() {
     <Screen scroll={false} footer={landscape ? undefined : actions(88, size.button)} overlay={<>
       <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={last} />
       <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={last} onRider={(id) => { setGroupOpen(false); setRiderId(id); }} />
-      {picked ? <RiderSheet tile={picked} destination={regroup} canNavigate={canNavigate} onClose={() => setRiderId(undefined)} /> : null}
+      {picked ? <RiderSheet tile={picked} me={spot} heading={heading} road={followRoad} canNavigate={canNavigate} onClose={() => setRiderId(undefined)} /> : null}
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
       <DocumentsSheet open={docsOpen} onClose={() => setDocsOpen(false)} />
       <NoteSheet open={noteOpen} canType={j.canType} onSave={j.addNote} onClose={() => setNoteOpen(false)} />

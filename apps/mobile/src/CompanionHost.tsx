@@ -125,6 +125,8 @@ export function CompanionHost() {
       const token = useAuth.getState().token;
       if (prev.status === 'running' && s.status === 'idle') {
         last = null;
+        // A simulated group ends with its ride; nothing of it is on the server.
+        if (group?.id === SIM_GROUP_ID) useCompanion.getState().setGroup(null);
         if (checkin && token) void arrive();
         // A member leaves. The leader keeps the group, so they can still end it from the Dash or the Ride screen.
         if (group && token && group.role !== 'leader' && group.id !== SIM_GROUP_ID) { void leaveGroupRide(token, group.id).catch(() => undefined); useCompanion.getState().setGroup(null); }

@@ -141,7 +141,7 @@ export async function joinGroupRide(
   });
 }
 
-export type Rider = { id: string; name: string; role: "leader" | "member"; eventRole: "captain" | "marshal" | "medic" | "sweep" | null; lat: number | null; lng: number | null; at: string | null; status: RiderStatus };
+export type Rider = { id: string; name: string; role: "leader" | "member"; eventRole: "captain" | "marshal" | "medic" | "sweep" | null; /** The titles the rider holds, the leader's list or else the one an event gave them. */ titles: RiderTitle[]; lat: number | null; lng: number | null; at: string | null; status: RiderStatus };
 export type SyncResult = { me: string; riders: Rider[]; regroup: { lat: number; lng: number; note: string | null } | null; ended: boolean; stretchKm: number };
 
 /**
@@ -174,7 +174,7 @@ export async function syncGroupRide(
     await sql`update group_ride set last_activity_at = ${i.now} where id = ${g.id}`;
   }
   const rows = await sql`
-    select u.public_id, m.display_name, m.role, m.event_role, m.lat, m.lng, m.seen_at, m.status
+    select u.public_id, m.display_name, m.role, m.event_role, m.titles, m.lat, m.lng, m.seen_at, m.status
     from group_ride_member m join app_user u on u.id = m.user_id
     where m.ride_id = ${g.id} and m.left_at is null order by m.role desc, m.joined_at`;
   const [r] = await sql`select regroup_lat, regroup_lng, regroup_note, stretch_km from group_ride where id = ${g.id}`;
@@ -182,7 +182,7 @@ export async function syncGroupRide(
     me: me.public_id,
     riders: rows.map((m) => {
       const fresh = isFresh(m.seen_at, i.now);
-      return { id: m.public_id, name: m.display_name, role: m.role, eventRole: m.event_role, lat: fresh ? m.lat : null, lng: fresh ? m.lng : null, at: fresh ? (m.seen_at as Date).toISOString() : null, status: m.status };
+      return { id: m.public_id, name: m.display_name, role: m.role, eventRole: m.event_role, titles: m.titles.length ? m.titles : m.event_role ? [m.event_role] : [], lat: fresh ? m.lat : null, lng: fresh ? m.lng : null, at: fresh ? (m.seen_at as Date).toISOString() : null, status: m.status };
     }),
     regroup: r?.regroup_lat !== null && r?.regroup_lat !== undefined ? { lat: r.regroup_lat, lng: r.regroup_lng, note: r.regroup_note } : null,
     ended: false,
@@ -213,20 +213,25 @@ export async function setRegroup(sql: Sql, i: { userId: string; rideId: string; 
 export const RIDER_TITLES = ["captain", "marshal", "medic", "sweep"] as const;
 export type RiderTitle = (typeof RIDER_TITLES)[number];
 
-/** A title from a request: one of the jobs, null (or an empty string) to take it away, undefined when it is anything else. */
-export function parseTitle(v: unknown): RiderTitle | null | undefined {
-  if (v === null || v === "") return null;
-  return typeof v === "string" && (RIDER_TITLES as readonly string[]).includes(v) ? (v as RiderTitle) : undefined;
+/**
+ * The titles from a request: a list of the jobs, in their usual order with repeats dropped; an empty list takes them all away. Undefined when
+ * it is not a list, or holds anything that is not one of the four jobs.
+ */
+export function parseTitles(v: unknown): RiderTitle[] | undefined {
+  if (!Array.isArray(v) || v.length > RIDER_TITLES.length * 2) return undefined;
+  if (!v.every((t) => typeof t === "string" && (RIDER_TITLES as readonly string[]).includes(t))) return undefined;
+  return RIDER_TITLES.filter((t) => v.includes(t));
 }
 
-/** The leader gives a rider a title (captain, marshal, medic, sweep) or takes it away. `rider` is the rider's public id, as the sync shows it. */
-export async function setRiderTitle(sql: Sql, i: { userId: string; rideId: string; rider: unknown; title: unknown; now: Date }): Promise<{ ok: true } | Fail<"not_found" | "not_leader" | "invalid">> {
+/** The leader gives a rider titles (any of captain, marshal, medic, sweep, together) or takes them all away. `rider` is the rider's public id, as the sync shows it. */
+export async function setRiderTitles(sql: Sql, i: { userId: string; rideId: string; rider: unknown; titles: unknown; now: Date }): Promise<{ ok: true } | Fail<"not_found" | "not_leader" | "invalid">> {
   const g = await leaderOf(sql, i.rideId, i.userId, i.now);
   if ("ok" in g) return g;
-  const title = parseTitle(i.title);
-  if (title === undefined || typeof i.rider !== "string" || i.rider === "") return { ok: false, reason: "invalid" };
+  const titles = parseTitles(i.titles);
+  // A rider's public id is a UUID; anything else is a bad request, not a query that fails inside the database.
+  if (titles === undefined || typeof i.rider !== "string" || !UUID.test(i.rider)) return { ok: false, reason: "invalid" };
   const rows = await sql`
-    update group_ride_member set event_role = ${title}
+    update group_ride_member set titles = ${sql.array(titles)}, event_role = null
     where ride_id = ${g.id} and left_at is null and user_id = (select id from app_user where public_id = ${i.rider}) returning user_id`;
   if (!rows.length) return { ok: false, reason: "not_found" };
   await sql`update group_ride set last_activity_at = ${i.now} where id = ${g.id}`;
