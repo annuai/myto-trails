@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Vibration } from 'react-native';
 import { ApiFailure } from '@/api/client';
 import { arriveCheckin, pingCheckin } from '@/api/checkins';
 import { postConditionReport } from '@/api/conditionReports';
@@ -13,6 +13,8 @@ import { shouldPing, type LastPing } from '@/lib/checkinCore';
 import { markFailed, markSent, nextBatch } from '@/lib/conditions';
 import { DEFAULT_STRETCH_KM, stretchAlert, stretchMessage, STRETCH_REPEAT_MS } from '@/lib/eventCore';
 import { pollIntervalMs, signalChanges, signalNotice } from '@/lib/groupCore';
+import { SIM_GROUP_ID } from '@/lib/groupSim';
+import { shareQueued } from '@/lib/osmShare';
 import { notifier } from '@/lib/notifier';
 import { startAutoPause, stepAutoPause } from '@/lib/autoPause';
 import { startPrompt, stepPrompt } from '@/lib/stoppedPrompt';
@@ -90,23 +92,23 @@ function announce(id: string, title: string, body: string, lock: string, route: 
 }
 
 /**
- * A rider in the group changed their signal: say so, with the rider's name ("Annuai is asking for help"). A call for help always shows
- * its words, even when details are hidden on the lock screen; the others follow that setting. It is also kept in the history.
+ * A rider in the group changed their signal: say so, with the rider's name and what they sent ("Jithin says wait up"), and buzz the
+ * phone: three long buzzes for help, two for the rest. Both always show their words, even when details are hidden on the lock screen,
+ * since the point is to know who needs what at a glance (a rider's name is only ever shown to their own group). It is also kept in the history.
  * Nothing is sent from the server: this runs when the phone next looks at the group, which is while a ride keeps the app alive.
  */
 function tellAboutSignals(changes: ReturnType<typeof signalChanges>) {
-  const { prefs, push } = useNotifications.getState();
-  if (!prefs.groupSignals) return;
+  if (!useNotifications.getState().prefs.groupSignals) return;
+  const { push } = useNotifications.getState();
   const now = Date.now();
   const route = useRecorder.getState().status === 'running' ? '/ride/live' : '/ride';
   for (const c of changes) {
     const n = signalNotice(c);
     if (!n) continue;
     const id = `group:${c.rider.id}:${c.to}:${now}`;
-    const lock = 'A rider in your group sent a signal';
-    push({ id, fireAt: now, title: n.title, body: n.body, lock, route, kind: 'ride' }, now);
-    const show = prefs.showDetails || c.to === 'help';
-    void notifier.notifyNow({ id, fireAt: now, title: show ? n.title : 'Myto Moto', body: show ? n.body : lock, route }).catch(() => undefined);
+    push({ id, fireAt: now, title: n.title, body: n.body, lock: n.body, route, kind: 'ride' }, now);
+    void notifier.notifyNow({ id, fireAt: now, title: n.title, body: n.body, route }).catch(() => undefined);
+    if (c.to === 'help') buzzThrice(); else Vibration.vibrate([0, 300, 150, 300]);
   }
 }
 
@@ -125,7 +127,7 @@ export function CompanionHost() {
         last = null;
         if (checkin && token) void arrive();
         // A member leaves. The leader keeps the group, so they can still end it from the Dash or the Ride screen.
-        if (group && token && group.role !== 'leader') { void leaveGroupRide(token, group.id).catch(() => undefined); useCompanion.getState().setGroup(null); }
+        if (group && token && group.role !== 'leader' && group.id !== SIM_GROUP_ID) { void leaveGroupRide(token, group.id).catch(() => undefined); useCompanion.getState().setGroup(null); }
         return;
       }
       if (s.status !== 'running' || s.paused || s.points.length === prev.points.length || !checkin || !token) return;
@@ -146,7 +148,8 @@ export function CompanionHost() {
     const pollGroup = async () => {
       const { group, live } = useCompanion.getState();
       const token = useAuth.getState().token;
-      if (!group || !token) return;
+      // A simulated group never reaches the server: the recorder host plays it.
+      if (!group || !token || group.id === SIM_GROUP_ID) return;
       const rec = useRecorder.getState();
       const p = rec.status === 'running' && (!rec.paused || flags.autoPaused) ? rec.points[rec.points.length - 1] : undefined;
       try {
@@ -167,6 +170,8 @@ export function CompanionHost() {
       }
     };
     pollGroupNow = () => { void pollGroup(); };
+    // The simulated group's riders change their signals on a script: say so the way the real ones would.
+    const unsubSim = useCompanion.subscribe((s, prev) => { if (s.group?.id === SIM_GROUP_ID && s.live.riders !== prev.live.riders) tellAboutSignals(signalChanges(prev.live.riders, s.live.riders, s.live.me)); });
     const loop = () => {
       void pollGroup().finally(() => {
         const { group, live } = useCompanion.getState();
@@ -177,7 +182,7 @@ export function CompanionHost() {
     loop();
 
     // Reports queued without a signal.
-    const retry = () => { void flushOutbox(); if (flags.arrivePending && useRecorder.getState().status === 'idle') void arrive(); };
+    const retry = () => { void flushOutbox(); void shareQueued(); if (flags.arrivePending && useRecorder.getState().status === 'idle') void arrive(); };
     const outboxTimer = setInterval(retry, 30_000);
     const app = AppState.addEventListener('change', (st) => { if (st === 'active') retry(); });
     void flushOutbox();
@@ -233,7 +238,7 @@ export function CompanionHost() {
       if (r.action === 'resume') void rec.resume();
     }, 5000);
 
-    return () => { pollGroupNow = undefined; unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); clearInterval(watchTimer); app.remove(); flags.autoPaused = false; };
+    return () => { pollGroupNow = undefined; unsubSim(); unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); clearInterval(watchTimer); app.remove(); flags.autoPaused = false; };
   }, []);
   return null;
 }

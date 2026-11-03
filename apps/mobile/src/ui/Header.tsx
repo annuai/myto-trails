@@ -19,10 +19,11 @@ export function BackHeader({ title, right }: { title?: string; right?: React.Rea
   );
 }
 
-export function PageTitle({ children, sub }: { children: string; sub?: string }) {
+/** `fit` keeps a title that changes with the moment to two lines: if the words are too long for that, the type shrinks a little instead of pushing the page down. */
+export function PageTitle({ children, sub, fit }: { children: string; sub?: string; fit?: boolean }) {
   return (
     <View style={{ marginTop: space[2], marginBottom: rhythm.afterTitle, gap: space[2] }}>
-      <Text variant="title">{children}</Text>
+      <Text variant="title" {...(fit ? { numberOfLines: 2, adjustsFontSizeToFit: true, minimumFontScale: 0.75 } : {})}>{children}</Text>
       {sub ? <Text variant="label" tone="muted">{sub}</Text> : null}
     </View>
   );

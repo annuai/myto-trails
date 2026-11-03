@@ -45,7 +45,7 @@ const COMPASS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-we
 export const compassWord = (a: LatLng, b: LatLng): string => COMPASS[Math.round(bearing(a, b) / 45) % 8]!;
 
 /** The point `d` metres along the line. */
-function pointAt(t: TrailLine, d: number): LatLng {
+export function pointAt(t: TrailLine, d: number): LatLng {
   const x = Math.max(0, Math.min(t.totalM, d));
   let i = 1;
   while (i < t.cum.length - 1 && t.cum[i]! < x) i++;

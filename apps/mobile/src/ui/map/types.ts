@@ -29,10 +29,16 @@ export type OsmMapProps = {
   follow?: boolean;
   /** Fly the camera here when it changes (a place the rider searched for). */
   focus?: LatLng;
-  /** Draw an arrow for the way the rider faces instead of a dot. Only while the camera follows and a `heading` is known, since the map is then turned to it. */
+  /** Draw an arrow for the way the rider faces instead of a dot, once a `heading` is known. It points at the heading whatever the map's own turn. */
   pointer?: boolean;
+  /** How long, in milliseconds, the camera takes to glide to the next position while it follows: the time between fixes, so the movement is steady rather than stop and go. */
+  glideMs?: number;
   /** Turn the map so this bearing (degrees, 0 is north) points up. Only with `follow`; left as is when undefined. */
   heading?: number;
+  /** Pixels at the top, bottom and left of the view that things floating over the map cover. The camera keeps the rider in the clear part between them, and the map's own buttons and credit sit above the bottom one. */
+  covered?: { top: number; bottom: number; left?: number };
+  /** Called with true while the list of riders in a tapped badge is open, and false when it closes: the screen hides what floats over the map so the list is not covered. */
+  onPicker?: (open: boolean) => void;
   /** Shows an enlarge button at the top right; it is called when pressed. */
   onFullscreen?: () => void;
   /** True while the map is the enlarged one: the button then shrinks it. */

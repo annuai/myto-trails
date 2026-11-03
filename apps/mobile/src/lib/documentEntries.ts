@@ -1,4 +1,4 @@
-import { daysUntil } from './dates';
+import { daysUntil, formatDate } from './dates';
 import type { DocKind } from './localMedia/types';
 
 type Licence = { number: string; validTill?: string };
@@ -45,4 +45,18 @@ export function papersSummary(papers: Paper[]): { status: 'caution' | 'stop'; wo
   if (missing) return { status: 'caution', word: `${missing} missing` };
   if (soon) return { status: 'caution', word: `${soon} running out` };
   return undefined;
+}
+
+export type Validity = { status: 'good' | 'caution' | 'stop' | 'unknown'; word: string };
+
+/**
+ * What the status chip says for a paper's date. A date far off is just the year ("Valid to 2038"), which is short enough to sit under
+ * the number on any phone; within a year it is the full date, within 30 days it counts the days, and past it says so.
+ */
+export function validityWord(iso: string | undefined, today?: string): Validity {
+  if (!iso) return { status: 'unknown', word: 'No date' };
+  const d = daysUntil(iso, today);
+  if (d < 0) return { status: 'stop', word: 'Expired' };
+  if (d <= SOON_DAYS) return { status: 'caution', word: `${d} days left` };
+  return { status: 'good', word: d > 365 ? `Valid to ${iso.slice(0, 4)}` : `Till ${formatDate(iso)}` };
 }

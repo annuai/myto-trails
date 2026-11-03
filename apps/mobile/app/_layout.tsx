@@ -15,6 +15,7 @@ import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
 import { CrashHost } from '@/CrashHost';
 import { NavigateChoiceHost } from '@/NavigateChoiceHost';
+import { OsmAskHost } from '@/features/osm/OsmAskHost';
 import { RideNotificationHost } from '@/RideNotificationHost';
 import { VoiceHost } from '@/VoiceHost';
 import { runRideIdMigration } from '@/lib/rideIdMigration.run';
@@ -60,6 +61,7 @@ export default function Root() {
         <Stack.Screen name="ride/live" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
       </Stack>
       <NavigateChoiceHost />
+      <OsmAskHost />
       <CrashHost />
     </Theme>
   );

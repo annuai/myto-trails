@@ -21,6 +21,9 @@ faces, no gradients, no photo realism. One rider (black full-face helmet, dark j
 | `trails` | Know before you go. | Pine forest, stream crossing | Eye level, no horizon | Misty morning | Medium, centre | Tag on a trail post |
 | `safety` | Someone always knows. | Dirt road above a lake | High, looking down the road | Day, cream sky | A group: two ride on, two help a rider | Red sonar rings on the rider being helped |
 | `setup` | Set up in a few taps. | Coast road, with the world behind | High, no rider | Day, cream sky | None | A red dot on the home country |
+| `maps` | Help improve the map. | Hill road at the edge of a half-drawn map | High, looking down | Day, cream sky | Small, far along the road | A red pin where the new road joins the map |
+
+`maps.webp` is not one of the five pages of the tour: it is the picture on the page that asks to share rides with OpenStreetMap (`src/features/osm/MapsStep.tsx`). It fills the room the words leave, in a rounded card as wide as the screen (about 335 points; 200 to 330 tall on a phone), centre-cropped, so keep the subject in the middle 60 percent.
 
 ## Making a new one (ChatGPT image generation)
 

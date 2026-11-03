@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { documentEntries, expiredEntries } from './documentEntries';
+import { documentEntries, expiredEntries, validityWord } from './documentEntries';
 
 describe('documentEntries', () => {
   it('lists only what was added', () => {
@@ -34,5 +34,15 @@ describe('paperStatus and papersSummary', () => {
   it('is silent when everything is valid', () => {
     const p = paperStatus({ number: 'x', validTill: '2030-01-01' }, { regNo: 'r', rcValidTill: '2030-01-01', insuranceValidTill: '2030-01-01', pucValidTill: '2030-01-01' }, today);
     expect(papersSummary(p)).toBeUndefined();
+  });
+});
+
+describe('validityWord', () => {
+  it('says only the year for a date far off, so the chip stays short', () => expect(validityWord('2038-08-07', '2026-11-03')).toEqual({ status: 'good', word: 'Valid to 2038' }));
+  it('gives the date within a year, the days within a month, and says expired', () => {
+    expect(validityWord('2027-02-10', '2026-11-03').word).toMatch(/^Till /);
+    expect(validityWord('2026-11-20', '2026-11-03')).toEqual({ status: 'caution', word: '17 days left' });
+    expect(validityWord('2026-10-01', '2026-11-03')).toEqual({ status: 'stop', word: 'Expired' });
+    expect(validityWord(undefined)).toEqual({ status: 'unknown', word: 'No date' });
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { distanceToLeaderM, isStale, pollIntervalMs, riderSlots, riderTiles, signalChanges, signalNotice, sortRiders, type GroupRiderView } from './groupCore';
+import { railOrder, distanceToLeaderM, isStale, pollIntervalMs, riderSlots, riderTiles, signalChanges, signalNotice, sortRiders, type GroupRiderView } from './groupCore';
 
 const now = Date.parse('2026-11-01T06:00:00Z');
 const rider = (o: Partial<GroupRiderView> & { id: string }): GroupRiderView => ({ name: o.id, role: 'member', lat: 12, lng: 77, at: '2026-11-01T05:59:30Z', status: 'ok', ...o });
@@ -96,5 +96,21 @@ describe('riderSlots', () => {
     const other = riderSlots([{ id: 'c' }, { id: 'a' }, { id: 'b' }]);
     expect([...one.entries()].sort()).toEqual([['a', 0], ['b', 1], ['c', 2]]);
     expect(other.get('b')).toBe(1);
+  });
+});
+
+describe('railOrder', () => {
+  const rs = [
+    rider({ id: 'me', name: 'Me', lat: 12, lng: 77 }), rider({ id: 'a', name: 'Asha', lat: 12.002, lng: 77 }), rider({ id: 'b', name: 'Ben', lat: 12.0005, lng: 77 }),
+    rider({ id: 'l', name: 'Lead', role: 'leader', lat: 12.01, lng: 77 }), rider({ id: 'h', name: 'Hana', status: 'help', lat: 12.05, lng: 77 }), rider({ id: 'w', name: 'Wes', status: 'wait_up', lat: 12.03, lng: 77 }),
+  ];
+  const tiles = riderTiles(rs, 'me', { lat: 12, lng: 77 }, now);
+  it('puts help first, then other signals, the leader, then the nearest, and leaves you out', () => {
+    expect(railOrder(tiles, 10).shown.map((t) => t.name)).toEqual(['Hana', 'Wes', 'Lead', 'Ben', 'Asha']);
+  });
+  it('shows only as many as fit and counts everyone', () => {
+    const r = railOrder(tiles, 3);
+    expect(r.shown).toHaveLength(3);
+    expect(r.total).toBe(6);
   });
 });

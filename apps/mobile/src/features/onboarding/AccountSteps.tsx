@@ -11,7 +11,7 @@ import { startSignIn } from '@/lib/signIn';
 import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '@/store/auth';
-import { radius, media, space } from '@/theme/tokens';
+import { radius, media, size, space } from '@/theme/tokens';
 import { Avatar } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
@@ -28,11 +28,12 @@ import { SETUP_ART } from './slides';
 /** Where the email link brings the rider back to: this flow's profile step. */
 export const PROFILE_STEP_PATH = '/onboarding?step=profile';
 
-function Header({ onSkip, skipLabel }: { onSkip: () => void; skipLabel: string }) {
+/** The logo, and a button to skip the step when there is one. */
+export function Header({ onSkip, skipLabel }: { onSkip?: () => void; skipLabel?: string }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: size.target }}>
       <Logo height={logo.onboarding} />
-      <TextButton label={skipLabel} onPress={onSkip} />
+      {onSkip && skipLabel ? <TextButton label={skipLabel} onPress={onSkip} /> : null}
     </View>
   );
 }

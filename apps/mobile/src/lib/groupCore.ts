@@ -79,7 +79,7 @@ export function signalNotice(c: SignalChange): { title: string; body: string } |
   return { title: c.to === 'help' ? 'Group ride: help needed' : 'Group ride', body };
 }
 
-export type RiderTile = { id: string; name: string; /** Which of the group's colours this rider is. */ slot: number; isMe: boolean; role: string; /** The job the event host gave this rider, if any. */ eventRole: 'captain' | 'marshal' | 'medic' | 'sweep' | null; status: GroupStatus; /** "350 m" or "1.2 km" (miles and feet in miles mode) from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
+export type RiderTile = { id: string; name: string; /** Which of the group's colours this rider is. */ slot: number; isMe: boolean; role: string; /** The job the event host gave this rider, if any. */ eventRole: 'captain' | 'marshal' | 'medic' | 'sweep' | null; status: GroupStatus; /** The same in metres, for ordering; null without both positions. */ distanceM: number | null; /** "350 m" or "1.2 km" (miles and feet in miles mode) from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
 
 const distanceText = (m: number) => withUnit(shortDistanceM(m));
 const seenText = (r: GroupRiderView, now: number) => {
@@ -93,6 +93,19 @@ export function riderTiles(riders: GroupRiderView[], meId: string | undefined, h
   const slots = riderSlots(riders);
   return sortRiders(riders, meId ?? '').map((r) => {
     const position = r.lat != null && r.lng != null ? { lat: r.lat, lng: r.lng } : null;
-    return { id: r.id, name: r.name, slot: slots.get(r.id) ?? 0, isMe: r.id === meId, role: r.role, eventRole: r.eventRole ?? null, status: r.status, distance: position && here && r.id !== meId ? distanceText(haversine(here, position)) : null, seen: seenText(r, now), stale: isStale(r, now), position };
+    return { id: r.id, name: r.name, slot: slots.get(r.id) ?? 0, isMe: r.id === meId, role: r.role, eventRole: r.eventRole ?? null, status: r.status, distanceM: position && here && r.id !== meId ? haversine(here, position) : null, distance: position && here && r.id !== meId ? distanceText(haversine(here, position)) : null, seen: seenText(r, now), stale: isStale(r, now), position };
   }).sort((a, b) => Number(a.isMe) - Number(b.isMe));
+}
+
+/** How many riders the row under the map names; the rest are behind its "All" chip. */
+export const RAIL_MAX = 4;
+
+/**
+ * Who the row under the map shows, most important first: a rider calling for help, anyone else who has signalled, the leader, then the
+ * nearest. You are not in it (you are the arrow on the map). `total` is everyone in the group, for the "All" chip.
+ */
+export function railOrder(tiles: RiderTile[], max: number = RAIL_MAX): { shown: RiderTile[]; total: number } {
+  const rank = (t: RiderTile) => (t.status === 'help' ? 0 : t.status !== 'ok' ? 1 : t.role === 'leader' ? 2 : 3);
+  const others = tiles.filter((t) => !t.isMe).sort((a, b) => rank(a) - rank(b) || (a.distanceM ?? Infinity) - (b.distanceM ?? Infinity) || a.name.localeCompare(b.name));
+  return { shown: others.slice(0, max), total: tiles.length };
 }

@@ -4,13 +4,23 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BellRing, Pause, Route as RouteIcon, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { DestinationOption } from '@/features/trip/DestinationOption';
+import { PlaceSearch } from '@/features/route/PlaceSearch';
+import { useDirections } from '@/features/ride/useDirections';
 import { StartBar, TrailHint } from '@/features/trip/RideStartActions';
+import { useGuideTarget } from '@/store/guideTarget';
+import { findHabits } from '@/lib/habit';
+import { rideTitle } from '@/lib/rideTitle';
+import { asText, distanceKm, durationParts } from '@/lib/units';
 import { chooseDayRoute, startTodaysRide, startTrip } from '@/features/trip/startTrip';
 import { plannedSlots, slotTimeText } from '@/lib/plannedRides';
 import { useTrips } from '@/store/trips';
-import { space } from '@/theme/tokens';
+import { radius, space } from '@/theme/tokens';
+import { useTheme } from '@/theme/ThemeProvider';
 import { GroupSheet } from '@/features/GroupSheet';
 import { clockLabel } from '@/lib/community';
+import { SIM_GROUP_ID } from '@/lib/groupSim';
+import { prepareSimRide, SIM_TRAIL_SLUG } from '@/lib/simRide';
+import { useSimRide } from '@/store/simRide';
 import { useCompanion } from '@/store/companion';
 import { useMyRoutes } from '@/store/myRoutes';
 import { needsSettings } from '@/lib/rideAccess';
@@ -38,12 +48,29 @@ import { Text } from '@/ui/Text';
 
 type Check = { label: string; status: Status; word: string; go?: string };
 
+/** The phone's position as soon as there is one, or nothing after `ms`. */
+async function fixWithin(ms: number): Promise<{ lat: number; lng: number } | undefined> {
+  const end = Date.now() + ms;
+  for (;;) {
+    const f = useLocation.getState().fix;
+    if (f) return { lat: f.lat, lng: f.lng };
+    if (Date.now() >= end) return undefined;
+    await new Promise((r) => setTimeout(r, 300));
+  }
+}
+
 /** Record, ready: where are you going, the map, what we can truly check before a ride, then one big Start. */
 export default function RideReady() {
   const router = useRouter();
+  const { c: colors } = useTheme();
   const { autostart } = useLocalSearchParams<{ autostart?: string }>();
   const running = useRecorder((s) => s.status === 'running');
   const [source, setSource] = useState<'gps' | 'sim'>('gps');
+  /** A simulated ride with a made-up group riding the test route, for trying the live map, the turns and the group on one phone. */
+  const [simGroup, setSimGroup] = useState(false);
+  /** What the simulated ride is doing before it starts: finding the phone's position, then the road to the trail. */
+  const [simNote, setSimNote] = useState<string>();
+  const noisy = useSimRide((s) => s.noisy);
   const [explain, setExplain] = useState(false);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(false);
@@ -67,8 +94,11 @@ export default function RideReady() {
   const fix = useLocation((s) => s.fix);
   const gpsError = useLocation((s) => s.error);
   // Start looking for the rider as soon as this screen opens, so a fix is ready by the time the ride starts.
-  useEffect(() => (source === 'gps' ? useLocation.getState().acquire() : undefined), [source]);
+  useEffect(() => (source === 'gps' || simGroup ? useLocation.getState().acquire() : undefined), [source, simGroup]);
   const here = useMemo(() => (fix ? { lat: fix.lat, lng: fix.lng } : undefined), [fix]);
+  /** The place the rider chose to ride to, and the road to it from where they are: shown on the map with the time it takes. */
+  const [dest, setDest] = useState<{ lat: number; lng: number; name: string }>();
+  const { directions: toDest, failed: toDestFailed } = useDirections(here, dest, { reroute: false });
 
   const gps: Check = source === 'sim' ? { label: 'GPS', status: 'unknown', word: 'Simulated' }
     : fix ? (fix.accuracy === undefined || fix.accuracy <= 30 ? { label: 'GPS', status: 'good', word: fix.accuracy ? `Good, ±${Math.round(fix.accuracy)} m` : 'Good' } : { label: 'GPS', status: 'caution', word: `Weak, ±${Math.round(fix.accuracy)} m` })
@@ -99,12 +129,31 @@ export default function RideReady() {
     }),
     ...(loneTrail ? [{ key: 'trail', title: loneTrail.name, sub: 'Your next ride', route: { kind: 'trail', slug: loneTrail.slug, name: loneTrail.name, status: loneTrail.status, statusLabel: loneTrail.statusLabel } as TripRoute, word: 'Start ride', chip: { status: loneTrail.status, label: loneTrail.statusLabel }, onStart: () => void start() }] : []),
     ...(myRoute && !slots.length ? [{ key: 'mine', title: myRoute.name, sub: 'A route you made', word: 'Start ride', onStart: () => void start() }] : []),
-    { key: 'free', title: 'Just ride', sub: 'No destination. Record wherever you go.', word: 'Start ride', onStart: () => { useMyRoutes.getState().follow(undefined); useTrailStore.getState().cancelPlan(); void start(); } },
+    // A place of their own: the road to it, and how long it takes, show on the map before the ride starts.
+    ...(source === 'gps' ? [{ key: 'place', title: 'Set a destination', sub: dest ? dest.name : 'Pick a place and see the road, and how long it takes.', word: dest ? 'Start ride' : 'Choose a place first', onStart: () => { if (dest) void start(); } }] : []),
+    { key: 'free', title: 'Roam free', sub: 'Nowhere to be. Ride wherever the road pulls you.', word: 'Start ride', onStart: () => { useMyRoutes.getState().follow(undefined); useTrailStore.getState().cancelPlan(); useGuideTarget.getState().clear(); void start(); } },
   ];
-  const chosen = choices.find((c) => c.key === picked) ?? choices[0]!;
+  // Planned rides first; with none, roaming is the quick answer and the rider opens "Set a destination" when they want one.
+  // One greeting for the moment, from the day, the hour and the rider's usual times. It always fits on two lines.
+  const [clockNow] = useState(Date.now);
+  const title = rideTitle({ now: new Date(clockNow), habits: useMemo(() => findHabits(rides, clockNow), [rides, clockNow]), rides: rides.length, planned: slots.length > 0 || !!loneTrail || !!myRoute });
+  const chosen = choices.find((c) => c.key === picked) ?? choices.find((c) => c.key !== 'place')!;
 
+  /** The simulated group rides the real road from where this phone is to the trail's start. Without a position or a connection it rides the built-in test loop instead, and says so. */
+  const prepareSim = async () => {
+    useSimRide.getState().clear();
+    setSimNote('Finding your location…');
+    const here = await fixWithin(10_000);
+    if (!here) { setSimNote('No location yet, so the built-in test loop is used.'); return; }
+    setSimNote('Finding the road to the trail…');
+    try { useSimRide.getState().set(await prepareSimRide(here, SIM_TRAIL_SLUG)); setSimNote(undefined); }
+    catch { setSimNote('The road could not be found, so the built-in test loop is used.'); }
+  };
   const begin = async () => {
     // false means an unfinished ride is still on disk: go home, where it is offered for saving or discarding.
+    if (!running && source === 'sim' && simGroup) await prepareSim();
+    if (!running && source === 'sim' && simGroup) useCompanion.getState().setGroup({ id: SIM_GROUP_ID, code: 'SIMGRP', name: 'Simulated group ride', role: 'member' });
+    if (!running && chosen.key === 'place' && dest) useGuideTarget.getState().set(dest);
     const ok = running || (await useRecorder.getState().start(source));
     router.replace(ok ? '/ride/live' : '/');
   };
@@ -114,7 +163,7 @@ export default function RideReady() {
   const allow = async () => { setExplain(false); const before = await rideLocationAccess(); const now = await requestRideLocationAccess(); if (needsSettings(before, now, Platform.OS)) { await Linking.openSettings(); return; } await begin(); };
   // Start trip and Record day open this screen already decided: recording starts at once (the Always-location question still comes first).
   const autostarted = useRef(false);
-  useEffect(() => { if (autostart === '1' && !autostarted.current && !running) { autostarted.current = true; void start(); } }); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (autostart === '1' && !autostarted.current && !running) { autostarted.current = true; void start(); } });
 
   return (
     <Screen footer={running ? <Button big variant="accent" label="Back to your ride" onPress={() => void start()} /> : <StartBar route={chosen.route} label={chosen.word} onNavigate={chosen.onNavigate} onStart={chosen.onStart} />} overlay={<>
@@ -127,17 +176,29 @@ export default function RideReady() {
       <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={here} />
     </>}>
       <BackHeader />
-      {/* With nothing planned there is nothing to choose between: no cards, no extra buttons. The rider tapped Ride on purpose. */}
-      {choices.length === 1 ? <PageTitle sub="No planned routes. Record wherever you go.">Ready to ride?</PageTitle> : <PageTitle sub="Pick one, then start.">Where are you going?</PageTitle>}
+      <PageTitle fit sub={choices.length === 1 ? 'No plans. Record wherever you go.' : 'Pick a place to ride to, or roam free.'}>{title}</PageTitle>
       {choices.length > 1 ? <View accessibilityRole="radiogroup" style={{ gap: space[3] }}>
         {choices.map((c) => (
           <DestinationOption key={c.key} title={c.title} sub={c.sub} selected={c.key === chosen.key} onSelect={() => setPicked(c.key)}>
             {c.chip ? <View style={{ flexDirection: 'row' }}><StatusChip status={c.chip.status} label={c.chip.label} /></View> : null}
+            {c.key === 'place' && c.key === chosen.key ? <PlaceSearch near={here} label={dest ? 'Somewhere else?' : 'Where to?'} onPick={(p) => setDest({ ...p.point, name: p.name })} /> : null}
             {c.key === chosen.key && c.route?.kind === 'trail' ? <TrailHint slug={c.route.slug} onNavigate={() => { c.onNavigate?.(); }} /> : null}
           </DestinationOption>
         ))}
       </View> : null}
-      {source === 'gps' ? <View style={{ marginTop: space[4] }}><OsmMap height={220} radius={24} follow interactive={false} position={here} /></View> : null}
+      {source === 'gps' ? (
+        <View style={{ marginTop: space[4] }}>
+          {dest && chosen.key === 'place'
+            ? <OsmMap height={260} radius={24} interactive={false} position={here} line={toDest?.line} destination={dest} />
+            : <OsmMap height={220} radius={24} follow interactive={false} position={here} />}
+          {dest && chosen.key === 'place' ? (
+            <View pointerEvents="none" style={{ position: 'absolute', left: space[3], bottom: space[3], right: space[3], borderRadius: radius.control, backgroundColor: colors.card, paddingHorizontal: space[4], paddingVertical: space[3], gap: space.half }}>
+              <Text variant="bodyMedium" numberOfLines={1}>{dest.name}</Text>
+              <Text variant="label" tone="muted">{toDest ? `${asText(distanceKm(toDest.totalM / 1000))} · about ${asText(durationParts(Math.max(1, toDest.etaMin) * 60))}` : toDestFailed ? 'The road service could not be reached. You will still be guided once you are riding.' : here ? 'Finding the road…' : 'Finding your location…'}</Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       <Text variant="caption" tone="muted" style={{ marginTop: space[2] }}>
         {source === 'sim' ? 'Moves along a test loop so you can try recording on a laptop. Not a real ride.'
           : fix ? 'Your position is shown above. It is only saved once you start.'
@@ -158,11 +219,16 @@ export default function RideReady() {
       </>} right={<>
       <SectionTitle>Location</SectionTitle>
       <View style={{ flexDirection: 'row', gap: space[2] }}>
-        <ChoiceChip label="Phone GPS" selected={source === 'gps'} onPress={() => setSource('gps')} />
-        <ChoiceChip label="Simulated (testing)" selected={source === 'sim'} onPress={() => setSource('sim')} />
+        <ChoiceChip label="Phone GPS" selected={source === 'gps'} onPress={() => { setSource('gps'); setSimGroup(false); }} />
+        <ChoiceChip label="Simulated (testing)" selected={source === 'sim' && !simGroup} onPress={() => { setSource('sim'); setSimGroup(false); }} />
+      </View>
+      <View style={{ flexDirection: 'row', gap: space[2], marginTop: space[2], flexWrap: 'wrap' }}>
+        <ChoiceChip icon={Users} label="Simulated group ride (testing)" selected={source === 'sim' && simGroup} onPress={() => { setSource('sim'); setSimGroup(true); }} />
+        {source === 'sim' ? <ChoiceChip label="Noisy GPS" selected={noisy} onPress={() => useSimRide.getState().setNoisy(!noisy)} /> : null}
       </View>
       <Text variant="caption" tone="muted" style={{ marginTop: space[3] }}>
-        {source === 'sim' ? 'Moves along a test loop so you can try recording on a laptop. Not a real ride.'
+        {source === 'sim' && simGroup ? (simNote ?? 'Rides the real road from where you are to the Manchanabele Dam trail with Annuai, Pranab, Jithin and Abha: Pranab leads, Jithin asks to wait and later for help, Abha stops for fuel. Not a real ride.')
+          : source === 'sim' ? 'Moves along a test loop so you can try recording on a laptop. Not a real ride.'
           : fix ? 'Your position is shown above. It is only saved once you start.'
           : gpsError ?? 'Finding your location. If asked, allow location access.'}
       </Text>

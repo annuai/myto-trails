@@ -82,7 +82,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
       {endCap ? <View style={{ height: capHeight }} /> : null}
     </Animated.ScrollView>
   ) : (
-    <View style={{ flex: 1, paddingTop: top, paddingLeft: padL, paddingRight: padR, paddingBottom: insets.bottom + 16 }}>{frame(children, true)}</View>
+    <View style={{ flex: 1, paddingTop: top, paddingLeft: padL, paddingRight: padR, paddingBottom: insets.bottom + 16 + (footer ? footerHeight : 0) }}>{frame(children, true)}</View>
   );
   return (
     <LinearGradient colors={c.gradient as unknown as [string, string, string]} locations={[0, 0.45, 1]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={{ flex: 1, backgroundColor: c.paper }}>

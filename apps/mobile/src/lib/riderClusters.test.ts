@@ -16,6 +16,12 @@ describe('clusterMarks', () => {
     expect(clusterLabel(c!)).toBe('Asha +1');
   });
 
+  it('never hides a rider who has asked for something inside a badge, and nobody joins theirs', () => {
+    const help = { ...b, status: 'help' as const };
+    const groups = clusterMarks([a, help, at('d', 'Di', 12.0001, 77)], 15);
+    expect(groups.map((g) => g.marks.map((m) => m.id))).toEqual([['a', 'd'], ['b']]);
+  });
+
   it('splits them again once zoomed in far enough', () => {
     expect(clusterMarks([a, b], 20)).toHaveLength(2);
   });

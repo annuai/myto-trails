@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, BookOpen, Globe, CalendarDays, ClipboardList, Download, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload } from 'lucide-react-native';
+import { Bell, BookOpen, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload } from 'lucide-react-native';
 import Constants from 'expo-constants';
 import { CONTACT_EMAIL, DISCORD_URL, MYTO_URL, versionLabel } from '@moto-trails/domain';
 import { useMe } from '@/api/useApi';
 import { countryName } from '@/lib/countryNames';
 import { signOut, startSignIn } from '@/lib/signIn';
+import { useOsm } from '@/store/osm';
 import { useAuth } from '@/store/auth';
 import { asText, distanceKm } from '@/lib/units';
 import { yearRecap } from '@/lib/yearRecap';
@@ -36,6 +37,7 @@ import { ScalePressable } from '@/ui/motion';
 export default function You() {
   const router = useRouter();
   const home = useHomeCountry();
+  const osmOn = useOsm((s) => s.asked && s.enabled);
   const unit = useDistanceUnit(); // re-draws this page's distances when the unit changes
   const rides = useRides((s) => s.rides);
   const { licence, vehicle, contacts } = useProfile();
@@ -103,6 +105,7 @@ export default function You() {
         <Row icon={ShieldAlert} label="Crash detection" sub="Beta. Asks if you are OK after a crash" onPress={() => router.push('/safety')} />
         <Row icon={Globe} label="Country and units" sub={`${home ? countryName(home) : 'Not set'} · ${unit === 'mi' ? 'miles' : 'kilometres'}`} onPress={() => router.push('/region')} />
         <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
+        <Row icon={MapIcon} label="Improve the map" sub="Share rides with OpenStreetMap" value={osmOn ? 'On' : 'Off'} onPress={() => router.push('/osm')} />
         <Row icon={Sparkles} label="Smart notifications" sub="Usual ride time, daylight and break reminders" onPress={() => router.push('/notifications/smart')} />
         <Row icon={MessagesSquare} label="Join our Discord" sub="Suggest improvements and chat with other riders" onPress={() => void Linking.openURL(DISCORD_URL)} />
         <Row icon={LifeBuoy} label="Report a problem" sub="Opens an email with your app version" onPress={reportProblem} />

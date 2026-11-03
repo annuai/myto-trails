@@ -13,5 +13,8 @@ export const SLIDES: Slide[] = [
   { key: 'safety', title: 'Someone always knows.', body: 'Set a check-in, ride with a group, or hold SOS for help. If a crash is detected, the app asks if you are OK first.', art: require('../../../assets/onboarding/safety.webp') },
 ];
 
+/** The picture on the page that asks to share rides with OpenStreetMap, which is not a slide. */
+export const MAPS_ART: ImageSourcePropType = require('../../../assets/onboarding/maps.webp');
+
 /** The picture above the setup page, which is not a slide. */
 export const SETUP_ART: ImageSourcePropType = require('../../../assets/onboarding/setup.webp');

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { SIM_GROUP_ID } from '@/lib/groupSim';
 import { persist } from 'zustand/middleware';
 import type { GroupRegroup } from '@/api/groups';
 import type { GroupRiderView, GroupStatus } from '@/lib/groupCore';
@@ -47,6 +48,11 @@ export const useCompanion = create<State>()(
       setLive: (l) => set((s) => ({ live: { ...s.live, ...l } })),
       wipe: () => set({ checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, live: noLive }),
     }),
-    { name: 'myto-companion', storage, partialize: (s) => ({ checkin: s.checkin, group: s.group, outbox: s.outbox, card: s.card, autoPause: s.autoPause }) },
+    {
+      name: 'myto-companion', storage,
+      // A simulated group ride is only for the test in front of the rider: it is never kept, and one left in storage by an older build is dropped.
+      partialize: (s) => ({ checkin: s.checkin, group: s.group?.id === SIM_GROUP_ID ? null : s.group, outbox: s.outbox, card: s.card, autoPause: s.autoPause }),
+      merge: (saved, current) => { const p = saved as Partial<State> | undefined; return { ...current, ...p, group: p?.group?.id === SIM_GROUP_ID ? null : p?.group ?? current.group }; },
+    },
   ),
 );

@@ -24,7 +24,7 @@ export const size = { target: 48, compact: 44, chip: 32, button: 56, bigButton: 
 /** Widest a floating bar or a bottom sheet gets, on a big screen or sideways (`wideMax`). `frame` is the width of the phone-shaped frame the web test build draws, upright and sideways. */
 export const layout = { barMax: 520, wideMax: 560, frame: 430, frameLandscape: 932 } as const;
 /** Translucent colours that sit over other things: behind a sheet, over a hold button as it fills, the empty part of a progress bar, and a header that is not yet a pill. */
-export const scrim = { sheet: 'rgba(0,0,0,0.45)', hold: 'rgba(255,255,255,0.28)', track: 'rgba(128,128,128,0.25)', clear: 'rgba(255,255,255,0)' } as const;
+export const scrim = { edge: 'rgba(0,0,0,0.7)', edgeClear: 'rgba(0,0,0,0)', sheet: 'rgba(0,0,0,0.45)', hold: 'rgba(255,255,255,0.28)', track: 'rgba(128,128,128,0.25)', clear: 'rgba(255,255,255,0)' } as const;
 /** Shadows of things that float: the tab bar, the ride bar, and the record button. Spread one into a style. */
 export const shadow = {
   bar: { shadowColor: fixed.shadow, shadowOpacity: 0.1, shadowRadius: 24, shadowOffset: { width: 0, height: space[1] }, elevation: 8 },

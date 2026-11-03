@@ -14,11 +14,11 @@ import { segmentsOf, trackStats } from '@/lib/track';
 import { asText, distanceKm, durationParts, speedKmh } from '@/lib/units';
 import { formatDate } from '@/lib/dates';
 import { useRides } from '@/store/rides';
-import { Theme } from '@/theme/ThemeProvider';
 import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
 import { IconButton } from '@/ui/IconButton';
 import { Card } from '@/ui/Card';
+import { sharingOn, useOsm } from '@/store/osm';
 import { StatusChip } from '@/ui/Chip';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { RideTimeline } from '@/features/RideTimeline';
@@ -31,7 +31,7 @@ import { Screen } from '@/ui/Screen';
 import { Measure } from '@/ui/Measure';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
-import { useTheme } from '@/theme/ThemeProvider';
+import { Theme, useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
 export default function Story() {
@@ -51,6 +51,8 @@ function StoryBody() {
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState('');
   const trips = useTrips((s) => s.trips);
+  // A rider who said yes but has not signed in to OpenStreetMap yet is asked here, with a ride waiting to be sent.
+  const osmNeedsSignIn = useOsm((s) => sharingOn(s) && !s.connected && s.pending.length > 0);
   const token = useAuth((s) => s.token);
   const slug = ride?.submission?.slug;
   // Ask the site what the moderators did with a ride that was sent for review. Offline or signed out, the last answer stays.
@@ -103,6 +105,13 @@ function StoryBody() {
         </>}
         right={<>
       <View style={{ marginTop: 0 }}><RideMap radius={radius.card} points={ride.points} breaks={ride.breaks} waypoints={ride.waypoints} /></View>
+      {osmNeedsSignIn && !ride.sample ? (
+        <Card style={{ gap: space[3], marginTop: space[4] }}>
+          <Text variant="bodyMedium">Send this ride to OpenStreetMap</Text>
+          <Text variant="label" tone="muted">Sign in to your free OpenStreetMap account once and this ride, and the ones after it, go to the map without your name.</Text>
+          <Button variant="soft" label="Sign in to OpenStreetMap" onPress={() => router.push('/osm')} />
+        </Card>
+      ) : null}
       <SectionTitle>Share it</SectionTitle>
       {sub ? (
         <Card style={{ gap: space[3] }}>
