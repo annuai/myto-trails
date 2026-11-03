@@ -45,6 +45,16 @@ export function leadCandidates(tiles: RiderTile[], successorId?: string | null):
   return first ? [first, ...others.filter((t) => t.id !== first.id)] : others;
 }
 
+/**
+ * The riders in a fixed order, with their latest details. The order is chosen once, when a list opens; the details (distance, how fresh) keep
+ * updating, but nobody moves up or down the list while it is on screen. A rider who has joined since goes last; one who has gone is dropped.
+ */
+export function inOrder(tiles: RiderTile[], ids: string[]): RiderTile[] {
+  const byId = new Map(tiles.map((t) => [t.id, t]));
+  const known = ids.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []));
+  return [...known, ...tiles.filter((t) => !ids.includes(t.id) && !t.isMe)];
+}
+
 const leaderOf = (rs: GroupRiderView[]) => rs.find((r) => r.role === 'leader');
 
 /**

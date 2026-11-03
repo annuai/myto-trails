@@ -29,7 +29,7 @@ import { useLeadActions } from './useLeadActions';
  * with every new position, so the figure follows the two of you. It is not about the destination. Under it: where they are, what they have
  * signalled, their titles (the leader sets them here, any number), and the ways to go to them. An old position gives an old answer, and it says so.
  */
-export function RiderSheet({ tile, me, heading, road, canNavigate, onClose }: { tile: RiderTile; /** Where you are now. */ me?: LatLng; /** The way you are heading, to tell ahead from behind off a road. */ heading?: number; /** The road you are riding, to measure along it. */ road?: TrailLine; canNavigate: boolean; onClose: () => void }) {
+export function RiderSheet({ tile, me, heading, road, canNavigate, onClose, onGo, open = true }: { tile: RiderTile; /** Where you are now. */ me?: LatLng; /** The way you are heading, to tell ahead from behind off a road. */ heading?: number; /** The road you are riding, to measure along it. */ road?: TrailLine; canNavigate: boolean; onClose: () => void; /** Called when the rider sets off to this rider or is done helping: the page behind is wanted, so whatever sheet this one was opened over closes too. */ onGo?: () => void; /** False slides the sheet away; the page keeps it mounted until then. */ open?: boolean }) {
   const { c } = useTheme();
   const { canSet, set } = useRiderTitles();
   const lead = useLeadActions();
@@ -39,20 +39,14 @@ export function RiderSheet({ tile, me, heading, road, canNavigate, onClose }: { 
   const rescue = useGuideTarget((s) => s.rescue);
   /** The rider is already on their way to this rider. */
   const helping = rescue?.riderId === tile.id;
-  const go = () => { useGuideTarget.getState().startRescue({ riderId: tile.id, name: tile.name, startStatus: tile.status }); onClose(); };
+  const go = () => { useGuideTarget.getState().startRescue({ riderId: tile.id, name: tile.name, startStatus: tile.status }); onClose(); onGo?.(); };
   const color = riderColor(tile.slot, c.riders);
   const name = tile.isMe ? 'You' : tile.name;
   const gap = tile.position && me && !tile.isMe ? riderGap({ me, rider: tile.position, heading, road }) : undefined;
   const toggle = (role: RiderTitle) => void set(tile.id, tile.titles.includes(role) ? tile.titles.filter((t) => t !== role) : [...tile.titles, role]);
-  if (confirming) {
-    return (
-      <Sheet open title={`Pass the lead to ${tile.name}?`} onClose={() => setConfirming(false)}>
-        <LeadConfirm name={tile.name} moving={!canNavigate} busy={busy} onBack={() => setConfirming(false)} onConfirm={() => { setBusy(true); void lead.pass(tile.id).then((ok) => { setBusy(false); if (ok) onClose(); }); }} />
-      </Sheet>
-    );
-  }
   return (
-    <Sheet open title={name} onClose={onClose}>
+    <>
+    <Sheet open={open} title={name} onClose={onClose}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
         <View style={{ width: space[3], height: space[3], borderRadius: radius.chip, backgroundColor: color }} />
         <Text variant="labelMedium" style={{ color }}>{tile.position ? `Last seen ${tile.seen}` : 'Not seen yet'}</Text>
@@ -84,7 +78,7 @@ export function RiderSheet({ tile, me, heading, road, canNavigate, onClose }: { 
       ) : null}
       {!tile.isMe && tile.position ? (helping ? (
         <>
-          <Button label="Help given, continue the ride" onPress={() => { useGuideTarget.getState().endRescue(); onClose(); }} />
+          <Button label="Help given, continue the ride" onPress={() => { useGuideTarget.getState().endRescue(); onClose(); onGo?.(); }} />
           <Button variant="soft" label={`Keep going to ${tile.name}`} onPress={onClose} />
         </>
       ) : canNavigate ? <Button icon={Route} label={`Navigate to ${tile.name}`} onPress={go} />
@@ -93,5 +87,9 @@ export function RiderSheet({ tile, me, heading, road, canNavigate, onClose }: { 
       {lead.isLeader && !tile.isMe ? <Button variant="soft" icon={Crown} label="Pass the lead" onPress={() => setConfirming(true)} /> : null}
       {!tile.isMe && tile.position && canNavigate && !helping ? <Button variant="soft" icon={Navigation} label={`Directions to ${tile.name}`} onPress={() => void Linking.openURL(mapsDirectionsUrl(tile.position!)).catch(() => undefined)} /> : null}
     </Sheet>
+    <Sheet open={open && confirming} title={`Pass the lead to ${tile.name}?`} onClose={() => setConfirming(false)}>
+      <LeadConfirm name={tile.name} moving={!canNavigate} busy={busy} onBack={() => setConfirming(false)} onConfirm={() => { setBusy(true); void lead.pass(tile.id).then((ok) => { setBusy(false); if (ok) { setConfirming(false); onClose(); } }); }} />
+    </Sheet>
+    </>
   );
 }

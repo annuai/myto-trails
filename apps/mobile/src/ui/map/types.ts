@@ -29,12 +29,18 @@ export type OsmMapProps = {
   follow?: boolean;
   /** Fly the camera here when it changes (a place the rider searched for). */
   focus?: LatLng;
+  /** Open centred here and let the rider move the map about freely, for choosing a spot: `onCenter` says where the middle of the map is. The screen draws the pin over the middle. */
+  pickFrom?: LatLng;
+  /** Called with the middle of the map when it stops moving. */
+  onCenter?: (p: LatLng) => void;
   /** Draw an arrow for the way the rider faces instead of a dot, once a `heading` is known. It points at the heading whatever the map's own turn. */
   pointer?: boolean;
   /** The heading the arrow shows, close to the truth. The map turns to `heading`, which follows it a little behind, so the arrow swings into a corner first. */
   arrowHeading?: number;
   /** How long, in milliseconds, the camera takes to glide to the next position while it follows: the time between fixes, so the movement is steady rather than stop and go. */
   glideMs?: number;
+  /** Show a line of numbers over the map (the heading, the arrow, how the map is turned, whether it follows), for finding out why it faces the wrong way. */
+  debug?: boolean;
   /** Turn the map so this bearing (degrees, 0 is north) points up. Only with `follow`; left as is when undefined. */
   heading?: number;
   /** Pixels at the top, bottom and left of the view that things floating over the map cover. The camera keeps the rider in the clear part between them, and the map's own buttons and credit sit above the bottom one. */

@@ -105,7 +105,7 @@ export default function Home() {
   const finished = justFinishedRide(rides, nowMs);
 
   return (
-    <Screen tabs brand overlay={<>
+    <Screen tabs brand bike overlay={<>
       <Sheet open={menu} title="Next ride" onClose={() => setMenu(false)}>
         <Text variant="label" tone="muted">{trail ? `${trail.name}${trail.date ? `, ${trail.date}` : ''}` : ''}</Text>
         <Button variant="danger" icon={Trash2} label="Cancel this plan" onPress={() => { useTrailStore.getState().cancelPlan(); setMenu(false); }} />

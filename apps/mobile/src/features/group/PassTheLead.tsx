@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { View } from 'react-native';
 import { Crown, Route as RouteIcon } from 'lucide-react-native';
 import { ROLE_LABEL } from '@/lib/eventCore';
-import { leadCandidates } from '@/lib/leadCore';
+import { inOrder, leadCandidates } from '@/lib/leadCore';
 import type { RiderTile } from '@/lib/groupCore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { size, space } from '@/theme/tokens';
@@ -15,7 +16,9 @@ import { Text } from '@/ui/Text';
  * "Suggested". Choosing one does nothing yet: the sheet goes on to a confirmation (LeadConfirm), in the same sheet and not a second one on top.
  */
 export function LeadPicker({ tiles, successorId, onPick }: { tiles: RiderTile[]; successorId?: string | null; onPick: (t: RiderTile) => void }) {
-  const list = leadCandidates(tiles, successorId);
+  // Who is suggested, and the order, are chosen when the list opens and then held: in a moving group the nearest rider changes every few seconds, and a list that reshuffles under a thumb is worse than a slightly old suggestion. The distances shown keep updating.
+  const [order] = useState(() => leadCandidates(tiles, successorId).map((t) => t.id));
+  const list = inOrder(tiles, order);
   if (!list.length) return <Text variant="label" tone="muted">There is nobody else in the group yet.</Text>;
   return (
     <ListCard>

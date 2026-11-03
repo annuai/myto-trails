@@ -12,7 +12,7 @@ import { banner } from './Banner.tokens';
 /** Dark card for something that needs action (stale pack, missing document). Always dark for contrast. */
 export function Banner({ eyebrow, title, onPress }: { eyebrow: string; title: string; onPress?: () => void }) {
   return (
-    <Theme mode="dark">
+    <Theme mode="dark" fixed>
       <BannerBody eyebrow={eyebrow} title={title} onPress={onPress} />
     </Theme>
   );

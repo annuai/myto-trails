@@ -50,7 +50,8 @@ export function Row({ label, sub, value, right, icon, onPress, mono, chevron, to
         {below ? <View style={{ marginTop: space[1] }}>{right}</View> : null}
       </View>
       {value ? <Text variant={mono ? 'data' : 'label'} tone="muted">{value}</Text> : null}
-      {below ? null : right}
+      {/* In the middle of the row, whatever its height: a chip lays itself out from the top of its own box, which put it at the top of a row of two lines. */}
+      {below || !right ? null : <View style={{ alignSelf: 'center' }}>{right}</View>}
       {chevron ?? !!onPress ? <Icon icon={ChevronRight} size={20} tone="muted" /> : null}
     </View>
   );

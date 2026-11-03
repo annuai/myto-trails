@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GroupRiderView, RiderTile } from './groupCore';
-import { batteryStep, leadCandidates, leadNotice, suggestSuccessor, type BatteryStage } from './leadCore';
+import { batteryStep, inOrder, leadCandidates, leadNotice, suggestSuccessor, type BatteryStage } from './leadCore';
 
 describe('batteryStep', () => {
   const run = (levels: number[], charging = false) => {
@@ -56,5 +56,19 @@ describe('leadNotice', () => {
     const rs = [view('a', 'leader'), view('b', 'member')];
     expect(leadNotice(rs, rs, 'b', now)).toBeNull();
     expect(leadNotice([], rs, 'b', now)).toBeNull();
+  });
+});
+
+describe('inOrder', () => {
+  const a = tile('a', { distance: '100 m' }), b = tile('b', { distance: '200 m' }), c = tile('c');
+  it('keeps the order it was given even as the riders move', () => {
+    const order = ['b', 'a'];
+    const moved = [tile('a', { distanceM: 10, distance: '10 m' }), tile('b', { distanceM: 900, distance: '900 m' })];
+    expect(inOrder(moved, order).map((t) => t.id)).toEqual(['b', 'a']);
+    expect(inOrder(moved, order)[0]!.distance).toBe('900 m');
+  });
+  it('puts a rider who joined since at the end and drops one who has gone, and never lists you', () => {
+    expect(inOrder([a, c, tile('me', { isMe: true })], ['b', 'a']).map((t) => t.id)).toEqual(['a', 'c']);
+    expect(b).toBeTruthy();
   });
 });

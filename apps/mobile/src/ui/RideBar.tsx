@@ -28,7 +28,7 @@ export function RideBar() {
   useEffect(() => { if (!running) return; const id = setInterval(() => tick((n) => n + 1), 1000); return () => clearInterval(id); }, [running]);
   if (!running || sheetOpen) return null;
   return (
-    <Theme mode="dark">
+    <Theme mode="dark" fixed>
       <Pressable accessibilityRole="button" accessibilityLabel="Open the live ride" onPress={() => router.push('/ride/live')}
         style={{ position: 'absolute', alignSelf: 'center', width: '92%', maxWidth: layout.barMax, bottom: landscape ? rideBar.bottomLandscape : rideBar.bottom, height: size.button, borderRadius: radius.thumb, backgroundColor: inkSolid, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space[5], ...shadow.ride }}>
         <InkFill always layer style={{ borderRadius: radius.thumb }} />

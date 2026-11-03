@@ -9,10 +9,12 @@ import { Geist_400Regular, Geist_500Medium, Geist_600SemiBold } from '@expo-goog
 import { GeistMono_400Regular, GeistMono_500Medium } from '@expo-google-fonts/geist-mono';
 import { Michroma_400Regular } from '@expo-google-fonts/michroma';
 import { Theme } from '@/theme/ThemeProvider';
-import { fixed, light, layout } from '@/theme/tokens';
+import { dark, fixed, light, layout } from '@/theme/tokens';
+import { useAppearance } from '@/store/appearance';
 import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
+import { ResumeHost } from '@/ResumeHost';
 import { CrashHost } from '@/CrashHost';
 import { NavigateChoiceHost } from '@/NavigateChoiceHost';
 import { OsmAskHost } from '@/features/osm/OsmAskHost';
@@ -46,17 +48,20 @@ export default function Root() {
   }, []);
   useEffect(() => { void runRideIdMigration().catch(() => undefined); }, []);
   useEffect(() => { void startCachePersistence(); }, []);
+  // Under inverted colours the page behind every screen is the dark paper, as the screens are drawn in the opposite mode.
+  const paper = useAppearance((s) => s.inverted) ? dark.paper : light.paper;
   const [loaded] = useFonts({ Michroma_400Regular, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, GeistMono_400Regular, GeistMono_500Medium });
   useEffect(() => { if (loaded) void SplashScreen.hideAsync(); }, [loaded]);
   if (!loaded) return null;
   const app = (
-    <Theme mode="light">
+    <Theme mode="light" screen>
       <RecorderHost />
       <NotificationHost />
       <CompanionHost />
+      <ResumeHost />
       <RideNotificationHost />
           <VoiceHost />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: light.paper }, animation: 'slide_from_right' }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: paper }, animation: 'slide_from_right' }}>
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="ride/live" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
       </Stack>
@@ -71,7 +76,7 @@ export default function Root() {
         {Platform.OS === 'web' ? (
           // On the web, show the app at phone width so a laptop test matches a phone.
           <View style={{ flex: 1, backgroundColor: fixed.frame, alignItems: 'center' }}>
-            <View style={{ flex: 1, width: '100%', maxWidth: width > height ? layout.frameLandscape : layout.frame, backgroundColor: light.paper, overflow: 'hidden' }}>{app}</View>
+            <View style={{ flex: 1, width: '100%', maxWidth: width > height ? layout.frameLandscape : layout.frame, backgroundColor: paper, overflow: 'hidden' }}>{app}</View>
           </View>
         ) : app}
       </SafeAreaProvider>

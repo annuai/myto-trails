@@ -29,16 +29,16 @@ function useNearbyTrails(at: LatLng | undefined, enabled: boolean): TrailSummary
  * One tap to say what a trail is like right now. The report is queued on the phone first and sent when there is a signal,
  * so it works on a pass with no network. It is shown to other riders as a rider's report: it never changes a trail's published access.
  */
-export function ReportSheet({ open, onClose, at }: { open: boolean; onClose: () => void; at?: LatLng }) {
+export function ReportSheet({ open, onClose, at, trailSlug }: { open: boolean; onClose: () => void; at?: LatLng; /** The trail the report is about, when the screen already knows it (a ride of that trail). Otherwise the nearest trails are offered. */ trailSlug?: string }) {
   const planned = useTrailStore((s) => s.nextTrip);
-  const nearby = useNearbyTrails(at, open);
+  const nearby = useNearbyTrails(at, open && !trailSlug);
   const [slug, setSlug] = useState<string>();
   const [sent, setSent] = useState<string>();
   const close = () => { setSent(undefined); onClose(); };
   // The planned trail leads only when the rider is actually near it; 200 km away, a report would go against the wrong trail.
   // With no signal to look nearby, the planned trail is the best guess.
   const plannedHere = !!planned && (nearby.length === 0 || nearby.some((t) => t.slug === planned.slug));
-  const choices = planned ? (plannedHere ? [{ slug: planned.slug, name: planned.name }, ...nearby.filter((t) => t.slug !== planned.slug)] : [...nearby]) : nearby;
+  const choices = trailSlug ? [{ slug: trailSlug, name: planned?.slug === trailSlug ? planned.name : 'This trail' }] : planned ? (plannedHere ? [{ slug: planned.slug, name: planned.name }, ...nearby.filter((t) => t.slug !== planned.slug)] : [...nearby]) : nearby;
   const target = slug ?? choices[0]?.slug;
 
   const send = (kind: ConditionKind) => {

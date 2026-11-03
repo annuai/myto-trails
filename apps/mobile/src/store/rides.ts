@@ -14,6 +14,7 @@ export type Ride = {
   id: string; name: string; startedAt: number; durationSec: number; /** Time the rider spent paused, already left out of durationSec. */ pausedSec?: number; distanceKm: number; maxKmh: number; points: LatLng[]; /** Indices into `points` where a new GPS segment starts. Absent on rides saved before gaps were tracked. */ breaks?: number[];
   waypoints: Waypoint[]; sample?: boolean; updatedAt?: number; submission?: SubmissionState; /** Stays the same across upload attempts so a retry continues the same draft. */ clientId?: string;
   /** The group ride and check-in that were live when this ride finished. */ groupId?: string; checkinId?: string;
+  /** The published trail the rider had chosen to ride when this ride finished. Absent for a ride of their own: only a trail has conditions to report. */ trailSlug?: string;
 };
 
 type State = {
@@ -24,7 +25,7 @@ type State = {
   renameRide: (id: string, name: string) => void;
   setSubmission: (id: string, s: SubmissionState) => void;
   /** Notes the group ride and check-in a ride was recorded under. */
-  linkRide: (id: string, links: { groupId?: string; checkinId?: string }) => void;
+  linkRide: (id: string, links: { groupId?: string; checkinId?: string; trailSlug?: string }) => void;
   /** Stores the moderators' answer on a ride that was sent for review. */
   setOutcome: (id: string, outcome: { status: string; feedback?: string }) => void;
 };

@@ -236,6 +236,32 @@ describe('pause', () => {
     expect(second.getState().elapsedMs(T + 100_000)).toBe(40_000);
     vi.restoreAllMocks();
   });
+  it('a ride taken up after the app was closed counts the closed time as a pause and says how long it was', async () => {
+    const set = clock(T);
+    const j = createMemoryJournal();
+    const first = createRecorder(j);
+    await first.getState().start('gps');
+    await first.getState().ingest({ lat: 12, lng: 77, t: T + 5_000 });
+    set(T + 245_000);
+    const second = createRecorder(j);
+    expect(await second.getState().recover()).toBe(240_000);
+    expect(second.getState().resumed).toEqual({ at: T + 245_000, gapMs: 240_000 });
+    expect(second.getState().elapsedMs(T + 305_000)).toBe(65_000);
+    expect((await j.read())!.pauses).toEqual([{ from: T + 5_000, to: T + 245_000 }]);
+    vi.restoreAllMocks();
+  });
+  it('a ride taken up a moment after its last fix has no gap', async () => {
+    const set = clock(T);
+    const j = createMemoryJournal();
+    const first = createRecorder(j);
+    await first.getState().start('gps');
+    await first.getState().ingest({ lat: 12, lng: 77, t: T + 5_000 });
+    set(T + 10_000);
+    const second = createRecorder(j);
+    expect(await second.getState().recover()).toBe(0);
+    expect(second.getState().resumed).toBeUndefined();
+    vi.restoreAllMocks();
+  });
 });
 
 describe('moving while paused', () => {

@@ -13,8 +13,8 @@ export const useLead = create<{
   closeBackup: () => void;
 }>((set) => ({
   stage: 'none', backupOpen: false,
-  // At the 5% question the choice opens by itself: the phone may not last for another.
-  raise: (stage) => set({ stage, backupOpen: stage === 'ask' }),
+  // Each warning opens the choice by itself, as a sheet and not a card over the map: the phone may not last for another chance.
+  raise: (stage) => set({ stage, backupOpen: true }),
   dismiss: () => set({ stage: 'none' }),
   openBackup: () => set({ backupOpen: true }),
   closeBackup: () => set({ backupOpen: false, stage: 'none' }),

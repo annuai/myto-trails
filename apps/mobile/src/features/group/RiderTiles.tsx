@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { Linking, ScrollView, View } from 'react-native';
 import { Navigation } from 'lucide-react-native';
 import { ROLE_LABEL } from '@/lib/eventCore';
-import { STATUS_LABEL, type RiderTile } from '@/lib/groupCore';
+import { findRiders, SEARCH_FROM, STATUS_LABEL, type RiderTile } from '@/lib/groupCore';
 import { mapsDirectionsUrl } from '@/lib/navigate';
 import { useTheme } from '@/theme/ThemeProvider';
 import { media, opacity, radius, size, space } from '@/theme/tokens';
 import { Avatar } from '@/ui/Avatar';
+import { Field } from '@/ui/Field';
 import { StatusChip } from '@/ui/Chip';
 import { Icon } from '@/ui/Icon';
 import { ScalePressable } from '@/ui/motion';
@@ -19,16 +21,21 @@ import { Text } from '@/ui/Text';
 export function RiderTiles({ tiles, canNavigate, onSelect }: { tiles: RiderTile[]; canNavigate: boolean; /** When given, tapping a tile opens that rider's details instead of directions. */ onSelect?: (t: RiderTile) => void }) {
   const { c } = useTheme();
   const open = (t: RiderTile) => { if (t.position) void Linking.openURL(mapsDirectionsUrl(t.position)).catch(() => undefined); };
+  const [q, setQ] = useState('');
+  const shown = findRiders(tiles, q, ROLE_LABEL);
   return (
     <View style={{ gap: space[2] }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space[3] }}>
-        {tiles.map((t) => {
+      {tiles.length >= SEARCH_FROM ? <Field label="Find a rider" value={q} onChangeText={setQ} placeholder="Name or title" autoCorrect={false} autoCapitalize="none" returnKeyType="search" /> : null}
+      {/* Two to a row, and the grid scrolls on its own: a group of thirty is a few swipes, not a long sheet. */}
+      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator style={{ maxHeight: media.riderGrid }} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[3] }}>
+        {shown.length === 0 ? <Text variant="label" tone="muted">No rider matches “{q.trim()}”.</Text> : null}
+        {shown.map((t) => {
           const tappable = onSelect ? true : !t.isMe && !!t.position && canNavigate;
           return (
             <ScalePressable key={t.id} scaleTo={0.97} disabled={!tappable} accessibilityRole="button"
               accessibilityLabel={onSelect ? `${t.isMe ? 'You' : t.name}, ${t.distance ?? t.seen}. Show where they are and how far they have to go` : t.isMe ? 'You' : `${t.name}, ${t.distance ?? t.seen}. ${canNavigate ? 'Open directions in Google Maps' : 'Directions open when you have stopped'}`}
               onPress={() => (onSelect ? onSelect(t) : open(t))}
-              style={{ width: media.riderTile, borderRadius: radius.control, padding: space[3], gap: space[2], backgroundColor: c.raised, opacity: t.stale && !t.isMe ? opacity.stale : 1 }}>
+              style={{ flexBasis: '47%', flexGrow: 1, borderRadius: radius.control, padding: space[3], gap: space[2], backgroundColor: c.raised, opacity: t.stale && !t.isMe ? opacity.stale : 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
                 <View style={{ borderRadius: radius.chip, borderWidth: size.rule, borderColor: riderColor(t.slot, c.riders) }}><Avatar name={t.name} size={media.avatarSm} /></View>
                 <View style={{ flex: 1 }}>

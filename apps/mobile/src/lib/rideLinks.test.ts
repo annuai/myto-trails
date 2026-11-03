@@ -14,3 +14,10 @@ describe('companionLinks', () => {
     expect(companionLinks({})).toBeUndefined();
   });
 });
+
+describe('companionLinks trail', () => {
+  it('notes the planned trail, and nothing for a ride of the rider\'s own', () => {
+    expect(companionLinks({ trailSlug: 'nandi' })).toEqual({ trailSlug: 'nandi' });
+    expect(companionLinks({})).toBeUndefined();
+  });
+});

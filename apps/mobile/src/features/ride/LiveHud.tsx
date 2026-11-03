@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, View } from 'react-native';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
+import { Animated, Easing, LayoutAnimation, Platform, Pressable, ScrollView, UIManager, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Crown, Users, X } from 'lucide-react-native';
 import type { Instruction } from '@/lib/guidance';
 import { ROLE_ICON } from '@/features/group/roleIcons';
 import { ROLE_LABEL } from '@/lib/eventCore';
-import { railOrder, STATUS_LABEL, type RiderTile } from '@/lib/groupCore';
+import { RAIL_MAX, railOrder, STATUS_LABEL, type RiderTile } from '@/lib/groupCore';
 import { asText, distanceKm, durationParts, shortDistanceM, type Quantity } from '@/lib/units';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fixed, inkSolid, opacity as fade2, radius, scrim, shadow, size, space } from '@/theme/tokens';
@@ -86,9 +86,28 @@ export function StatsStrip({ distance, time, speed, paused, note }: { distance: 
  * white text for contrast, a disc in the rider's colour (the colour of their dot on the map) holding their initial, their name, and how far
  * they are. A rider who has asked for something shows what, and is outlined; a crown marks the leader. Tapping a chip opens that rider.
  */
-export function GroupRail({ tiles, onSelect, onAll }: { tiles: RiderTile[]; onSelect: (t: RiderTile) => void; onAll: () => void }) {
+// Android needs layout animations switched on once.
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) UIManager.setLayoutAnimationEnabledExperimental(true);
+
+export function GroupRail({ tiles, onSelect, onAll, since }: { tiles: RiderTile[]; onSelect: (t: RiderTile) => void; onAll: () => void; /** When each rider's signal was first seen (useStatusSince), to put the one who asked first first. */ since?: Record<string, number> }) {
   const { c } = useTheme();
-  const { shown, total } = railOrder(tiles);
+  const { shown: wanted, total } = railOrder(tiles, RAIL_MAX, since);
+  const wantedIds = wanted.map((t) => t.id);
+  const wantedKey = wantedIds.join(',');
+  // Who is in the row, in order, changes only through here: just before it does, the next layout change is animated, so a rider who asks for help
+  // slides in at the front and one whose signal ends fades out, and the others make way. The details on each chip (distance, how fresh) update with no animation.
+  const [ids, setIds] = useState(wantedIds);
+  const scroller = useRef<ComponentRef<typeof ScrollView>>(null);
+  useEffect(() => {
+    if (wantedKey === ids.join(',')) return;
+    LayoutAnimation.configureNext({ duration: 280, create: { type: 'easeInEaseOut', property: 'opacity' }, update: { type: 'easeInEaseOut' }, delete: { type: 'easeInEaseOut', property: 'opacity' } });
+    // A rider newly asking for something goes to the front: bring the row back to its start so they are seen.
+    if (wanted.some((t) => t.status !== 'ok' && !ids.includes(t.id))) scroller.current?.scrollTo({ x: 0, animated: true });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the row's order is held in state so the change can be animated just before it happens
+    setIds(wantedIds);
+  }, [wantedKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const byId = new Map(tiles.map((t) => [t.id, t]));
+  const shown = ids.flatMap((id) => (byId.has(id) && !byId.get(id)!.isMe ? [byId.get(id)!] : []));
   const [view, setView] = useState({ x: 0, width: 0, content: 0 });
   if (!shown.length) return null;
   const moreRight = view.content - (view.x + view.width) > 1, moreLeft = view.x > 1;
@@ -97,7 +116,7 @@ export function GroupRail({ tiles, onSelect, onAll }: { tiles: RiderTile[]; onSe
   );
   return (
     <View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: space[2] }} scrollEventThrottle={32}
+      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: space[2] }} scrollEventThrottle={32}
         onLayout={(e) => setView((v) => ({ ...v, width: e.nativeEvent.layout.width }))} onContentSizeChange={(w) => setView((v) => ({ ...v, content: w }))} onScroll={(e) => setView((v) => ({ ...v, x: e.nativeEvent.contentOffset.x }))}>
         {shown.map((t) => {
           const asking = t.status !== 'ok';

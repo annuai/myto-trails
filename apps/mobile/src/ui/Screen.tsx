@@ -7,6 +7,7 @@ import { fadeTarget, isTap, touchPoint } from '@/lib/tabFade';
 import { useTheme } from '@/theme/ThemeProvider';
 import { size, space, layout } from '@/theme/tokens';
 import { FloatingHeader, HEADER_HEIGHT } from './FloatingHeader';
+import { PullBike } from './PullBike';
 import { PullQuote, QuoteStrip } from './PullQuote';
 import { EASE, Reveal } from './motion';
 import { tabBarFade } from './tabBarFade';
@@ -18,10 +19,10 @@ export const TAB_BAR_HEIGHT = 100;
 export const TAB_BAR_HEIGHT_LANDSCAPE = 84;
 export { CONTENT_MAX };
 
-type Props = { children: ReactNode; overlay?: ReactNode; tabs?: boolean; scroll?: boolean; footer?: ReactNode; /** Fixed logo and notifications bar that floats as a pill once the page scrolls. */ brand?: boolean; /** The floating tab bar fades away near the end of the page and returns on scrolling up or a tap. */ fadeTabs?: boolean; /** Called when the page is scrolled to within a screen of its end, or is shorter than two screens: the cue to load more of a long list. It may be called again before the list has grown, so the caller must ignore it while it is already loading. */ onNearEnd?: () => void; /** A full-width picture fixed to the bottom edge of the screen. It stays put while the page scrolls; at the very end the content slides up and uncovers it. */ endCap?: ReactNode };
+type Props = { children: ReactNode; overlay?: ReactNode; tabs?: boolean; scroll?: boolean; footer?: ReactNode; /** Fixed logo and notifications bar that floats as a pill once the page scrolls. */ brand?: boolean; /** Pulling the page down a long way, past the quote, sends a bike across the top of the first card. */ bike?: boolean; /** The floating tab bar fades away near the end of the page and returns on scrolling up or a tap. */ fadeTabs?: boolean; /** Called when the page is scrolled to within a screen of its end, or is shorter than two screens: the cue to load more of a long list. It may be called again before the list has grown, so the caller must ignore it while it is already loading. */ onNearEnd?: () => void; /** A full-width picture fixed to the bottom edge of the screen. It stays put while the page scrolls; at the very end the content slides up and uncovers it. */ endCap?: ReactNode };
 
 /** Page frame: safe-area top, 20 px side margins, scrolls, leaves room for the tab bar. */
-export function Screen({ children, overlay, tabs = false, scroll = true, footer, brand = false, fadeTabs = false, endCap, onNearEnd }: Props) {
+export function Screen({ children, overlay, tabs = false, scroll = true, footer, brand = false, bike = false, fadeTabs = false, endCap, onNearEnd }: Props) {
   const scrollY = useAnimatedValue(0);
   const bar = useRef({ prevY: 0, content: 0, layout: 0, value: 1, touch: null as { x: number; y: number } | null }).current;
   /** Height of the fixed end picture, and the page's own size: together they say how much of the picture the content has uncovered. */
@@ -78,6 +79,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
       refreshControl={androidQuote ? <RefreshControl refreshing={false} onRefresh={() => setQuoting(true)} progressViewOffset={top} colors={[c.accent]} progressBackgroundColor={c.card} /> : undefined}
     >
       {androidQuote ? <Animated.View style={{ height: quoteHeight }} /> : null}
+      {bike && Platform.OS !== 'android' ? <PullBike scrollY={scrollY} baseline={top} /> : null}
       {frame(children)}
       {endCap ? <View style={{ height: capHeight }} /> : null}
     </Animated.ScrollView>

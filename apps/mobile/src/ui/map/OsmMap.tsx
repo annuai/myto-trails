@@ -1,18 +1,20 @@
 // Phone version (Android and iOS) on MapLibre Native. NOT yet run on a device: it needs a development build
 // (not Expo Go) and is covered by the S0 spike. The web version, OsmMap.web.tsx, is the one tested so far.
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { LocateFixed, Maximize2, Minimize2, Users } from 'lucide-react-native';
 import { Camera, GeoJSONSource, Layer, Map, Marker, type CameraRef } from '@maplibre/maplibre-react-native';
 import type { LatLng } from '@/lib/geo';
 import { fixed, size, space } from '@/theme/tokens';
 import { clusterMarks } from '@/lib/riderClusters';
-import { turnBetween, unwrapBearing } from '@/lib/rideCamera';
+import { norm, turnBetween, unwrapBearing } from '@/lib/rideCamera';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { IconButton } from '../IconButton';
+import { Text } from '../Text';
 import { ClusterList, ClusterPin, DestinationPin, HeadingPointer, RiderPin } from './RiderPins';
 import { mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
 import { trackFeature } from './geojson';
+import { useMapDark } from './useMapDark';
 import { useMapStart } from './useMapStart';
 import type { OsmMapProps } from './types';
 
@@ -27,12 +29,24 @@ const GUIDE_COLOR = fixed.position;
 /** How long the camera takes to glide to the rider's next position (positions come about a second apart), to fly back to them, and to fit the whole group. */
 const FOLLOW_EASE_MS = 900, RECENTER_MS = 800, GROUP_VIEW_MS = 900, ZOOM_EASE_MS = 120;
 const MIN_FOLLOW_ZOOM = 11, MAX_FOLLOW_ZOOM = 19;
+/** The zoom a map for choosing a spot opens at: a town and its streets. */
+const PICK_ZOOM = 14;
+/** The bearing is read at most this often while the camera moves. */
+const BEARING_READ_MS = 100;
+/** If the map stays this far from the way it was told to face for this long, the camera is set again outright (see the effect below). */
+const OFF_DEG = 40, OFF_MS = 2000;
 
-function OsmMapView({ height, line: route, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, arrowHeading, glideMs, covered, onPicker, pointer, dark, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
+function OsmMapView({ height, line: route, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, arrowHeading, glideMs, covered, onPicker, pickFrom, onCenter, debug, pointer, dark: darkProp, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
+  const dark = useMapDark(darkProp);
   const camera = useRef<CameraRef>(null);
   const [zoom, setZoom] = useState(FOLLOW_ZOOM);
   /** How the map is turned now, so the arrow can point where the bike goes whatever the map is doing. */
+  /** The map's real bearing as the phone reports it, live while the camera moves. Everything drawn against the map's rotation uses this, never the bearing that was asked for. */
   const [bearing, setBearing] = useState(0);
+  const bearingAt = useRef(0);
+  const readBearing = (b: number) => { const now = Date.now(); if (now - bearingAt.current >= BEARING_READ_MS) { bearingAt.current = now; setBearing(b); } };
+  const offSince = useRef(0);
+  const [healed, setHealed] = useState(0);
   /** How big the map is, so the arrow can stand at the middle of the part not covered. */
   const [box, setBox] = useState({ w: 0, h: 0 });
   /** The camera's bearing, kept continuous across north so it never spins the long way round. */
@@ -53,8 +67,8 @@ function OsmMapView({ height, line: route, track, trackBreaks, position, waypoin
   // The arrow replaces the dot as soon as the way the rider is facing is known, followed or not.
   const shownHeading = arrowHeading ?? heading;
   const arrow = !!pointer && shownHeading !== undefined && !!position;
-  // While the map follows, it is turned to `heading` and the arrow to `arrowHeading`: the difference is how far the arrow is ahead of the map in a corner.
-  const arrowTurn = heading !== undefined && arrowHeading !== undefined ? turnBetween(heading, arrowHeading) : 0;
+  // While the map follows, the arrow is turned by how far the way the rider faces is from the way the map really faces (measured, not assumed): in a corner the arrow is ahead of the map, and if the map has not turned yet the arrow still points the right way on it.
+  const arrowTurn = shownHeading !== undefined ? turnBetween(bearing, shownHeading) : 0;
   // While the camera follows, the arrow stands still at the middle of the clear part of the map and the road moves under it; a pin on the map would jump at every fix.
   const arrowFixed = arrow && !!follow && following;
   const posData = useMemo(() => points(position && !arrow ? [position] : []), [position?.lat, position?.lng, arrow]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -72,13 +86,21 @@ function OsmMapView({ height, line: route, track, trackBreaks, position, waypoin
   }, [route, track]);
   // The camera's first view can be set before the map has its size, which leaves it on the wrong spot with no line in sight. Fit again once the map is drawn, and whenever the route changes.
   const coverTop = covered?.top ?? 0, coverBottom = covered?.bottom ?? 0, coverLeft = covered?.left ?? 0;
-  const padding = useMemo(() => (coverTop || coverBottom || coverLeft ? { top: coverTop, right: 0, bottom: coverBottom, left: coverLeft } : undefined), [coverTop, coverBottom, coverLeft]);
+  // What floats over the map is kept out of the view in one of two ways. On iPhone the map's own inset: its centre and the point it turns about are both the middle of what is left,
+  // so the rider stays under the arrow as the map turns. (Per-move camera padding is worked out with the map's old rotation, so on a corner the rider slid off the arrow.)
+  // On Android each camera move carries the padding.
+  const insetMap = Platform.OS === 'ios';
+  const inset = useMemo(() => (insetMap ? { top: coverTop, right: 0, bottom: coverBottom, left: coverLeft } : undefined), [insetMap, coverTop, coverBottom, coverLeft]);
+  const padding = useMemo(() => (!insetMap && (coverTop || coverBottom || coverLeft) ? { top: coverTop, right: 0, bottom: coverBottom, left: coverLeft } : undefined), [insetMap, coverTop, coverBottom, coverLeft]),
+  /** Where the credit and logo sit: above what covers the bottom, unless the map's inset already moved them. */
+  ornamentBottom = (insetMap ? 0 : coverBottom) + space[2];
   // Following moves the camera with animated moves, never by changing its props: a prop change jumps. Each position glides to the next over about a second, and "centre on me" flies back from wherever the map was left.
   const flyNext = useRef(false);
   useEffect(() => {
     if (!follow || !following || !position) return;
-    camBearing.current = unwrapBearing(camBearing.current, heading ?? 0);
-    const stop = { center: [position.lng, position.lat] as [number, number], zoom: followZoom, bearing: camBearing.current, padding };
+    if (heading !== undefined) camBearing.current = unwrapBearing(camBearing.current, heading);
+    // The phone's map ignores a negative bearing outright (MLNMapView: `if (camera.heading >= 0)`), so it is sent as 0 to 360. It still turns the short way round.
+    const stop = { center: [position.lng, position.lat] as [number, number], zoom: followZoom, bearing: heading === undefined ? undefined : norm(camBearing.current), padding };
     const zoomed = lastZoomSent.current !== followZoom;
     lastZoomSent.current = followZoom;
     try {
@@ -87,6 +109,17 @@ function OsmMapView({ height, line: route, track, trackBreaks, position, waypoin
       else camera.current?.easeTo({ ...stop, duration: zoomed ? ZOOM_EASE_MS : glideMs ?? FOLLOW_EASE_MS, easing: 'linear' });
     } catch { /* the map is not drawn yet: the next position moves it */ }
   }, [follow, following, position?.lat, position?.lng, heading, padding, followZoom]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A closed loop on the camera: the moves above are asked for and not checked, and a move the phone drops would leave the map facing the wrong way for good. If the measured bearing stays far from the wanted one, the camera is set to it outright.
+  useEffect(() => {
+    if (!follow || !following || !position || heading === undefined) { offSince.current = 0; return; }
+    if (Math.abs(turnBetween(bearing, heading)) < OFF_DEG) { offSince.current = 0; return; }
+    const now = Date.now();
+    if (!offSince.current) { offSince.current = now; return; }
+    if (now - offSince.current < OFF_MS) return;
+    offSince.current = 0; setHealed((n) => n + 1);
+    camBearing.current = unwrapBearing(bearing, heading);
+    try { camera.current?.jumpTo({ center: [position.lng, position.lat], zoom: followZoom, bearing: norm(camBearing.current), padding }); } catch { /* not drawn yet */ }
+  }, [bearing, follow, following, position?.lat, position?.lng, heading, padding, followZoom]); // eslint-disable-line react-hooks/exhaustive-deps
   // While following, a pinch changes only the zoom, about the rider, so the map never slides away from them; the map's own pinch (about the fingers) is off.
   // Each pinch step changes the zoom by its own share (scaleChange), so nothing about where the gesture began has to be remembered.
   const pinch = useMemo(() => Gesture.Pinch().runOnJS(true).enabled(!!follow && following).onChange((e) => setFollowZoom((z) => Math.max(MIN_FOLLOW_ZOOM, Math.min(MAX_FOLLOW_ZOOM, z + Math.log2(e.scaleChange))))), [follow, following]);
@@ -97,15 +130,15 @@ function OsmMapView({ height, line: route, track, trackBreaks, position, waypoin
     if (all.length < 2) return;
     setFollowing(false);
     // Kept clear of what floats over the map, and turned back to north-up so the spread of the group reads at a glance.
-    camera.current?.fitBounds([Math.min(...all.map((p) => p.lng)), Math.min(...all.map((p) => p.lat)), Math.max(...all.map((p) => p.lng)), Math.max(...all.map((p) => p.lat))], { padding: { top: FIT_PADDING.top + coverTop, bottom: FIT_PADDING.bottom + coverBottom, left: FIT_PADDING.left + coverLeft, right: FIT_PADDING.right }, duration: GROUP_VIEW_MS });
+    camera.current?.fitBounds([Math.min(...all.map((p) => p.lng)), Math.min(...all.map((p) => p.lat)), Math.max(...all.map((p) => p.lng)), Math.max(...all.map((p) => p.lat))], { padding: insetMap ? FIT_PADDING : { top: FIT_PADDING.top + coverTop, bottom: FIT_PADDING.bottom + coverBottom, left: FIT_PADDING.left + coverLeft, right: FIT_PADDING.right }, duration: GROUP_VIEW_MS });
   };
   const fit = () => { if (bounds && !follow) camera.current?.fitBounds(bounds, { padding: FIT_PADDING, duration: 0 }); };
   useEffect(fit, [bounds, follow]);
   return (
     <GestureDetector gesture={pinch}>
     <View onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })} style={{ height: height === 'fill' ? undefined : height, flex: height === 'fill' ? 1 : undefined, borderRadius: radius, overflow: 'hidden' }}>
-      <Map mapStyle={mapStyleUrl(dark)} attribution={interactive} logo={interactive} attributionPosition={{ bottom: coverBottom + space[2], right: space[2] }} logoPosition={{ bottom: coverBottom + space[2], left: coverLeft + space[2] }} onDidFinishLoadingMap={fit} onRegionWillChange={(e) => { if (e.nativeEvent.userInteraction && follow) setFollowing(false); }} onRegionDidChange={(e) => { setZoom(e.nativeEvent.zoom); setBearing(e.nativeEvent.bearing); if (e.nativeEvent.userInteraction && follow) setFollowing(false); }} compassPosition={{ top: size.compact + space[4], right: space[3] }} style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive && !(follow && following)} doubleTapZoom={interactive && !(follow && following)} onPress={onTap ? (e) => onTap({ lat: e.nativeEvent.lngLat[1], lng: e.nativeEvent.lngLat[0] }) : undefined}>
-        <Camera ref={camera} initialViewState={follow && position ? { center: [position.lng, position.lat], zoom: FOLLOW_ZOOM, bearing: heading ?? 0, padding } : bounds ? { bounds, padding: FIT_PADDING } : start.kind === 'bounds' ? { bounds: start.bounds, padding: FIT_PADDING } : { center: start.center, zoom: start.zoom }} />
+      <Map mapStyle={mapStyleUrl(dark)} attribution={interactive} logo={interactive} attributionPosition={{ bottom: ornamentBottom, right: space[2] }} logoPosition={{ bottom: ornamentBottom, left: (insetMap ? 0 : coverLeft) + space[2] }} contentInset={inset} onDidFinishLoadingMap={fit} onRegionWillChange={(e) => { if (e.nativeEvent.userInteraction && follow) setFollowing(false); }} onRegionIsChanging={(e) => readBearing(e.nativeEvent.bearing)} onRegionDidChange={(e) => { onCenter?.({ lng: e.nativeEvent.center[0], lat: e.nativeEvent.center[1] }); setZoom(e.nativeEvent.zoom); bearingAt.current = 0; readBearing(e.nativeEvent.bearing); if (e.nativeEvent.userInteraction && follow) setFollowing(false); }} compassPosition={{ top: size.compact + space[4], right: space[3] }} style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive && !(follow && following)} doubleTapZoom={interactive && !(follow && following)} onPress={onTap ? (e) => onTap({ lat: e.nativeEvent.lngLat[1], lng: e.nativeEvent.lngLat[0] }) : undefined}>
+        <Camera ref={camera} initialViewState={pickFrom ? { center: [pickFrom.lng, pickFrom.lat], zoom: PICK_ZOOM, bearing: 0, padding: undefined } : follow && position ? { center: [position.lng, position.lat], zoom: FOLLOW_ZOOM, bearing: heading ?? 0, padding } : bounds ? { bounds, padding: FIT_PADDING } : start.kind === 'bounds' ? { bounds: start.bounds, padding: FIT_PADDING } : { center: start.center, zoom: start.zoom }} />
         <GeoJSONSource id="guide" data={guideData}><Layer id="guide-line" type="line" layout={round} paint={{ 'line-color': GUIDE_COLOR, 'line-width': 6 }} /></GeoJSONSource>
         <GeoJSONSource id="route" data={routeData}><Layer id="route-line" type="line" layout={round} paint={{ 'line-color': ROUTE_COLOR, 'line-width': 4 }} /></GeoJSONSource>
         <GeoJSONSource id="track" data={trackData}><Layer id="track-line" type="line" layout={round} paint={{ 'line-color': TRACK_COLOR, 'line-width': 5 }} /></GeoJSONSource>
@@ -120,6 +153,7 @@ function OsmMapView({ height, line: route, track, trackBreaks, position, waypoin
           : <Marker key={c.id} id={`riders-${c.id}`} lngLat={[c.lng, c.lat]} anchor="left" offset={[-size.riderDot / 2, 0]}><RiderPin mark={c.marks[0]!} /></Marker>)}
       </Map>
       {arrowFixed && box.w > 0 ? <View pointerEvents="none" style={{ position: 'absolute', left: coverLeft + (box.w - coverLeft) / 2 - size.pin / 2, top: coverTop + (box.h - coverTop - coverBottom) / 2 - size.pin / 2 }}><HeadingPointer rotation={arrowTurn} /></View> : null}
+      {debug ? <View pointerEvents="none" style={{ position: 'absolute', left: space[3], bottom: space[3] + coverBottom + size.chip, paddingHorizontal: space[2], paddingVertical: space.half, borderRadius: size.chip, backgroundColor: fixed.white }}><Text variant="caption" style={{ color: fixed.ink }}>{`hdg ${heading === undefined ? '-' : Math.round(heading)} · arrow ${arrowHeading === undefined ? '-' : Math.round(arrowHeading)} · map ${Math.round(((bearing % 360) + 360) % 360)} · ${following ? 'following' : 'free'} · z${followZoom.toFixed(1)} · fixed ${healed}× · ${insetMap ? 'inset' : 'padding'}`}</Text></View> : null}
       {onFullscreen ? <View style={{ position: 'absolute', top: space[3], right: space[3] }}><IconButton size={size.compact} icon={fullscreen ? Minimize2 : Maximize2} label={fullscreen ? 'Shrink the map' : 'Full-screen map'} onPress={onFullscreen} /></View> : null}
       {follow && position ? (
         <View style={{ position: 'absolute', right: space[3], bottom: space[3] + size.chip + coverBottom, gap: space[2] }}>

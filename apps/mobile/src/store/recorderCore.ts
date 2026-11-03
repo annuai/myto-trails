@@ -6,6 +6,7 @@ import { medianOf, TOP_SPEED_WINDOW } from '@/lib/topSpeed';
 import type { Journal } from '@/lib/journal';
 import { breaksOf, cleanTrack, driftRadius, splitSegments, trackStats } from '@/lib/track';
 import { WAYPOINT_LABEL, type WaypointKind } from '@/lib/waypointKinds';
+import { GAP_MIN_MS, lastFixAt } from '@/lib/resumeRide';
 import type { Waypoint } from './rides';
 
 // The live track and distance leave out the same fixes the saved ride will (poor accuracy, impossible jumps, jitter);
@@ -52,6 +53,8 @@ type State = {
   setBackgrounded: (b: boolean) => void;
   /** A ride left unfinished by a crash or a kill, waiting for the rider to save or discard it. */
   recoverable: Recoverable | null;
+  /** When and after how long a closed app was taken up again, for the notice on the live screen. */
+  resumed?: { at: number; gapMs: number };
   error?: string;
   setError: (e?: string) => void;
   /** Returns false (and sets `recoverable`) when an unfinished ride is on disk: it is never overwritten. */
@@ -62,12 +65,13 @@ type State = {
   retypeLastWaypoint: (kind: WaypointKind) => Promise<void>;
   addNote: () => void;
   checkRecoverable: () => Promise<void>;
-  recover: () => Promise<void>;
+  /** Takes the ride on disk up again. The time the app was closed becomes a pause, so the track has a break there and the time is not counted. Returns how long that was (0 when there was none). */
+  recover: () => Promise<number>;
   discardRecovered: () => Promise<void>;
   reset: () => void;
 };
 
-const blank = { status: 'idle' as const, startedAt: 0, rideId: '', points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0, moving: false, paused: false, pausedAt: 0, pausedMs: 0, pauseBreaks: [] as number[], skipStep: false };
+const blank = { status: 'idle' as const, startedAt: 0, rideId: '', points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0, moving: false, paused: false, pausedAt: 0, pausedMs: 0, pauseBreaks: [] as number[], skipStep: false, resumed: undefined };
 
 /** The live recorder. Every fix goes to the journal first; the store only shows what the screen needs. */
 export function createRecorder(journal: Journal, hooks: { stopBackground?: () => Promise<void> } = {}) {
@@ -148,13 +152,20 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
     },
     recover: async () => {
       const r = await journal.read();
-      if (!r) return set({ recoverable: null });
+      if (!r) { set({ recoverable: null }); return 0; }
       recent = [];
+      const now = Date.now();
+      let pauses = r.pauses;
+      const open = pauses.find((x) => x.to === undefined);
+      // The phone recorded nothing while the app was closed: that stretch is a pause that ends now.
+      const from = Math.max(lastFixAt(r), ...pauses.map((x) => x.to ?? 0));
+      const gapMs = !open && now - from >= GAP_MIN_MS ? now - from : 0;
+      if (gapMs) { await journal.pause(from); await journal.resume(now); pauses = [...pauses, { from, to: now }]; }
       const points = cleanTrack(r.points);
-      const stats = trackStats(splitSegments(points, r.pauses));
-      const open = r.pauses.find((x) => x.to === undefined);
-      const pausedMs = r.pauses.reduce((n, x) => n + (x.to !== undefined ? x.to - x.from : 0), 0);
-      set({ ...blank, status: 'running', source: r.meta.source, startedAt: r.meta.startedAt, rideId: r.meta.rideId ?? '', points, waypoints: r.waypoints, meters: stats.distanceM, maxKmh: stats.maxKmh, lastFixAt: Date.now(), recoverable: null, paused: !!open, pausedAt: open?.from ?? 0, pausedMs, pauseBreaks: breaksOf(splitSegments(points, r.pauses)) });
+      const stats = trackStats(splitSegments(points, pauses));
+      const pausedMs = pauses.reduce((n, x) => n + (x.to !== undefined ? x.to - x.from : 0), 0);
+      set({ ...blank, status: 'running', source: r.meta.source, startedAt: r.meta.startedAt, rideId: r.meta.rideId ?? '', points, waypoints: r.waypoints, meters: stats.distanceM, maxKmh: stats.maxKmh, lastFixAt: now, recoverable: null, paused: !!open, pausedAt: open?.from ?? 0, pausedMs, pauseBreaks: breaksOf(splitSegments(points, pauses)), skipStep: !open, ...(gapMs ? { resumed: { at: now, gapMs } } : {}) });
+      return gapMs;
     },
     discardRecovered: async () => { await hooks.stopBackground?.(); await journal.clear(); set({ recoverable: null }); },
     setError: (error) => set({ error }),

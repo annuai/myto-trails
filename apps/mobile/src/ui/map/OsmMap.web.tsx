@@ -12,6 +12,7 @@ import { Text } from '../Text';
 import { ClusterList, ClusterPin, DestinationPin, HeadingPointer, RiderPin } from './RiderPins';
 import { mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
 import { trackFeature } from './geojson';
+import { useMapDark } from './useMapDark';
 import { useMapStart } from './useMapStart';
 import type { OsmMapProps } from './types';
 
@@ -20,12 +21,15 @@ const lineFeature = (pts?: LatLng[]) => ({ type: 'Feature' as const, properties:
 const pointsFeature = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 
 /** OpenStreetMap through MapLibre GL, the same stack as the website. Two-finger or Ctrl+scroll to move, so it never traps page scrolling. */
-function OsmMapView({ height, line, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, arrowHeading, glideMs, covered, onPicker, pointer, dark, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
+function OsmMapView({ height, line, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, arrowHeading, glideMs, covered, onPicker, pickFrom, onCenter, pointer, dark: darkProp, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
+  const dark = useMapDark(darkProp);
   const box = useRef<HTMLDivElement>(null);
   const coverTop = covered?.top ?? 0, coverBottom = covered?.bottom ?? 0, coverLeft = covered?.left ?? 0;
   const start = useMapStart();
   const tap = useRef(onTap);
   useEffect(() => { tap.current = onTap; });
+  const centered = useRef(onCenter);
+  useEffect(() => { centered.current = onCenter; });
   const map = useRef<MlMap | null>(null);
   /** The same map as `map`, as state: the pins are placed on the screen from it while drawing, and a ref cannot be read then. */
   const [mapView, setMapView] = useState<MlMap | null>(null);
@@ -63,8 +67,8 @@ function OsmMapView({ height, line, track, trackBreaks, position, waypoints, rid
         ml.setWorkerUrl('/vendor/maplibre/maplibre-gl-worker.mjs');
         if (cancelled || !box.current) return;
         const m = new ml.Map({
-          container: box.current, style: mapStyleUrl(dark), ...(start.kind === 'bounds' ? { bounds: start.bounds, fitBoundsOptions: { padding: space[8] } } : { center: start.center, zoom: start.zoom }),
-          attributionControl: interactive ? { compact: true } : false, cooperativeGestures: !follow, interactive,
+          container: box.current, style: mapStyleUrl(dark), ...(pickFrom ? { center: [pickFrom.lng, pickFrom.lat] as [number, number], zoom: 14 } : start.kind === 'bounds' ? { bounds: start.bounds, fitBoundsOptions: { padding: space[8] } } : { center: start.center, zoom: start.zoom }),
+          attributionControl: interactive ? { compact: true } : false, cooperativeGestures: !follow && !pickFrom, interactive,
         });
         map.current = m;
         setMapView(m);
@@ -76,6 +80,7 @@ function OsmMapView({ height, line, track, trackBreaks, position, waypoints, rid
         if (follow) { m.scrollZoom.enable({ around: 'center' }); m.touchZoomRotate.enable({ around: 'center' }); }
         m.on('zoomend', (e) => { if (follow && 'originalEvent' in e && e.originalEvent) zoomTarget.current = m.getZoom(); });
         for (const type of ['dragstart', 'rotatestart', 'pitchstart'] as const) m.on(type, (e) => { if (follow && 'originalEvent' in e && e.originalEvent) { followingRef.current = false; setFollowing(false); } });
+        m.on('moveend', () => { const c = m.getCenter(); centered.current?.({ lat: c.lat, lng: c.lng }); });
         m.on('move', () => setView({ zoom: m.getZoom(), tick: Date.now(), bearing: m.getBearing() }));
         m.on('click', (e) => tap.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }));
         m.on('error', (e) => setProblem(e.error?.message?.slice(0, 120) ?? 'The map reported an error.'));

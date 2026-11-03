@@ -18,6 +18,7 @@ import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
 import { IconButton } from '@/ui/IconButton';
 import { Card } from '@/ui/Card';
+import { ListCard, Row } from '@/ui/ListCard';
 import { sharingOn, useOsm } from '@/store/osm';
 import { StatusChip } from '@/ui/Chip';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
@@ -35,7 +36,7 @@ import { Theme, useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 
 export default function Story() {
-  return <Theme mode="dark"><StoryBody /></Theme>;
+  return <Theme mode="dark" screen><StoryBody /></Theme>;
 }
 
 function StoryBody() {
@@ -65,11 +66,12 @@ function StoryBody() {
   if (!ride) return <Screen><BackHeader /><Text>Ride not found.</Text></Screen>;
   const deleteRide = () => { useJournal.getState().removeForRide(ride.startedAt); useTrips.getState().forgetRide(ride.id); useRides.getState().removeRide(ride.id); router.replace('/rides'); };
   const sub = ride.submission;
+  const inTrips = trips.filter((t) => t.rideIds.includes(ride.id));
   const gapM = trackStats(segmentsOf(ride.points, ride.breaks)).gapM;
   return (
     <Screen overlay={<>
       <ShareRideSheet ride={ride} open={shareOpen} onClose={() => setShareOpen(false)} />
-      <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={ride.points[ride.points.length - 1]} />
+      <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={ride.points[ride.points.length - 1]} trailSlug={ride.trailSlug} />
       <Sheet open={renaming} title="Rename this ride" onClose={() => setRenaming(false)}>
         <Field label="Name" value={draftName} onChangeText={setDraftName} maxLength={80} autoFocus returnKeyType="done" onSubmitEditing={() => { useRides.getState().renameRide(ride.id, draftName); setRenaming(false); }} />
         <Button label="Save name" disabled={!draftName.trim()} onPress={() => { useRides.getState().renameRide(ride.id, draftName); setRenaming(false); }} />
@@ -122,11 +124,11 @@ function StoryBody() {
       ) : null}
       <View style={{ gap: space[3], marginTop: sub ? space[3] : 0 }}>
         <Button icon={Share2} label="Share this ride" arrow onPress={() => setShareOpen(true)} />
-        <Button variant="soft" icon={Megaphone} label="Report the trail's condition" onPress={() => setReportOpen(true)} />
-        <Button variant="soft" icon={Luggage} label="Add to a trip" onPress={() => setTripOpen(true)} />
+        {ride.trailSlug ? <Button variant="soft" icon={Megaphone} label="Report the trail's condition" onPress={() => setReportOpen(true)} /> : null}
         <Button variant="soft" icon={Upload} label={sub ? 'Upload again' : 'Upload to Moto Trails'} arrow onPress={() => router.push(`/story/submit?id=${ride.id}`)} />
         <Button variant="soft" icon={BookOpen} label={journalCount ? `Journal · ${journalCount}` : 'Journal'} onPress={() => router.push(`/journal/${ride.startedAt}`)} />
         <Button variant="soft" icon={Download} label="Export GPX file" onPress={() => exportGpx(ride.name, buildGpx(ride.name, ride.points, ride.waypoints, ride.breaks))} />
+        <ListCard><Row icon={Luggage} label="Trip" value={inTrips.length ? inTrips.map((t) => t.name).join(', ') : 'Not in a trip'} onPress={() => setTripOpen(true)} /></ListCard>
         <Button variant="danger" icon={Trash2} label="Delete this ride" onPress={() => (journalCount ? setConfirmDelete(true) : deleteRide())} />
       </View>
         </>}

@@ -69,3 +69,13 @@ describe('glideMs and roundedDistanceM', () => {
     expect(roundedDistanceM(2)).toBe(5);
   });
 });
+
+import { norm } from './rideCamera';
+describe('norm', () => {
+  it('puts any bearing in 0 to 360, which is all the phone map accepts (it ignores a negative one)', () => {
+    expect(norm(-77)).toBe(283);
+    expect(norm(-249)).toBe(111);
+    expect(norm(471)).toBe(111);
+    expect(norm(0)).toBe(0);
+  });
+});

@@ -216,7 +216,7 @@ export function CompanionHost() {
       void pollGroup().finally(() => {
         const { group, live } = useCompanion.getState();
         if (!group) { groupTimer = setTimeout(loop, 5000); return; }
-        groupTimer = setTimeout(loop, pollIntervalMs({ moving: useRecorder.getState().moving, anyHelp: live.riders.some((r) => r.status === 'help'), backgrounded: AppState.currentState !== 'active' }));
+        groupTimer = setTimeout(loop, pollIntervalMs({ moving: useRecorder.getState().moving, anyHelp: live.riders.some((r) => r.status === 'help'), backgrounded: AppState.currentState !== 'active', riders: live.riders.length }));
       });
     };
     loop();

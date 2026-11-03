@@ -27,9 +27,13 @@ export function riderSlots(riders: { id: string }[]): Map<string, number> {
   return new Map([...riders].sort((a, b) => a.id.localeCompare(b.id)).map((r, i) => [r.id, i] as const));
 }
 
-/** Who needs help first, then the leader, then you, then the others by name. */
+/** The order signals come in on screen: a call for help first, then wait up, then a fuel stop, then a break. Nothing asked for is last. */
+export const SIGNAL_ORDER: GroupStatus[] = ['help', 'wait_up', 'fuel', 'break'];
+const signalRank = (s: GroupStatus): number => { const i = SIGNAL_ORDER.indexOf(s); return i < 0 ? SIGNAL_ORDER.length : i; };
+
+/** Who has asked for something first (help, then wait up, fuel, break), then the leader, then you, then the others by name. */
 export function sortRiders(riders: GroupRiderView[], meId: string): GroupRiderView[] {
-  const rank = (r: GroupRiderView) => (r.status === 'help' ? 0 : r.role === 'leader' ? 1 : r.id === meId ? 2 : 3);
+  const rank = (r: GroupRiderView) => (r.status !== 'ok' ? signalRank(r.status) : SIGNAL_ORDER.length + (r.role === 'leader' ? 0 : r.id === meId ? 1 : 2));
   return [...riders].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
 }
 
@@ -43,13 +47,17 @@ export function distanceToLeaderM(riders: GroupRiderView[], meId: string): numbe
 /**
  * How often to call `sync`: every 20 seconds while riding, a little slower when stopped or with the app in the background, and
  * quickly (5 s) when someone has called for help. The server takes a write every 5 s, so this is well inside it. A 10-rider group
- * costs about 1,800 requests an hour: enough for a few hundred group-hours a month on a free hosting plan.
+ * costs about 1,800 requests an hour: enough for a few hundred group-hours a month on a free hosting plan. A group can hold 100 riders, and every poll
+ * carries everyone, so past 30 riders each rider polls half as often (and a call for help is checked every 10 s, not 5): the same load for ten times the people.
  */
 export const POLL_MOVING_MS = 20_000;
-export function pollIntervalMs(s: { moving: boolean; anyHelp: boolean; backgrounded?: boolean }): number {
-  if (s.anyHelp) return 5_000;
-  if (s.backgrounded) return s.moving ? 30_000 : 60_000;
-  return s.moving ? POLL_MOVING_MS : 30_000;
+/** A group bigger than this polls more slowly. */
+export const BIG_GROUP = 30;
+export function pollIntervalMs(s: { moving: boolean; anyHelp: boolean; backgrounded?: boolean; /** How many riders are in the group. */ riders?: number }): number {
+  const big = (s.riders ?? 0) > BIG_GROUP;
+  if (s.anyHelp) return big ? 10_000 : 5_000;
+  if (s.backgrounded) return (s.moving ? 30_000 : 60_000) * (big ? 1.5 : 1);
+  return (s.moving ? POLL_MOVING_MS : 30_000) * (big ? 1.5 : 1);
 }
 
 export type SignalChange = { rider: GroupRiderView; from: GroupStatus; to: GroupStatus };
@@ -106,11 +114,22 @@ export function riderTiles(riders: GroupRiderView[], meId: string | undefined, h
 export const RAIL_MAX = 4;
 
 /**
- * Who the row under the map shows, most important first: a rider calling for help, anyone else who has signalled, the leader, then the
- * nearest. You are not in it (you are the arrow on the map). `total` is everyone in the group, for the "All" chip.
+ * Who the row under the map shows, most important first: a rider calling for help, then one asking the group to wait up, then a fuel stop, then a
+ * break; among riders with the same signal, whoever signalled first (`since`, when this phone first saw it). Then the leader, then the nearest.
+ * You are not in it (you are the arrow on the map). `total` is everyone in the group, for the "All" chip.
  */
-export function railOrder(tiles: RiderTile[], max: number = RAIL_MAX): { shown: RiderTile[]; total: number } {
-  const rank = (t: RiderTile) => (t.status === 'help' ? 0 : t.status !== 'ok' ? 1 : t.role === 'leader' ? 2 : 3);
-  const others = tiles.filter((t) => !t.isMe).sort((a, b) => rank(a) - rank(b) || (a.distanceM ?? Infinity) - (b.distanceM ?? Infinity) || a.name.localeCompare(b.name));
+export function railOrder(tiles: RiderTile[], max: number = RAIL_MAX, since: Record<string, number> = {}): { shown: RiderTile[]; total: number } {
+  const rank = (t: RiderTile) => (t.status !== 'ok' ? signalRank(t.status) : SIGNAL_ORDER.length + (t.role === 'leader' ? 0 : 1));
+  const others = tiles.filter((t) => !t.isMe).sort((a, b) => rank(a) - rank(b) || (since[a.id] ?? Infinity) - (since[b.id] ?? Infinity) || (a.distanceM ?? Infinity) - (b.distanceM ?? Infinity) || a.name.localeCompare(b.name));
   return { shown: others.slice(0, max), total: tiles.length };
 }
+
+/** Riders whose name, or a title they hold, contains what was typed (any case); everyone when nothing is typed. */
+export function findRiders(tiles: RiderTile[], query: string, titleWords: Record<RiderTitle, string>): RiderTile[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return tiles;
+  return tiles.filter((t) => t.name.toLowerCase().includes(q) || t.titles.some((x) => titleWords[x].toLowerCase().includes(q)) || (t.role === 'leader' && 'leader'.includes(q)));
+}
+
+/** A group this big gets a search box above its riders. */
+export const SEARCH_FROM = 6;

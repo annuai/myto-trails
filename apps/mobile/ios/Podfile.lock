@@ -130,6 +130,8 @@ PODS:
     - ExpoModulesCore
   - ExpoAudio (58.0.10):
     - ExpoModulesCore
+  - ExpoBattery (58.0.3):
+    - ExpoModulesCore
   - ExpoCrypto (58.0.7):
     - ExpoModulesCore
   - ExpoDocumentPicker (58.0.4):
@@ -2446,6 +2448,7 @@ DEPENDENCIES:
   - ExpoApplication (from `../../../node_modules/expo-application/ios`)
   - ExpoAsset (from `../../../node_modules/expo-asset/ios`)
   - ExpoAudio (from `../../../node_modules/expo-audio/ios`)
+  - ExpoBattery (from `../../../node_modules/expo-battery/ios`)
   - ExpoCrypto (from `../../../node_modules/expo-crypto/ios`)
   - ExpoDocumentPicker (from `../../../node_modules/expo-document-picker/ios`)
   - "ExpoDomWebView (from `../../../node_modules/@expo/dom-webview/ios`)"
@@ -2602,6 +2605,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/expo-asset/ios"
   ExpoAudio:
     :path: "../../../node_modules/expo-audio/ios"
+  ExpoBattery:
+    :path: "../../../node_modules/expo-battery/ios"
   ExpoCrypto:
     :path: "../../../node_modules/expo-crypto/ios"
   ExpoDocumentPicker:
@@ -2872,6 +2877,7 @@ SPEC CHECKSUMS:
   ExpoApplication: c83355b2f69f996b5d26b64fef39228e7f1e1208
   ExpoAsset: 9c966d4d2c67a13de7d449561558f782df1c1787
   ExpoAudio: 7f919daf0ebf1b0e1cf8b7464b7c85be6664a412
+  ExpoBattery: 86e72f4bd716952355bcf77b2bdb954af0cd1741
   ExpoCrypto: 33ede543a3747abbef071c3bd747135ccc4e4fd5
   ExpoDocumentPicker: af0917aa6f1b54ab3a0f47977935a1e20ffb1537
   ExpoDomWebView: b2a6d681b9d34c23b1f584321386ca8da1d36afb

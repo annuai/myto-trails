@@ -9,5 +9,10 @@ export const buzz = {
   help: () => quiet(notificationAsync(NotificationFeedbackType.Warning)),
   /** One soft tick as a wheel settles on a new value. */
   tick: () => quiet(selectionAsync()),
+  /** The bike setting off on a long pull-down, and the light taps of its engine while it rides. */
+  rev: () => quiet(impactAsync(ImpactFeedbackStyle.Heavy)),
+  rumble: () => quiet(impactAsync(ImpactFeedbackStyle.Light)),
+  /** A new way was found after the rider left the road. */
+  reroute: () => quiet(impactAsync(ImpactFeedbackStyle.Medium)),
   stop: () => quiet(impactAsync(ImpactFeedbackStyle.Heavy)),
 };

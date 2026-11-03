@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { railOrder, distanceToLeaderM, isStale, pollIntervalMs, riderSlots, riderTiles, signalChanges, signalNotice, sortRiders, type GroupRiderView } from './groupCore';
+import { findRiders, railOrder, distanceToLeaderM, isStale, pollIntervalMs, riderSlots, riderTiles, signalChanges, signalNotice, sortRiders, type GroupRiderView } from './groupCore';
 
 const now = Date.parse('2026-11-01T06:00:00Z');
 const rider = (o: Partial<GroupRiderView> & { id: string }): GroupRiderView => ({ name: o.id, role: 'member', lat: 12, lng: 77, at: '2026-11-01T05:59:30Z', status: 'ok', ...o });
@@ -37,6 +37,16 @@ describe('distanceToLeaderM', () => {
     const list = [rider({ id: 'l', role: 'leader' }), rider({ id: 'me', lat: null, lng: null })];
     expect(distanceToLeaderM(list, 'l')).toBeNull();
     expect(distanceToLeaderM(list, 'me')).toBeNull();
+  });
+});
+
+describe('pollIntervalMs for a big group', () => {
+  it('polls half as often past 30 riders, and checks for help every 10 seconds', () => {
+    expect(pollIntervalMs({ moving: true, anyHelp: false, riders: 30 })).toBe(20_000);
+    expect(pollIntervalMs({ moving: true, anyHelp: false, riders: 31 })).toBe(30_000);
+    expect(pollIntervalMs({ moving: false, anyHelp: false, riders: 100 })).toBe(45_000);
+    expect(pollIntervalMs({ moving: false, anyHelp: true, riders: 100 })).toBe(10_000);
+    expect(pollIntervalMs({ moving: false, anyHelp: true, riders: 5 })).toBe(5_000);
   });
 });
 
@@ -112,5 +122,37 @@ describe('railOrder', () => {
     const r = railOrder(tiles, 3);
     expect(r.shown).toHaveLength(3);
     expect(r.total).toBe(6);
+  });
+});
+
+describe('findRiders', () => {
+  const words = { captain: 'Captain', marshal: 'Marshal', medic: 'Medic', sweep: 'Sweep' };
+  const rs = [rider({ id: 'a', name: 'Annuai', role: 'leader' }), rider({ id: 'b', name: 'Pranab', titles: ['medic'] }), rider({ id: 'c', name: 'Jithin', titles: ['sweep'] })];
+  const tiles = riderTiles(rs, 'zz', { lat: 12, lng: 77 }, now);
+  it('finds a rider by part of their name in any case', () => expect(findRiders(tiles, ' prA ', words).map((t) => t.name)).toEqual(['Pranab']));
+  it('finds riders by a title they hold, and the leader', () => {
+    expect(findRiders(tiles, 'medic', words).map((t) => t.name)).toEqual(['Pranab']);
+    expect(findRiders(tiles, 'lead', words).map((t) => t.name)).toEqual(['Annuai']);
+  });
+  it('gives everyone for an empty search, and nobody for no match', () => {
+    expect(findRiders(tiles, '  ', words)).toHaveLength(3);
+    expect(findRiders(tiles, 'zzz', words)).toEqual([]);
+  });
+});
+
+describe('signals in order, and who asked first', () => {
+  const rs = [
+    rider({ id: 'me', name: 'Me' }), rider({ id: 'b', name: 'Brk', status: 'break' }), rider({ id: 'f', name: 'Fuel', status: 'fuel' }), rider({ id: 'w', name: 'Wait', status: 'wait_up' }),
+    rider({ id: 'h', name: 'Help', status: 'help' }), rider({ id: 'o', name: 'Okay' }), rider({ id: 'l', name: 'Lead', role: 'leader' }), rider({ id: 'f2', name: 'Fuel2', status: 'fuel' }),
+  ];
+  const tiles = riderTiles(rs, 'me', { lat: 12, lng: 77 }, now);
+  it('puts help first, then wait up, then fuel, then break, then the leader, then the rest', () => {
+    expect(railOrder(tiles, 20).shown.map((t) => t.name)).toEqual(['Help', 'Wait', 'Fuel', 'Fuel2', 'Brk', 'Lead', 'Okay']);
+  });
+  it('puts whoever signalled first first among riders with the same signal', () => {
+    expect(railOrder(tiles, 20, { f: 200, f2: 100 }).shown.map((t) => t.name).slice(2, 4)).toEqual(['Fuel2', 'Fuel']);
+  });
+  it('orders the group popup the same way', () => {
+    expect(sortRiders(rs, 'me').map((r) => r.name).slice(0, 5)).toEqual(['Help', 'Wait', 'Fuel', 'Fuel2', 'Brk']);
   });
 });

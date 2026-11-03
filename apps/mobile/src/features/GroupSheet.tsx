@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Flag, LogOut, Share2 } from 'lucide-react-native';
+import { LogOut, MapPin, Share2 } from 'lucide-react-native';
+import { ListCard, Row } from '@/ui/ListCard';
 import { createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup } from '@/api/groups';
 import { SITE_BASE } from '@/api/config';
 import type { LatLng } from '@/lib/geo';
@@ -13,7 +14,7 @@ import { LeadConfirm, LeadPicker } from '@/features/group/PassTheLead';
 import { RiderSheet } from '@/features/group/RiderSheet';
 import { useLeadActions } from '@/features/group/useLeadActions';
 import { RiderTiles } from '@/features/group/RiderTiles';
-import { PlaceSearch } from '@/features/route/PlaceSearch';
+import { DestinationSheet } from '@/features/group/DestinationSheet';
 import { useCanNavigate } from '@/features/group/useCanNavigate';
 import { useAuth } from '@/store/auth';
 import { useCompanion } from '@/store/companion';
@@ -47,6 +48,7 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
   const { busy, problem, run } = useAction();
   const leader = group?.role === 'leader';
   const [pickedId, setPickedId] = useState<string>();
+  const [destOpen, setDestOpen] = useState(false);
   /** A leader leaving: choosing who gets the lead, then confirming, in this same sheet. */
   const [exit, setExit] = useState<'pick' | 'confirm' | undefined>();
   const [heir, setHeir] = useState<RiderTile>();
@@ -120,14 +122,12 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
             {SIGNALS.map((s) => <ChoiceChip key={s} label={STATUS_LABEL[s]} selected={live.myStatus === s} onPress={() => signal(s)} />)}
           </View>
           {live.riders.length ? <RiderTiles tiles={tiles} canNavigate={canNavigate} onSelect={(t) => { if (onRider) onRider(t.id); else { setPickedId(t.id); onClose(); } }} /> : null}
-          {live.regroup ? <Text variant="label" tone="muted">{`Group destination: ${live.regroup.note ?? 'a spot on the map'}. Everyone sees the road to it.`}</Text> : null}
           {leader ? (
             <>
-              <PlaceSearch label="Set the group destination" near={position} onPick={(p) => void pin(p.point, p.name)} />
-              <Button variant="soft" icon={Flag} label="Use my spot as the destination" disabled={!position || busy} onPress={() => position && void pin(position)} />
+              <ListCard><Row icon={MapPin} label="Destination" value={live.regroup ? live.regroup.note ?? 'A spot on the map' : 'Not set'} onPress={() => setDestOpen(true)} /></ListCard>
               {live.regroup ? <Button variant="soft" label="Remove the destination" onPress={() => void pin(null)} /> : null}
             </>
-          ) : null}
+          ) : live.regroup ? <Text variant="label" tone="muted">{`Group destination: ${live.regroup.note ?? 'a spot on the map'}. Everyone sees the road to it.`}</Text> : null}
           {leader && tiles.some((t) => !t.isMe) ? <Button icon={LogOut} label="Pass the lead and leave" disabled={busy} onPress={() => setExit('pick')} /> : null}
           <Button variant="danger" icon={LogOut} label={leader ? 'End the group ride for everyone' : 'Leave the group'} disabled={busy} onPress={() => void leave()} />
           {live.error ? <Text variant="label" tone="caution">{live.error}</Text> : null}
@@ -136,6 +136,7 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
       {problem ? <Text variant="label" tone="stop">{problem}</Text> : null}
       </>)}
     </Sheet>
+    <DestinationSheet open={open && destOpen} onClose={() => setDestOpen(false)} near={position} current={live.regroup ?? undefined} onSet={async (p, name) => { await pin(p, name); }} />
     {picked && !onRider ? <RiderSheet tile={picked} me={position} canNavigate={canNavigate} onClose={() => setPickedId(undefined)} /> : null}
     </>
   );

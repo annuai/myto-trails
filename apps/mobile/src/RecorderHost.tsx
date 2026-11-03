@@ -29,7 +29,12 @@ export function RecorderHost() {
   const paused = useRecorder((s) => s.paused);
   /** Seconds into a simulated ride. It lives outside the effect below so pausing, which restarts that effect, does not send the simulation back to its start. */
   const simClock = useRef(0);
-  useEffect(() => { if (status !== 'running') simClock.current = 0; }, [status]);
+  useEffect(() => {
+    if (status !== 'running') { simClock.current = 0; return; }
+    // A simulated ride taken up again after the app closed carries on from the seconds already ridden, not from the start of the route.
+    const { source: src, elapsedMs } = useRecorder.getState();
+    if (src === 'sim' && simClock.current === 0) simClock.current = Math.floor(elapsedMs(Date.now()) / 1000);
+  }, [status]);
   useEffect(() => {
     if (status !== 'running') return;
     const { ingest, setBackgrounded } = useRecorder.getState();

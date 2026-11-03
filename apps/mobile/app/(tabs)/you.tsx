@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, BookOpen, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload } from 'lucide-react-native';
+import { Bell, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload } from 'lucide-react-native';
 import Constants from 'expo-constants';
 import { CONTACT_EMAIL, DISCORD_URL, MYTO_URL, versionLabel } from '@moto-trails/domain';
 import { useMe } from '@/api/useApi';
@@ -24,6 +24,7 @@ import { BikeCard } from '@/ui/BikeCard';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Measure } from '@/ui/Measure';
+import { useAppearance } from '@/store/appearance';
 import { PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Columns } from '@/ui/Columns';
@@ -37,6 +38,7 @@ import { ScalePressable } from '@/ui/motion';
 export default function You() {
   const router = useRouter();
   const home = useHomeCountry();
+  const inverted = useAppearance((s) => s.inverted);
   const osmOn = useOsm((s) => s.asked && s.enabled);
   const unit = useDistanceUnit(); // re-draws this page's distances when the unit changes
   const rides = useRides((s) => s.rides);
@@ -104,6 +106,7 @@ export default function You() {
       <ListCard>
         <Row icon={ShieldAlert} label="Crash detection" sub="Beta. Asks if you are OK after a crash" onPress={() => router.push('/safety')} />
         <Row icon={Globe} label="Country and units" sub={`${home ? countryName(home) : 'Not set'} · ${unit === 'mi' ? 'miles' : 'kilometres'}`} onPress={() => router.push('/region')} />
+        <Row icon={Contrast} label="Inverted colours" sub="Light riding screen, dark everywhere else" value={inverted ? 'On' : 'Off'} onPress={() => useAppearance.getState().setInverted(!inverted)} />
         <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
         <Row icon={MapIcon} label="Improve the map" sub="Share rides with OpenStreetMap" value={osmOn ? 'On' : 'Off'} onPress={() => router.push('/osm')} />
         <Row icon={Sparkles} label="Smart notifications" sub="Usual ride time, daylight and break reminders" onPress={() => router.push('/notifications/smart')} />

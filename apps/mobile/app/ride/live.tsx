@@ -14,12 +14,13 @@ import { NoteSheet } from '@/features/NoteSheet';
 import { ReportSheet } from '@/features/ReportSheet';
 import { clockLabel } from '@/lib/community';
 import { telUrl } from '@/lib/crashAlert';
-import { startFollow, stepFollow } from '@/lib/routeFollow';
+import { rejoinTarget, routeBearing, startReroute, stepReroute } from '@/lib/reroute';
 import { compassWord, prepareTrail, startGuide, stepGuide, type Guide } from '@/lib/trailGuide';
 import { WAYPOINT_KINDS, WAYPOINT_LABEL } from '@/lib/waypointKinds';
 import { RiderSheet } from '@/features/group/RiderSheet';
 import { GroupRail, StatsStrip, TurnCard } from '@/features/ride/LiveHud';
 import { useDirections } from '@/features/ride/useDirections';
+import { useStatusSince } from '@/features/ride/useStatusSince';
 import { useSmoothedRide } from '@/features/ride/useSmoothedRide';
 import { fromDirections, fromTrail, type Instruction } from '@/lib/guidance';
 import { SIM_GROUP_ID, SIM_ROUTE } from '@/lib/groupSim';
@@ -30,7 +31,6 @@ import { LeadCards } from '@/features/group/LeadCards';
 import { LeaderExitSheet } from '@/features/group/LeaderExitSheet';
 import { BackupLeadSheet } from '@/features/group/BackupLeadSheet';
 import { useLeadActions } from '@/features/group/useLeadActions';
-import { useBattery } from '@/store/battery';
 import { useLead } from '@/store/lead';
 import { useCanNavigate } from '@/features/group/useCanNavigate';
 import { riderSlots, riderTiles, sortRiders } from '@/lib/groupCore';
@@ -40,6 +40,7 @@ import { useTrips } from '@/store/trips';
 import { ChoiceChip } from '@/ui/Chip';
 import { useJournalActions } from '@/lib/useJournalActions';
 import { Banner } from '@/ui/Banner';
+import { gapText, RESUMED_NOTICE_MS } from '@/lib/resumeRide';
 import { clock } from '@/lib/format';
 import { finishRide } from '@/lib/finishRide';
 import { breaksOf, mergeBreaks, splitSegments } from '@/lib/track';
@@ -49,7 +50,7 @@ import { Button } from '@/ui/Button';
 import { buzz } from '@/lib/haptics';
 import { EmergencyEditor } from '@/ui/EmergencyEditor';
 import { HoldButton } from '@/ui/HoldButton';
-import { haversine, travelHeading } from '@/lib/geo';
+import { haversine, travelHeading, type LatLng } from '@/lib/geo';
 import type { RiderMark } from '@/lib/riderClusters';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { useRouteLine } from '@/api/useApi';
@@ -67,7 +68,7 @@ import { nowMs } from '@/lib/clock';
 
 /** Live riding: dark, no tab bar, big numbers, nothing that needs text input. */
 export default function Live() {
-  return <Theme mode="dark"><LiveBody /></Theme>;
+  return <Theme mode="dark" screen><LiveBody /></Theme>;
 }
 
 function LiveBody() {
@@ -85,6 +86,7 @@ function LiveBody() {
   const group = useCompanion((s) => s.group);
   const simGroup = group?.id === SIM_GROUP_ID;
   // A simulated group rides the real road to a trail when one was found (guided by its own turns), else the built-in test loop.
+  const mapDebug = useSimRide((s) => s.mapDebug);
   const simRoad = useSimRide((s) => (simGroup ? s.ride : undefined));
   const routeLine = simGroup ? (simRoad ? undefined : SIM_ROUTE) : mine?.points ?? trailLine;
   const checkin = useCompanion((s) => s.checkin);
@@ -92,6 +94,9 @@ function LiveBody() {
   const canNavigate = useCanNavigate();
   /** The rider whose tile was tapped: the sheet shows where they are and how far they have to go. */
   const [riderId, setRiderId] = useState<string>();
+  /** The rider's sheet is kept drawn while it slides away, so it is told to close rather than removed. */
+  const [riderOpen, setRiderOpen] = useState(false);
+  const showRider = (id: string) => { setRiderId(id); setRiderOpen(true); };
   const fix = useLocation((s) => s.fix);
   const gpsError = useLocation((s) => s.error);
   const lastPoint = r.points[r.points.length - 1];
@@ -152,7 +157,10 @@ function LiveBody() {
   const [sideW, setSideW] = useState(0);
   /** The list of riders in a tapped map badge is open: the turn card steps aside so it is not covered. */
   const [picking, setPicking] = useState(false);
-  const follow = useRef(startFollow);
+  const follow = useRef(startReroute);
+  const prevSpot = useRef<LatLng | undefined>(undefined);
+  /** Off the trail: where on it to rejoin, some way ahead. The road to it is found like the road to any place. */
+  const [rejoinTo, setRejoinTo] = useState<LatLng>();
   const j = useJournalActions(r.startedAt);
   const stopping = useRef(false);
   const [health, setHealth] = useState(startGpsHealth);
@@ -162,7 +170,7 @@ function LiveBody() {
   useEffect(() => { if (r.status === 'idle' && !stopping.current) router.replace('/'); }, [r.status, router]);
   // A place the rider asked to be guided to is for this ride only.
   useEffect(() => () => { if (useRecorder.getState().status === 'idle') { useGuideTarget.getState().clear(); useSimRide.getState().clear(); useLead.getState().dismiss(); useLead.getState().closeBackup(); } }, []);
-  // Heading to the start, then along the trail. Off the route for 20 seconds (only once on the trail): buzz and say so. Back within 60 m: clear it.
+  // Heading to the start, then along the trail. Off the trail (only once on it, as lib/reroute decides): buzz, say so and guide back to a point ahead on it. Back on it: clear that.
   const trail = useMemo(() => (routeLine ? prepareTrail(routeLine) : undefined), [routeLine]);
   const guideState = useRef(startGuide);
   const [guide, setGuide] = useState<Guide>();
@@ -173,17 +181,24 @@ function LiveBody() {
     guideState.current = g.state;
     setGuide(g.guide);
     if (g.state.phase === 'finished' && before !== 'finished') Vibration.vibrate([0, 300, 150, 300]);
-    if (g.state.phase !== 'on_trail') { follow.current = startFollow; setOff(false); return; }
-    const step = stepFollow(follow.current, g.guide.offM, Date.now());
+    if (g.state.phase !== 'on_trail') { follow.current = startReroute; prevSpot.current = last; setOff(false); setRejoinTo(undefined); return; }
+    // Off the trail is decided by lib/reroute: how far is "off" follows the GPS and the speed, and the wrong way is noticed within seconds.
+    const speedMps = r.speedKmh / 3.6;
+    const step = stepReroute(follow.current, { now: Date.now(), distM: g.guide.offM, accM: fix?.accuracy ?? undefined, speedMps, headingDeg: course, routeDeg: routeBearing(trail.line, { segment: g.state.segment }), stepM: prevSpot.current ? haversine(prevSpot.current, last) : 0 });
+    prevSpot.current = last;
     follow.current = step.state;
-    if (step.wentOff) { setOff(true); Vibration.vibrate([0, 400, 200, 400]); }
-    if (step.backOn) setOff(false);
+    if (step.wentOff) { setOff(true); setRejoinTo(rejoinTarget(trail, g.guide.alongM, speedMps)); Vibration.vibrate([0, 400, 200, 400]); }
+    if (step.backOn) { setOff(false); setRejoinTo(undefined); }
   }, [last?.lat, last?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
   // What to tell the rider next. A route in hand is followed by its own bends; before its start, and with no route, the road to a place is asked for.
   const start = routeLine?.[0];
   const toStart = !!routeLine && guide?.phase === 'to_start';
-  const roadTo = rescueSpot ? rescueSpot : simRoad ? undefined : routeLine ? (toStart ? target ?? start : undefined) : destination;
-  const { directions, failed: roadFailed } = useDirections(lastSpot, roadTo);
+  const rejoining = !rescueSpot && !simRoad && !!routeLine && !toStart && !!rejoinTo;
+  const roadTo = rescueSpot ? rescueSpot : simRoad ? undefined : routeLine ? (toStart ? target ?? start : rejoinTo) : destination;
+  const { directions, failed: roadFailed, rerouting, rerouted } = useDirections(lastSpot, roadTo, { motion: { accM: fix?.accuracy ?? undefined, speedMps: r.speedKmh / 3.6, headingDeg: course } });
+  // One buzz for each new way found, and a longer one when the road is left (the trail's own monitor buzzes for the trail).
+  useEffect(() => { if (rerouted > 0) buzz.reroute(); }, [rerouted]);
+  useEffect(() => { if (rerouting && !rejoining) Vibration.vibrate([0, 300, 150, 300]); }, [rerouting]); // eslint-disable-line react-hooks/exhaustive-deps
   // The position and heading the map and the turn card show are steadied, not raw: on a road they are the road's, elsewhere the fix and the smoothed direction of travel.
   const followLine = rescueSpot ? directions?.line : simRoad?.directions.line ?? (roadTo ? directions?.line : undefined) ?? routeLine;
   const followRoad = useMemo(() => (followLine && followLine.length > 1 ? prepareTrail(followLine) : undefined), [followLine]);
@@ -195,12 +210,12 @@ function LiveBody() {
     if (!spot) return undefined;
     if (simRoad && !rescueSpot) return fromDirections(simRoad.directions, spot, simRoad.name);
     if (roadTo) {
-      const eyebrow = rescueSpot ? `To ${rescueSpot.name}` : toStart ? 'To the start' : target ? target.name ?? 'Navigation' : 'Group destination';
-      if (directions) return fromDirections(directions, spot, eyebrow);
-      return { kind: 'straight', distM: haversine(spot, roadTo), text: `Head ${compassWord(spot, roadTo)}. ${roadFailed ? 'The road service could not be reached' : 'Finding the road…'}`, eyebrow, remainingM: null, etaMin: null, off: false, arrived: false };
+      const eyebrow = rescueSpot ? `To ${rescueSpot.name}` : rejoining ? 'Back to the trail' : toStart ? 'To the start' : target ? target.name ?? 'Navigation' : 'Group destination';
+      if (directions) return { ...fromDirections(directions, spot, eyebrow), off: rerouting };
+      return { kind: 'straight', distM: haversine(spot, roadTo), text: `Head ${compassWord(spot, roadTo)}${rejoining ? ' to rejoin the trail' : ''}. ${roadFailed ? 'The road service could not be reached' : 'Finding the road…'}`, eyebrow, remainingM: null, etaMin: null, off: false, arrived: false };
     }
     return routeLine && guide ? fromTrail(guide, start, spot, off) : undefined;
-  }, [spot, roadTo?.lat, roadTo?.lng, toStart, target, rescueSpot, directions, roadFailed, routeLine, simRoad, guide, start, off]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [spot, roadTo?.lat, roadTo?.lng, toStart, target, rescueSpot, directions, roadFailed, routeLine, simRoad, guide, start, off, rerouting, rejoining]); // eslint-disable-line react-hooks/exhaustive-deps
   // On reaching the rider, or when they say they are OK, the card asks whether to carry on: one tap goes back to the ride as it was.
   const helpResolved = !!rescue && !!rescueRider && rescue.startStatus !== 'ok' && rescueRider.status === 'ok';
   const helpPrompt = rescue && (instruction?.arrived || helpResolved) ? { text: helpResolved ? `${rescue.name} is OK now.` : `You have reached ${rescue.name}.`, action: 'Help given, continue the ride', onAction: endRescue } : undefined;
@@ -244,6 +259,7 @@ function LiveBody() {
   const status = (
     <View style={{ gap: space[2] }}>
       {r.error ? <Banner eyebrow="Storage" title={r.error} /> : null}
+      {r.resumed && nowMs() - r.resumed.at < RESUMED_NOTICE_MS ? <Banner eyebrow="Back on the road" title={`Picked up your ride after ${gapText(r.resumed.gapMs)}${group ? '. The group is still riding.' : '.'}`} /> : null}
       {lostSignal ? <Banner eyebrow="GPS" title="Lost GPS signal, still recording" /> : weakSignal ? <Banner eyebrow="GPS" title="Weak GPS signal. The route may be rough here." /> : null}
       {dropAt && nowMs() - dropAt < 6000 && r.waypoints.length ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
@@ -258,15 +274,13 @@ function LiveBody() {
   const tiles = group ? riderTiles(live.riders, live.me, last, nowMs()) : [];
   // Questions about the lead, over the map: a leader back in contact, a leader out of it, a leader's low battery.
   const lead = useLeadActions();
-  const batteryStage = useLead((s) => s.stage);
   const backupOpen = useLead((s) => s.backupOpen);
-  const batteryLevel = useBattery((s) => s.level);
   const others = tiles.filter((t) => !t.isMe);
   const leadCards = (
-    <LeadCards battery={group?.role === 'leader' ? batteryStage : 'none'} level={batteryLevel} leaderName={live.riders.find((x) => x.role === 'leader')?.name} canTakeBack={live.canTakeBack} canTakeLead={live.canTakeLead}
-      onTakeBack={() => void lead.takeBack()} onTakeLead={() => void lead.take()} onChoose={() => useLead.getState().openBackup()} onDismiss={() => useLead.getState().dismiss()} />
+    <LeadCards leaderName={live.riders.find((x) => x.role === 'leader')?.name} canTakeBack={live.canTakeBack} canTakeLead={live.canTakeLead} onTakeBack={() => void lead.takeBack()} onTakeLead={() => void lead.take()} />
   );
-  const groupRail = group && live.riders.length > 1 ? <GroupRail tiles={tiles} onSelect={(t) => setRiderId(t.id)} onAll={() => setGroupOpen(true)} /> : null;
+  const statusSince = useStatusSince(live.riders);
+  const groupRail = group && live.riders.length > 1 ? <GroupRail tiles={tiles} since={statusSince} onSelect={(t) => showRider(t.id)} onAll={() => setGroupOpen(true)} /> : null;
   const picked = tiles.find((t) => t.id === riderId);
   const pauseBtn = (h: number) => (
     <Pressable accessibilityRole="button" accessibilityLabel={r.paused ? 'Resume ride' : 'Pause ride'} onPress={() => { (r.paused ? buzz.resume : buzz.pause)(); void (r.paused ? r.resume() : r.pause()); }} style={({ pressed }) => ({ flex: 1, minHeight: h, borderRadius: radius.control, backgroundColor: r.paused ? c.accent : pressed ? fixed.darkPressed : c.raised, alignItems: 'center', justifyContent: 'center', gap: space[2] })}>
@@ -281,7 +295,7 @@ function LiveBody() {
   );
   // SOS is held, like Stop, so a glove or a bump cannot open it. A shorter hold than Stop, because it is the one a hurt rider reaches for.
   const sosBtn = (h: number) => (
-    <HoldButton label="SOS" icon={Siren} color={c.stop} tone="stop" row borderOnly ms={700} minHeight={h} onComplete={() => { buzz.help(); setSos(true); }} />
+    <HoldButton label="SOS" icon={Siren} color={c.stop} tone="stop" row borderOnly background={c.paper} ms={700} minHeight={h} onComplete={() => { buzz.help(); setSos(true); }} />
   );
 
   const smallBtn = (label: string, icon: typeof Users, onPress: () => void, h: number) => (
@@ -297,7 +311,7 @@ function LiveBody() {
   const stage = (
     // The map takes all the height between the header and the buttons: the turn card floats over its top edge, the group and the numbers over its bottom edge.
     <View style={{ flex: 1 }}>
-      <OsmMap height="fill" radius={radius.card} follow pointer covered={{ top: hudH ? hudH + space[3] : 0, bottom: footH && !quiet ? footH + space[3] : 0 }} onPicker={setPicking} {...mapData} />
+      <OsmMap height="fill" radius={radius.card} follow pointer debug={mapDebug} covered={{ top: hudH ? hudH + space[3] : 0, bottom: footH && !quiet ? footH + space[3] : 0 }} onPicker={setPicking} {...mapData} />
       <View pointerEvents="box-none" onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); if (h > 0) setHudH(h); }} style={{ position: 'absolute', top: space[3], left: space[3], right: space[3] + size.compact + space[2], gap: space[2] }}>
         {picking ? null : instruction ? <TurnCard instruction={instruction} compact={landscape} onStop={rescue ? endRescue : target ? clearTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}
         {picking ? null : leadCards}
@@ -327,8 +341,8 @@ function LiveBody() {
       <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={last} />
       <LeaderExitSheet open={exitOpen} tiles={tiles} successorId={live.successor} onClose={() => setExitOpen(false)} onGone={() => { setExitOpen(false); void doStop(); }} />
       <BackupLeadSheet open={backupOpen && group?.role === 'leader' && others.length > 0} tiles={tiles} successorId={live.successor} onClose={() => useLead.getState().closeBackup()} />
-      <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={last} onRider={(id) => { setGroupOpen(false); setRiderId(id); }} />
-      {picked ? <RiderSheet tile={picked} me={spot} heading={heading} road={followRoad} canNavigate={canNavigate} onClose={() => setRiderId(undefined)} /> : null}
+      <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={last} onRider={showRider} />
+      {picked ? <RiderSheet open={riderOpen} tile={picked} me={spot} heading={heading} road={followRoad} canNavigate={canNavigate} onClose={() => setRiderOpen(false)} onGo={() => setGroupOpen(false)} /> : null}
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
       <DocumentsSheet open={docsOpen} onClose={() => setDocsOpen(false)} />
       <NoteSheet open={noteOpen} canType={j.canType} onSave={j.addNote} onClose={() => setNoteOpen(false)} />
@@ -366,7 +380,7 @@ function LiveBody() {
         // Turned on its side (a handlebar mount): the map takes the whole height, the turn card and numbers float over its left, and the four big buttons stand in a column on the right where a thumb falls.
         <View style={{ flex: 1, flexDirection: 'row', gap: space[3] }}>
           <View style={{ flex: 1 }}>
-            <OsmMap height="fill" radius={radius.card} follow pointer covered={{ top: 0, bottom: 0, left: sideW ? sideW + space[3] : 0 }} onPicker={setPicking} {...mapData} />
+            <OsmMap height="fill" radius={radius.card} follow pointer debug={mapDebug} covered={{ top: 0, bottom: 0, left: sideW ? sideW + space[3] : 0 }} onPicker={setPicking} {...mapData} />
             <View pointerEvents="box-none" onLayout={(e) => { const w = Math.round(e.nativeEvent.layout.width); if (w > 0) setSideW(w); }} style={{ position: 'absolute', top: space[3], bottom: space[3], left: space[3], width: '46%', maxWidth: layout.barMax, justifyContent: 'space-between' }}>
               <View style={{ gap: space[2] }}>{picking ? null : instruction ? <TurnCard instruction={instruction} compact onStop={rescue ? endRescue : target ? clearTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}{picking ? null : leadCards}{picking ? null : status}</View>
               {quiet ? null : <View style={{ gap: space[2] }}>{groupRail}{stats}</View>}

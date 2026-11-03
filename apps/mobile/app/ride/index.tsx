@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Platform, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { BellRing, Pause, Route as RouteIcon, Users } from 'lucide-react-native';
+import { BellRing, MapPin, Pause, Route as RouteIcon, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { DestinationOption } from '@/features/trip/DestinationOption';
-import { PlaceSearch } from '@/features/route/PlaceSearch';
+import { DestinationSheet } from '@/features/group/DestinationSheet';
 import { useDirections } from '@/features/ride/useDirections';
 import { StartBar, TrailHint } from '@/features/trip/RideStartActions';
 import { useGuideTarget } from '@/store/guideTarget';
@@ -72,6 +72,7 @@ export default function RideReady() {
   const [simNote, setSimNote] = useState<string>();
   const noisy = useSimRide((s) => s.noisy);
   const lowBattery = useSimRide((s) => s.lowBattery);
+  const mapDebug = useSimRide((s) => s.mapDebug);
   const [explain, setExplain] = useState(false);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(false);
@@ -99,6 +100,7 @@ export default function RideReady() {
   const here = useMemo(() => (fix ? { lat: fix.lat, lng: fix.lng } : undefined), [fix]);
   /** The place the rider chose to ride to, and the road to it from where they are: shown on the map with the time it takes. */
   const [dest, setDest] = useState<{ lat: number; lng: number; name: string }>();
+  const [destOpen, setDestOpen] = useState(false);
   const { directions: toDest, failed: toDestFailed } = useDirections(here, dest, { reroute: false });
 
   const gps: Check = source === 'sim' ? { label: 'GPS', status: 'unknown', word: 'Simulated' }
@@ -175,6 +177,7 @@ export default function RideReady() {
       </Sheet>
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
       <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={here} />
+      <DestinationSheet open={destOpen} onClose={() => setDestOpen(false)} near={here} current={dest} onSet={(p, name) => setDest({ lat: p.lat, lng: p.lng, name: name ?? 'A spot on the map' })} />
     </>}>
       <BackHeader />
       <PageTitle fit sub={choices.length === 1 ? 'No plans. Record wherever you go.' : 'Pick a place to ride to, or roam free.'}>{title}</PageTitle>
@@ -182,7 +185,7 @@ export default function RideReady() {
         {choices.map((c) => (
           <DestinationOption key={c.key} title={c.title} sub={c.sub} selected={c.key === chosen.key} onSelect={() => setPicked(c.key)}>
             {c.chip ? <View style={{ flexDirection: 'row' }}><StatusChip status={c.chip.status} label={c.chip.label} /></View> : null}
-            {c.key === 'place' && c.key === chosen.key ? <PlaceSearch near={here} label={dest ? 'Somewhere else?' : 'Where to?'} onPick={(p) => setDest({ ...p.point, name: p.name })} /> : null}
+            {c.key === 'place' && c.key === chosen.key ? <Button variant="soft" icon={MapPin} label={dest ? 'Somewhere else?' : 'Where to?'} onPress={() => setDestOpen(true)} /> : null}
             {c.key === chosen.key && c.route?.kind === 'trail' ? <TrailHint slug={c.route.slug} onNavigate={() => { c.onNavigate?.(); }} /> : null}
           </DestinationOption>
         ))}
@@ -226,6 +229,7 @@ export default function RideReady() {
       <View style={{ flexDirection: 'row', gap: space[2], marginTop: space[2], flexWrap: 'wrap' }}>
         <ChoiceChip icon={Users} label="Simulated group ride (testing)" selected={source === 'sim' && simGroup} onPress={() => { setSource('sim'); setSimGroup(true); }} />
         {source === 'sim' ? <ChoiceChip label="Noisy GPS" selected={noisy} onPress={() => useSimRide.getState().setNoisy(!noisy)} /> : null}
+        {source === 'sim' ? <ChoiceChip label="Map numbers" selected={mapDebug} onPress={() => useSimRide.getState().setMapDebug(!mapDebug)} /> : null}
         {source === 'sim' && simGroup ? <ChoiceChip label="Low battery" selected={lowBattery} onPress={() => useSimRide.getState().setLowBattery(!lowBattery)} /> : null}
       </View>
       <Text variant="caption" tone="muted" style={{ marginTop: space[3] }}>

@@ -16,7 +16,7 @@ export const HEADING_DEADBAND_DEG = 6;
 const HEADING_GAIN = 0.3;
 export const MAX_TURN_DEG_PER_S = 60;
 
-const norm = (deg: number): number => ((deg % 360) + 360) % 360;
+export const norm = (deg: number): number => ((deg % 360) + 360) % 360;
 /** The shortest signed turn from `from` to `to`, in -180 to 180. */
 export const turnBetween = (from: number, to: number): number => ((((to - from) % 360) + 540) % 360) - 180;
 
