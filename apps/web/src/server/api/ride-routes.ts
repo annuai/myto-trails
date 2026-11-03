@@ -1,7 +1,7 @@
 import { isValidSlug } from "@moto-trails/domain";
 import { arriveCheckin, extendCheckin, getMyCheckin, createCheckin, parseExpectedAt, parseNewCheckin, parsePosition, pingCheckin } from "../rides/checkins";
 import { confirmConditionReport, createConditionReport, listConditionReports } from "../rides/condition-reports";
-import { activeClubGroupRide, createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup, syncGroupRide } from "../rides/group-rides";
+import { activeClubGroupRide, createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup, setRiderTitle, syncGroupRide } from "../rides/group-rides";
 import { createSharedRoute, deleteSharedRoute, getSharedRoute, parseSharedRoute } from "../rides/shared-routes";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 
@@ -123,6 +123,14 @@ export const rideRoutes: RouteDef[] = [
       const b = await asObject(c);
       const r = await syncGroupRide(c.sql, { userId: c.userId, rideId: c.params.id!, lat: b.lat, lng: b.lng, status: b.status, now: c.now });
       return "ok" in r ? failWith(GROUP, r.reason) : ok(r);
+    },
+  },
+  {
+    method: "POST", path: "/group-rides/{id}/titles", access: "write:submission", summary: "The leader gives a rider a title (body: rider, the rider's id from the sync; title captain|marshal|medic|sweep, or null to take it away). Everyone sees it on the next sync",
+    async handler(c) {
+      const b = await asObject(c);
+      const r = await setRiderTitle(c.sql, { userId: c.userId, rideId: c.params.id!, rider: b.rider, title: b.title, now: c.now });
+      return r.ok ? noContent() : failWith(GROUP, r.reason);
     },
   },
   {

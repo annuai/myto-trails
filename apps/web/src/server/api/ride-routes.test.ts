@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const checkins = vi.hoisted(() => ({ arriveCheckin: vi.fn(), extendCheckin: vi.fn(), getMyCheckin: vi.fn(), createCheckin: vi.fn(), pingCheckin: vi.fn() }));
-const groups = vi.hoisted(() => ({ createGroupRide: vi.fn(), endGroupRide: vi.fn(), joinGroupRide: vi.fn(), leaveGroupRide: vi.fn(), setRegroup: vi.fn(), syncGroupRide: vi.fn() }));
+const groups = vi.hoisted(() => ({ createGroupRide: vi.fn(), endGroupRide: vi.fn(), joinGroupRide: vi.fn(), leaveGroupRide: vi.fn(), setRegroup: vi.fn(), setRiderTitle: vi.fn(), syncGroupRide: vi.fn() }));
 const reports = vi.hoisted(() => ({ confirmConditionReport: vi.fn(), createConditionReport: vi.fn(), listConditionReports: vi.fn() }));
 const shared = vi.hoisted(() => ({ createSharedRoute: vi.fn(), deleteSharedRoute: vi.fn(), getSharedRoute: vi.fn() }));
 // Only the database-touching functions are replaced; parsing and validation run for real.
@@ -94,6 +94,16 @@ describe("group ride routes", () => {
     expect(groups.syncGroupRide.mock.calls[1]![1]).toMatchObject({ rideId: "g1", lat: 12, lng: 77, status: "wait_up" });
     groups.syncGroupRide.mockResolvedValueOnce({ ok: false, reason: "invalid" });
     expect(await call("POST", "/group-rides/g1/sync", { status: "nonsense" })).toMatchObject({ status: 422 });
+  });
+
+  it("lets only the leader give a rider a title", async () => {
+    groups.setRiderTitle.mockResolvedValueOnce({ ok: true });
+    expect((await call("POST", "/group-rides/g1/titles", { rider: "h2", title: "medic" })).status).toBe(204);
+    expect(groups.setRiderTitle.mock.calls[0]![1]).toMatchObject({ rideId: "g1", rider: "h2", title: "medic" });
+    groups.setRiderTitle.mockResolvedValueOnce({ ok: false, reason: "not_leader" });
+    expect(await call("POST", "/group-rides/g1/titles", { rider: "h2", title: "medic" })).toMatchObject({ status: 403 });
+    groups.setRiderTitle.mockResolvedValueOnce({ ok: false, reason: "not_found" });
+    expect(await call("POST", "/group-rides/g1/titles", { rider: "gone", title: null })).toMatchObject({ status: 404 });
   });
 
   it("keeps regroup, end and leave to the right people", async () => {

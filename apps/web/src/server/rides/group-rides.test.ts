@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { expiresAt, generateCode, HARD_CAP_MS, IDLE_MS, isExpired, isFresh, normalizeCode, STALE_MS } from "./group-rides";
+import { expiresAt, generateCode, HARD_CAP_MS, IDLE_MS, isExpired, isFresh, normalizeCode, parseTitle, STALE_MS } from "./group-rides";
 
 const t0 = new Date("2026-11-01T06:00:00Z");
 const at = (ms: number) => new Date(t0.getTime() + ms);
@@ -43,5 +43,16 @@ describe("a rider's position", () => {
     expect(isFresh(at(0), at(STALE_MS - 1))).toBe(true);
     expect(isFresh(at(0), at(STALE_MS))).toBe(false);
     expect(isFresh(null, at(0))).toBe(false);
+  });
+});
+
+describe("rider titles", () => {
+  it("takes the four jobs, null or an empty string to remove one, and refuses anything else", () => {
+    for (const t of ["captain", "marshal", "medic", "sweep"]) expect(parseTitle(t)).toBe(t);
+    expect(parseTitle(null)).toBeNull();
+    expect(parseTitle("")).toBeNull();
+    expect(parseTitle("boss")).toBeUndefined();
+    expect(parseTitle(7)).toBeUndefined();
+    expect(parseTitle(undefined)).toBeUndefined();
   });
 });

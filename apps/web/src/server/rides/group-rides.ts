@@ -209,6 +209,30 @@ export async function setRegroup(sql: Sql, i: { userId: string; rideId: string; 
   return { ok: true };
 }
 
+/** The jobs a leader can give a rider on a group ride, the same as an event's roles. */
+export const RIDER_TITLES = ["captain", "marshal", "medic", "sweep"] as const;
+export type RiderTitle = (typeof RIDER_TITLES)[number];
+
+/** A title from a request: one of the jobs, null (or an empty string) to take it away, undefined when it is anything else. */
+export function parseTitle(v: unknown): RiderTitle | null | undefined {
+  if (v === null || v === "") return null;
+  return typeof v === "string" && (RIDER_TITLES as readonly string[]).includes(v) ? (v as RiderTitle) : undefined;
+}
+
+/** The leader gives a rider a title (captain, marshal, medic, sweep) or takes it away. `rider` is the rider's public id, as the sync shows it. */
+export async function setRiderTitle(sql: Sql, i: { userId: string; rideId: string; rider: unknown; title: unknown; now: Date }): Promise<{ ok: true } | Fail<"not_found" | "not_leader" | "invalid">> {
+  const g = await leaderOf(sql, i.rideId, i.userId, i.now);
+  if ("ok" in g) return g;
+  const title = parseTitle(i.title);
+  if (title === undefined || typeof i.rider !== "string" || i.rider === "") return { ok: false, reason: "invalid" };
+  const rows = await sql`
+    update group_ride_member set event_role = ${title}
+    where ride_id = ${g.id} and left_at is null and user_id = (select id from app_user where public_id = ${i.rider}) returning user_id`;
+  if (!rows.length) return { ok: false, reason: "not_found" };
+  await sql`update group_ride set last_activity_at = ${i.now} where id = ${g.id}`;
+  return { ok: true };
+}
+
 /** A rider leaves and their position goes. The leader cannot leave: they end the ride. */
 export async function leaveGroupRide(sql: Sql, i: { userId: string; rideId: string }): Promise<{ ok: true } | Fail<"not_found" | "leader">> {
   const g = await findRide(sql, i.rideId);
