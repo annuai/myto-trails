@@ -7,7 +7,8 @@ import { leaderDroppedOff, leaderQuietFor15, mayTakeLead, pickSuccessor, type Ca
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const HOUR = 3_600_000;
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-const MAX_RIDERS = 30;
+/** How many riders one group ride holds. A sync carries everyone's position, so a full group costs about 22 KB a poll to each rider. */
+export const MAX_RIDERS = 100;
 const CREATES_PER_DAY = 5;
 /** A code is six characters, so the number of tries is what keeps it from being guessed. */
 const JOIN_TRIES_PER_HOUR = 20;

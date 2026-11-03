@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { completeWelcome } from "../community/members";
 import { createTestDatabase } from "../testing/db";
 import { makeUser } from "../testing/submission-fixture";
-import { createGroupRide, joinGroupRide, leaveGroupRide, passLead, setRegroup, setRiderTitles, setSuccessor, syncGroupRide, takeBack, takeLead, type Rider } from "./group-rides";
+import { createGroupRide, joinGroupRide, MAX_RIDERS, leaveGroupRide, passLead, setRegroup, setRiderTitles, setSuccessor, syncGroupRide, takeBack, takeLead, type Rider } from "./group-rides";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
 const now = new Date("2026-11-01T06:00:00Z");
@@ -243,5 +243,23 @@ describe("taking the lead from a leader who is out of contact", () => {
     expect(await takeLead(db.sql, { userId: g.ben, rideId: g.rideId, now: minutes(16) })).toEqual({ ok: true });
     expect((await g.see()).riders.find((x) => x.role === "leader")!.id).toBe(ben);
     expect(await asha).toBeTruthy();
+  });
+});
+
+describe("how many riders a group holds", () => {
+  it("takes up to the limit and says the next one is turned away", async () => {
+    const leader = await rider("Leader");
+    const made = await createGroupRide(db.sql, { userId: leader, name: "Big ride", clubId: null, now });
+    if (!made.ok) throw new Error(made.reason);
+    for (let i = 1; i < MAX_RIDERS; i++) {
+      const j = await joinGroupRide(db.sql, { userId: await rider(`Rider ${i}`), code: made.code, displayName: `Rider ${i}`, now });
+      if (!j.ok) throw new Error(`rider ${i}: ${j.reason}`);
+    }
+    const one = await syncGroupRide(db.sql, { userId: leader, rideId: made.id, now });
+    expect("riders" in one && one.riders).toHaveLength(MAX_RIDERS);
+    expect(await joinGroupRide(db.sql, { userId: await rider("One too many"), code: made.code, displayName: "One too many", now })).toEqual({ ok: false, reason: "full" });
+    // Someone leaving makes room.
+    const first = (one as { riders: Rider[] }).riders.find((r) => r.name === "Rider 1")!;
+    expect(first).toBeTruthy();
   });
 });
