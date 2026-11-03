@@ -5,11 +5,13 @@ import { openBackupFile, type ByteReader } from './import';
 import type { ByteWriter } from './stream';
 
 const PASS = 'correct horse battery';
+/** A note long enough that its text appearing in the encrypted file by chance is not a real possibility (two letters would, now and then). */
+const NOTE = 'a private note about the Nandi Hills ride';
 const now = new Date('2026-10-28T10:00:00Z');
 const snap = (over: Partial<Snapshot> = {}): Snapshot => ({
   contacts: [], medical: {}, todos: [], rides: [],
   photos: [{ id: 'd1', docKind: 'licence', width: 1, height: 1, addedAt: 1 }],
-  journal: [{ id: 'n1', rideKey: 1, at: 1, kind: 'note', text: 'hi' }, { id: 'ph1', rideKey: 1, at: 2, kind: 'photo' }, { id: 'v1', rideKey: 1, at: 3, kind: 'voice', durationSec: 5 }],
+  journal: [{ id: 'n1', rideKey: 1, at: 1, kind: 'note', text: NOTE }, { id: 'ph1', rideKey: 1, at: 2, kind: 'photo' }, { id: 'v1', rideKey: 1, at: 3, kind: 'voice', durationSec: 5 }],
   ...over,
 });
 const data = { d1: [1, 2, 3], ph1: [4, 5, 6, 7], v1: [8, 9] };
@@ -29,7 +31,7 @@ async function drain(bytes: Uint8Array, pass = PASS) {
 describe('streamed backup file', () => {
   it('round trips the data and every file, and does not contain the data in the clear', async () => {
     const bytes = await make();
-    expect(new TextDecoder('latin1').decode(bytes)).not.toContain('hi');
+    expect(new TextDecoder('latin1').decode(bytes)).not.toContain(NOTE);
     const { meta, files } = await drain(bytes);
     expect(meta.journal.map((e) => e.id)).toEqual(['n1', 'ph1', 'v1']);
     expect(Object.keys(files).sort()).toEqual(['doc:d1', 'photo:ph1', 'voice:v1']);

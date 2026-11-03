@@ -38,7 +38,7 @@ describe('paperStatus and papersSummary', () => {
 });
 
 describe('validityWord', () => {
-  it('says only the year for a date far off, so the chip stays short', () => expect(validityWord('2038-08-07', '2026-11-03')).toEqual({ status: 'good', word: 'Valid to 2038' }));
+  it('says only the year for a date far off, so the chip stays short', () => expect(validityWord('2038-08-07', '2026-11-03')).toEqual({ status: 'good', word: 'Till 2038' }));
   it('gives the date within a year, the days within a month, and says expired', () => {
     expect(validityWord('2027-02-10', '2026-11-03').word).toMatch(/^Till /);
     expect(validityWord('2026-11-20', '2026-11-03')).toEqual({ status: 'caution', word: '17 days left' });

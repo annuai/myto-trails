@@ -31,6 +31,8 @@ export type OsmMapProps = {
   focus?: LatLng;
   /** Draw an arrow for the way the rider faces instead of a dot, once a `heading` is known. It points at the heading whatever the map's own turn. */
   pointer?: boolean;
+  /** The heading the arrow shows, close to the truth. The map turns to `heading`, which follows it a little behind, so the arrow swings into a corner first. */
+  arrowHeading?: number;
   /** How long, in milliseconds, the camera takes to glide to the next position while it follows: the time between fixes, so the movement is steady rather than stop and go. */
   glideMs?: number;
   /** Turn the map so this bearing (degrees, 0 is north) points up. Only with `follow`; left as is when undefined. */

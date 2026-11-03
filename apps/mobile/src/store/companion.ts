@@ -13,7 +13,7 @@ export type Checkin = { id: string; expectedAt: number; contactName: string; url
 /** The group ride this phone is in. `role` is "leader" for whoever started it. */
 export type GroupSession = { id: string; code: string; name: string; role: string };
 
-type Live = { riders: GroupRiderView[]; /** Which of `riders` is this phone. */ me?: string; regroup: GroupRegroup | null; myStatus: GroupStatus; error?: string };
+type Live = { riders: GroupRiderView[]; /** Which of `riders` is this phone. */ me?: string; regroup: GroupRegroup | null; myStatus: GroupStatus; error?: string; /** The leader's backup, a rider's id (the leader sees it). */ successor?: string | null; /** The leader is out of contact and this rider may take the lead. */ canTakeLead?: boolean; /** The lead was taken from this rider, and they may take it back. */ canTakeBack?: boolean };
 
 type State = {
   checkin: Checkin | null;
@@ -30,6 +30,8 @@ type State = {
   setCard: (c: Partial<State['card']>) => void;
   setAutoPause: (on: boolean) => void;
   setLive: (l: Partial<Live>) => void;
+  /** This phone's part in the group changed (the lead was passed). */
+  setGroupRole: (role: string) => void;
   /** Used by "Erase all my data". */
   wipe: () => void;
 };
@@ -46,6 +48,7 @@ export const useCompanion = create<State>()(
       setCard: (c) => set((s) => ({ card: { ...s.card, ...c } })),
       setAutoPause: (autoPause) => set({ autoPause }),
       setLive: (l) => set((s) => ({ live: { ...s.live, ...l } })),
+      setGroupRole: (role) => set((s) => (s.group ? { group: { ...s.group, role } } : s)),
       wipe: () => set({ checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, live: noLive }),
     }),
     {

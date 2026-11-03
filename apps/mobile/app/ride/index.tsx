@@ -71,6 +71,7 @@ export default function RideReady() {
   /** What the simulated ride is doing before it starts: finding the phone's position, then the road to the trail. */
   const [simNote, setSimNote] = useState<string>();
   const noisy = useSimRide((s) => s.noisy);
+  const lowBattery = useSimRide((s) => s.lowBattery);
   const [explain, setExplain] = useState(false);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(false);
@@ -225,6 +226,7 @@ export default function RideReady() {
       <View style={{ flexDirection: 'row', gap: space[2], marginTop: space[2], flexWrap: 'wrap' }}>
         <ChoiceChip icon={Users} label="Simulated group ride (testing)" selected={source === 'sim' && simGroup} onPress={() => { setSource('sim'); setSimGroup(true); }} />
         {source === 'sim' ? <ChoiceChip label="Noisy GPS" selected={noisy} onPress={() => useSimRide.getState().setNoisy(!noisy)} /> : null}
+        {source === 'sim' && simGroup ? <ChoiceChip label="Low battery" selected={lowBattery} onPress={() => useSimRide.getState().setLowBattery(!lowBattery)} /> : null}
       </View>
       <Text variant="caption" tone="muted" style={{ marginTop: space[3] }}>
         {source === 'sim' && simGroup ? (simNote ?? 'Rides the real road from where you are to the Manchanabele Dam trail with Annuai, Pranab, Jithin and Abha: Pranab leads, Jithin asks to wait and later for help, Abha stops for fuel. Not a real ride.')

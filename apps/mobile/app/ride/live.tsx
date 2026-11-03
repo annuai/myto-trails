@@ -26,6 +26,12 @@ import { SIM_GROUP_ID, SIM_ROUTE } from '@/lib/groupSim';
 import { useSimRide } from '@/store/simRide';
 import { queueRideForOsm } from '@/lib/osmShare';
 import { useGuideTarget } from '@/store/guideTarget';
+import { LeadCards } from '@/features/group/LeadCards';
+import { LeaderExitSheet } from '@/features/group/LeaderExitSheet';
+import { BackupLeadSheet } from '@/features/group/BackupLeadSheet';
+import { useLeadActions } from '@/features/group/useLeadActions';
+import { useBattery } from '@/store/battery';
+import { useLead } from '@/store/lead';
 import { useCanNavigate } from '@/features/group/useCanNavigate';
 import { riderSlots, riderTiles, sortRiders } from '@/lib/groupCore';
 import { useCompanion } from '@/store/companion';
@@ -155,7 +161,7 @@ function LiveBody() {
   useEffect(() => { const id = setInterval(() => tick((n) => n + 1), 1000); return () => clearInterval(id); }, []);
   useEffect(() => { if (r.status === 'idle' && !stopping.current) router.replace('/'); }, [r.status, router]);
   // A place the rider asked to be guided to is for this ride only.
-  useEffect(() => () => { if (useRecorder.getState().status === 'idle') { useGuideTarget.getState().clear(); useSimRide.getState().clear(); } }, []);
+  useEffect(() => () => { if (useRecorder.getState().status === 'idle') { useGuideTarget.getState().clear(); useSimRide.getState().clear(); useLead.getState().dismiss(); useLead.getState().closeBackup(); } }, []);
   // Heading to the start, then along the trail. Off the route for 20 seconds (only once on the trail): buzz and say so. Back within 60 m: clear it.
   const trail = useMemo(() => (routeLine ? prepareTrail(routeLine) : undefined), [routeLine]);
   const guideState = useRef(startGuide);
@@ -183,6 +189,7 @@ function LiveBody() {
   const followRoad = useMemo(() => (followLine && followLine.length > 1 ? prepareTrail(followLine) : undefined), [followLine]);
   const smooth = useSmoothedRide({ position: lastSpot, speedMps: r.speedKmh / 3.6, course, line: followLine });
   const heading = smooth.heading;
+  const arrowHeading = smooth.arrow;
   const spot = smooth.position ?? lastSpot;
   const instruction = useMemo<Instruction | undefined>(() => {
     if (!spot) return undefined;
@@ -199,7 +206,11 @@ function LiveBody() {
   const helpPrompt = rescue && (instruction?.arrived || helpResolved) ? { text: helpResolved ? `${rescue.name} is OK now.` : `You have reached ${rescue.name}.`, action: 'Help given, continue the ride', onAction: endRescue } : undefined;
   const shareHere = () => last && Share.share({ message: `I need help. My position: https://maps.google.com/?q=${last.lat.toFixed(5)},${last.lng.toFixed(5)}` });
 
-  const stop = async () => {
+  const [exitOpen, setExitOpen] = useState(false);
+  /** A leader whose group is still riding cannot just stop: they pass the lead on (and leave), or end the group for everyone. */
+  const mustPassFirst = group?.role === 'leader' && live.riders.some((x) => x.id !== live.me);
+  const stop = async () => { if (mustPassFirst) { setExitOpen(true); return; } await doStop(); };
+  const doStop = async () => {
     buzz.stop();
     stopping.current = true;
     const recordedByGps = r.source === 'gps';
@@ -245,6 +256,16 @@ function LiveBody() {
   );
   // The other riders of the group ride, with how far they are and a way to navigate to them (once stopped).
   const tiles = group ? riderTiles(live.riders, live.me, last, nowMs()) : [];
+  // Questions about the lead, over the map: a leader back in contact, a leader out of it, a leader's low battery.
+  const lead = useLeadActions();
+  const batteryStage = useLead((s) => s.stage);
+  const backupOpen = useLead((s) => s.backupOpen);
+  const batteryLevel = useBattery((s) => s.level);
+  const others = tiles.filter((t) => !t.isMe);
+  const leadCards = (
+    <LeadCards battery={group?.role === 'leader' ? batteryStage : 'none'} level={batteryLevel} leaderName={live.riders.find((x) => x.role === 'leader')?.name} canTakeBack={live.canTakeBack} canTakeLead={live.canTakeLead}
+      onTakeBack={() => void lead.takeBack()} onTakeLead={() => void lead.take()} onChoose={() => useLead.getState().openBackup()} onDismiss={() => useLead.getState().dismiss()} />
+  );
   const groupRail = group && live.riders.length > 1 ? <GroupRail tiles={tiles} onSelect={(t) => setRiderId(t.id)} onAll={() => setGroupOpen(true)} /> : null;
   const picked = tiles.find((t) => t.id === riderId);
   const pauseBtn = (h: number) => (
@@ -270,7 +291,7 @@ function LiveBody() {
   );
 
   // The map is the stage of the screen: the turn card floats over its top, and the group and the numbers sit under it.
-  const mapData = { line: simRoad?.directions.line ?? routeLine, track: r.points, trackBreaks: breaks, position: spot, waypoints: r.waypoints, riderMarks, destination, guide: roadTo ? directions?.line : undefined, heading, glideMs: smooth.glideMs };
+  const mapData = { line: simRoad?.directions.line ?? routeLine, track: r.points, trackBreaks: breaks, position: spot, waypoints: r.waypoints, riderMarks, destination, guide: roadTo ? directions?.line : undefined, heading, arrowHeading, glideMs: smooth.glideMs };
   // On the map's top right corner, where the turn card and the numbers it controls are.
   const quietBtn = <View style={{ position: 'absolute', top: space[3], right: space[3] }}><IconButton size={size.compact} icon={quiet ? Eye : EyeOff} label={quiet ? 'Show ride and group details' : 'Hide ride and group details'} onPress={() => setQuiet(!quiet)} /></View>;
   const stage = (
@@ -279,6 +300,7 @@ function LiveBody() {
       <OsmMap height="fill" radius={radius.card} follow pointer covered={{ top: hudH ? hudH + space[3] : 0, bottom: footH && !quiet ? footH + space[3] : 0 }} onPicker={setPicking} {...mapData} />
       <View pointerEvents="box-none" onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); if (h > 0) setHudH(h); }} style={{ position: 'absolute', top: space[3], left: space[3], right: space[3] + size.compact + space[2], gap: space[2] }}>
         {picking ? null : instruction ? <TurnCard instruction={instruction} compact={landscape} onStop={rescue ? endRescue : target ? clearTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}
+        {picking ? null : leadCards}
         {picking ? null : status}
       </View>
       {quietBtn}
@@ -303,6 +325,8 @@ function LiveBody() {
   return (
     <Screen scroll={false} footer={landscape ? undefined : actions(88, size.button)} overlay={<>
       <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={last} />
+      <LeaderExitSheet open={exitOpen} tiles={tiles} successorId={live.successor} onClose={() => setExitOpen(false)} onGone={() => { setExitOpen(false); void doStop(); }} />
+      <BackupLeadSheet open={backupOpen && group?.role === 'leader' && others.length > 0} tiles={tiles} successorId={live.successor} onClose={() => useLead.getState().closeBackup()} />
       <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={last} onRider={(id) => { setGroupOpen(false); setRiderId(id); }} />
       {picked ? <RiderSheet tile={picked} me={spot} heading={heading} road={followRoad} canNavigate={canNavigate} onClose={() => setRiderId(undefined)} /> : null}
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
@@ -344,7 +368,7 @@ function LiveBody() {
           <View style={{ flex: 1 }}>
             <OsmMap height="fill" radius={radius.card} follow pointer covered={{ top: 0, bottom: 0, left: sideW ? sideW + space[3] : 0 }} onPicker={setPicking} {...mapData} />
             <View pointerEvents="box-none" onLayout={(e) => { const w = Math.round(e.nativeEvent.layout.width); if (w > 0) setSideW(w); }} style={{ position: 'absolute', top: space[3], bottom: space[3], left: space[3], width: '46%', maxWidth: layout.barMax, justifyContent: 'space-between' }}>
-              <View style={{ gap: space[2] }}>{picking ? null : instruction ? <TurnCard instruction={instruction} compact onStop={rescue ? endRescue : target ? clearTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}{picking ? null : status}</View>
+              <View style={{ gap: space[2] }}>{picking ? null : instruction ? <TurnCard instruction={instruction} compact onStop={rescue ? endRescue : target ? clearTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}{picking ? null : leadCards}{picking ? null : status}</View>
               {quiet ? null : <View style={{ gap: space[2] }}>{groupRail}{stats}</View>}
             </View>
             {quietBtn}

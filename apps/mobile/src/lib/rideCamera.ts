@@ -20,14 +20,22 @@ const norm = (deg: number): number => ((deg % 360) + 360) % 360;
 /** The shortest signed turn from `from` to `to`, in -180 to 180. */
 export const turnBetween = (from: number, to: number): number => ((((to - from) % 360) + 540) % 360) - 180;
 
-/** The heading after one step: unchanged while slow or within the deadband, else moved part of the way, never faster than the limit. */
-export function smoothHeading(prev: number | undefined, sample: number | undefined, speedMps: number, dtS: number): number | undefined {
+/** On a road the direction is the road's own, with no noise to smooth: it is followed quickly, so the map and arrow are not still facing the last straight when a corner comes. */
+const ROAD_GAIN = 0.85;
+const ROAD_DEADBAND_DEG = 1;
+export const ROAD_MAX_TURN_DEG_PER_S = 150;
+
+/**
+ * The heading after one step: unchanged while slow, else moved part of the way, never faster than the limit. From a GPS course (noisy) it is
+ * moved slowly and a wobble inside the deadband is ignored. `onRoad` means the sample is a road's own direction: it is followed quickly.
+ */
+export function smoothHeading(prev: number | undefined, sample: number | undefined, speedMps: number, dtS: number, onRoad = false): number | undefined {
   if (sample === undefined || !(speedMps >= MIN_HEADING_MPS)) return prev;
   if (prev === undefined) return norm(sample);
   const delta = turnBetween(prev, sample);
-  if (Math.abs(delta) < HEADING_DEADBAND_DEG) return prev;
-  const limit = MAX_TURN_DEG_PER_S * Math.max(0.2, dtS);
-  return norm(prev + Math.max(-limit, Math.min(limit, delta * HEADING_GAIN)));
+  if (Math.abs(delta) < (onRoad ? ROAD_DEADBAND_DEG : HEADING_DEADBAND_DEG)) return prev;
+  const limit = (onRoad ? ROAD_MAX_TURN_DEG_PER_S : MAX_TURN_DEG_PER_S) * Math.max(0.2, dtS);
+  return norm(prev + Math.max(-limit, Math.min(limit, delta * (onRoad ? ROAD_GAIN : HEADING_GAIN))));
 }
 
 /** A bearing for the camera that continues from the last one instead of wrapping (359 then 2 becomes 359 then 362), so it never spins the long way round. */
@@ -38,8 +46,8 @@ export function unwrapBearing(prev: number, next: number): number {
 /** A rider this close to a planned road is shown on it; once on it, they stay on it until this far away. */
 export const SNAP_M = 30;
 export const RELEASE_M = 50;
-/** The direction of the road is read this far ahead of the rider. */
-const LOOK_AHEAD_M = 25;
+/** The direction of the road is read this far ahead of the rider, or further at speed (about a second and a bit of riding), so a corner is met facing into it. */
+export const lookAheadM = (speedMps: number): number => Math.max(15, Math.min(45, speedMps * 1.3));
 
 export type Matched = { point: LatLng; heading: number; alongM: number };
 
@@ -48,12 +56,12 @@ export type Matched = { point: LatLng; heading: number; alongM: number };
  * on the road at the last fix, so the limit is looser to leave than to join (a fix at 29, 31, 29 m away does not flicker). Null when the
  * rider is not on the road. `alongM` never goes back by more than 25 m, so a fix jittering across the road cannot send a turn card backwards.
  */
-export function matchToRoad(road: TrailLine, fix: LatLng, snapped: boolean, prevAlongM?: number): Matched | null {
+export function matchToRoad(road: TrailLine, fix: LatLng, snapped: boolean, prevAlongM?: number, lookM: number = lookAheadM(0)): Matched | null {
   const near = nearestOnLine(road.line, fix);
   if (!near || near.distM > (snapped ? RELEASE_M : SNAP_M)) return null;
   const along = prevAlongM !== undefined && near.alongM < prevAlongM && prevAlongM - near.alongM < 25 ? prevAlongM : near.alongM;
   const here = pointAt(road, along);
-  return { point: here, heading: bearing(here, pointAt(road, Math.min(road.totalM, along + LOOK_AHEAD_M))), alongM: along };
+  return { point: here, heading: bearing(here, pointAt(road, Math.min(road.totalM, along + lookM))), alongM: along };
 }
 
 /** How long to glide the camera to the next position: the time since the last fix, within a sensible range. */

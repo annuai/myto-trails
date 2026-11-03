@@ -56,12 +56,12 @@ export const simMePoint = (s: number, trail: TrailLine = SIM_TRAIL, speed: numbe
 const statusAt = (r: Scripted, s: number): GroupStatus => r.signals?.find((x) => s >= x.from && s < x.to)?.status ?? 'ok';
 
 /** Everyone in the simulated group `s` seconds in, as the server would send them: this phone first at its own point, then the scripted riders. */
-export function simRiders(s: number, now: number, me: { name: string; status: GroupStatus }, trail: TrailLine = SIM_TRAIL, speed: number = SIM_SPEED_MPS, titles: Record<string, EventRole[]> = {}): GroupRiderView[] {
+export function simRiders(s: number, now: number, me: { name: string; status: GroupStatus }, trail: TrailLine = SIM_TRAIL, speed: number = SIM_SPEED_MPS, titles: Record<string, EventRole[]> = {}, leaderId: string = SIM_ME): GroupRiderView[] {
   const at = new Date(now).toISOString();
   const mine = simMePoint(s, trail, speed);
   return [
-    { id: SIM_ME, name: me.name, role: 'leader', titles: titles[SIM_ME] ?? [], lat: mine.lat, lng: mine.lng, at, status: me.status },
-    ...RIDERS.map((r): GroupRiderView => { const p = pointAt(trail, alongAt(r, s, trail, speed)); return { id: r.id, name: r.name, role: r.role, titles: titles[r.id] ?? r.titles ?? [], lat: p.lat, lng: p.lng, at, status: statusAt(r, s) }; }),
+    { id: SIM_ME, name: me.name, role: leaderId === SIM_ME ? 'leader' : 'member', titles: titles[SIM_ME] ?? [], lat: mine.lat, lng: mine.lng, at, status: me.status },
+    ...RIDERS.map((r): GroupRiderView => { const p = pointAt(trail, alongAt(r, s, trail, speed)); return { id: r.id, name: r.name, role: leaderId === r.id ? 'leader' : 'member', titles: titles[r.id] ?? r.titles ?? [], lat: p.lat, lng: p.lng, at, status: statusAt(r, s) }; }),
   ];
 }
 

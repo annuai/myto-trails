@@ -72,6 +72,15 @@ describe('titles in the simulated group', () => {
   });
 });
 
+describe('passing the lead in the simulated group', () => {
+  const me = { name: 'You', status: 'ok' as const };
+  it('moves the crown to the rider chosen, and leaves exactly one leader', () => {
+    const rs = simRiders(0, 0, me, undefined, undefined, {}, 'sim-pranab');
+    expect(rs.filter((x) => x.role === 'leader').map((x) => x.id)).toEqual(['sim-pranab']);
+    expect(rs.find((x) => x.id === 'sim-me')!.role).toBe('member');
+  });
+});
+
 describe('noisyFix', () => {
   const p = { lat: 13, lng: 77 };
   const seeded = (xs: number[]) => { let i = 0; return () => xs[i++ % xs.length]!; };

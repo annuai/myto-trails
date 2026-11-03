@@ -6,7 +6,7 @@ import type { GeoJSONSource, Map as MlMap } from 'maplibre-gl';
 import type { LatLng } from '@/lib/geo';
 import { fixed, size, space } from '@/theme/tokens';
 import { clusterMarks } from '@/lib/riderClusters';
-import { unwrapBearing } from '@/lib/rideCamera';
+import { turnBetween, unwrapBearing } from '@/lib/rideCamera';
 import { IconButton } from '../IconButton';
 import { Text } from '../Text';
 import { ClusterList, ClusterPin, DestinationPin, HeadingPointer, RiderPin } from './RiderPins';
@@ -20,7 +20,7 @@ const lineFeature = (pts?: LatLng[]) => ({ type: 'Feature' as const, properties:
 const pointsFeature = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 
 /** OpenStreetMap through MapLibre GL, the same stack as the website. Two-finger or Ctrl+scroll to move, so it never traps page scrolling. */
-function OsmMapView({ height, line, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, glideMs, covered, onPicker, pointer, dark, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
+function OsmMapView({ height, line, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, arrowHeading, glideMs, covered, onPicker, pointer, dark, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
   const box = useRef<HTMLDivElement>(null);
   const coverTop = covered?.top ?? 0, coverBottom = covered?.bottom ?? 0, coverLeft = covered?.left ?? 0;
   const start = useMapStart();
@@ -43,7 +43,12 @@ function OsmMapView({ height, line, track, trackBreaks, position, waypoints, rid
   const followingRef = useRef(true);
   const [view, setView] = useState({ zoom: 15, tick: 0, bearing: 0 });
   // The arrow replaces the dot as soon as the way the rider is facing is known, followed or not.
-  const arrow = !!pointer && heading !== undefined && !!position;
+  const shownHeading = arrowHeading ?? heading;
+  const arrow = !!pointer && shownHeading !== undefined && !!position;
+  // The arrow runs a little ahead of the map in a corner: the difference between the two headings.
+  const arrowTurn = heading !== undefined && arrowHeading !== undefined ? turnBetween(heading, arrowHeading) : 0;
+  /** The zoom the camera follows at: 15 to begin with, then whatever the rider zooms to. It is kept here, not read from the map, because the map's own zoom is mid-way during a move. */
+  const zoomTarget = useRef(15);
   const [openId, setOpenId] = useState<string>();
   const clusters = useMemo(() => clusterMarks(riderMarks ?? [], view.zoom), [riderMarks, view.zoom]);
   const open = clusters.find((c) => c.id === openId && c.marks.length > 1);
@@ -67,7 +72,10 @@ function OsmMapView({ height, line, track, trackBreaks, position, waypoints, rid
         // "Cannot find single active touch" warning when two fingers pinch or pan the map.
         for (const type of ['touchstart', 'touchmove', 'touchend', 'touchcancel'] as const) box.current.addEventListener(type, (e) => e.stopPropagation(), { passive: true });
         if (interactive) m.addControl(new ml.NavigationControl({ showCompass: false }), 'top-left');
-        for (const type of ['dragstart', 'zoomstart', 'rotatestart', 'pitchstart'] as const) m.on(type, (e) => { if (follow && 'originalEvent' in e && e.originalEvent) { followingRef.current = false; setFollowing(false); } });
+        // Panning or turning the map hands it back to the rider; zooming does not: it stays about their position.
+        if (follow) { m.scrollZoom.enable({ around: 'center' }); m.touchZoomRotate.enable({ around: 'center' }); }
+        m.on('zoomend', (e) => { if (follow && 'originalEvent' in e && e.originalEvent) zoomTarget.current = m.getZoom(); });
+        for (const type of ['dragstart', 'rotatestart', 'pitchstart'] as const) m.on(type, (e) => { if (follow && 'originalEvent' in e && e.originalEvent) { followingRef.current = false; setFollowing(false); } });
         m.on('move', () => setView({ zoom: m.getZoom(), tick: Date.now(), bearing: m.getBearing() }));
         m.on('click', (e) => tap.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }));
         m.on('error', (e) => setProblem(e.error?.message?.slice(0, 120) ?? 'The map reported an error.'));
@@ -115,7 +123,7 @@ function OsmMapView({ height, line, track, trackBreaks, position, waypoints, rid
     (m.getSource('riders') as GeoJSONSource).setData(pointsFeature(riders));
     (m.getSource('regroup') as GeoJSONSource).setData(pointsFeature(regroup ? [regroup] : []));
     if (m.getLayer('osm')) m.setPaintProperty('osm', 'raster-brightness-max', dark ? 0.6 : 1);
-    if (follow && position) { if (followingRef.current) m.easeTo({ center: [position.lng, position.lat], zoom: Math.max(m.getZoom(), 15), bearing: heading === undefined ? m.getBearing() : unwrapBearing(m.getBearing(), heading), padding: { top: coverTop, right: 0, bottom: coverBottom, left: coverLeft }, duration: glideMs ?? 500, easing: (t) => t }); return; }
+    if (follow && position) { if (followingRef.current) m.easeTo({ center: [position.lng, position.lat], zoom: zoomTarget.current, bearing: heading === undefined ? m.getBearing() : unwrapBearing(m.getBearing(), heading), padding: { top: coverTop, right: 0, bottom: coverBottom, left: coverLeft }, duration: glideMs ?? 500, easing: (t) => t }); return; }
     const all = [...coords(line), ...coords(track)];
     // While a route is being built by tapping, the camera stays where the rider put it.
     if (!all.length || tap.current || fitted.current && follow) return;
@@ -152,8 +160,8 @@ function OsmMapView({ height, line, track, trackBreaks, position, waypoints, rid
   return (
     <View onLayout={(e) => setViewSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })} style={{ height: height === 'fill' ? undefined : height, flex: height === 'fill' ? 1 : undefined, borderRadius: radius, overflow: 'hidden', backgroundColor: dark ? fixed.mapNight : fixed.mapDay }}>
       <div ref={box} style={{ width: '100%', height: '100%' }} />
-      {arrowFixed && viewSize.w > 0 ? <View pointerEvents="none" style={{ position: 'absolute', left: coverLeft + (viewSize.w - coverLeft) / 2 - size.pin / 2, top: coverTop + (viewSize.h - coverTop - coverBottom) / 2 - size.pin / 2 }}><HeadingPointer /></View> : null}
-      {me ? <View pointerEvents="none" style={{ position: 'absolute', left: me.x - size.pin / 2, top: me.y - size.pin / 2 }}><HeadingPointer rotation={heading! - view.bearing} /></View> : null}
+      {arrowFixed && viewSize.w > 0 ? <View pointerEvents="none" style={{ position: 'absolute', left: coverLeft + (viewSize.w - coverLeft) / 2 - size.pin / 2, top: coverTop + (viewSize.h - coverTop - coverBottom) / 2 - size.pin / 2 }}><HeadingPointer rotation={arrowTurn} /></View> : null}
+      {me ? <View pointerEvents="none" style={{ position: 'absolute', left: me.x - size.pin / 2, top: me.y - size.pin / 2 }}><HeadingPointer rotation={shownHeading! - view.bearing} /></View> : null}
       {dest ? <View pointerEvents="none" style={{ position: 'absolute', left: dest.x - size.riderLabel / 2, top: dest.y - size.pin - size.chip, width: size.riderLabel, height: size.pin + size.chip, justifyContent: 'flex-end' }}><DestinationPin name={destination?.name} /></View> : null}
       {clusters.map((c) => {
         const at = screen(c);

@@ -2,6 +2,7 @@ import { randomInt } from "node:crypto";
 import type { Sql, TransactionSql } from "postgres";
 import { cleanBody, LINK } from "../community/comments";
 import { isMember } from "../community/members";
+import { leaderDroppedOff, leaderQuietFor15, mayTakeLead, pickSuccessor, type Candidate } from "./lead";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const HOUR = 3_600_000;
@@ -142,7 +143,15 @@ export async function joinGroupRide(
 }
 
 export type Rider = { id: string; name: string; role: "leader" | "member"; eventRole: "captain" | "marshal" | "medic" | "sweep" | null; /** The titles the rider holds, the leader's list or else the one an event gave them. */ titles: RiderTitle[]; lat: number | null; lng: number | null; at: string | null; status: RiderStatus };
-export type SyncResult = { me: string; riders: Rider[]; regroup: { lat: number; lng: number; note: string | null } | null; ended: boolean; stretchKm: number };
+export type SyncResult = {
+  me: string; riders: Rider[]; regroup: { lat: number; lng: number; note: string | null } | null; ended: boolean; stretchKm: number;
+  /** The leader's backup, shown to the leader only. */
+  successor?: string | null;
+  /** The leader is out of contact and this rider may take the lead (they are the backup, a marshal or a captain). */
+  canTakeLead?: boolean;
+  /** The lead was taken from this rider because they dropped off, and they may take it back. */
+  canTakeBack?: boolean;
+};
 
 /**
  * One round trip: store my position and signal (at most once every 5 seconds), return everyone's. A rider's id is their
@@ -150,7 +159,7 @@ export type SyncResult = { me: string; riders: Rider[]; regroup: { lat: number; 
  */
 export async function syncGroupRide(
   sql: Sql,
-  i: { userId: string; rideId: string; lat?: unknown; lng?: unknown; status?: unknown; now: Date },
+  i: { userId: string; rideId: string; lat?: unknown; lng?: unknown; status?: unknown; /** The phone's battery, 0 to 100, and whether it is charging. */ battery?: unknown; charging?: unknown; now: Date },
 ): Promise<SyncResult | Fail<"not_found" | "invalid">> {
   const g = await findRide(sql, i.rideId);
   if (!g) return { ok: false, reason: "not_found" };
@@ -160,24 +169,33 @@ export async function syncGroupRide(
   if (hasPos && !validLatLng(i.lat, i.lng)) return { ok: false, reason: "invalid" };
   const status = i.status === undefined ? null : (STATUSES as readonly unknown[]).includes(i.status) ? (i.status as RiderStatus) : undefined;
   if (status === undefined) return { ok: false, reason: "invalid" };
+  const battery = i.battery === undefined ? null : Number.isInteger(i.battery) && (i.battery as number) >= 0 && (i.battery as number) <= 100 ? (i.battery as number) : undefined;
+  const charging = i.charging === undefined ? null : typeof i.charging === "boolean" ? i.charging : undefined;
+  if (battery === undefined || charging === undefined) return { ok: false, reason: "invalid" };
   if (isExpired(g, i.now)) {
     if (g.endedAt === null) await wipe(sql, g.id, i.now);
     return { me: me.public_id, riders: [], regroup: null, ended: true, stretchKm: 3 };
   }
-  if (hasPos || status) {
+  if (hasPos || status || battery !== null) {
     await sql`
       update group_ride_member set
         lat = coalesce(${hasPos ? (i.lat as number) : null}, lat), lng = coalesce(${hasPos ? (i.lng as number) : null}, lng),
         seen_at = case when ${hasPos} then ${i.now}::timestamptz else seen_at end,
-        status = coalesce(${status}, status), last_write_at = ${i.now}
+        status = coalesce(${status}, status), battery = coalesce(${battery}, battery), charging = coalesce(${charging}, charging), last_write_at = ${i.now}
       where ride_id = ${g.id} and user_id = ${i.userId} and (last_write_at is null or last_write_at <= ${new Date(i.now.getTime() - WRITE_GAP_MS)})`;
     await sql`update group_ride set last_activity_at = ${i.now} where id = ${g.id}`;
   }
+  // A leader whose phone has gone quiet with a low battery loses the lead to the next in line, whoever's sync finds it.
+  await promoteIfDroppedOff(sql, g.id, i.now);
   const rows = await sql`
-    select u.public_id, m.display_name, m.role, m.event_role, m.titles, m.lat, m.lng, m.seen_at, m.status
+    select u.public_id, m.user_id, m.joined_at, m.display_name, m.role, m.event_role, m.titles, m.lat, m.lng, m.seen_at, m.status
     from group_ride_member m join app_user u on u.id = m.user_id
     where m.ride_id = ${g.id} and m.left_at is null order by m.role desc, m.joined_at`;
-  const [r] = await sql`select regroup_lat, regroup_lng, regroup_note, stretch_km from group_ride where id = ${g.id}`;
+  const [r] = await sql`select regroup_lat, regroup_lng, regroup_note, stretch_km, leader_id, successor_id, previous_leader_id from group_ride where id = ${g.id}`;
+  const mine = rows.find((m) => m.user_id === i.userId);
+  const leaderRow = rows.find((m) => m.user_id === r?.leader_id);
+  const myTitles = mine ? (mine.titles.length ? mine.titles : mine.event_role ? [mine.event_role] : []) : [];
+  const iLead = r?.leader_id === i.userId;
   return {
     me: me.public_id,
     riders: rows.map((m) => {
@@ -187,6 +205,9 @@ export async function syncGroupRide(
     regroup: r?.regroup_lat !== null && r?.regroup_lat !== undefined ? { lat: r.regroup_lat, lng: r.regroup_lng, note: r.regroup_note } : null,
     ended: false,
     stretchKm: r?.stretch_km ?? 3,
+    successor: iLead ? (rows.find((m) => m.user_id === r?.successor_id)?.public_id ?? null) : null,
+    canTakeLead: !iLead && !!leaderRow && leaderQuietFor15(leaderRow.seen_at, leaderRow.joined_at, i.now) && mayTakeLead({ userId: i.userId, titles: myTitles }, r?.successor_id ?? null),
+    canTakeBack: r?.previous_leader_id === i.userId && !iLead,
   };
 }
 
@@ -238,13 +259,123 @@ export async function setRiderTitles(sql: Sql, i: { userId: string; rideId: stri
   return { ok: true };
 }
 
-/** A rider leaves and their position goes. The leader cannot leave: they end the ride. */
-export async function leaveGroupRide(sql: Sql, i: { userId: string; rideId: string }): Promise<{ ok: true } | Fail<"not_found" | "leader">> {
-  const g = await findRide(sql, i.rideId);
-  if (!g) return { ok: false, reason: "not_found" };
-  if (g.leaderId === i.userId && g.endedAt === null) return { ok: false, reason: "leader" };
-  const rows = await sql`update group_ride_member set left_at = coalesce(left_at, now()), lat = null, lng = null, seen_at = null where ride_id = ${g.id} and user_id = ${i.userId} returning user_id`;
-  return rows.length ? { ok: true } : { ok: false, reason: "not_found" };
+type Db = Sql | TransactionSql;
+
+/** The ride, locked for the rest of the transaction, so two lead changes at once cannot both happen. */
+async function lockRide(tx: Db, id: string): Promise<Ride | null> {
+  if (!UUID.test(id)) return null;
+  const [g] = await tx`select id, leader_id, name, created_at, last_activity_at, ended_at from group_ride where id = ${id} for update`;
+  return g ? { id: g.id, leaderId: g.leader_id, name: g.name, createdAt: g.created_at, lastActivityAt: g.last_activity_at, endedAt: g.ended_at } : null;
+}
+
+/** The user id of a rider still in the ride, from their public id. "invalid" when it is not an id. */
+async function activeRider(tx: Db, rideId: string, rider: unknown): Promise<string | null | "invalid"> {
+  if (typeof rider !== "string" || !UUID.test(rider)) return "invalid";
+  const [m] = await tx`select m.user_id from group_ride_member m join app_user u on u.id = m.user_id where m.ride_id = ${rideId} and m.left_at is null and u.public_id = ${rider}`;
+  return m ? (m.user_id as string) : null;
+}
+
+/** The lead changes hands: one leader, always. `previous` is who it was taken from if they dropped off (so they can take it back), else null. */
+async function transferLead(tx: Db, rideId: string, from: string, to: string, o: { previous: string | null; now: Date }) {
+  await tx`update group_ride set leader_id = ${to}, successor_id = null, previous_leader_id = ${o.previous}, last_activity_at = ${o.now} where id = ${rideId}`;
+  await tx`update group_ride_member set role = 'member' where ride_id = ${rideId} and user_id = ${from}`;
+  await tx`update group_ride_member set role = 'leader' where ride_id = ${rideId} and user_id = ${to}`;
+}
+
+type LeadFail = Fail<"not_found" | "not_leader" | "invalid">;
+
+/** The leader passes the lead to a rider of the ride, at once. The leader becomes a rider. */
+export async function passLead(sql: Sql, i: { userId: string; rideId: string; rider: unknown; now: Date }): Promise<{ ok: true } | LeadFail> {
+  return sql.begin(async (tx) => {
+    const g = await lockRide(tx, i.rideId);
+    if (!g || isExpired(g, i.now)) return { ok: false, reason: "not_found" } as const;
+    if (g.leaderId !== i.userId) return { ok: false, reason: "not_leader" } as const;
+    const to = await activeRider(tx, g.id, i.rider);
+    if (to === "invalid" || to === i.userId) return { ok: false, reason: "invalid" } as const;
+    if (to === null) return { ok: false, reason: "not_found" } as const;
+    await transferLead(tx, g.id, i.userId, to, { previous: null, now: i.now });
+    return { ok: true } as const;
+  });
+}
+
+/** The leader names the rider who leads if their phone dies, or clears the choice with null. Only the leader sees it. */
+export async function setSuccessor(sql: Sql, i: { userId: string; rideId: string; rider: unknown; now: Date }): Promise<{ ok: true } | LeadFail> {
+  const g = await leaderOf(sql, i.rideId, i.userId, i.now);
+  if ("ok" in g) return g;
+  if (i.rider === null) { await sql`update group_ride set successor_id = null where id = ${g.id}`; return { ok: true }; }
+  const to = await activeRider(sql, g.id, i.rider);
+  if (to === "invalid" || to === i.userId) return { ok: false, reason: "invalid" };
+  if (to === null) return { ok: false, reason: "not_found" };
+  await sql`update group_ride set successor_id = ${to} where id = ${g.id}`;
+  return { ok: true };
+}
+
+/** Someone next in line takes the lead from a leader who has been out of contact for 15 minutes. The old leader may take it back. */
+export async function takeLead(sql: Sql, i: { userId: string; rideId: string; now: Date }): Promise<{ ok: true } | Fail<"not_found" | "not_allowed">> {
+  return sql.begin(async (tx) => {
+    const g = await lockRide(tx, i.rideId);
+    if (!g || isExpired(g, i.now)) return { ok: false, reason: "not_found" } as const;
+    const [me] = await tx`select m.titles, m.event_role from group_ride_member m where m.ride_id = ${g.id} and m.user_id = ${i.userId} and m.left_at is null`;
+    if (!me || g.leaderId === i.userId) return { ok: false, reason: "not_found" } as const;
+    const [l] = await tx`select seen_at, joined_at from group_ride_member where ride_id = ${g.id} and user_id = ${g.leaderId}`;
+    const [r] = await tx`select successor_id from group_ride where id = ${g.id}`;
+    const titles = me.titles.length ? me.titles : me.event_role ? [me.event_role] : [];
+    if (!l || !leaderQuietFor15(l.seen_at, l.joined_at, i.now) || !mayTakeLead({ userId: i.userId, titles }, r?.successor_id ?? null)) return { ok: false, reason: "not_allowed" } as const;
+    await transferLead(tx, g.id, g.leaderId, i.userId, { previous: g.leaderId, now: i.now });
+    return { ok: true } as const;
+  });
+}
+
+/** The leader the lead was taken from comes back and takes it again, at once. */
+export async function takeBack(sql: Sql, i: { userId: string; rideId: string; now: Date }): Promise<{ ok: true } | Fail<"not_found" | "not_allowed">> {
+  return sql.begin(async (tx) => {
+    const g = await lockRide(tx, i.rideId);
+    if (!g || isExpired(g, i.now)) return { ok: false, reason: "not_found" } as const;
+    const [r] = await tx`select previous_leader_id from group_ride where id = ${g.id}`;
+    const [m] = await tx`select 1 as ok from group_ride_member where ride_id = ${g.id} and user_id = ${i.userId} and left_at is null`;
+    if (!m || r?.previous_leader_id !== i.userId || g.leaderId === i.userId) return { ok: false, reason: "not_allowed" } as const;
+    await transferLead(tx, g.id, g.leaderId, i.userId, { previous: null, now: i.now });
+    return { ok: true } as const;
+  });
+}
+
+/**
+ * A leader quiet for 10 minutes whose last reported battery was low and not charging has dropped off: the lead goes to the next in line (see
+ * pickSuccessor), who is told, and the old leader can take it back. A leader who only lost signal is never judged this way. Checked on every
+ * sync, so no schedule is needed.
+ */
+async function promoteIfDroppedOff(sql: Sql, rideId: string, now: Date) {
+  const [l] = await sql`
+    select g.leader_id, m.seen_at, m.battery, m.charging from group_ride g join group_ride_member m on m.ride_id = g.id and m.user_id = g.leader_id
+    where g.id = ${rideId} and g.ended_at is null`;
+  if (!l || !leaderDroppedOff({ seenAt: l.seen_at, battery: l.battery, charging: l.charging }, now)) return;
+  await sql.begin(async (tx) => {
+    const g = await lockRide(tx, rideId);
+    if (!g || g.leaderId !== l.leader_id) return; // someone else changed it first
+    const [r] = await tx`select successor_id from group_ride where id = ${g.id}`;
+    const rows = await tx`select user_id, titles, event_role, joined_at, seen_at from group_ride_member where ride_id = ${g.id} and left_at is null`;
+    const people: Candidate[] = rows.map((m) => ({ userId: m.user_id as string, titles: m.titles.length ? m.titles : m.event_role ? [m.event_role] : [], joinedAt: m.joined_at as Date, seenAt: m.seen_at as Date | null }));
+    const next = pickSuccessor(people, { successorId: r?.successor_id ?? null, leaderId: g.leaderId, now });
+    if (next) await transferLead(tx, g.id, g.leaderId, next.userId, { previous: g.leaderId, now });
+  });
+}
+
+/** A rider leaves and their position goes. The leader cannot leave without passing the lead: with `successor` (a rider's public id) the lead passes and the leaving is one step; without, they end the ride instead. */
+export async function leaveGroupRide(sql: Sql, i: { userId: string; rideId: string; successor?: unknown; now?: Date }): Promise<{ ok: true } | Fail<"not_found" | "leader" | "invalid">> {
+  const now = i.now ?? new Date();
+  return sql.begin(async (tx) => {
+    const g = await lockRide(tx, i.rideId);
+    if (!g) return { ok: false, reason: "not_found" } as const;
+    if (g.leaderId === i.userId && g.endedAt === null) {
+      if (i.successor === undefined || i.successor === null) return { ok: false, reason: "leader" } as const;
+      const to = await activeRider(tx, g.id, i.successor);
+      if (to === "invalid" || to === i.userId) return { ok: false, reason: "invalid" } as const;
+      if (to === null) return { ok: false, reason: "not_found" } as const;
+      await transferLead(tx, g.id, i.userId, to, { previous: null, now });
+    }
+    const rows = await tx`update group_ride_member set left_at = coalesce(left_at, now()), lat = null, lng = null, seen_at = null, battery = null, charging = false where ride_id = ${g.id} and user_id = ${i.userId} returning user_id`;
+    return rows.length ? ({ ok: true } as const) : ({ ok: false, reason: "not_found" } as const);
+  });
 }
 
 export async function endGroupRide(sql: Sql, i: { userId: string; rideId: string; now: Date }): Promise<{ ok: true } | Fail<"not_found" | "not_leader">> {

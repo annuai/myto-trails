@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const checkins = vi.hoisted(() => ({ arriveCheckin: vi.fn(), extendCheckin: vi.fn(), getMyCheckin: vi.fn(), createCheckin: vi.fn(), pingCheckin: vi.fn() }));
-const groups = vi.hoisted(() => ({ createGroupRide: vi.fn(), endGroupRide: vi.fn(), joinGroupRide: vi.fn(), leaveGroupRide: vi.fn(), setRegroup: vi.fn(), setRiderTitles: vi.fn(), syncGroupRide: vi.fn() }));
+const groups = vi.hoisted(() => ({ createGroupRide: vi.fn(), endGroupRide: vi.fn(), joinGroupRide: vi.fn(), leaveGroupRide: vi.fn(), setRegroup: vi.fn(), setRiderTitles: vi.fn(), syncGroupRide: vi.fn(), passLead: vi.fn(), setSuccessor: vi.fn(), takeLead: vi.fn(), takeBack: vi.fn() }));
 const reports = vi.hoisted(() => ({ confirmConditionReport: vi.fn(), createConditionReport: vi.fn(), listConditionReports: vi.fn() }));
 const shared = vi.hoisted(() => ({ createSharedRoute: vi.fn(), deleteSharedRoute: vi.fn(), getSharedRoute: vi.fn() }));
 // Only the database-touching functions are replaced; parsing and validation run for real.
@@ -104,6 +104,45 @@ describe("group ride routes", () => {
     expect(await call("POST", "/group-rides/g1/titles", { rider: "h2", titles: ["medic"] })).toMatchObject({ status: 403 });
     groups.setRiderTitles.mockResolvedValueOnce({ ok: false, reason: "not_found" });
     expect(await call("POST", "/group-rides/g1/titles", { rider: "gone", titles: [] })).toMatchObject({ status: 404 });
+  });
+
+  it("passes the lead at once, and says why when it cannot", async () => {
+    groups.passLead.mockResolvedValueOnce({ ok: true });
+    expect((await call("POST", "/group-rides/g1/leader", { rider: "h2" })).status).toBe(204);
+    expect(groups.passLead.mock.calls[0]![1]).toMatchObject({ rideId: "g1", rider: "h2" });
+    groups.passLead.mockResolvedValueOnce({ ok: false, reason: "not_leader" });
+    expect(await call("POST", "/group-rides/g1/leader", { rider: "h2" })).toMatchObject({ status: 403 });
+    groups.passLead.mockResolvedValueOnce({ ok: false, reason: "invalid" });
+    expect((await call("POST", "/group-rides/g1/leader", { rider: "me" })).status).toBe(422);
+  });
+
+  it("lets a leader leave only with a successor, and an ordinary rider leave with no body", async () => {
+    groups.leaveGroupRide.mockResolvedValueOnce({ ok: false, reason: "leader" });
+    expect(await call("POST", "/group-rides/g1/leave")).toMatchObject({ status: 409, body: { error: { message: expect.stringContaining("Pass the lead") } } });
+    groups.leaveGroupRide.mockResolvedValueOnce({ ok: true });
+    expect((await call("POST", "/group-rides/g1/leave", { successor: "h2" })).status).toBe(204);
+    expect(groups.leaveGroupRide.mock.calls.at(-1)![1]).toMatchObject({ successor: "h2" });
+  });
+
+  it("names a backup leader, takes the lead from one who is out of contact, and takes it back", async () => {
+    groups.setSuccessor.mockResolvedValue({ ok: true });
+    expect((await call("POST", "/group-rides/g1/successor", { rider: "h2" })).status).toBe(204);
+    await call("POST", "/group-rides/g1/successor", {});
+    expect(groups.setSuccessor.mock.calls.at(-1)![1].rider).toBeNull();
+    groups.takeLead.mockResolvedValueOnce({ ok: false, reason: "not_allowed" });
+    expect(await call("POST", "/group-rides/g1/leader/take")).toMatchObject({ status: 403 });
+    groups.takeLead.mockResolvedValueOnce({ ok: true });
+    expect((await call("POST", "/group-rides/g1/leader/take")).status).toBe(204);
+    groups.takeBack.mockResolvedValueOnce({ ok: true });
+    expect((await call("POST", "/group-rides/g1/leader/back")).status).toBe(204);
+  });
+
+  it("passes a battery level along with a sync, and refuses a nonsense one", async () => {
+    groups.syncGroupRide.mockResolvedValue({ me: "h1", riders: [], regroup: null, ended: false });
+    await call("POST", "/group-rides/g1/sync", { lat: 12, lng: 77, battery: 14, charging: false });
+    expect(groups.syncGroupRide.mock.calls.at(-1)![1]).toMatchObject({ battery: 14, charging: false });
+    groups.syncGroupRide.mockResolvedValueOnce({ ok: false, reason: "invalid" });
+    expect((await call("POST", "/group-rides/g1/sync", { battery: 140 })).status).toBe(422);
   });
 
   it("still takes the single title an older app sends", async () => {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Linking, View } from 'react-native';
 import { Crown, Navigation, Route } from 'lucide-react-native';
 import type { LatLng } from '@/lib/geo';
@@ -20,6 +21,8 @@ import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { ROLE_ICON } from './roleIcons';
 import { useRiderTitles } from './useRiderTitles';
+import { LeadConfirm } from './PassTheLead';
+import { useLeadActions } from './useLeadActions';
 
 /**
  * One rider of the group. It says how far they are from you and whether that is ahead of you or behind you, live: the card is drawn again
@@ -29,6 +32,10 @@ import { useRiderTitles } from './useRiderTitles';
 export function RiderSheet({ tile, me, heading, road, canNavigate, onClose }: { tile: RiderTile; /** Where you are now. */ me?: LatLng; /** The way you are heading, to tell ahead from behind off a road. */ heading?: number; /** The road you are riding, to measure along it. */ road?: TrailLine; canNavigate: boolean; onClose: () => void }) {
   const { c } = useTheme();
   const { canSet, set } = useRiderTitles();
+  const lead = useLeadActions();
+  /** The leader has asked to pass the lead to this rider and is being asked to confirm, in this same sheet. */
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
   const rescue = useGuideTarget((s) => s.rescue);
   /** The rider is already on their way to this rider. */
   const helping = rescue?.riderId === tile.id;
@@ -37,6 +44,13 @@ export function RiderSheet({ tile, me, heading, road, canNavigate, onClose }: { 
   const name = tile.isMe ? 'You' : tile.name;
   const gap = tile.position && me && !tile.isMe ? riderGap({ me, rider: tile.position, heading, road }) : undefined;
   const toggle = (role: RiderTitle) => void set(tile.id, tile.titles.includes(role) ? tile.titles.filter((t) => t !== role) : [...tile.titles, role]);
+  if (confirming) {
+    return (
+      <Sheet open title={`Pass the lead to ${tile.name}?`} onClose={() => setConfirming(false)}>
+        <LeadConfirm name={tile.name} moving={!canNavigate} busy={busy} onBack={() => setConfirming(false)} onConfirm={() => { setBusy(true); void lead.pass(tile.id).then((ok) => { setBusy(false); if (ok) onClose(); }); }} />
+      </Sheet>
+    );
+  }
   return (
     <Sheet open title={name} onClose={onClose}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[2] }}>
@@ -76,6 +90,7 @@ export function RiderSheet({ tile, me, heading, road, canNavigate, onClose }: { 
       ) : canNavigate ? <Button icon={Route} label={`Navigate to ${tile.name}`} onPress={go} />
         // Moving, the button must be held, like Stop and SOS: a bump or a glove cannot send the rider off their road.
         : <HoldButton label={`Hold to navigate to ${tile.name}`} icon={Route} color={c.accent} borderOnly row ms={700} minHeight={size.button} onComplete={go} />) : null}
+      {lead.isLeader && !tile.isMe ? <Button variant="soft" icon={Crown} label="Pass the lead" onPress={() => setConfirming(true)} /> : null}
       {!tile.isMe && tile.position && canNavigate && !helping ? <Button variant="soft" icon={Navigation} label={`Directions to ${tile.name}`} onPress={() => void Linking.openURL(mapsDirectionsUrl(tile.position!)).catch(() => undefined)} /> : null}
     </Sheet>
   );

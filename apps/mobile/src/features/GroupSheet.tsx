@@ -5,11 +5,13 @@ import { Flag, LogOut, Share2 } from 'lucide-react-native';
 import { createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup } from '@/api/groups';
 import { SITE_BASE } from '@/api/config';
 import type { LatLng } from '@/lib/geo';
-import { distanceToLeaderM, riderTiles, STATUS_LABEL, type GroupStatus } from '@/lib/groupCore';
+import { distanceToLeaderM, riderTiles, STATUS_LABEL, type GroupStatus, type RiderTile } from '@/lib/groupCore';
 import { SIM_GROUP_ID } from '@/lib/groupSim';
 import { codeFromInvite, inviteUrl } from '@/lib/inviteLink';
 import { useAction } from '@/lib/useAction';
+import { LeadConfirm, LeadPicker } from '@/features/group/PassTheLead';
 import { RiderSheet } from '@/features/group/RiderSheet';
+import { useLeadActions } from '@/features/group/useLeadActions';
 import { RiderTiles } from '@/features/group/RiderTiles';
 import { PlaceSearch } from '@/features/route/PlaceSearch';
 import { useCanNavigate } from '@/features/group/useCanNavigate';
@@ -45,6 +47,11 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
   const { busy, problem, run } = useAction();
   const leader = group?.role === 'leader';
   const [pickedId, setPickedId] = useState<string>();
+  /** A leader leaving: choosing who gets the lead, then confirming, in this same sheet. */
+  const [exit, setExit] = useState<'pick' | 'confirm' | undefined>();
+  const [heir, setHeir] = useState<RiderTile>();
+  const [passing, setPassing] = useState(false);
+  const lead = useLeadActions();
   const canNavigate = useCanNavigate();
 
   const start = async () => {
@@ -79,7 +86,16 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
 
   return (
     <>
-    <Sheet open={open} title={group ? group.name : 'Group ride'} onClose={onClose}>
+    <Sheet open={open} title={exit === 'confirm' && heir ? `Pass the lead to ${heir.name}?` : exit === 'pick' ? 'Pass the lead' : group ? group.name : 'Group ride'} onClose={() => { setExit(undefined); onClose(); }}>
+      {exit === 'pick' ? (
+        <>
+          <Text variant="label" tone="muted">You lead this group, so you pass the lead to a rider before you leave. Choose who.</Text>
+          <LeadPicker tiles={tiles} successorId={live.successor} onPick={(t) => { setHeir(t); setExit('confirm'); }} />
+          <Button variant="soft" label="Cancel" onPress={() => setExit(undefined)} />
+        </>
+      ) : exit === 'confirm' && heir ? (
+        <LeadConfirm name={heir.name} leaving moving={!canNavigate} busy={passing} onBack={() => setExit('pick')} onConfirm={() => { setPassing(true); void lead.passAndLeave(heir.id).then((ok) => { setPassing(false); if (ok) { setExit(undefined); onClose(); } }); }} />
+      ) : (<>
       {!token && group?.id !== SIM_GROUP_ID ? (
         <>
           <Text variant="label" tone="muted">Sign in to ride with a group. Your position is shared with the group only while the ride is on.</Text>
@@ -112,11 +128,13 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
               {live.regroup ? <Button variant="soft" label="Remove the destination" onPress={() => void pin(null)} /> : null}
             </>
           ) : null}
+          {leader && tiles.some((t) => !t.isMe) ? <Button icon={LogOut} label="Pass the lead and leave" disabled={busy} onPress={() => setExit('pick')} /> : null}
           <Button variant="danger" icon={LogOut} label={leader ? 'End the group ride for everyone' : 'Leave the group'} disabled={busy} onPress={() => void leave()} />
           {live.error ? <Text variant="label" tone="caution">{live.error}</Text> : null}
         </>
       )}
       {problem ? <Text variant="label" tone="stop">{problem}</Text> : null}
+      </>)}
     </Sheet>
     {picked && !onRider ? <RiderSheet tile={picked} me={position} canNavigate={canNavigate} onClose={() => setPickedId(undefined)} /> : null}
     </>

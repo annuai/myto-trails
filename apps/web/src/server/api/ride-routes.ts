@@ -1,7 +1,7 @@
 import { isValidSlug } from "@moto-trails/domain";
 import { arriveCheckin, extendCheckin, getMyCheckin, createCheckin, parseExpectedAt, parseNewCheckin, parsePosition, pingCheckin } from "../rides/checkins";
 import { confirmConditionReport, createConditionReport, listConditionReports } from "../rides/condition-reports";
-import { activeClubGroupRide, createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup, setRiderTitles, syncGroupRide } from "../rides/group-rides";
+import { activeClubGroupRide, createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, passLead, setRegroup, setRiderTitles, setSuccessor, syncGroupRide, takeBack, takeLead } from "../rides/group-rides";
 import { createSharedRoute, deleteSharedRoute, getSharedRoute, parseSharedRoute } from "../rides/shared-routes";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 
@@ -32,7 +32,7 @@ const CHECKIN: Reasons = {
 const GROUP: Reasons = {
   not_member: NOT_MEMBER, not_found: [404, "That group ride isn't available. Check the code."], invalid: [422, "Use 1 to 60 characters, and leave web addresses out."],
   rate_limited: [429, "You can start five group rides a day."], too_many_tries: [429, "Too many tries. Wait a little while, then enter the code again."], full: [409, "This group ride is full (30 riders)."],
-  not_leader: [403, "Only the leader can do that."], leader: [409, "The leader ends the ride instead of leaving it."],
+  not_leader: [403, "Only the leader can do that."], leader: [409, "Pass the lead to a rider first, or end the ride for everyone."], not_allowed: [403, "You can't do that right now."],
 };
 const REPORT: Reasons = {
   not_member: NOT_MEMBER, not_found: [404, "That isn't available any more."], invalid: [422, "Pick what you saw, with a time that is not in the future or more than 30 days ago."],
@@ -118,11 +118,41 @@ export const rideRoutes: RouteDef[] = [
     },
   },
   {
-    method: "POST", path: "/group-rides/{id}/sync", access: "write:submission", summary: "Send your position and signal (body: lat, lng, at, status ok|wait_up|fuel|break|help) and get everyone's back, with the regroup point. Send {} to only read",
+    method: "POST", path: "/group-rides/{id}/sync", access: "write:submission", summary: "Send your position, signal and battery (body: lat, lng, at, status ok|wait_up|fuel|break|help, battery 0-100, charging) and get everyone's back, with the regroup point. Send {} to only read. A leader who goes quiet with a low battery loses the lead to the next in line",
     async handler(c) {
       const b = await asObject(c);
-      const r = await syncGroupRide(c.sql, { userId: c.userId, rideId: c.params.id!, lat: b.lat, lng: b.lng, status: b.status, now: c.now });
+      const r = await syncGroupRide(c.sql, { userId: c.userId, rideId: c.params.id!, lat: b.lat, lng: b.lng, status: b.status, battery: b.battery, charging: b.charging, now: c.now });
       return "ok" in r ? failWith(GROUP, r.reason) : ok(r);
+    },
+  },
+  {
+    method: "POST", path: "/group-rides/{id}/leader", access: "write:submission", summary: "The leader passes the lead to a rider (body: rider, the rider's id from the sync). It happens at once; the old leader becomes a rider",
+    async handler(c) {
+      const b = await asObject(c);
+      const r = await passLead(c.sql, { userId: c.userId, rideId: c.params.id!, rider: b.rider, now: c.now });
+      return r.ok ? noContent() : failWith(GROUP, r.reason);
+    },
+  },
+  {
+    method: "POST", path: "/group-rides/{id}/leader/take", access: "write:submission", summary: "The leader's backup, a marshal or a captain takes the lead when the leader has been out of contact for 15 minutes",
+    async handler(c) {
+      const r = await takeLead(c.sql, { userId: c.userId, rideId: c.params.id!, now: c.now });
+      return r.ok ? noContent() : failWith(GROUP, r.reason);
+    },
+  },
+  {
+    method: "POST", path: "/group-rides/{id}/leader/back", access: "write:submission", summary: "A leader the lead was taken from, because they dropped off, takes it back",
+    async handler(c) {
+      const r = await takeBack(c.sql, { userId: c.userId, rideId: c.params.id!, now: c.now });
+      return r.ok ? noContent() : failWith(GROUP, r.reason);
+    },
+  },
+  {
+    method: "POST", path: "/group-rides/{id}/successor", access: "write:submission", summary: "The leader names the rider who leads if their phone dies (body: rider, or null to clear). Only the leader sees the choice",
+    async handler(c) {
+      const b = await asObject(c);
+      const r = await setSuccessor(c.sql, { userId: c.userId, rideId: c.params.id!, rider: b.rider === undefined ? null : b.rider, now: c.now });
+      return r.ok ? noContent() : failWith(GROUP, r.reason);
     },
   },
   {
@@ -144,9 +174,11 @@ export const rideRoutes: RouteDef[] = [
     },
   },
   {
-    method: "POST", path: "/group-rides/{id}/leave", access: "write:submission", summary: "Leave a group ride. Your position is wiped. The leader ends it instead",
+    method: "POST", path: "/group-rides/{id}/leave", access: "write:submission", summary: "Leave a group ride (body, optional: successor, a rider's id). Your position is wiped. The leader must pass the lead with `successor`, or end the ride instead",
     async handler(c) {
-      const r = await leaveGroupRide(c.sql, { userId: c.userId, rideId: c.params.id! });
+      const b = await c.body().catch(() => ({}));
+      const successor = typeof b === "object" && b !== null && !Array.isArray(b) ? (b as Record<string, unknown>).successor : undefined;
+      const r = await leaveGroupRide(c.sql, { userId: c.userId, rideId: c.params.id!, successor, now: c.now });
       return r.ok ? noContent() : failWith(GROUP, r.reason);
     },
   },

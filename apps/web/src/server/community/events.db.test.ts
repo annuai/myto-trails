@@ -67,7 +67,7 @@ describe("visibility", () => {
 describe("replying", () => {
   it("waitlists past capacity and promotes the longest waiting rider when a seat opens", async () => {
     const { id } = await host({ capacity: 2 });
-    const [a, b] = [await rider("A"), await rider("B")];
+    const [a, b] = [await rider("Asha"), await rider("Ben")];
     // The host already holds one of the two seats.
     expect(await respond(db.sql, { userId: a, eventId: id, response: "going", now: t0 })).toMatchObject({ ok: true, response: "going" });
     expect(await respond(db.sql, { userId: b, eventId: id, response: "going", now: t0 })).toMatchObject({ ok: true, response: "waitlisted" });

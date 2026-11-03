@@ -14,6 +14,10 @@ import { markFailed, markSent, nextBatch } from '@/lib/conditions';
 import { DEFAULT_STRETCH_KM, stretchAlert, stretchMessage, STRETCH_REPEAT_MS } from '@/lib/eventCore';
 import { pollIntervalMs, signalChanges, signalNotice } from '@/lib/groupCore';
 import { SIM_GROUP_ID } from '@/lib/groupSim';
+import { watchBattery } from '@/lib/battery';
+import { BATTERY_WORDS, batteryStep, leadNotice, type BatteryStage } from '@/lib/leadCore';
+import { useBattery } from '@/store/battery';
+import { useLead } from '@/store/lead';
 import { shareQueued } from '@/lib/osmShare';
 import { notifier } from '@/lib/notifier';
 import { startAutoPause, stepAutoPause } from '@/lib/autoPause';
@@ -112,6 +116,17 @@ function tellAboutSignals(changes: ReturnType<typeof signalChanges>) {
   }
 }
 
+/** The lead changed hands: say who leads now, to everyone, and keep it in the history. */
+function tellAboutLead(n: { title: string; body: string }) {
+  const { push } = useNotifications.getState();
+  const now = Date.now();
+  const route = useRecorder.getState().status === 'running' ? '/ride/live' : '/ride';
+  const id = `lead:${now}`;
+  push({ id, fireAt: now, title: n.title, body: n.body, lock: n.body, route, kind: 'ride' }, now);
+  void notifier.notifyNow({ id, fireAt: now, title: n.title, body: n.body, route }).catch(() => undefined);
+  Vibration.vibrate([0, 300, 150, 300]);
+}
+
 /**
  * What runs alongside a ride, mounted once at the root: tells the check-in where the rider is and closes it when the ride ends,
  * keeps the group ride's map current, sends queued condition reports, and asks "Are you OK?" after a long stop.
@@ -155,10 +170,14 @@ export function CompanionHost() {
       const rec = useRecorder.getState();
       const p = rec.status === 'running' && (!rec.paused || flags.autoPaused) ? rec.points[rec.points.length - 1] : undefined;
       try {
-        const r = await syncGroupRide(token, group.id, { ...(p ? { lat: p.lat, lng: p.lng, at: iso(Date.now()) } : {}), status: live.myStatus });
+        // The battery goes with the position, so the server can tell a phone that has died from one that has only lost its signal.
+        const bat = useBattery.getState();
+        const r = await syncGroupRide(token, group.id, { ...(p ? { lat: p.lat, lng: p.lng, at: iso(Date.now()) } : {}), status: live.myStatus, ...(bat.level !== null ? { battery: bat.level, charging: bat.charging } : {}) });
         const before = useCompanion.getState().live.riders;
-        useCompanion.getState().setLive({ riders: r.riders, me: r.me, regroup: r.regroup, error: undefined });
+        useCompanion.getState().setLive({ riders: r.riders, me: r.me, regroup: r.regroup, successor: r.successor ?? null, canTakeLead: !!r.canTakeLead, canTakeBack: !!r.canTakeBack, error: undefined });
         tellAboutSignals(signalChanges(before, r.riders, r.me));
+        const lead = leadNotice(before, r.riders, r.me, Date.now());
+        if (lead) tellAboutLead(lead);
         const now = Date.now();
         const stretched = stretchAlert(r.riders, r.me, r.stretchKm ?? DEFAULT_STRETCH_KM, now);
         if (stretched && now - lastStretchAt >= STRETCH_REPEAT_MS) {
@@ -172,6 +191,25 @@ export function CompanionHost() {
       }
     };
     pollGroupNow = () => { void pollGroup(); };
+    // A leader's falling battery: warned at 15% and 7%, then asked who should lead if the phone turns off (5%). Each once as it falls.
+    const stopBattery = watchBattery();
+    let batteryStage: BatteryStage = 'none';
+    const checkBattery = () => {
+      const { group: g, live: lv } = useCompanion.getState();
+      const lead = !!g && g.role === 'leader' && lv.riders.length > 1;
+      if (!lead) { batteryStage = 'none'; return; }
+      const { level, charging } = useBattery.getState();
+      const step = batteryStep(batteryStage, level, charging);
+      batteryStage = step.next;
+      if (!step.raise || step.raise === 'none' || level === null) return;
+      useLead.getState().raise(step.raise);
+      const body = BATTERY_WORDS[step.raise](level);
+      const now = Date.now();
+      useNotifications.getState().push({ id: `battery:${step.raise}:${now}`, fireAt: now, title: 'Group ride', body, lock: body, route: '/ride/live', kind: 'ride' }, now);
+      void notifier.notifyNow({ id: `battery:${step.raise}:${now}`, fireAt: now, title: 'Group ride', body, route: '/ride/live' }).catch(() => undefined);
+      Vibration.vibrate([0, 300, 150, 300]);
+    };
+    const unsubBattery = useBattery.subscribe(checkBattery);
     // The simulated group's riders change their signals on a script: say so the way the real ones would.
     const unsubSim = useCompanion.subscribe((s, prev) => { if (s.group?.id === SIM_GROUP_ID && s.live.riders !== prev.live.riders) tellAboutSignals(signalChanges(prev.live.riders, s.live.riders, s.live.me)); });
     const loop = () => {
@@ -240,7 +278,7 @@ export function CompanionHost() {
       if (r.action === 'resume') void rec.resume();
     }, 5000);
 
-    return () => { pollGroupNow = undefined; unsubSim(); unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); clearInterval(watchTimer); app.remove(); flags.autoPaused = false; };
+    return () => { pollGroupNow = undefined; stopBattery(); unsubBattery(); unsubSim(); unsubRide(); clearTimeout(groupTimer); clearInterval(outboxTimer); clearInterval(promptTimer); clearInterval(autoTimer); clearInterval(watchTimer); app.remove(); flags.autoPaused = false; };
   }, []);
   return null;
 }

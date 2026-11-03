@@ -7,6 +7,7 @@ import { noisyFix, SIM_GROUP_ID, SIM_ME, SIM_ME_NAME, SIM_ROAD_SPEED_MPS, SIM_SP
 import { simPoint } from '@/lib/sim';
 import { useCompanion } from '@/store/companion';
 import { useSimRide } from '@/store/simRide';
+import { useBattery } from '@/store/battery';
 import { useLocation } from '@/store/location';
 import { startShakeSensor } from '@/lib/shakeSensor';
 import { traceBegin, traceEnd } from '@/lib/motionTraceFile';
@@ -41,8 +42,10 @@ export function RecorderHost() {
         const trail = road?.trail ?? SIM_TRAIL, speed = road ? SIM_ROAD_SPEED_MPS : SIM_SPEED_MPS;
         const i = simClock.current;
         const p = group ? { ...simMePoint(i, trail, speed), t: Date.now(), speed } : { ...simPoint(i, undefined, 0.0045), t: Date.now() };
-        if (group) { const { live } = useCompanion.getState(); useCompanion.getState().setLive({ riders: simRiders(i, Date.now(), { name: SIM_ME_NAME, status: live.myStatus }, trail, speed, useSimRide.getState().titles), me: SIM_ME, regroup: simRegroup(trail, road?.name ?? 'Regroup at the lake'), error: undefined }); }
+        if (group) { const { live } = useCompanion.getState(); useCompanion.getState().setLive({ riders: simRiders(i, Date.now(), { name: SIM_ME_NAME, status: live.myStatus }, trail, speed, useSimRide.getState().titles, useSimRide.getState().leader), me: SIM_ME, regroup: simRegroup(trail, road?.name ?? 'Regroup at the lake'), error: undefined }); }
         simClock.current = i + 1;
+        // "Low battery" lets the leader's warnings be tried: 18% to begin with, a point lower every five seconds.
+        if (useSimRide.getState().lowBattery) useBattery.getState().set(Math.max(3, 18 - Math.floor(i / 5)), false);
         useMotion.getState().feed({ t: p.t, lat: p.lat, lng: p.lng });
         // "Noisy GPS" makes the test behave like a phone: each fix a few metres off, some missed.
         const heard = useSimRide.getState().noisy ? noisyFix(p, Math.random) : p;
