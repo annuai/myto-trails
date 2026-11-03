@@ -17,6 +17,11 @@ describe('notifications store', () => {
     s.getState().setTripLead(0);
     expect(s.getState().prefs.tripLeadMin).toBe(0);
   });
+  it('changes how long before the usual ride time the rider is reminded', () => {
+    const s = setup();
+    s.getState().setHabitLead(30);
+    expect(s.getState().prefs.habitLeadMin).toBe(30);
+  });
   it('changes how long to ride before a break reminder, or turns it off', () => {
     const s = setup();
     s.getState().setBreakEvery(90);

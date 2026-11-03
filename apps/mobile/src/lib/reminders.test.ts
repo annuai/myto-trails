@@ -162,6 +162,10 @@ describe('ready-for-your-next-ride reminders', () => {
     expect(planReminders(input({ rides: sat, prefs }))).toEqual([]);
     expect(planReminders(input({ prefs: on }))).toEqual([]);
   });
+  it('comes the number of minutes before the usual time that the rider chose', () => {
+    const lead = (m?: number) => planReminders(input({ rides: sat, prefs: { ...on, habitLeadMin: m } }))[0].fireAt;
+    expect(lead(30)).toBe(lead(10) - 20 * 60_000);
+  });
   it('is left out on a day a planned trip already reminds the rider to start', () => {
     const trip = { slug: 't', name: 'Trip', iso: '2026-10-31' };
     expect(planReminders(input({ rides: sat, prefs: on, trip })).filter((r) => r.kind === 'ride')).toEqual([]);

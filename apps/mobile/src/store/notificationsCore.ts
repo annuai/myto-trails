@@ -20,9 +20,11 @@ export type NotificationsState = {
   kmNotified: Record<string, number>;
   /** The rider said "Not now" to turning reminders on. */
   asked: boolean;
-  setPref: (key: Exclude<keyof Prefs, 'tripLeadMin' | 'breakEveryMin'>, value: boolean) => void;
+  setPref: (key: Exclude<keyof Prefs, 'tripLeadMin' | 'breakEveryMin' | 'habitLeadMin'>, value: boolean) => void;
   /** How long to ride, without a stop, before a break reminder (0 is off). */
   setBreakEvery: (minutes: number) => void;
+  /** How many minutes before my usual ride time to be reminded. */
+  setHabitLead: (minutes: number) => void;
   /** How long before a trip starts to be reminded to start it (0 is off). */
   setTripLead: (minutes: number) => void;
   setScheduled: (list: Reminder[]) => void;
@@ -47,6 +49,7 @@ export const notificationsSlice = (): StateCreator<NotificationsState> => (set) 
   prefs: defaults(), scheduled: [], inbox: [], kmNotified: {}, asked: false,
   setPref: (key, value) => set((s) => ({ prefs: { ...s.prefs, [key]: value } })),
   setBreakEvery: (breakEveryMin) => set((s) => ({ prefs: { ...s.prefs, breakEveryMin } })),
+  setHabitLead: (habitLeadMin) => set((s) => ({ prefs: { ...s.prefs, habitLeadMin } })),
   setTripLead: (tripLeadMin) => set((s) => ({ prefs: { ...s.prefs, tripLeadMin } })),
   setScheduled: (list) => set({ scheduled: list }),
   absorb: (now) => set((s) => {

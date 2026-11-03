@@ -4,7 +4,7 @@ import type { Todo } from './todos';
 import { REMIND_BEFORE_MIN } from './tripPlan';
 
 /** What the rider has switched on. */
-export type ReminderPrefs = { todos: boolean; trips: boolean; paused: boolean; /** "Ready for your next ride?" before the time of day the rider usually sets off. Off when not set. */ habit?: boolean; /** Minutes before a trip starts to be reminded to start it; 0 is off. Ten when not set. */ tripLeadMin?: number };
+export type ReminderPrefs = { todos: boolean; trips: boolean; paused: boolean; /** "Ready for your next ride?" before the time of day the rider usually sets off. Off when not set. */ habit?: boolean; /** Minutes before the usual time to send that reminder. Ten when not set. */ habitLeadMin?: number; /** Minutes before a trip starts to be reminded to start it; 0 is off. Ten when not set. */ tripLeadMin?: number };
 
 /** One notification the app wants to show. `title` and `body` are the full text; `lock` is what shows when details are hidden. */
 export type Reminder = { id: string; fireAt: number; title: string; body: string; lock: string; route: string; kind: 'todo' | 'trip' | 'ride' };
@@ -81,7 +81,7 @@ export function planReminders(i: PlanInput): Reminder[] {
   if (i.prefs.habit && i.rides) {
     // A day with a planned trip already has its own start reminder, so it gets no second one.
     const tripDays = new Set(i.trip ? [i.trip.iso, ...(i.trip.days ?? []).map((d) => d.iso)] : []);
-    all.push(...habitReminders(i.rides, i.now).filter((r) => !tripDays.has(r.id.slice(6, 16))));
+    all.push(...habitReminders(i.rides, i.now, i.prefs.habitLeadMin).filter((r) => !tripDays.has(r.id.slice(6, 16))));
   }
   return all.filter((r) => r.fireAt > i.now).sort((a, b) => a.fireAt - b.fireAt);
 }

@@ -6,6 +6,10 @@ import type { Reminder } from './reminders';
 export type Habit = { startMin: number; weekdays: number[]; days: number };
 type Started = { startedAt: number; sample?: boolean };
 
+/** How long before the usual time the rider can ask to be reminded; ten minutes when not chosen. */
+export const HABIT_LEAD_CHOICES = [5, 10, 15, 30] as const;
+export const DEFAULT_HABIT_LEAD_MIN = 10;
+
 const LOOKBACK_DAYS = 21;
 /** Rides on this many different days, starting within WINDOW_MIN of each other, make a habit. */
 const MIN_DAYS = 3;
@@ -49,7 +53,7 @@ export function findHabits(rides: Started[], now: number): Habit[] {
  * Not for a time that has passed, and not when they have already ridden around that time that day (a morning ride does not silence the
  * evening one). Nothing here is quiet-hours aware: the time is the rider's own, even at 6 am.
  */
-export function habitReminders(rides: Started[], now: number, leadMin = 10): Reminder[] {
+export function habitReminders(rides: Started[], now: number, leadMin = DEFAULT_HABIT_LEAD_MIN): Reminder[] {
   const today = toISO(new Date(now));
   const real = rides.filter((r) => !r.sample && r.startedAt <= now);
   const out: Reminder[] = [];
