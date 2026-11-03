@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LatLng } from './geo';
-import { AREA_ZOOM, layoutAreaMap, layoutCardMap, TILE } from './cardMap';
+import { AREA_ZOOM, layoutAreaMap, layoutCardMap, TILE, TILE_HEADERS } from './cardMap';
 
 const BOX = { width: 900, height: 600 };
 // About 11 km north to south near Bengaluru.
@@ -49,5 +49,11 @@ describe('layoutAreaMap', () => {
     expect(Math.min(...m.tiles.map((t) => t.left))).toBeLessThanOrEqual(0);
     expect(Math.max(...m.tiles.map((t) => t.left + TILE))).toBeGreaterThanOrEqual(BOX.width);
     expect(Math.max(...m.tiles.map((t) => t.top + TILE))).toBeGreaterThanOrEqual(BOX.height);
+  });
+});
+
+describe('tile requests', () => {
+  it('identify the app, which OpenStreetMap requires before it serves tiles', () => {
+    expect(TILE_HEADERS['User-Agent']).toMatch(/^MytoMoto\//);
   });
 });

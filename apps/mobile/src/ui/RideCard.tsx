@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useState, type ComponentRef } from 'react';
 import { Image, View } from 'react-native';
 import Svg, { G, Path, Polyline, Text as SvgText, TSpan } from 'react-native-svg';
-import { ATTRIBUTION, CARD_PAD, mapBoxOf, TILE, type CardMapLayout } from '@/lib/cardMap';
+import { ATTRIBUTION, CARD_PAD, mapBoxOf, TILE, TILE_HEADERS, type CardMapLayout } from '@/lib/cardMap';
 import type { CardModel } from '@/lib/rideCard';
 import { cardTokens } from '@/lib/rideCard.tokens';
 import { fixed, inkSolid } from '@/theme/tokens';
@@ -52,7 +52,7 @@ export const RideCard = forwardRef<ComponentRef<typeof View>, { model: CardModel
       <InkFill always layer />
       {map ? (
         <View style={{ position: 'absolute', left: box.x * k, top: box.y * k, width: box.width * k, height: box.height * k, borderRadius: cardTokens.mapRadius * k, overflow: 'hidden', backgroundColor: fixed.mapDay }}>
-          {map.tiles.map((t) => <Image key={t.url + t.left + t.top} source={{ uri: t.url }} onLoad={tileDone} onError={tileDone} style={{ position: 'absolute', left: t.left * k, top: t.top * k, width: Math.ceil(TILE * k) + 1, height: Math.ceil(TILE * k) + 1 }} />)}
+          {map.tiles.map((t) => <Image key={t.url + t.left + t.top} source={{ uri: t.url, headers: TILE_HEADERS }} onLoad={tileDone} onError={tileDone} style={{ position: 'absolute', left: t.left * k, top: t.top * k, width: Math.ceil(TILE * k) + 1, height: Math.ceil(TILE * k) + 1 }} />)}
           <View style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, backgroundColor: fixed.white, opacity: cardTokens.mapWash }} />
         </View>
       ) : null}

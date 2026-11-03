@@ -3,6 +3,11 @@ import type { LatLng } from './geo';
 export const TILE = 256;
 /** OpenStreetMap's tile server allows light use with attribution: a handful of tiles for one picture the rider asked for. */
 export const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+/**
+ * OpenStreetMap's tile policy blocks requests that do not identify the app (403 "Access blocked"). iOS adds the app's name on its
+ * own; Android's image loader sends a generic client string, so every tile came back as the block notice. Name the app ourselves.
+ */
+export const TILE_HEADERS = { 'User-Agent': 'MytoMoto/0.10 (ride share card; https://moto-trails.com)' };
 export const ATTRIBUTION = '© OpenStreetMap contributors';
 const MIN_ZOOM = 2, MAX_ZOOM = 16, FILL = 0.78;
 
