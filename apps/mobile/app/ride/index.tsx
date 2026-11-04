@@ -8,6 +8,7 @@ import { DestinationSheet } from '@/features/group/DestinationSheet';
 import { useDirections } from '@/features/ride/useDirections';
 import { StartBar, TrailHint } from '@/features/trip/RideStartActions';
 import { useGuideTarget } from '@/store/guideTarget';
+import { useRideDraft } from '@/store/rideDraft';
 import { findHabits } from '@/lib/habit';
 import { rideTitle } from '@/lib/rideTitle';
 import { asText, distanceKm, durationParts } from '@/lib/units';
@@ -99,7 +100,9 @@ export default function RideReady() {
   useEffect(() => (source === 'gps' || simGroup ? useLocation.getState().acquire() : undefined), [source, simGroup]);
   const here = useMemo(() => (fix ? { lat: fix.lat, lng: fix.lng } : undefined), [fix]);
   /** The place the rider chose to ride to, and the road to it from where they are: shown on the map with the time it takes. */
-  const [dest, setDest] = useState<{ lat: number; lng: number; name: string }>();
+  // Kept for this session so leaving this page and coming back finds the place still chosen (see store/rideDraft).
+  const dest = useRideDraft((s) => s.dest);
+  const setDest = useRideDraft((s) => s.setDest);
   const [destOpen, setDestOpen] = useState(false);
   const { directions: toDest, failed: toDestFailed } = useDirections(here, dest, { reroute: false });
 
@@ -122,7 +125,8 @@ export default function RideReady() {
 
   // The answers to "Where are you going?", closest planned ride first. The first is chosen until the rider picks another.
   type Choice = { key: string; title: string; sub?: string; route?: TripRoute; word: string; chip?: { status: Status; label: string }; onNavigate?: () => void; onStart: () => void };
-  const [picked, setPicked] = useState<string>();
+  const picked = useRideDraft((s) => s.picked);
+  const setPicked = useRideDraft((s) => s.setPicked);
   const choices: Choice[] = [
     ...slots.map((s): Choice => {
       const first = s.dayIndex === 0 && !s.trip.startedAt;
@@ -158,6 +162,8 @@ export default function RideReady() {
     if (!running && source === 'sim' && simGroup) useCompanion.getState().setGroup({ id: SIM_GROUP_ID, code: 'SIMGRP', name: 'Simulated group ride', role: 'leader' });
     if (!running && chosen.key === 'place' && dest) useGuideTarget.getState().set(dest);
     const ok = running || (await useRecorder.getState().start(source));
+    // The place chosen here is the ride's own now; the next visit to this page starts clean.
+    if (ok && !running) useRideDraft.getState().clear();
     router.replace(ok ? '/ride/live' : '/');
   };
   // Before the system asks for Always location, say why: without it, recording stops when the phone locks.
@@ -185,7 +191,7 @@ export default function RideReady() {
         {choices.map((c) => (
           <DestinationOption key={c.key} title={c.title} sub={c.sub} selected={c.key === chosen.key} onSelect={() => setPicked(c.key)}>
             {c.chip ? <View style={{ flexDirection: 'row' }}><StatusChip status={c.chip.status} label={c.chip.label} /></View> : null}
-            {c.key === 'place' && c.key === chosen.key ? <Button variant="soft" icon={MapPin} label={dest ? 'Somewhere else?' : 'Where to?'} onPress={() => setDestOpen(true)} /> : null}
+            {c.key === 'place' && c.key === chosen.key ? <Button variant="soft" onCard icon={MapPin} arrow label={dest ? 'Somewhere else?' : 'Where to?'} onPress={() => setDestOpen(true)} /> : null}
             {c.key === chosen.key && c.route?.kind === 'trail' ? <TrailHint slug={c.route.slug} onNavigate={() => { c.onNavigate?.(); }} /> : null}
           </DestinationOption>
         ))}
