@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { Animated, Platform, RefreshControl, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Animated, Platform, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,8 +8,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { size, space, layout } from '@/theme/tokens';
 import { FloatingHeader, HEADER_HEIGHT } from './FloatingHeader';
 import { PullBike } from './PullBike';
-import { pullBike } from './PullBike.tokens';
-import { PullQuote, QuoteStrip } from './PullQuote';
+import { PullQuote } from './PullQuote';
+import { pullQuote } from './PullQuote.tokens';
 import { EASE, Reveal } from './motion';
 import { tabBarFade } from './tabBarFade';
 import { CONTENT_MAX, useLayout } from './useLayout';
@@ -26,16 +26,8 @@ type Props = { children: ReactNode; overlay?: ReactNode; tabs?: boolean; scroll?
 export function Screen({ children, overlay, tabs = false, scroll = true, footer, brand = false, bike = false, fadeTabs = false, endCap, onNearEnd }: Props) {
   const scrollY = useAnimatedValue(0);
   const bar = useRef({ prevY: 0, content: 0, layout: 0, value: 1, touch: null as { x: number; y: number } | null }).current;
-  /**
-   * Android cannot stretch the page past its top, and its pull-to-refresh takes the whole drag (the page's own touch handlers are cancelled the moment it starts), so the
-   * bike cannot read the finger there. It rides when the pull-to-refresh fires, together with the quote: this value stands in for a long pull, which the bike watches for.
-   */
-  const pull = useAnimatedValue(0);
-  const rideBike = () => { pull.setValue(-pullBike.trigger - 1); setTimeout(() => pull.setValue(0), 80); };
   /** Height of the fixed end picture, and the page's own size: together they say how much of the picture the content has uncovered. */
-  /** Android: the pull-down line is opened by the system's pull-to-refresh, since the page cannot be stretched past its top there. */
-  const [quoting, setQuoting] = useState(false);
-  const quoteHeight = useAnimatedValue(0);
+  const scroller = useRef<{ scrollTo: (o: { y: number; animated: boolean }) => void } | null>(null);
   const [capHeight, setCapHeight] = useState(0);
   /** A footer's own height, so a tall one never covers the end of the page. */
   const [footerHeight, setFooterHeight] = useState(88);
@@ -56,6 +48,15 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   const bottom = (tabs ? (landscape ? TAB_BAR_HEIGHT_LANDSCAPE : TAB_BAR_HEIGHT) + 24 : insets.bottom + 24) + (footer ? footerHeight : 0);
   const frame = (kids: ReactNode, fill = false) => <Reveal style={{ width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center', flex: fill ? 1 : undefined }}>{kids}</Reveal>;
   const top = insets.top + 8 + (brand ? HEADER_HEIGHT + 8 : 0);
+  /**
+   * Android cannot stretch a page past its top, and its pull-to-refresh would take the whole drag. So on a tab page the page rests `zone` points down
+   * in its own scroll area, below a blank space the same height: pulling the page down is really scrolling up into that space, which a finger can
+   * measure like iOS's stretch. `pulled` is the scroll position counted from the resting place (negative while pulled), and what the quote, the bike
+   * and the header watch; letting go scrolls back to rest. Everywhere else `zone` is 0 and `pulled` is the scroll position itself.
+   */
+  const zone = Platform.OS === 'android' && tabs && scroll ? pullQuote.zone : 0;
+  const pulled = useMemo(() => (zone ? Animated.add(scrollY, -zone) : scrollY) as Animated.Value, [zone, scrollY]);
+  const settle = (y: number) => { if (zone && y < zone - 1) scroller.current?.scrollTo({ y: zone, animated: true }); };
   // The picture is uncovered from the bottom up as the page reaches its end: nothing until the transparent space after the content
   // starts to enter the screen, all of it when the page can scroll no further. Bounce past the end changes nothing.
   const maxY = Math.max(0, page.content - page.layout);
@@ -66,27 +67,29 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
     if (onNearEnd && contentSize.height - (contentOffset.y + layoutMeasurement.height) < layoutMeasurement.height) onNearEnd();
     if (!fadeTabs) return;
-    const y = e.nativeEvent.contentOffset.y;
+    const y = e.nativeEvent.contentOffset.y - zone;
     const next = fadeTarget({ y, prevY: bar.prevY, maxY: Math.max(0, bar.content - bar.layout), current: bar.value });
     bar.prevY = y;
     if (next !== bar.value) setBar(next, next > bar.value);
   });
-  const androidQuote = Platform.OS === 'android' && tabs && scroll;
   const body = scroll ? (
     <Animated.ScrollView
+      ref={scroller as never}
       scrollEventThrottle={16}
+      contentOffset={zone ? { x: 0, y: zone } : undefined}
+      overScrollMode={zone ? 'never' : undefined}
+      onScrollEndDrag={zone ? (e) => { if (Math.abs(e.nativeEvent.velocity?.y ?? 0) < 0.1) settle(e.nativeEvent.contentOffset.y); } : undefined}
+      onMomentumScrollEnd={zone ? (e) => settle(e.nativeEvent.contentOffset.y) : undefined}
       onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false, listener: onScrollEvent })}
       onLayout={fadeTabs || endCap || onNearEnd ? (e) => { const h = e.nativeEvent.layout.height; bar.layout = h; if (endCap) setPage((p) => ({ ...p, layout: h })); } : undefined}
-      onContentSizeChange={fadeTabs || endCap || onNearEnd ? (_w, h) => { bar.content = h; if (endCap) setPage((p) => ({ ...p, content: h })); if (onNearEnd && bar.layout > 0 && h < bar.layout * 2) onNearEnd(); } : undefined}
+      onContentSizeChange={fadeTabs || endCap || onNearEnd ? (_w, h) => { bar.content = h - zone; if (endCap) setPage((p) => ({ ...p, content: h })); if (onNearEnd && bar.layout > 0 && h - zone < bar.layout * 2) onNearEnd(); } : undefined}
       onTouchStart={fadeTabs ? (e) => { bar.touch = touchPoint(e.nativeEvent); } : undefined}
       onTouchEnd={fadeTabs ? (e) => { if (bar.value < 1 && bar.touch && isTap(bar.touch, touchPoint(e.nativeEvent))) setBar(1, true); } : undefined}
-      contentContainerStyle={{ paddingTop: top, paddingBottom: endCap ? 0 : bottom, paddingLeft: padL, paddingRight: padR }}
+      contentContainerStyle={{ paddingTop: zone + top, paddingBottom: endCap ? 0 : bottom, paddingLeft: padL, paddingRight: padR }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      refreshControl={androidQuote ? <RefreshControl refreshing={false} onRefresh={() => { setQuoting(true); if (bike) rideBike(); }} progressViewOffset={top} colors={[c.accent]} progressBackgroundColor={c.card} /> : undefined}
     >
-      {androidQuote ? <Animated.View style={{ height: quoteHeight }} /> : null}
-      {bike ? <PullBike scrollY={Platform.OS === 'android' ? pull : scrollY} baseline={top} /> : null}
+      {bike ? <PullBike scrollY={pulled} baseline={zone + top} /> : null}
       {frame(children)}
       {endCap ? <View style={{ height: capHeight }} /> : null}
     </Animated.ScrollView>
@@ -95,15 +98,14 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   );
   return (
     <LinearGradient colors={c.gradient as unknown as [string, string, string]} locations={[0, 0.45, 1]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={{ flex: 1, backgroundColor: c.paper }}>
-      {tabs && scroll && Platform.OS !== 'android' ? <PullQuote scrollY={scrollY} top={top - 8} /> : null}
-      {androidQuote ? <QuoteStrip open={quoting} height={quoteHeight} top={top - 8} onClosed={() => setQuoting(false)} /> : null}
+      {tabs && scroll ? <PullQuote scrollY={pulled} top={top - 8} /> : null}
       {endCap ? (
         <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: uncovered, overflow: 'hidden' }}>
           <View onLayout={(e) => setCapHeight(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>{endCap}</View>
         </Animated.View>
       ) : null}
       {body}
-      {brand ? <FloatingHeader scrollY={scrollY} /> : null}
+      {brand ? <FloatingHeader scrollY={pulled} /> : null}
       {footer ? (
         <View onLayout={(e) => setFooterHeight(Math.ceil(e.nativeEvent.layout.height))} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingLeft: padL, paddingRight: padR, paddingTop: space[3], paddingBottom: insets.bottom + 16, backgroundColor: c.paper, borderTopWidth: 1, borderTopColor: c.line }}>
           <View style={{ width: '100%', maxWidth: landscape ? layout.barMax : CONTENT_MAX, alignSelf: 'center' }}>{footer}</View>
