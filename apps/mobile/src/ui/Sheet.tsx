@@ -14,6 +14,7 @@ import { useLayout } from './useLayout';
 import { space, layout, radius, scrim } from '@/theme/tokens';
 import { sheet } from './Sheet.tokens';
 import { useAnimatedValue } from './useAnimatedValue';
+import { keyboardLift } from './sheetKeyboard';
 import { useLatest } from '@/lib/useLatest';
 /**
  * Bottom sheet drawn in the screen's own tree (not a native Modal), so on the web it stays inside the phone frame.
@@ -25,7 +26,7 @@ import { useLatest } from '@/lib/useLatest';
  * With the keyboard up the sheet's own background runs down behind it, so the keyboard's rounded corners (iOS 26) show the sheet rather than a gap.
  * The keyboard height is tracked here, from before the sheet opens, rather than with KeyboardAvoidingView: a field that focuses as the
  * sheet opens raises the keyboard before such a view has measured itself, and the sheet would stay hidden behind it.
- * (Android resizes the window for the keyboard by itself.)
+ * Android draws edge to edge and does not resize the window for the keyboard, so there the height comes from keyboardDidShow and keyboardDidHide.
  *
  * The handle and title are a drag area: the sheet follows the finger down, and letting go past a short distance or with a flick closes it;
  * otherwise it springs back. Pulled up it gives a little, like a rubber band. The close button and a tap on the backdrop still work.
@@ -72,6 +73,11 @@ export function Sheet({ open, title, onClose, children, footer }: { open: boolea
   }, [drag, close]);
   const [keyboard, setKeyboard] = useState(0);
   useEffect(() => {
+    if (Platform.OS === 'android') {
+      const show = Keyboard.addListener('keyboardDidShow', (e) => setKeyboard(e.endCoordinates.height));
+      const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboard(0));
+      return () => { show.remove(); hide.remove(); };
+    }
     if (Platform.OS !== 'ios') return;
     const change = Keyboard.addListener('keyboardWillChangeFrame', (e) => setKeyboard(Math.max(0, Dimensions.get('window').height - e.endCoordinates.screenY)));
     const hide = Keyboard.addListener('keyboardWillHide', () => setKeyboard(0));
@@ -102,7 +108,7 @@ export function Sheet({ open, title, onClose, children, footer }: { open: boolea
       <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: Animated.multiply(t, drag.interpolate({ inputRange: [0, Dimensions.get('window').height], outputRange: [1, 0], extrapolate: 'clamp' })) }}>
         <Pressable accessibilityLabel="Close" onPress={onClose} style={{ flex: 1, backgroundColor: scrim.sheet }} />
       </Animated.View>
-      <Animated.View style={{ transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [sheet.slide, 0] }) }, { translateY: drag }, { translateY: step.interpolate({ inputRange: [0, 1, 2], outputRange: [...sheet.recedeLift].map((n) => -n) }) }, { scale: step.interpolate({ inputRange: [0, 1, 2], outputRange: [...sheet.recedeScale] }) }], transformOrigin: 'bottom', opacity: t, backgroundColor: c.paper, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, maxHeight: `${cap}%`, width: '100%', maxWidth: layout.wideMax, paddingBottom: keyboard ? keyboard + space[4] : insets.bottom + space[4] }}>
+      <Animated.View style={{ transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [sheet.slide, 0] }) }, { translateY: drag }, { translateY: step.interpolate({ inputRange: [0, 1, 2], outputRange: [...sheet.recedeLift].map((n) => -n) }) }, { scale: step.interpolate({ inputRange: [0, 1, 2], outputRange: [...sheet.recedeScale] }) }], transformOrigin: 'bottom', opacity: t, backgroundColor: c.paper, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, maxHeight: `${cap}%`, width: '100%', maxWidth: layout.wideMax, paddingBottom: keyboard ? keyboardLift(Platform.OS, keyboard, insets.bottom) + space[4] : insets.bottom + space[4] }}>
         <View {...pan.panHandlers}>
           <View style={{ alignItems: 'center', paddingTop: space[3], paddingBottom: space[2] }}>
             <View style={{ width: sheet.handleWidth, height: sheet.handleHeight, borderRadius: radius.chip, backgroundColor: c.line }} />
