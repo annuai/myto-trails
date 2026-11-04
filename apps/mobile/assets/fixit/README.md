@@ -1,6 +1,6 @@
 # Fix it pictures
 
-19 pictures for the repair guides: 12 "hero" pictures (one per guide, shown at the top) and 7 "step" pictures (shown with the one step that is easier to see than to read). Every guide works without them; the app shows a picture as soon as it is listed in `src/fixit/art.ts`. Nothing here blocks a release.
+20 pictures for the repair guides: 12 "hero" pictures, the What to carry cover (one per guide, shown at the top) and 7 "step" pictures (shown with the one step that is easier to see than to read). Every guide works without them; the app shows a picture as soon as it is listed in `src/fixit/art.ts`. Nothing here blocks a release.
 
 **Size:** 1200 x 900 px (4:3, landscape), WebP, quality about 78, under 300 KB each. Shown full width of the screen (about 335 points), so keep the subject in the middle 80 percent.
 **File name:** the id with `/` replaced by `-` and `.webp` (or `.png`, `.jpg`) added: `flat-tyre-tubeless/plug` becomes `flat-tyre-tubeless-plug.webp`.
@@ -23,6 +23,7 @@ Use these words with the style reference attached: "use the attached image as th
 | `wont-start/hero` | The right handlebar: kill switch, start button, a gloved thumb on the start button | The kill switch |
 | `weak-battery/hero` | Seat lifted, battery visible beneath, a small jump pack beside it | The battery's positive terminal |
 | `weak-battery/jump` | Two clips on the battery: one on the positive terminal, one on a bare frame bolt, shown in a close top view | The clip on the frame bolt |
+| `carry/kit` | A flat lay of the roadside repair kit from above: plug kit and T-handle tool, pressure gauge, hand pump, jump-starter pack with clips, multitool, spanner, chain lube, headlamp. Not a guide's picture: it is the tile on the What to carry card | The T-handle of the plug tool |
 | `brakes-soft/hero` | A brake lever on the left or right handlebar and the front disc brake behind it, a gloved hand squeezing the lever | The lever tip |
 | `chain-slack/hero` | Rear sprocket and chain from the side, a gloved hand on the swingarm adjuster | The adjuster bolt |
 | `chain-slack/measure` | A ruler against the chain at the middle of its lower run, the chain pushed up and down (two ghost positions) | The ruler's reading line |

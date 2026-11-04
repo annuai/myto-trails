@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Backpack, ClipboardCheck, Wrench } from 'lucide-react-native';
-import { fixitCheckStatus, fixitSections } from '@moto-trails/domain';
+import { FIXIT_CARRY_ART, fixitCheckStatus, fixitSections } from '@moto-trails/domain';
 import { refreshFixit, useFixitContent } from '@/fixit/content';
 import { Unavailable } from '@/features/fixit/Unavailable';
 import { CarryList, GuideRow, SectionCover } from '@/features/fixit/SectionParts';
@@ -64,7 +64,7 @@ export default function FixIt() {
         <AccordionItem
           title="What to carry"
           subtitle="Tools for every ride"
-          leading={<SectionCover content={content} art={null} icon={Backpack} />}
+          leading={<SectionCover content={content} art={FIXIT_CARRY_ART} icon={Backpack} />}
           open={openId === 'carry'}
           onToggle={() => setOpenId(nextOpen(openId, 'carry'))}
         >
