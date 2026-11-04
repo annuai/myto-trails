@@ -5,8 +5,8 @@ import { api } from '@/api/client';
 import { storage } from '@/store/persist';
 import { prefetchArt } from './artCache';
 
-/** How long a downloaded copy is used before the app asks again. */
-export const REFRESH_AFTER_MS = 30 * 60 * 1000;
+/** How long before the app asks the site again whether anything changed. The question is cheap, so it is short. */
+export const REFRESH_AFTER_MS = 60 * 1000;
 
 type State = { cached: FixitContent | null; fetchedAt: number; set: (c: FixitContent, at: number) => void; clear: () => void };
 
@@ -34,7 +34,9 @@ export async function refreshFixit(now: number, force = false): Promise<boolean>
   if (useFixitLoading.getState().loading) return !!cached;
   useFixitLoading.setState({ loading: true });
   try {
-    const fresh = await api<unknown>('/fixit');
+    // Ask with the version the phone has: if nothing has changed the answer is a few bytes, so asking often is cheap and an edit or a new picture arrives within a minute.
+    const fresh = await api<unknown>(cached?.version ? `/fixit?v=${encodeURIComponent(cached.version)}` : '/fixit');
+    if (cached && (fresh as { unchanged?: boolean } | null)?.unchanged) { set(cached, now); return true; }
     if (!isFixitContent(fresh)) return !!cached;
     set(fresh, now);
     void prefetchArt(fresh);

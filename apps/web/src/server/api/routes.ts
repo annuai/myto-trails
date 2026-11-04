@@ -12,7 +12,7 @@ import { attachRoute, createDraft, getMine, listMine, saveStep, submit } from ".
 import { completeUpload, getUploadStatus, requestUpload } from "../uploads/service";
 import { exchangeAppCode } from "../auth/app-auth";
 import { listBikeMakes, listBikeModels } from "../community/bikes";
-import { getFixitContent } from "../fixit/fixit";
+import { getFixitContent, getFixitVersion } from "../fixit/fixit";
 import { clubPageSize } from "../community/club-paging";
 import { getClub, listMembers, searchClubs, setClubCover } from "../community/clubs";
 import { parseGender } from "../community/gender";
@@ -189,6 +189,10 @@ export const routes: RouteDef[] = [
   {
     method: "GET", path: "/fixit", access: "public", cache: "none", /* not cached at the edge: an edit in the database should reach riders at once */ summary: "Fix it: the repair guides, the pre-ride check items, the toolkit and the pictures that have been uploaded, in one document the app keeps for offline use",
     async handler(c) {
+      // A phone that already has the content sends its version: if nothing has changed it gets a few bytes, not the whole document.
+      const have = c.url.searchParams.get("v");
+      const version = have ? await getFixitVersion(c.sql) : null;
+      if (have && have === version) return ok({ unchanged: true, version });
       return ok(await getFixitContent(c.sql));
     },
   },

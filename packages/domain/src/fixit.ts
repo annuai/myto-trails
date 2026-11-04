@@ -41,7 +41,7 @@ export type FixitGuide = {
 
 export type FixitTool = { id: string; name: string; why: string; /** Carried on every ride, or only far from a workshop. */ kit: "base" | "remote" };
 
-export type FixitCheckItem = { id: string; label: string; how: string; /** Guide ids to offer when it needs fixing. */ guides: string[]; /** For a check that is not a repair (papers): where to go instead. */ route?: string };
+export type FixitCheckItem = { id: string; label: string; how: string; /** Art id of the picture on its card, when it has its own; else the card borrows its first guide's section picture. */ cover?: string | null; /** Guide ids to offer when it needs fixing. */ guides: string[]; /** For a check that is not a repair (papers): where to go instead. */ route?: string };
 
 /** A picture: its widths in R2, by pixel width (as bike pictures are), and what it shows for people who cannot see it. */
 export type FixitArt = { alt: string; variants: Record<string, string> };
@@ -49,6 +49,8 @@ export type FixitArt = { alt: string; variants: Record<string, string> };
 /** Everything the app needs, in one document. `updatedAt` changes whenever any row does, so the app can tell if its copy is old. */
 export type FixitContent = {
   updatedAt: string;
+  /** Changes whenever any row is added, changed or removed. The app sends it back to ask "has anything changed?" and gets a short answer if not. */
+  version?: string;
   tools: FixitTool[];
   checks: FixitCheckItem[];
   /** In the order to show them. Absent on a copy made before sections existed: show the guides as one list. */
@@ -114,6 +116,7 @@ export function fixitProblems(c: Pick<FixitContent, "guides" | "tools" | "checks
     }
     for (const g of c.guides) if (!g.section || !sectionIds.has(g.section)) out.push(`${g.id}: not in a known section`);
   }
+  for (const i of c.checks) if (i.cover && !FIXIT_ART_ID.test(i.cover)) out.push(`check ${i.id}: bad cover id`);
   for (const i of c.checks) for (const id of i.guides) if (!guideIds.has(id)) out.push(`check ${i.id}: unknown guide ${id}`);
   return out;
 }

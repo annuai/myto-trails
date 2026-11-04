@@ -20,12 +20,13 @@ export async function getFixitContent(sql: Sql): Promise<FixitContent> {
         select s.guide_id, s.position, s.text, s.warn, s.expect, s.art from fixit_step s join fixit_guide g on g.id = s.guide_id where g.published) x) as steps,
       (select coalesce(json_agg(x order by x.guide_id, x.position), '[]'::json) from (
         select t.guide_id, t.position, t.term, t.meaning from fixit_term t join fixit_guide g on g.id = t.guide_id where g.published) x) as terms,
-      (select coalesce(json_agg(x order by x.sort, x.id), '[]'::json) from (select id, label, how, guides, route, sort from fixit_check_item) x) as checks,
+      (select coalesce(json_agg(x order by x.sort, x.id), '[]'::json) from (select id, label, how, guides, route, cover, sort from fixit_check_item) x) as checks,
       (select coalesce(json_agg(x order by x.id), '[]'::json) from (
         select a.id, a.alt, a.variants from fixit_art a left join fixit_guide g on g.id = a.guide_id where (a.guide_id is null or g.published) and a.variants <> '{}'::jsonb) x) as art,
       greatest(
         (select max(updated_at) from fixit_tool), (select max(updated_at) from fixit_guide), (select max(updated_at) from fixit_step),
-        (select max(updated_at) from fixit_term), (select max(updated_at) from fixit_check_item), (select max(updated_at) from fixit_art), (select max(updated_at) from fixit_section)) as at`;
+        (select max(updated_at) from fixit_term), (select max(updated_at) from fixit_check_item), (select max(updated_at) from fixit_art), (select max(updated_at) from fixit_section)) as at,
+      ((select count(*) from fixit_tool) + (select count(*) from fixit_guide) + (select count(*) from fixit_step) + (select count(*) from fixit_term) + (select count(*) from fixit_check_item) + (select count(*) from fixit_art) + (select count(*) from fixit_section))::int as n`;
   type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
   const tools = (r?.tools ?? []) as Row[];
   const guides = (r?.guides ?? []) as Row[];
@@ -37,9 +38,10 @@ export async function getFixitContent(sql: Sql): Promise<FixitContent> {
   const publishedIds = new Set(guides.map((g) => g.id as string));
   return {
     updatedAt: (r?.at as Date | null)?.toISOString() ?? new Date(0).toISOString(),
+    version: `${(r?.at as Date | null)?.toISOString() ?? ""}|${r?.n ?? 0}`,
     tools: tools.map((t) => ({ id: t.id, name: t.name, why: t.why, kit: t.kit })),
     sections: sections.map((s): FixitSection => ({ id: s.id, title: s.title, cover: s.cover ?? null })),
-    checks: checks.map((c) => ({ id: c.id, label: c.label, how: c.how, guides: ((c.guides ?? []) as string[]).filter((g) => publishedIds.has(g)), ...(c.route ? { route: c.route } : {}) })),
+    checks: checks.map((c) => ({ id: c.id, label: c.label, how: c.how, guides: ((c.guides ?? []) as string[]).filter((g) => publishedIds.has(g)), ...(c.route ? { route: c.route } : {}), ...(c.cover ? { cover: c.cover } : {}) })),
     guides: guides.map((g): FixitGuide => ({
       id: g.id, title: g.title, summary: g.summary, difficulty: g.difficulty, minutes: g.minutes,
       ...(g.section ? { section: g.section } : {}), ...(g.hero ? { hero: g.hero } : {}), tools: g.tools ?? [], stopIf: g.stop_if ?? [],
@@ -88,8 +90,9 @@ export async function importFixit(sql: Sql, content: Pick<FixitContent, "tools" 
       for (const [n, t] of g.terms.entries()) await tx`insert into fixit_term (guide_id, position, term, meaning) values (${g.id}, ${n}, ${t.term}, ${t.meaning})`;
     }
     for (const [i, c] of content.checks.entries()) {
-      await tx`insert into fixit_check_item (id, label, how, guides, route, sort) values (${c.id}, ${c.label}, ${c.how}, ${c.guides}, ${c.route ?? null}, ${i})
-        on conflict (id) do ${opts.overwrite ? tx`update set label = excluded.label, how = excluded.how, guides = excluded.guides, route = excluded.route, sort = excluded.sort` : tx`nothing`}`;
+      await tx`insert into fixit_check_item (id, label, how, guides, route, cover, sort) values (${c.id}, ${c.label}, ${c.how}, ${c.guides}, ${c.route ?? null}, ${c.cover ?? null}, ${i})
+        on conflict (id) do ${opts.overwrite ? tx`update set label = excluded.label, how = excluded.how, guides = excluded.guides, route = excluded.route, cover = excluded.cover, sort = excluded.sort` : tx`nothing`}`;
+      if (!opts.overwrite) await tx`update fixit_check_item set cover = ${c.cover ?? null} where id = ${c.id} and cover is null`;
     }
     for (const [id, alt] of Object.entries(FIXIT_ART_ALT)) {
       // A picture belongs to the guide named before the slash, or to none (the cover of the What to carry card).
@@ -99,4 +102,14 @@ export async function importFixit(sql: Sql, content: Pick<FixitContent, "tools" 
     }
   });
   return result;
+}
+
+/** Just the version of the content, for the cheap "has anything changed?" answer. Same value as `getFixitContent(...).version`. */
+export async function getFixitVersion(sql: Sql): Promise<string> {
+  const [r] = await sql`
+    select greatest(
+      (select max(updated_at) from fixit_tool), (select max(updated_at) from fixit_guide), (select max(updated_at) from fixit_step),
+      (select max(updated_at) from fixit_term), (select max(updated_at) from fixit_check_item), (select max(updated_at) from fixit_art), (select max(updated_at) from fixit_section)) as at,
+      ((select count(*) from fixit_tool) + (select count(*) from fixit_guide) + (select count(*) from fixit_step) + (select count(*) from fixit_term) + (select count(*) from fixit_check_item) + (select count(*) from fixit_art) + (select count(*) from fixit_section))::int as n`;
+  return `${(r?.at as Date | null)?.toISOString() ?? ""}|${r?.n ?? 0}`;
 }
