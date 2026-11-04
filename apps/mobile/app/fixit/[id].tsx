@@ -6,7 +6,7 @@ import { AlertTriangle, ArrowLeft, ArrowRight, Check } from 'lucide-react-native
 import { guideById, toolsOf } from '@moto-trails/domain';
 import { useFixitContent } from '@/fixit/content';
 import { Unavailable } from '@/features/fixit/Unavailable';
-import { GuideFacts, StepArt, StopCard } from '@/features/fixit/parts';
+import { GuideFacts, StepArt, StepProgress, StopCard } from '@/features/fixit/parts';
 import { fixit } from '@/features/fixit/fixit.tokens';
 import { useFixit } from '@/store/fixit';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -15,7 +15,6 @@ import { Button } from '@/ui/Button';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { Icon } from '@/ui/Icon';
 import { ListCard, Row } from '@/ui/ListCard';
-import { PageDots } from '@/ui/PageDots';
 import { Screen } from '@/ui/Screen';
 import { TextButton } from '@/ui/TextButton';
 import { Text } from '@/ui/Text';
@@ -30,7 +29,6 @@ export default function Guide() {
   const { c } = useTheme();
   const content = useFixitContent();
   const guide = content ? guideById(content, id) : undefined;
-  const packed = useFixit((s) => s.packed);
   const [walking, setWalking] = useState(false);
   const [i, setI] = useState(0);
   useEffect(() => {
@@ -61,7 +59,7 @@ export default function Guide() {
       >
         <BackHeader title={guide.title} right={<TextButton label="All steps" onPress={() => setWalking(false)} />} />
         <View style={{ gap: space[5] }}>
-          <PageDots count={guide.steps.length} index={i} />
+          <StepProgress index={i} count={guide.steps.length} />
           <StepArt id={step.art ?? (i === 0 ? guide.hero : undefined)} />
           <Text variant="step" accessibilityLiveRegion="polite">{step.text}</Text>
           {step.warn ? (
@@ -95,7 +93,7 @@ export default function Guide() {
         <>
           <SectionTitle>You will need</SectionTitle>
           <ListCard>
-            {tools.map((t) => <Row key={t.id} label={t.name} sub={t.why} value={packed[t.id] ? 'In your kit' : undefined} chevron={false} />)}
+            {tools.map((t) => <Row key={t.id} label={t.name} sub={t.why} chevron={false} />)}
           </ListCard>
         </>
       ) : null}

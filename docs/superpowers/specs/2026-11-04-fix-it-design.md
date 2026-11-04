@@ -6,8 +6,8 @@ Date: 2026-11-04 · [ADR 0011](../../adr/0011-fix-it-offline-guides.md)
 
 **Parts**
 - **Guides** (13, symptom first): flat tyre (tubeless and tube), won't start, weak battery, chain loose or noisy, chain off, clutch cable, clutch adjust (free play), dead lights (fuse), misfire (spark plug), overheating, soft brakes (checks only), bike fallen over. Each: difficulty, minutes, tools, "stop and get help if", steps with an optional warning and picture. `src/fixit/guides.ts`.
-- **Pre-ride check**: eight items, each Fine or Needs fixing; a flagged item offers its guides. The result is kept for the day and shown on Dash. `src/fixit/preRide.ts`, `app/fixit/check.tsx`.
-- **Toolkit**: 10 base and 6 remote tools, tickable. Guides list the tools they need and show which are in the rider's kit. `src/fixit/toolkit.ts`.
+- **Pre-ride check**: eight cards in the same accordion style, one open at a time. Mark each Fine or Needs fixing; it closes with a tick or a warning and the next opens; flagged items link to their guides on the last page. It is reached only from the Fix it page, not from the home screen.
+- **What to carry**: a closed, read-only card at the bottom of the library: the tools for every ride and the extras for a ride far from a workshop, each with its reason. No ticking and no screen of its own. Each guide still lists the tools it needs.
 
 **Design.** Text first, no card per item, one primary action per screen (Survey sheet, DESIGN.md). Status is glyph, word and colour. A picture is shown at the top of a guide or with one step, only when it exists. Nothing needs typing.
 

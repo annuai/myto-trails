@@ -1,4 +1,6 @@
 import { Image, View } from 'react-native';
+import { useTheme } from '@/theme/ThemeProvider';
+import { InkFill } from '@/ui/InkFill';
 import { AlertTriangle } from 'lucide-react-native';
 import type { FixitDifficulty as Difficulty, FixitGuide as Guide } from '@moto-trails/domain';
 import { useFixitContent } from '@/fixit/content';
@@ -43,5 +45,18 @@ export function StopCard({ items }: { items: string[] }) {
       </View>
       {items.map((t) => <Text key={t} variant="label">{t}</Text>)}
     </Card>
+  );
+}
+
+/** How far through a repair the rider is: a thin bar that fills, with "Step 3 of 14" beside it. One bar reads better than fourteen dots. */
+export function StepProgress({ index, count }: { index: number; count: number }) {
+  const { c } = useTheme();
+  return (
+    <View accessible accessibilityLabel={`Step ${index + 1} of ${count}`} style={{ gap: space[2] }}>
+      <View style={{ height: space[1], borderRadius: radius.chip, backgroundColor: c.line, overflow: 'hidden' }}>
+        <InkFill style={{ height: space[1], width: `${((index + 1) / count) * 100}%`, borderRadius: radius.chip }} />
+      </View>
+      <Text variant="label" tone="muted">Step {index + 1} of {count}</Text>
+    </View>
   );
 }

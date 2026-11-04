@@ -1,11 +1,11 @@
 import { View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ClipboardCheck, Wrench } from 'lucide-react-native';
-import { fixitCheckStatus, fixitSections, kitFor } from '@moto-trails/domain';
+import { Backpack, ClipboardCheck, Wrench } from 'lucide-react-native';
+import { fixitCheckStatus, fixitSections } from '@moto-trails/domain';
 import { refreshFixit, useFixitContent } from '@/fixit/content';
 import { Unavailable } from '@/features/fixit/Unavailable';
-import { GuideRow, SectionCover } from '@/features/fixit/SectionParts';
+import { CarryList, GuideRow, SectionCover } from '@/features/fixit/SectionParts';
 import { nextOpen } from '@/lib/accordion';
 import { AccordionItem } from '@/ui/Accordion';
 import { nowMs } from '@/lib/clock';
@@ -22,14 +22,12 @@ import { Text } from '@/ui/Text';
 export default function FixIt() {
   const router = useRouter();
   const last = useFixit((s) => s.last);
-  const packed = useFixit((s) => s.packed);
   const fixed = useFixit((s) => totalFixed(s.fixed));
   const content = useFixitContent();
   const [openId, setOpenId] = useState<string | null>(null);
   // The guides are edited on the site: ask for the latest when this opens. Offline, the copy on the phone is used.
   useEffect(() => { void refreshFixit(nowMs()); }, []);
   const status = fixitCheckStatus(last, nowMs());
-  const base = content ? kitFor(content, false) : [];
   const checkNote = status === 'clear' ? 'Checked today. All clear.' : status === 'flagged' ? `Checked today. ${last?.flagged.length} to fix before you ride.` : undefined;
   const groups = content ? fixitSections(content) : [];
   if (!content) return <Screen><BackHeader title="You" /><PageTitle sub="Short guides for the roadside.">Fix it</PageTitle><Unavailable /></Screen>;
@@ -62,10 +60,17 @@ export default function FixIt() {
           {content.guides.map((g) => <Row key={g.id} icon={Wrench} label={g.title} sub={`${difficultyWord(g.difficulty)} · ${g.minutes} min`} onPress={() => router.push(`/fixit/${g.id}`)} />)}
         </ListCard>
       )}
-      <SectionTitle>Be ready</SectionTitle>
-      <ListCard>
-        <Row label="Toolkit" sub="What to carry, and why" value={`${base.filter((t) => packed[t.id]).length} of ${base.length}`} mono onPress={() => router.push('/fixit/toolkit')} />
-      </ListCard>
+      <View style={{ marginTop: space[3] }}>
+        <AccordionItem
+          title="What to carry"
+          subtitle="Tools for every ride"
+          leading={<SectionCover content={content} art={null} icon={Backpack} />}
+          open={openId === 'carry'}
+          onToggle={() => setOpenId(nextOpen(openId, 'carry'))}
+        >
+          <CarryList content={content} />
+        </AccordionItem>
+      </View>
       <Text variant="caption" tone="muted" style={{ marginTop: space[5] }}>
         General advice only. Your bike’s manual has the exact numbers.{fixed ? ` You have fixed ${fixed} thing${fixed === 1 ? '' : 's'} yourself.` : ''}
       </Text>

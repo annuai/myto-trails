@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, View } from 'react-native';
 import { ChevronDown } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -14,14 +14,17 @@ import { useAnimatedValue } from './useAnimatedValue';
  * It holds no state of its own: the screen says which item is open, so it can keep just one open. Closed by default; read aloud as a
  * button that is expanded or collapsed; the chevron turns and the body moves over 300 ms, or at once when the phone asks for less motion.
  */
-export function AccordionItem({ title, subtitle, leading, open, onToggle, children }: { title: string; subtitle?: string; leading?: ReactNode; open: boolean; onToggle: () => void; children: ReactNode }) {
+export function AccordionItem({ title, subtitle, leading, trailing, open, onToggle, children }: { title: string; subtitle?: string; leading?: ReactNode; /** Shown in place of the chevron, for a state such as "checked". */ trailing?: ReactNode; open: boolean; onToggle: () => void; children: ReactNode }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const height = useAnimatedValue(0);
   const turn = useAnimatedValue(open ? 1 : 0);
   const [content, setContent] = useState(0);
+  const measured = useRef(false);
   useEffect(() => {
     const to = open ? content : 0;
+    // The first time the body has a size, take it at once: an item that starts open appears open, it does not slide open as the screen arrives.
+    if (!measured.current && content > 0) { measured.current = true; height.setValue(to); turn.setValue(open ? 1 : 0); return; }
     if (reduced) { height.setValue(to); turn.setValue(open ? 1 : 0); return; }
     Animated.timing(height, { toValue: to, duration: accordion.durationMs, easing: EASE, useNativeDriver: false }).start();
     Animated.timing(turn, { toValue: open ? 1 : 0, duration: accordion.durationMs, easing: EASE, useNativeDriver: true }).start();
@@ -41,9 +44,11 @@ export function AccordionItem({ title, subtitle, leading, open, onToggle, childr
           <Text variant="bodyMedium">{title}</Text>
           {subtitle ? <Text variant="label" tone="muted">{subtitle}</Text> : null}
         </View>
-        <Animated.View style={{ transform: [{ rotate: turn.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${accordion.turn}deg`] }) }] }}>
-          <Icon icon={ChevronDown} size={22} tone="muted" />
-        </Animated.View>
+        {trailing ?? (
+          <Animated.View style={{ transform: [{ rotate: turn.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${accordion.turn}deg`] }) }] }}>
+            <Icon icon={ChevronDown} size={22} tone="muted" />
+          </Animated.View>
+        )}
       </ScalePressable>
       <Animated.View style={{ height, overflow: 'hidden' }} accessibilityElementsHidden={!open} importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}>
         <View onLayout={(e) => setContent(e.nativeEvent.layout.height)} style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>

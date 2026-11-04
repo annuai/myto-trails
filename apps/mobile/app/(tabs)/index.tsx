@@ -26,8 +26,6 @@ import { space } from '@/theme/tokens';
 import { useTrailStore } from '@/store/trails';
 import { finishRide } from '@/lib/finishRide';
 import { useRecorder } from '@/store/recorder';
-import { useFixit } from '@/store/fixit';
-import { fixitCheckStatus } from '@moto-trails/domain';
 import { IconButton } from '@/ui/IconButton';
 import { Sheet } from '@/ui/Sheet';
 import { dueInfo, isDueSoon } from '@/lib/todos';
@@ -81,7 +79,6 @@ export default function Home() {
   const [planTripOpen, setPlanTripOpen] = useState(false);
   // Nothing planned and nothing ridden yet: the whole top of the Dash asks for the first trip.
   const firstTimer = trips.length === 0 && rides.length === 0 && !trail;
-  const lastCheck = useFixit((s) => s.last);
   const packs = todos.filter((t) => t.category === 'pack' && !t.tripId);
   const dues = todos.map((t) => ({ t, d: dueInfo(t, km_) })).filter(({ d }) => d.state !== 'done').sort((a, b) => a.d.sortKey - b.d.sortKey);
   const overdue = dues.filter(({ t, d }) => d.state === 'overdue' && !t.tripId);
@@ -105,8 +102,6 @@ export default function Home() {
   const checkin = useCompanion((s) => s.checkin);
   const group = useCompanion((s) => s.group);
   const nowMs = readClock();
-  const checkNow = fixitCheckStatus(lastCheck, nowMs);
-  const checkLabel = checkNow === 'clear' ? 'Pre-ride check done today' : checkNow === 'flagged' ? 'Pre-ride check: things to fix' : 'Pre-ride check · 2 min';
   const finished = justFinishedRide(rides, nowMs);
 
   return (
@@ -185,7 +180,6 @@ export default function Home() {
               <Text variant="label" tone="muted">{packs.filter((p) => p.done).length} of {packs.length} packed</Text>
             </View>
           ) : null}
-          <TextButton tone="ink" label={checkLabel} onPress={() => router.push('/fixit/check')} />
         </HeroCard>
       ) : (
         firstTimer ? (
