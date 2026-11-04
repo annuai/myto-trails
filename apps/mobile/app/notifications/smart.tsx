@@ -27,7 +27,7 @@ export default function SmartNotifications() {
 
   return (
     <Screen>
-      <BackHeader title="Smart notifications" />
+      <BackHeader title="You" />
       <PageTitle sub="Worked out on this phone from your own rides. Nothing about them is sent anywhere.">Smart reminders</PageTitle>
       <ListCard>
         <Row label="Ready for your next ride?" sub="Before the time of day you usually set off, once you have ridden then on three days" chevron={false}

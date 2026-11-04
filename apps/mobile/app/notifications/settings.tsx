@@ -44,7 +44,7 @@ export default function NotificationSettings() {
 
   return (
     <Screen>
-      <BackHeader title="Notifications" />
+      <BackHeader title="You" />
       <PageTitle sub="Reminders are scheduled on this phone. Nothing about them is sent anywhere.">Reminders</PageTitle>
       {permission === 'granted' ? null : permission === 'denied' ? (
         <>
