@@ -19,3 +19,5 @@ Date: 2026-11-04 · [ADR 0011](../../adr/0011-fix-it-offline-guides.md)
 **Data on the phone.** `useFixit`: last check, packed tools, fixed counts. Wiped by erase all.
 
 **To finish**: the 18 pictures (`assets/fixit/README.md`), and a mechanic's review of each guide.
+
+**Sections (added 2026-11-04).** The library groups the guides under the major parts of the bike (Tyres, Brakes, Drivetrain, Clutch, Engine, Electrical, After a fall) as cards that are closed by default and open one at a time. Sections are rows (`fixit_section`, migration 0039) served in the same document; each has a cover picture borrowed from one of its guides. A copy with no sections shows the guides as one flat list.

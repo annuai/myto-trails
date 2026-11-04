@@ -15,8 +15,13 @@ export type FixitStep = {
   art?: string;
 };
 
+/** A major part of the bike that guides are grouped under: Tyres, Brakes, Drivetrain. `cover` is the art id of its picture, or null. */
+export type FixitSection = { id: string; title: string; cover: string | null };
+
 export type FixitGuide = {
   id: string;
+  /** Id of the FixitSection this guide sits under. */
+  section?: string;
   /** The symptom as a rider would say it. */
   title: string;
   summary: string;
@@ -48,6 +53,8 @@ export type FixitContent = {
   updatedAt: string;
   tools: FixitTool[];
   checks: FixitCheckItem[];
+  /** In the order to show them. Absent on a copy made before sections existed: show the guides as one list. */
+  sections?: FixitSection[];
   guides: FixitGuide[];
   /** By art id, only for pictures that have been uploaded. */
   art: Record<string, FixitArt>;
@@ -84,7 +91,7 @@ export const stepWords = (s: FixitStep): number => [s.text, s.warn, s.expect].fi
 export const MAX_STEP_WORDS = 22;
 
 /** Problems that would make a guide unsafe or hard to follow: empty when it is fine. Used by the tests and by the importer, so nothing bad reaches the database. */
-export function fixitProblems(c: Pick<FixitContent, "guides" | "tools" | "checks">): string[] {
+export function fixitProblems(c: Pick<FixitContent, "guides" | "tools" | "checks"> & { sections?: FixitSection[] }): string[] {
   const out: string[] = [];
   const toolIds = new Set(c.tools.map((t) => t.id));
   const guideIds = new Set(c.guides.map((g) => g.id));
@@ -103,6 +110,16 @@ export function fixitProblems(c: Pick<FixitContent, "guides" | "tools" | "checks
     });
     if (g.hero && !FIXIT_ART_ID.test(g.hero)) out.push(`${g.id}: bad hero id`);
   }
+  if (c.sections) {
+    const sectionIds = new Set(c.sections.map((s) => s.id));
+    if (sectionIds.size !== c.sections.length) out.push("duplicate section id");
+    for (const s of c.sections) {
+      if (!FIXIT_ID.test(s.id)) out.push(`section ${s.id}: bad id`);
+      if (s.cover && !FIXIT_ART_ID.test(s.cover)) out.push(`section ${s.id}: bad cover id`);
+      if (!c.guides.some((g) => g.section === s.id)) out.push(`section ${s.id}: has no guides`);
+    }
+    for (const g of c.guides) if (!g.section || !sectionIds.has(g.section)) out.push(`${g.id}: not in a known section`);
+  }
   for (const i of c.checks) for (const id of i.guides) if (!guideIds.has(id)) out.push(`check ${i.id}: unknown guide ${id}`);
   return out;
 }
@@ -120,4 +137,18 @@ export function isFixitContent(x: unknown): x is FixitContent {
   const c = x as Partial<FixitContent> | null;
   if (!c || typeof c !== "object" || !Array.isArray(c.guides) || !Array.isArray(c.tools) || !Array.isArray(c.checks) || typeof c.art !== "object" || c.art === null) return false;
   return c.guides.length > 0 && c.guides.every((g) => g && typeof g.id === "string" && typeof g.title === "string" && Array.isArray(g.steps) && g.steps.length > 0 && g.steps.every((s) => typeof s?.text === "string") && Array.isArray(g.stopIf) && g.stopIf.length > 0 && Array.isArray(g.tools) && Array.isArray(g.terms));
+}
+
+export type FixitSectionGroup = { section: FixitSection; guides: FixitGuide[] };
+
+/**
+ * The guides grouped by section, in the sections' order. A guide with no section, or one the copy does not list, goes in a last "More" group,
+ * so nothing is ever hidden. Empty when the copy has no sections at all: the caller shows one flat list.
+ */
+export function fixitSections(c: Pick<FixitContent, "guides" | "sections">): FixitSectionGroup[] {
+  if (!c.sections?.length) return [];
+  const known = new Set(c.sections.map((s) => s.id));
+  const groups = c.sections.map((section) => ({ section, guides: c.guides.filter((g) => g.section === section.id) })).filter((g) => g.guides.length);
+  const rest = c.guides.filter((g) => !g.section || !known.has(g.section));
+  return rest.length ? [...groups, { section: { id: "more", title: "More", cover: null }, guides: rest }] : groups;
 }

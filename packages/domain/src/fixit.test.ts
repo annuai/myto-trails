@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { isFixitContent, artIdsOf, fixitCheckStatus, fixitProblems, guideById, guidesForCheck, kitFor, MAX_STEP_WORDS, stepWords, trailsideGuides } from "./fixit";
-import { FIXIT_ART_ALT, FIXIT_CHECKS, FIXIT_GUIDES, FIXIT_TOOLS } from "./fixitContent";
+import { fixitSections, isFixitContent, artIdsOf, fixitCheckStatus, fixitProblems, guideById, guidesForCheck, kitFor, MAX_STEP_WORDS, stepWords, trailsideGuides } from "./fixit";
+import { FIXIT_ART_ALT, FIXIT_CHECKS, FIXIT_GUIDES, FIXIT_SECTIONS, FIXIT_TOOLS } from "./fixitContent";
 
-const content = { guides: FIXIT_GUIDES, tools: FIXIT_TOOLS, checks: FIXIT_CHECKS };
+const content = { guides: FIXIT_GUIDES, tools: FIXIT_TOOLS, checks: FIXIT_CHECKS, sections: FIXIT_SECTIONS };
 
 describe("Fix it content", () => {
   it("has no problems", () => expect(fixitProblems(content)).toEqual([]));
@@ -34,9 +34,9 @@ describe("Fix it content", () => {
   it("offers real guides for a check that needs fixing", () => {
     expect(guidesForCheck(content, FIXIT_CHECKS[0]!).length).toBeGreaterThan(0);
   });
-  it("names 18 pictures, each with a description", () => {
+  it("names 19 pictures, each with a description", () => {
     const ids = [...new Set(artIdsOf(content))].sort();
-    expect(ids).toHaveLength(18);
+    expect(ids).toHaveLength(19);
     expect(Object.keys(FIXIT_ART_ALT).sort()).toEqual(ids);
   });
 });
@@ -71,5 +71,27 @@ describe("isFixitContent", () => {
     expect(isFixitContent({ ...ok, guides: [{ ...FIXIT_GUIDES[0]!, steps: [] }] })).toBe(false);
     expect(isFixitContent({ ...ok, guides: [{ ...FIXIT_GUIDES[0]!, stopIf: [] }] })).toBe(false);
     expect(isFixitContent({ ...ok, art: undefined })).toBe(false);
+  });
+});
+
+describe("sections", () => {
+  it("put every guide under a known section, and every section has guides", () => expect(fixitProblems(content)).toEqual([]));
+  it("group the guides in the sections' order with every guide shown once", () => {
+    const groups = fixitSections(content);
+    expect(groups.map((g) => g.section.title)).toEqual(["Tyres", "Brakes", "Drivetrain", "Clutch", "Engine", "Electrical", "After a fall"]);
+    expect(groups.flatMap((g) => g.guides.map((x) => x.id)).sort()).toEqual(FIXIT_GUIDES.map((g) => g.id).sort());
+    expect(groups.find((g) => g.section.id === "clutch")!.guides.map((g) => g.id)).toEqual(["clutch-adjust", "clutch-cable"]);
+  });
+  it("use a picture of one of their own guides as the cover", () => {
+    for (const s of FIXIT_SECTIONS) expect(artIdsOf(content), s.id).toContain(s.cover);
+  });
+  it("show a guide with no section in a last More group, and nothing when there are no sections", () => {
+    const orphan = { sections: FIXIT_SECTIONS, guides: [...FIXIT_GUIDES, { ...FIXIT_GUIDES[0]!, id: "extra", section: "nope" }] };
+    expect(fixitSections(orphan).at(-1)!.section.title).toBe("More");
+    expect(fixitSections({ guides: FIXIT_GUIDES })).toEqual([]);
+  });
+  it("are reported when a guide points at a section that does not exist", () => {
+    const bad = { ...content, guides: [{ ...FIXIT_GUIDES[0]!, section: "ghost" }, ...FIXIT_GUIDES.slice(1)] };
+    expect(fixitProblems(bad).join("|")).toMatch(/not in a known section/);
   });
 });
