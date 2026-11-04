@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bike as BikeGlyph, Camera } from 'lucide-react-native';
+import { Bike as BikeGlyph, Camera, Wrench } from 'lucide-react-native';
 import { ApiFailure, api } from '@/api/client';
 import { forgetProfile, useMe } from '@/api/useApi';
 import type { BikeImageVariants, BikeModel } from '@/api/types';
@@ -14,6 +14,7 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Field } from '@/ui/Field';
 import { BackHeader } from '@/ui/Header';
+import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
@@ -85,6 +86,7 @@ export default function Bike() {
         {photo.uri ? <Button variant="soft" label="Remove my photo" disabled={busy} onPress={() => setPhoto({ mediaId: null, uri: null })} /> : null}
         {problem ? <Text variant="label" tone="stop">{problem}</Text> : null}
       </Card>
+      <View style={{ marginTop: space[4] }}><ListCard><Row icon={Wrench} label="Fix it" sub="Repair guides and what to carry" onPress={() => router.push('/fixit')} /></ListCard></View>
       {me.data?.bike ? <View style={{ marginTop: space[4] }}><Button variant="danger" label="Remove my bike" disabled={busy} onPress={() => void remove()} /></View> : null}
     </Screen>
   );

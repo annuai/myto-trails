@@ -15,6 +15,7 @@ import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
 import { SubmissionQueueHost } from '@/SubmissionQueueHost';
+import { refreshFixit } from '@/fixit/content';
 import { ResumeHost } from '@/ResumeHost';
 import { CrashHost } from '@/CrashHost';
 import { NavigateChoiceHost } from '@/NavigateChoiceHost';
@@ -49,6 +50,8 @@ export default function Root() {
   }, []);
   useEffect(() => { void runRideIdMigration().catch(() => undefined); }, []);
   useEffect(() => { void startCachePersistence(); }, []);
+  // Download the Fix it guides while there is a signal, so they are on the phone when there is not one.
+  useEffect(() => { void refreshFixit(Date.now()); }, []);
   // Under inverted colours the page behind every screen is the dark paper, as the screens are drawn in the opposite mode.
   const paper = useAppearance((s) => s.inverted) ? dark.paper : light.paper;
   const [loaded] = useFonts({ Michroma_400Regular, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, GeistMono_400Regular, GeistMono_500Medium });

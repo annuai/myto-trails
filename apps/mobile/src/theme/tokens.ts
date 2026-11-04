@@ -46,6 +46,8 @@ export const type = {
   hero: { fontFamily: font.display, fontSize: 26, lineHeight: 34, letterSpacing: -0.2 },
   title: { fontFamily: font.display, fontSize: 24, lineHeight: 32, letterSpacing: -0.1 },
   section: { fontFamily: font.semibold, fontSize: 21, lineHeight: 28 },
+  /** One repair step read at arm's length, with gloves on, in sun. */
+  step: { fontFamily: font.semibold, fontSize: 28, lineHeight: 36 },
   body: { fontFamily: font.regular, fontSize: 17, lineHeight: 24 },
   bodyMedium: { fontFamily: font.medium, fontSize: 17, lineHeight: 24 },
   label: { fontFamily: font.regular, fontSize: 15, lineHeight: 20 },

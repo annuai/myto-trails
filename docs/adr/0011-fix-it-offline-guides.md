@@ -6,7 +6,7 @@ Date: 2026-11-04 · Status: accepted (replaces the first version of this decisio
 
 **Why.** Guides must be corrected without shipping a new app: a mechanic's review, a better step, a new bike. The database gives that. A repair is needed where there is no signal, so the document is kept on the phone after the first download. The cost of having no copy in the app is that a phone that has never been online shows "Guides not downloaded yet" with a Try again button, until it has been online once.
 
-**Safety of edits.** The database refuses a guide with fewer than two "stop and get help" lines, and a review that has a name but no date. The importer checks every step is short enough to read with gloves on. The app ignores a fetched document that is malformed and keeps the one it has, so a bad edit cannot blank the guides. `review` stays empty until a mechanic has really checked a guide; the app says "Not yet checked by a mechanic" until then.
+**Safety of edits.** The database refuses a guide with fewer than two "stop and get help" lines, and a review that has a name but no date. The importer checks every step is short enough to read with gloves on. The app ignores a fetched document that is malformed and keeps the one it has, so a bad edit cannot blank the guides. `review` stays empty until a mechanic has really checked a guide. The app shows "Checked by <name>" on a reviewed guide and says nothing on one that has not been reviewed.
 
 **Re-running the import** only adds what is missing and never overwrites an edit. `--overwrite` replaces guide text but keeps the review, the published flag and uploaded pictures.
 
