@@ -19,12 +19,15 @@ export const TAB_BAR_HEIGHT = 100;
 export const TAB_BAR_HEIGHT_LANDSCAPE = 84;
 export { CONTENT_MAX };
 
-type Props = { children: ReactNode; overlay?: ReactNode; tabs?: boolean; scroll?: boolean; footer?: ReactNode; /** Fixed logo and notifications bar that floats as a pill once the page scrolls. */ brand?: boolean; /** Pulling the page down a long way, past the quote, sends a bike across the top of the first card. */ bike?: boolean; /** The floating tab bar fades away near the end of the page and returns on scrolling up or a tap. */ fadeTabs?: boolean; /** Called when the page is scrolled to within a screen of its end, or is shorter than two screens: the cue to load more of a long list. It may be called again before the list has grown, so the caller must ignore it while it is already loading. */ onNearEnd?: () => void; /** A full-width picture fixed to the bottom edge of the screen. It stays put while the page scrolls; at the very end the content slides up and uncovers it. */ endCap?: ReactNode };
+type Props = { children: ReactNode; overlay?: ReactNode; tabs?: boolean; scroll?: boolean; footer?: ReactNode; /** Fixed logo and notifications bar that floats as a pill once the page scrolls. */ brand?: boolean; /** Pulling the page down a long way, past the quote, sends a bike across the top of the first card (on Android, read from the finger's travel). */ bike?: boolean; /** The floating tab bar fades away near the end of the page and returns on scrolling up or a tap. */ fadeTabs?: boolean; /** Called when the page is scrolled to within a screen of its end, or is shorter than two screens: the cue to load more of a long list. It may be called again before the list has grown, so the caller must ignore it while it is already loading. */ onNearEnd?: () => void; /** A full-width picture fixed to the bottom edge of the screen. It stays put while the page scrolls; at the very end the content slides up and uncovers it. */ endCap?: ReactNode };
 
 /** Page frame: safe-area top, 20 px side margins, scrolls, leaves room for the tab bar. */
 export function Screen({ children, overlay, tabs = false, scroll = true, footer, brand = false, bike = false, fadeTabs = false, endCap, onNearEnd }: Props) {
   const scrollY = useAnimatedValue(0);
   const bar = useRef({ prevY: 0, content: 0, layout: 0, value: 1, touch: null as { x: number; y: number } | null }).current;
+  /** Android cannot stretch the page past its top, so the bike reads the finger instead: how far it has dragged down from where it touched, as a negative number like a stretched page, while the page is at its top. */
+  const pull = useAnimatedValue(0);
+  const drag = useRef({ offset: 0, startY: null as number | null }).current;
   /** Height of the fixed end picture, and the page's own size: together they say how much of the picture the content has uncovered. */
   /** Android: the pull-down line is opened by the system's pull-to-refresh, since the page cannot be stretched past its top there. */
   const [quoting, setQuoting] = useState(false);
@@ -57,6 +60,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   /** The scroll handler is made once; `useLatest` keeps it reading the current props. */
   const onScrollEvent = useLatest((e: { nativeEvent: { contentOffset: { y: number }; contentSize: { height: number }; layoutMeasurement: { height: number } } }) => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    drag.offset = contentOffset.y;
     if (onNearEnd && contentSize.height - (contentOffset.y + layoutMeasurement.height) < layoutMeasurement.height) onNearEnd();
     if (!fadeTabs) return;
     const y = e.nativeEvent.contentOffset.y;
@@ -65,21 +69,24 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
     if (next !== bar.value) setBar(next, next > bar.value);
   });
   const androidQuote = Platform.OS === 'android' && tabs && scroll;
+  const bikeAndroid = bike && Platform.OS === 'android';
   const body = scroll ? (
     <Animated.ScrollView
       scrollEventThrottle={16}
       onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false, listener: onScrollEvent })}
       onLayout={fadeTabs || endCap || onNearEnd ? (e) => { const h = e.nativeEvent.layout.height; bar.layout = h; if (endCap) setPage((p) => ({ ...p, layout: h })); } : undefined}
       onContentSizeChange={fadeTabs || endCap || onNearEnd ? (_w, h) => { bar.content = h; if (endCap) setPage((p) => ({ ...p, content: h })); if (onNearEnd && bar.layout > 0 && h < bar.layout * 2) onNearEnd(); } : undefined}
-      onTouchStart={fadeTabs ? (e) => { bar.touch = touchPoint(e.nativeEvent); } : undefined}
-      onTouchEnd={fadeTabs ? (e) => { if (bar.value < 1 && bar.touch && isTap(bar.touch, touchPoint(e.nativeEvent))) setBar(1, true); } : undefined}
+      onTouchStart={fadeTabs || bikeAndroid ? (e) => { if (fadeTabs) bar.touch = touchPoint(e.nativeEvent); if (bikeAndroid) drag.startY = drag.offset <= 0 ? e.nativeEvent.pageY : null; } : undefined}
+      onTouchMove={bikeAndroid ? (e) => { if (drag.startY !== null) pull.setValue(-Math.max(0, e.nativeEvent.pageY - drag.startY)); } : undefined}
+      onTouchEnd={fadeTabs || bikeAndroid ? (e) => { if (fadeTabs && bar.value < 1 && bar.touch && isTap(bar.touch, touchPoint(e.nativeEvent))) setBar(1, true); if (bikeAndroid) { drag.startY = null; pull.setValue(0); } } : undefined}
+      onTouchCancel={bikeAndroid ? () => { drag.startY = null; pull.setValue(0); } : undefined}
       contentContainerStyle={{ paddingTop: top, paddingBottom: endCap ? 0 : bottom, paddingLeft: padL, paddingRight: padR }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       refreshControl={androidQuote ? <RefreshControl refreshing={false} onRefresh={() => setQuoting(true)} progressViewOffset={top} colors={[c.accent]} progressBackgroundColor={c.card} /> : undefined}
     >
       {androidQuote ? <Animated.View style={{ height: quoteHeight }} /> : null}
-      {bike && Platform.OS !== 'android' ? <PullBike scrollY={scrollY} baseline={top} /> : null}
+      {bike ? <PullBike scrollY={Platform.OS === 'android' ? pull : scrollY} baseline={top} /> : null}
       {frame(children)}
       {endCap ? <View style={{ height: capHeight }} /> : null}
     </Animated.ScrollView>
