@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLEAR_AFTER_MS, isWeak, LOST_AFTER_MS, startGpsHealth, stepGpsHealth, type GpsHealth } from './gpsHealth';
+import { CLEAR_AFTER_MS, isWeak, LOST_AFTER_MS, PROBE_AFTER_MS, PROBE_EVERY_MS, shouldProbe, startGpsHealth, STOPPED_LOST_AFTER_MS, stepGpsHealth, type GpsHealth } from './gpsHealth';
 
 const run = (fixAt: (t: number) => number, from: number, to: number, start: GpsHealth = startGpsHealth) => {
   let s = start; const seen: boolean[] = [];
@@ -29,4 +29,28 @@ describe('gps health', () => {
   });
   it('time spent with the app away does not count as silence', () => expect(stepGpsHealth(startGpsHealth, { now: 100_000, lastFixAt: 10_000, resumedAt: 98_000 }).lost).toBe(false));
   it('a poor fix is weak, not lost', () => { expect(isWeak(80)).toBe(true); expect(isWeak(20)).toBe(false); expect(isWeak(undefined)).toBe(false); });
+});
+
+describe('a rider standing still', () => {
+  const still = (gapMs: number) => stepGpsHealth(startGpsHealth, { now: 1000 + gapMs, lastFixAt: 1000, stopped: true }).lost;
+  it('is not warned at a light: a phone at rest may send nothing for minutes', () => {
+    expect(still(LOST_AFTER_MS)).toBe(false);
+    expect(still(120_000)).toBe(false);
+  });
+  it('is warned after a very long silence', () => expect(still(STOPPED_LOST_AFTER_MS)).toBe(true));
+  it('a moving rider is warned at the usual time', () => expect(stepGpsHealth(startGpsHealth, { now: 1000 + LOST_AFTER_MS, lastFixAt: 1000, stopped: false }).lost).toBe(true));
+});
+
+describe('shouldProbe', () => {
+  const base = { now: 100_000, lastSignalAt: 100_000 - PROBE_AFTER_MS, probing: false, lastProbeAt: 0 };
+  it('asks once nothing has been heard for the wait', () => {
+    expect(shouldProbe(base)).toBe(true);
+    expect(shouldProbe({ ...base, lastSignalAt: base.lastSignalAt + 1 })).toBe(false);
+  });
+  it('does not ask while a question is out, or soon after one', () => {
+    expect(shouldProbe({ ...base, probing: true })).toBe(false);
+    expect(shouldProbe({ ...base, lastProbeAt: base.now - PROBE_EVERY_MS + 1 })).toBe(false);
+    expect(shouldProbe({ ...base, lastProbeAt: base.now - PROBE_EVERY_MS })).toBe(true);
+  });
+  it('does not ask before the first fix', () => expect(shouldProbe({ ...base, lastSignalAt: 0 })).toBe(false));
 });

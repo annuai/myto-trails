@@ -3,6 +3,8 @@ import { watchLocation, type Fix } from '@/lib/location';
 
 type State = {
   fix?: Fix;
+  /** When the phone's clock last saw a fix arrive (not the fix's own time, which can be old). */
+  fixAt?: number;
   error?: string;
   /** The error cannot fix itself (permission blocked). */
   blocked: boolean;
@@ -21,7 +23,7 @@ export const useLocation = create<State>((set, get) => ({
     set({ watchers: n });
     if (n === 1) {
       set({ error: undefined, blocked: false });
-      stop = watchLocation((fix) => set({ fix, error: undefined, blocked: false }), (error, fatal) => set({ error, blocked: fatal }));
+      stop = watchLocation((fix) => set({ fix, fixAt: Date.now(), error: undefined, blocked: false }), (error, fatal) => set({ error, blocked: fatal }));
     }
     let released = false;
     return () => {

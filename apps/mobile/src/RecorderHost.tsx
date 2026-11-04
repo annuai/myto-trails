@@ -9,6 +9,8 @@ import { useCompanion } from '@/store/companion';
 import { useSimRide } from '@/store/simRide';
 import { useBattery } from '@/store/battery';
 import { useLocation } from '@/store/location';
+import { shouldProbe } from '@/lib/gpsHealth';
+import { probePosition } from '@/lib/gpsProbe';
 import { startShakeSensor } from '@/lib/shakeSensor';
 import { traceBegin, traceEnd } from '@/lib/motionTraceFile';
 import { useCrash } from '@/store/crash';
@@ -73,6 +75,20 @@ export function RecorderHost() {
     let unsub: (() => void) | undefined;
     // Paused: the map dot keeps moving, but nothing is recorded and the background task is not running.
     if (paused) return () => { stopMotion(); release(); if (Platform.OS === 'web') void Promise.resolve(deactivateKeepAwake(KEEP_AWAKE)).catch(() => undefined); };
+    // A GPS that goes quiet is asked for a position, not assumed lost: a phone standing still may send nothing for a while. An answer is a fix like any other.
+    let probing = false, probedAt = 0;
+    const probe = setInterval(() => {
+      const now = Date.now();
+      if (!shouldProbe({ now, lastSignalAt: Math.max(useRecorder.getState().lastFixAt, useLocation.getState().fixAt ?? 0), probing, lastProbeAt: probedAt })) return;
+      probing = true; probedAt = now;
+      void probePosition().then((f) => {
+        probing = false;
+        if (!f || cancelled || useRecorder.getState().paused) return;
+        // The watch's subscriber below records it; with the background task running, nothing else would.
+        useLocation.setState({ fix: f, fixAt: Date.now() });
+        if (useRecorder.getState().backgrounded) void ingest(toPoint(f));
+      });
+    }, 4000);
     void startBackground().then((ok) => {
       if (cancelled) { if (ok) void stopBackground(); return; }
       setBackgrounded(ok);
@@ -85,6 +101,7 @@ export function RecorderHost() {
     });
     return () => {
       cancelled = true;
+      clearInterval(probe);
       unsub?.();
       stopMotion();
       release();

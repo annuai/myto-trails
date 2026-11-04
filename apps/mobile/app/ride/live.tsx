@@ -3,9 +3,9 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { asText, distanceKm, speedKmh } from '@/lib/units';
 import { isWeak, startGpsHealth, stepGpsHealth } from '@/lib/gpsHealth';
 import { shownSpeedKmh } from '@/lib/liveSpeed';
-import { AppState, Linking, Platform, Pressable, Share, Vibration, View } from 'react-native';
+import { AppState, Linking, Platform, Pressable, ScrollView, Share, Vibration, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Camera, Eye, EyeOff, Flag, Megaphone, Mic, Minus, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
+import { Camera, Eye, EyeOff, Flag, Megaphone, Mic, Minus, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users, Wrench } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { DocumentsSheet } from '@/features/DocumentsSheet';
 import { useEmergency } from '@/features/emergency/useEmergency';
@@ -48,6 +48,7 @@ import { useProfile } from '@/store/profile';
 import { useRecorder } from '@/store/recorder';
 import { Button } from '@/ui/Button';
 import { buzz } from '@/lib/haptics';
+import { useMotion } from '@/store/motion';
 import { EmergencyEditor } from '@/ui/EmergencyEditor';
 import { HoldButton } from '@/ui/HoldButton';
 import { haversine, travelHeading, type LatLng } from '@/lib/geo';
@@ -98,6 +99,8 @@ function LiveBody() {
   const [riderOpen, setRiderOpen] = useState(false);
   const showRider = (id: string) => { setRiderId(id); setRiderOpen(true); };
   const fix = useLocation((s) => s.fix);
+  const watchedAt = useLocation((s) => s.fixAt);
+  const motionStopped = useMotion((s) => s.stopped);
   const gpsError = useLocation((s) => s.error);
   const lastPoint = r.points[r.points.length - 1];
   const breaks = useMemo(() => mergeBreaks(breaksOf(splitSegments(r.points)), r.pauseBreaks), [r.points.length, r.pauseBreaks]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -242,8 +245,10 @@ function LiveBody() {
   const speed = shown === null ? { value: '–', unit: speedKmh(0).unit } : speedKmh(shown);
   const distance = distanceKm(r.meters / 1000);
   const ageSec = r.lastFixAt ? Math.max(0, Math.round((nowMs() - r.lastFixAt) / 1000)) : 0;
-  // Fixes keep coming while stopped, so a long silence is a real loss; the warning needs one to raise and a steady run of fixes to clear.
-  const nextHealth = r.source === 'gps' && !r.paused ? stepGpsHealth(health, { now: nowMs(), lastFixAt: r.lastFixAt, resumedAt }) : startGpsHealth;
+  // A silent GPS is asked for a position (RecorderHost), and a rider standing still is not warned for a short silence: a phone at rest may send nothing.
+  // Either watch hearing a fix counts: the recording task and the one that moves the dot on the map.
+  const standing = !r.moving || motionStopped;
+  const nextHealth = r.source === 'gps' && !r.paused ? stepGpsHealth(health, { now: nowMs(), lastFixAt: Math.max(r.lastFixAt, watchedAt ?? 0), resumedAt, stopped: standing }) : startGpsHealth;
   if (nextHealth.lost !== health.lost || nextHealth.freshSince !== health.freshSince) setHealth(nextHealth);
   const lostSignal = nextHealth.lost;
   const weakSignal = !lostSignal && r.source === 'gps' && !r.paused && isWeak(fix?.accuracy);
@@ -321,6 +326,12 @@ function LiveBody() {
       {quiet ? null : (
         <View pointerEvents="box-none" onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); if (h > 0) setFootH(h); }} style={{ position: 'absolute', left: space[3], right: space[3], bottom: space[3], gap: space[2] }}>
           {groupRail}
+          {standing && !r.paused ? (
+            <Pressable accessibilityRole="button" accessibilityLabel="Bike trouble? Open Fix it" onPress={() => router.push('/fixit/trailside')} style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: size.compact, paddingHorizontal: space[4], borderRadius: radius.chip, backgroundColor: pressed ? fixed.darkPressed : c.raised, flexDirection: 'row', alignItems: 'center', gap: space[2] })}>
+              <Icon icon={Wrench} size={18} />
+              <Text variant="labelMedium">Bike trouble? Fix it</Text>
+            </Pressable>
+          ) : null}
           {stats}
         </View>
       )}
@@ -381,9 +392,12 @@ function LiveBody() {
         <View style={{ flex: 1, flexDirection: 'row', gap: space[3] }}>
           <View style={{ flex: 1 }}>
             <OsmMap height="fill" radius={radius.card} follow pointer debug={mapDebug} covered={{ top: 0, bottom: 0, left: sideW ? sideW + space[3] : 0 }} onPicker={setPicking} {...mapData} />
-            <View pointerEvents="box-none" onLayout={(e) => { const w = Math.round(e.nativeEvent.layout.width); if (w > 0) setSideW(w); }} style={{ position: 'absolute', top: space[3], bottom: space[3], left: space[3], width: '46%', maxWidth: layout.barMax, justifyContent: 'space-between' }}>
-              <View style={{ gap: space[2] }}>{picking ? null : instruction ? <TurnCard instruction={instruction} compact onStop={rescue ? endRescue : target ? clearTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}{picking ? null : leadCards}{picking ? null : status}</View>
-              {quiet ? null : <View style={{ gap: space[2] }}>{groupRail}{stats}</View>}
+            <View pointerEvents="box-none" onLayout={(e) => { const w = Math.round(e.nativeEvent.layout.width); if (w > 0) setSideW(w); }} style={{ position: 'absolute', top: space[3], bottom: space[3], left: space[3], width: '46%', maxWidth: layout.barMax }}>
+              {/* The column scrolls when its notices (lost signal, a lead question) make it taller than the screen, so the numbers are never pushed out of sight. It still spreads to the full height when it fits, and the map is still touched through its empty space. */}
+              <ScrollView pointerEvents="box-none" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between', gap: space[2] }}>
+                <View pointerEvents="box-none" style={{ gap: space[2] }}>{picking ? null : instruction ? <TurnCard instruction={instruction} compact onStop={rescue ? endRescue : target ? clearTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}{picking ? null : leadCards}{picking ? null : status}</View>
+                {quiet ? null : <View pointerEvents="box-none" style={{ gap: space[2] }}>{groupRail}{stats}</View>}
+              </ScrollView>
             </View>
             {quietBtn}
           </View>
