@@ -14,6 +14,7 @@ import { useAppearance } from '@/store/appearance';
 import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
+import { SubmissionQueueHost } from '@/SubmissionQueueHost';
 import { ResumeHost } from '@/ResumeHost';
 import { CrashHost } from '@/CrashHost';
 import { NavigateChoiceHost } from '@/NavigateChoiceHost';
@@ -58,6 +59,7 @@ export default function Root() {
       <RecorderHost />
       <NotificationHost />
       <CompanionHost />
+      <SubmissionQueueHost />
       <ResumeHost />
       <RideNotificationHost />
           <VoiceHost />

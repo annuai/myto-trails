@@ -33,3 +33,13 @@ export function markFailed(box: Outbox, clientId: string, now: number, permanent
   if (permanent) return markSent(box, clientId);
   return box.map((i) => (i.clientId === clientId ? { ...i, tries: i.tries + 1, nextAt: now + Math.min(BACKOFF_BASE_MS * 2 ** i.tries, BACKOFF_MAX_MS) } : i));
 }
+
+/** How long after a ride ends the rider is still asked how the trail was. Later than this, the memory is stale and the ask is dropped. */
+export const ASK_WITHIN_MS = 15 * 60_000;
+
+/** Whether to ask "how was the trail?" for a ride that has just ended: once, only for a ride of a published trail, only soon after it ended. */
+export function shouldAskCondition(r: { trailSlug?: string; conditionAsked?: boolean; sample?: boolean; startedAt: number; durationSec: number; pausedSec?: number }, now: number): boolean {
+  if (!r.trailSlug || r.conditionAsked || r.sample) return false;
+  const endedAt = r.startedAt + ((r.durationSec + (r.pausedSec ?? 0)) * 1000);
+  return now >= r.startedAt && now - endedAt <= ASK_WITHIN_MS;
+}

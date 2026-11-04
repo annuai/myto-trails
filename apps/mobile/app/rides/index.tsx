@@ -42,7 +42,7 @@ export default function RideLog() {
       {rides.length ? (
         <ListCard>
           {rides.map((r) => (
-            <Row key={r.id} icon={RouteIcon} label={r.name} sub={`${formatDate(new Date(r.startedAt).toISOString().slice(0, 10))} · ${asText(durationParts(r.durationSec))}${r.submission ? ' · uploaded' : ''}${r.sample ? ' · sample' : ''}`} value={asText(distanceKm(r.distanceKm))} mono onPress={() => router.push(`/story/${r.id}`)} />
+            <Row key={r.id} icon={RouteIcon} label={r.name} sub={`${formatDate(new Date(r.startedAt).toISOString().slice(0, 10))} · ${asText(durationParts(r.durationSec))}${r.submission ? (r.submission.status === 'queued' ? ' · waiting to upload' : r.submission.status === 'failed' ? ' · not sent' : ' · uploaded') : ''}${r.sample ? ' · sample' : ''}`} value={asText(distanceKm(r.distanceKm))} mono onPress={() => router.push(`/story/${r.id}`)} />
           ))}
         </ListCard>
       ) : <EmptyState icon={RouteIcon} title="Your first ride starts here" body="Tap Ride and go. Every ride you record is kept here, with its route and what it cost." />}

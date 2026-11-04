@@ -24,6 +24,8 @@ import { StatusChip } from '@/ui/Chip';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { RideTimeline } from '@/features/RideTimeline';
 import { fetchOutcome } from '@/api/submissionOutcome';
+import { nowMs } from '@/lib/clock';
+import { shouldAskCondition } from '@/lib/conditions';
 import { outcomeText } from '@/lib/submissionOutcome';
 import { useAuth } from '@/store/auth';
 import { RideMap } from '@/ui/RideMap';
@@ -47,7 +49,8 @@ function StoryBody() {
   const journalCount = useJournal((s) => s.entries.filter((e) => e.rideKey === ride?.startedAt).length);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
+  // Straight after a ride of a trail ends, ask once how the trail was: it is the cheapest way to keep conditions fresh.
+  const [reportOpen, setReportOpen] = useState(() => !!ride && shouldAskCondition(ride, nowMs()));
   const [tripOpen, setTripOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState('');
@@ -63,8 +66,9 @@ function StoryBody() {
     fetchOutcome(token, slug).then((o) => { if (o && !cancelled) useRides.getState().setOutcome(ride.id, o); }).catch(() => undefined);
     return () => { cancelled = true; };
   }, [token, slug, ride?.id]);
+  useEffect(() => { if (reportOpen && ride && !ride.conditionAsked) useRides.getState().markConditionAsked(ride.id); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   if (!ride) return <Screen><BackHeader /><Text>Ride not found.</Text></Screen>;
-  const deleteRide = () => { useJournal.getState().removeForRide(ride.startedAt); useTrips.getState().forgetRide(ride.id); useRides.getState().removeRide(ride.id); router.replace('/rides'); };
+  const deleteRide = () => { useJournal.getState().removeForRide(ride.startedAt); useTrips.getState().forgetRide(ride.id); useRides.getState().removeRide(ride.id); router.dismissTo('/rides'); };
   const sub = ride.submission;
   const inTrips = trips.filter((t) => t.rideIds.includes(ride.id));
   const gapM = trackStats(segmentsOf(ride.points, ride.breaks)).gapM;
@@ -117,8 +121,12 @@ function StoryBody() {
       <SectionTitle>Share it</SectionTitle>
       {sub ? (
         <Card style={{ gap: space[3] }}>
-          {(() => { const o = sub.outcome ? outcomeText(sub.outcome.status, sub.outcome.feedback) : undefined; return <StatusChip status={o?.tone ?? 'good'} label={o ? o.label : 'Sent for review'} />; })()}
-          <Text variant="label" tone="muted">{sub.trailName}. Moderators check it before anything is published.</Text>
+          {sub.status === 'queued' ? <StatusChip status="unknown" label="Waiting for a signal" />
+            : sub.status === 'failed' ? <StatusChip status="stop" label="Not sent" />
+            : (() => { const o = sub.outcome ? outcomeText(sub.outcome.status, sub.outcome.feedback) : undefined; return <StatusChip status={o?.tone ?? 'good'} label={o ? o.label : 'Sent for review'} />; })()}
+          <Text variant="label" tone="muted">{sub.status === 'queued' ? `${sub.trailName}. It is saved on this phone and goes by itself when you have a signal. You can close the app.`
+            : sub.status === 'failed' ? `${sub.trailName}. ${sub.error ?? 'The site did not accept it.'} Change it and upload again.`
+            : `${sub.trailName}. Moderators check it before anything is published.`}</Text>
           {sub.outcome ? (() => { const o = outcomeText(sub.outcome.status, sub.outcome.feedback); return o.note ? <Text variant="label">{o.note}</Text> : null; })() : null}
         </Card>
       ) : null}

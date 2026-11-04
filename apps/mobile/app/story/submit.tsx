@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Send } from 'lucide-react-native';
+import { ImagePlus, Send } from 'lucide-react-native';
 import { ACCESS_BASES, CARRY_ITEMS, CARRY_ITEM_LABEL, INDIA_STATES, TERRAINS } from '@moto-trails/domain';
 import type { CarryItem } from '@moto-trails/domain';
 import { ApiFailure } from '@/api/client';
@@ -10,9 +10,13 @@ import { newUuid } from '@/lib/uuid';
 import { pathLength, trimEnds } from '@/lib/geo';
 import { startSignIn } from '@/lib/signIn';
 import { submitRide } from '@/lib/submit';
+import { MAX_SUBMISSION_PHOTOS } from '@/lib/submitPhotos';
+import { pickAndUploadImage } from '@/lib/uploadImage';
 import { ARRIVAL_NOTE_MAX, CARRY_NOTES_MAX, carryFields, carryProblem } from '@/lib/trailCarry';
 import { useAuth } from '@/store/auth';
 import { useRides } from '@/store/rides';
+import { useSubmissionQueue } from '@/store/submissionQueue';
+import { enqueueSubmission } from '@/lib/submissionQueue';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Checkbox } from '@/ui/Checkbox';
@@ -62,6 +66,7 @@ export default function Submit() {
   const [arrival, setArrival] = useState<{ from: number; to: number } | null>(null);
   const [arrivalNote, setArrivalNote] = useState('');
   const [trim, setTrim] = useState<number>(200);
+  const [photos, setPhotos] = useState<{ mediaId: string; uri: string; width: number; height: number; altText: string }[]>([]);
   const [agreed, setAgreed] = useState(false);
   const [picking, setPicking] = useState(false);
   const [filter, setFilter] = useState('');
@@ -82,6 +87,7 @@ export default function Submit() {
     if (access === 'permission_required' && permission.trim().length < 10) return 'Explain how a rider gets permission.';
     const carryIssue = carryProblem({ water, notes: carryNotes, arrival, arrivalNote });
     if (carryIssue) return carryIssue;
+    if (photos.some((p) => !p.altText.trim())) return 'Describe each photo in a few words, for people who cannot see it.';
     if (points.length < 2) return 'Nothing is left of the track after trimming. Choose a smaller trim.';
     if (!agreed) return 'Accept the contribution licence to submit.';
     return undefined;
@@ -92,17 +98,35 @@ export default function Submit() {
     setError(undefined);
     const clientId = ride.clientId ?? newUuid();
     useRides.setState((s) => ({ rides: s.rides.map((r) => (r.id === ride.id ? { ...r, clientId } : r)) }));
+    const form = {
+      name: name.trim(), summary: summary.trim(), state: state.slug, district: district.trim(), nearestTown: town.trim(), difficulty, terrain, routeShape: shape,
+      accessClass: access, basis, evidence: evidence.trim(), permissionInstructions: permission.trim(),
+      carry: carryFields({ water, items, notes: carryNotes, arrival, arrivalNote }), photos: photos.map((p) => ({ mediaId: p.mediaId, altText: p.altText })),
+    };
     try {
-      const res = await submitRide(token, {
-        clientId, name: name.trim(), summary: summary.trim(), state: state.slug, district: district.trim(), nearestTown: town.trim(), difficulty, terrain, routeShape: shape,
-        accessClass: access, basis, evidence: evidence.trim(), permissionInstructions: permission.trim(), points, waypoints: ride.waypoints,
-        carry: carryFields({ water, items, notes: carryNotes, arrival, arrivalNote }),
-      }, setBusy);
+      const res = await submitRide(token, { ...form, clientId, points, waypoints: ride.waypoints }, setBusy);
       useRides.getState().setSubmission(ride.id, { status: 'submitted', at: Date.now(), trailName: name.trim(), slug: res.slug, clientId });
       router.replace(`/story/${ride.id}`);
     } catch (e) {
+      // No signal: keep the form on the phone and send it when there is one, so the rider can put the phone away.
+      if (e instanceof ApiFailure && e.status === 0) {
+        useSubmissionQueue.getState().setItems(enqueueSubmission(useSubmissionQueue.getState().items, { rideId: ride.id, clientId, trim, form }, Date.now()));
+        useRides.getState().setSubmission(ride.id, { status: 'queued', at: Date.now(), trailName: name.trim(), slug: '', clientId });
+        router.replace(`/story/${ride.id}`);
+        return;
+      }
       setError(e instanceof ApiFailure ? (e.fields ? `${e.message} ${Object.values(e.fields).join(' ')}` : e.message) : 'Something went wrong. Try again.');
     } finally { setBusy(undefined); }
+  };
+
+  const addPhoto = async () => {
+    if (!token) return;
+    setError(undefined); setBusy('Uploading the photo');
+    try {
+      const up = await pickAndUploadImage(token, null);
+      if (up) setPhotos((x) => [...x, { ...up, altText: '' }]);
+    } catch (e) { setError(e instanceof ApiFailure ? e.message : 'The photo could not be added. Try again.'); }
+    finally { setBusy(undefined); }
   };
 
   const states = INDIA_STATES.filter((s) => s.name.toLowerCase().includes(filter.toLowerCase()));
@@ -160,6 +184,18 @@ export default function Submit() {
             <Field label="Why then?" value={arrivalNote} onChangeText={setArrivalNote} maxLength={ARRIVAL_NOTE_MAX} placeholder="e.g. Cooler, and the river crossing is low" />
           </>
         ) : null}
+      </View>
+      <SectionTitle>Photos (optional)</SectionTitle>
+      <View style={{ gap: space[4] }}>
+        <Text variant="caption" tone="muted">Up to {MAX_SUBMISSION_PHOTOS}. Keep number plates, faces and house numbers out of them. Moderators check every photo before it is shown.</Text>
+        {photos.map((p, i) => (
+          <Card key={p.mediaId} style={{ gap: space[3] }}>
+            <Image source={{ uri: p.uri }} style={{ width: '100%', aspectRatio: p.width && p.height ? Math.min(Math.max(p.width / p.height, 0.75), 2) : 4 / 3 }} resizeMode="cover" accessibilityLabel={p.altText || 'Photo to upload'} />
+            <Field label="What is in the picture?" value={p.altText} onChangeText={(t) => setPhotos((x) => x.map((y, j) => (j === i ? { ...y, altText: t } : y)))} maxLength={300} />
+            <Button variant="soft" label="Remove this photo" onPress={() => setPhotos((x) => x.filter((_, j) => j !== i))} />
+          </Card>
+        ))}
+        {token && photos.length < MAX_SUBMISSION_PHOTOS ? <Button variant="soft" icon={ImagePlus} label="Add a photo" disabled={!!busy} onPress={addPhoto} /> : null}
       </View>
       <SectionTitle>Hide the start and end</SectionTitle>
       <Chips>{TRIMS.map((t) => <ChoiceChip key={t} label={t ? `${t} m` : 'None'} selected={trim === t} onPress={() => setTrim(t)} />)}</Chips>

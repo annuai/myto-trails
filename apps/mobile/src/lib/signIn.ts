@@ -7,6 +7,7 @@ import { api } from '@/api/client';
 import { SITE_BASE } from '@/api/config';
 import { forgetProfile } from '@/api/useApi';
 import { wipeImageCache } from '@/lib/imageCache';
+import { useSubmissionQueue } from '@/store/submissionQueue';
 import { useAuth } from '@/store/auth';
 import { safeReturnPath } from '@/lib/returnPath';
 
@@ -71,6 +72,8 @@ export async function finishSignIn(code: string, state: string): Promise<string>
 export async function signOut(): Promise<void> {
   const token = useAuth.getState().token;
   useAuth.getState().clear();
+  // A queued trail submission belongs to the account that wrote it: it must not go out under the next one.
+  useSubmissionQueue.getState().setItems([]);
   await wipeImageCache();
   if (token) await api('/auth/token', { method: 'DELETE', token }).catch(() => undefined); // revokes it on the server; offline just forgets it here
 }

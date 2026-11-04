@@ -8,13 +8,14 @@ import type { WaypointKind } from '@/lib/waypointKinds';
 import { storage } from './persist';
 
 export type Waypoint = { name: string; lat: number; lng: number; kind?: WaypointKind };
-export type SubmissionState = { status: 'submitted'; at: number; trailName: string; slug: string; clientId: string; /** What the moderators did with it, as last fetched. */ outcome?: { status: string; feedback?: string; checkedAt: number } };
+export type SubmissionState = { /** `queued`: waiting for a signal. `failed`: the site refused it, see `error`. */ status: 'submitted' | 'queued' | 'failed'; error?: string; at: number; trailName: string; slug: string; clientId: string; /** What the moderators did with it, as last fetched. */ outcome?: { status: string; feedback?: string; checkedAt: number } };
 
 export type Ride = {
   id: string; name: string; startedAt: number; durationSec: number; /** Time the rider spent paused, already left out of durationSec. */ pausedSec?: number; distanceKm: number; maxKmh: number; points: LatLng[]; /** Indices into `points` where a new GPS segment starts. Absent on rides saved before gaps were tracked. */ breaks?: number[];
   waypoints: Waypoint[]; sample?: boolean; updatedAt?: number; submission?: SubmissionState; /** Stays the same across upload attempts so a retry continues the same draft. */ clientId?: string;
   /** The group ride and check-in that were live when this ride finished. */ groupId?: string; checkinId?: string;
   /** The published trail the rider had chosen to ride when this ride finished. Absent for a ride of their own: only a trail has conditions to report. */ trailSlug?: string;
+  /** Set once the rider has been asked how the trail was, so the question comes once. */ conditionAsked?: boolean;
 };
 
 type State = {
@@ -26,6 +27,8 @@ type State = {
   setSubmission: (id: string, s: SubmissionState) => void;
   /** Notes the group ride and check-in a ride was recorded under. */
   linkRide: (id: string, links: { groupId?: string; checkinId?: string; trailSlug?: string }) => void;
+  /** Notes that the rider has been asked how the trail was. */
+  markConditionAsked: (id: string) => void;
   /** Stores the moderators' answer on a ride that was sent for review. */
   setOutcome: (id: string, outcome: { status: string; feedback?: string }) => void;
 };
@@ -38,6 +41,7 @@ export const useRides = create<State>()(
       removeRide: (id) => set((s) => ({ rides: s.rides.filter((r) => r.id !== id) })),
       renameRide: (id, name) => { const n = name.replace(/\s+/g, ' ').trim().slice(0, 80); if (n) set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, name: n, updatedAt: Date.now() } : r)) })); },
       setOutcome: (id, o) => set((s) => ({ rides: s.rides.map((r) => (r.id === id && r.submission ? { ...r, submission: { ...r.submission, outcome: { ...o, checkedAt: Date.now() } } } : r)) })),
+      markConditionAsked: (id) => set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, conditionAsked: true } : r)) })),
       linkRide: (id, links) => set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, ...links, updatedAt: Date.now() } : r)) })),
       setSubmission: (id, submission) => set((s) => ({ rides: s.rides.map((r) => (r.id === id ? { ...r, submission, updatedAt: Date.now() } : r)) })),
     }),

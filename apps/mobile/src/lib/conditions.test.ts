@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { enqueue, markFailed, markSent, nextBatch, OUTBOX_CAP, type Outbox, type ReportDraft } from './conditions';
+import { ASK_WITHIN_MS, enqueue, markFailed, markSent, nextBatch, OUTBOX_CAP, shouldAskCondition, type Outbox, type ReportDraft } from './conditions';
 
 const draft = (o: Partial<ReportDraft> = {}): ReportDraft => ({ slug: 'nandi-hills', kind: 'blocked', at: '2026-11-01T06:00:00Z', ...o });
 
@@ -43,4 +43,17 @@ describe('outbox', () => {
     const box = enqueue(enqueue([], draft(), 0), draft(), 0);
     expect(box[0].clientId).not.toBe(box[1].clientId);
   });
+});
+
+describe('shouldAskCondition', () => {
+  const ride = { trailSlug: 'manchanabele-dam', startedAt: 1_000_000, durationSec: 3600 };
+  const ended = 1_000_000 + 3_600_000;
+  it('asks right after a ride of a trail ends', () => expect(shouldAskCondition(ride, ended + 60_000)).toBe(true));
+  it('counts paused time as part of the ride', () => expect(shouldAskCondition({ ...ride, pausedSec: 600 }, ended + 600_000 + ASK_WITHIN_MS)).toBe(true));
+  it('does not ask a rider who was already asked, or about a ride of their own, or a sample', () => {
+    expect(shouldAskCondition({ ...ride, conditionAsked: true }, ended)).toBe(false);
+    expect(shouldAskCondition({ startedAt: 1_000_000, durationSec: 3600 }, ended)).toBe(false);
+    expect(shouldAskCondition({ ...ride, sample: true }, ended)).toBe(false);
+  });
+  it('drops the ask once the ride is old', () => expect(shouldAskCondition(ride, ended + ASK_WITHIN_MS + 1)).toBe(false));
 });

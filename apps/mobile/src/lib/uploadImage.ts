@@ -10,9 +10,10 @@ type Check = { status: string; mediaId?: string; rejectMessage?: string };
  * Let the rider choose a photo and send it through the website's upload pipeline (signed upload, then processing).
  * Returns the finished upload's media id, to be attached with PUT /me/avatar, /me/bike or /clubs/{id}/cover.
  * Returns null when the rider backs out of the picker.
+ * `aspect` crops to that shape; pass null to keep the photo as it was taken (landscape, portrait or square), with its width and height returned.
  */
-export async function pickAndUploadImage(token: string, aspect: [number, number]): Promise<{ mediaId: string; uri: string } | null> {
-  const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect, quality: 0.85 });
+export async function pickAndUploadImage(token: string, aspect: [number, number] | null): Promise<{ mediaId: string; uri: string; width: number; height: number } | null> {
+  const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85, ...(aspect ? { allowsEditing: true, aspect } : {}) });
   if (picked.canceled || !picked.assets[0]) return null;
   const asset = picked.assets[0];
   // The store signs the exact size and type, so read the size from the file itself and let the native uploader stream it from disk.
@@ -33,5 +34,5 @@ export async function pickAndUploadImage(token: string, aspect: [number, number]
     check = await api<Check>(`/uploads/${up.uploadId}`, { token });
   }
   if (check.status !== 'ready' || !check.mediaId) throw new ApiFailure(422, 'rejected', check.rejectMessage ?? 'That photo was not accepted.');
-  return { mediaId: check.mediaId, uri: asset.uri };
+  return { mediaId: check.mediaId, uri: asset.uri, width: asset.width, height: asset.height };
 }

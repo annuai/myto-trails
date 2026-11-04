@@ -3,6 +3,7 @@ import { SITE_BASE } from '@/api/config';
 import type { LatLng } from './geo';
 import { buildGpx } from './gpx';
 import type { carryFields } from './trailCarry';
+import { photoStep, type SubmissionPhoto } from './submitPhotos';
 import { breaksOf, splitSegments } from './track';
 
 export type RideSubmission = {
@@ -12,6 +13,8 @@ export type RideSubmission = {
   points: LatLng[]; waypoints: { name: string; lat: number; lng: number }[]; contributorNote?: string;
   /** The optional carry list and best time to reach, as the keys of step 3. */
   carry?: ReturnType<typeof carryFields>;
+  /** Photos already uploaded through the image pipeline, in the order to show. Each needs a description for people who cannot see it. */
+  photos?: SubmissionPhoto[];
 };
 export type Progress = (step: string) => void;
 
@@ -55,7 +58,7 @@ export async function submitRide(token: string, s: RideSubmission, progress: Pro
       evidence: unknown ? [] : [{ kind: 'other', description: s.evidence }],
       ...(s.accessClass === 'permission_required' ? { permissionInstructions: s.permissionInstructions } : {}),
     }],
-    [5, []],
+    [5, photoStep(s.photos)],
     [6, { licenceAccepted: true, contributorNote: s.contributorNote }],
   ];
   for (const [n, body] of steps) await call(`/submissions/${id}/steps/${n}`, 'PUT', body);
