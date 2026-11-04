@@ -5,7 +5,7 @@ import { isWeak, startGpsHealth, stepGpsHealth } from '@/lib/gpsHealth';
 import { shownSpeedKmh } from '@/lib/liveSpeed';
 import { AppState, Linking, Platform, Pressable, ScrollView, Share, Vibration, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Camera, Eye, EyeOff, Flag, Megaphone, Mic, Minus, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users, Wrench } from 'lucide-react-native';
+import { Camera, Eye, EyeOff, Flag, Megaphone, Mic, Minus, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { DocumentsSheet } from '@/features/DocumentsSheet';
 import { useEmergency } from '@/features/emergency/useEmergency';
@@ -326,12 +326,6 @@ function LiveBody() {
       {quiet ? null : (
         <View pointerEvents="box-none" onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); if (h > 0) setFootH(h); }} style={{ position: 'absolute', left: space[3], right: space[3], bottom: space[3], gap: space[2] }}>
           {groupRail}
-          {standing && !r.paused ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Bike trouble? Open Fix it" onPress={() => router.push('/fixit/trailside')} style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: size.compact, paddingHorizontal: space[4], borderRadius: radius.chip, backgroundColor: pressed ? fixed.darkPressed : c.raised, flexDirection: 'row', alignItems: 'center', gap: space[2] })}>
-              <Icon icon={Wrench} size={18} />
-              <Text variant="labelMedium">Bike trouble? Fix it</Text>
-            </Pressable>
-          ) : null}
           {stats}
         </View>
       )}

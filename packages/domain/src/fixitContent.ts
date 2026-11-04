@@ -51,7 +51,7 @@ export const FIXIT_SECTIONS: FixitSection[] = [
 export const FIXIT_GUIDES: FixitGuide[] = [
   {
     id: "flat-tyre-tubeless", section: "tyres", title: "Flat tyre (tubeless)", summary: "Plug a thorn or nail hole so you can ride to a tyre shop.",
-    difficulty: "moderate", minutes: 25, trailside: true, hero: "flat-tyre-tubeless/hero",
+    difficulty: "moderate", minutes: 25, hero: "flat-tyre-tubeless/hero",
     tools: ["plug-kit", "pump", "gauge", "multitool", "gloves"],
     stopIf: ["The side of the tyre is cut or bulging.", "The hole is bigger than a nail, or the tyre is shredded.", "The tyre has come off the rim."],
     terms: [
@@ -80,7 +80,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "flat-tyre-tube", section: "tyres", title: "Flat tyre (with a tube)", summary: "Change the inner tube. Slow, but doable with the right tools.",
-    difficulty: "hard", minutes: 60, trailside: false, hero: "flat-tyre-tube/hero",
+    difficulty: "hard", minutes: 60, hero: "flat-tyre-tube/hero",
     tools: ["levers", "tube", "pump", "gauge", "spanners", "gloves"],
     stopIf: ["You cannot lift the wheel off the ground safely.", "The tyre or the rim is damaged, not only the tube.", "You have never taken a wheel off, and you are on a slope or near traffic."],
     terms: [
@@ -112,7 +112,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "brakes-soft", section: "brakes", title: "Brakes feel soft or weak", summary: "This is not a roadside repair. Check safely, then get help.",
-    difficulty: "hard", minutes: 10, trailside: true, hero: "brakes-soft/hero",
+    difficulty: "hard", minutes: 10, hero: "brakes-soft/hero",
     tools: ["torch"],
     stopIf: ["The lever or pedal goes to the end, or feels spongy.", "You see fluid leaking around the brake.", "You cannot stop the bike with confidence. Do not ride on."],
     terms: [
@@ -134,7 +134,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "chain-slack", section: "drivetrain", title: "Chain loose or noisy", summary: "Set the chain slack and lubricate it.",
-    difficulty: "moderate", minutes: 25, trailside: true, hero: "chain-slack/hero",
+    difficulty: "moderate", minutes: 25, hero: "chain-slack/hero",
     tools: ["spanners", "chain-lube", "gloves"],
     stopIf: ["The chain has stiff or kinked links, or missing rubber seals.", "The teeth of a sprocket are hooked or shaped like shark fins.", "You cannot adjust both sides evenly."],
     terms: [
@@ -158,7 +158,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "chain-off", section: "drivetrain", title: "Chain has come off", summary: "Look for the cause, then put it back.",
-    difficulty: "moderate", minutes: 20, trailside: false, hero: "chain-off/hero",
+    difficulty: "moderate", minutes: 20, hero: "chain-off/hero",
     tools: ["spanners", "chain-lube", "gloves", "torch"],
     stopIf: ["The chain is broken or has a missing link.", "A sprocket has broken or bent teeth.", "The chain has come off twice in one ride."],
     terms: [
@@ -179,7 +179,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "clutch-adjust", section: "clutch", title: "Clutch too tight, loose or dragging", summary: "Set the clutch lever’s free play with the cable adjusters.",
-    difficulty: "easy", minutes: 15, trailside: false, hero: "clutch-adjust/hero",
+    difficulty: "easy", minutes: 15, hero: "clutch-adjust/hero",
     tools: ["spanners", "multitool", "gloves"],
     stopIf: ["Your bike has a hydraulic clutch (a fluid reservoir on the lever, no cable). It has no free play to adjust.", "The cable is frayed, kinked or rusty. Replace it instead.", "Both adjusters are wound out to their limit. The cable has stretched and needs replacing.", "It still slips or drags after you set the free play. The clutch plates may be worn."],
     terms: [
@@ -206,7 +206,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "clutch-cable", section: "clutch", title: "Clutch cable snapped", summary: "Fit a spare cable. Without one, do not ride in traffic.",
-    difficulty: "hard", minutes: 45, trailside: false,
+    difficulty: "hard", minutes: 45,
     tools: ["clutch-cable", "spanners", "multitool", "zip-ties"],
     stopIf: ["You have no spare cable. Riding without a clutch is risky: arrange a tow or a pickup.", "The lever or its mount is broken, not only the cable.", "The throttle cable is the one that snapped."],
     terms: [
@@ -231,7 +231,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "wont-start", section: "engine", title: "Bike won’t start", summary: "Check the simple causes, in order, before anything else.",
-    difficulty: "easy", minutes: 10, trailside: true, hero: "wont-start/hero",
+    difficulty: "easy", minutes: 10, hero: "wont-start/hero",
     tools: ["torch", "multitool"],
     stopIf: ["You smell petrol.", "You see smoke, or something hot and wet under the bike.", "The starter does nothing and the lights are dead. Use the weak battery guide."],
     terms: [
@@ -254,7 +254,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "spark-plug", section: "engine", title: "Misfiring or hard to start", summary: "Check and clean the spark plug.",
-    difficulty: "moderate", minutes: 20, trailside: false, hero: "spark-plug/hero",
+    difficulty: "moderate", minutes: 20, hero: "spark-plug/hero",
     tools: ["plug", "spanners", "gloves"],
     stopIf: ["The engine is hot. Wait until it is cool.", "The plug threads are damaged, or the plug will not turn easily.", "The plug is oily and the bike keeps fouling plugs."],
     terms: [
@@ -280,7 +280,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "overheating", section: "engine", title: "Engine overheating", summary: "Cool it safely and find out why.",
-    difficulty: "easy", minutes: 30, trailside: true, hero: "overheating/hero",
+    difficulty: "easy", minutes: 30, hero: "overheating/hero",
     tools: ["gloves", "torch"],
     stopIf: ["Steam or boiling coolant is coming out.", "You hear knocking, or the engine loses power.", "The temperature light comes on again after you restart."],
     terms: [
@@ -303,7 +303,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "weak-battery", section: "electrical", title: "Weak or dead battery", summary: "Get started with a jump pack, or a push if your bike allows it.",
-    difficulty: "moderate", minutes: 20, trailside: true, hero: "weak-battery/hero",
+    difficulty: "moderate", minutes: 20, hero: "weak-battery/hero",
     tools: ["jump-pack", "spanners", "gloves"],
     stopIf: ["The battery is swollen, leaking, very hot, or smells like rotten eggs.", "Your manual says not to push start or jump start the bike.", "The battery has been dead for weeks."],
     terms: [
@@ -328,7 +328,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "blown-fuse", section: "electrical", title: "Lights, horn or indicators dead", summary: "Find and replace a blown fuse.",
-    difficulty: "easy", minutes: 15, trailside: true, hero: "blown-fuse/hero",
+    difficulty: "easy", minutes: 15, hero: "blown-fuse/hero",
     tools: ["fuses", "multitool", "torch"],
     stopIf: ["The new fuse blows straight away. There is a short circuit.", "You smell burning or see melted wire.", "Only the headlight failed. Check the bulb before the fuse."],
     terms: [
@@ -349,7 +349,7 @@ export const FIXIT_GUIDES: FixitGuide[] = [
   },
   {
     id: "bike-down", section: "after-a-fall", title: "Bike has fallen over", summary: "Lift it without hurting your back, then check it before you ride.",
-    difficulty: "easy", minutes: 15, trailside: true, hero: "bike-down/hero",
+    difficulty: "easy", minutes: 15, hero: "bike-down/hero",
     tools: ["gloves", "torch"],
     stopIf: ["Petrol is leaking.", "You are hurt. Look after yourself first, and use SOS if you need it.", "The forks, frame or a wheel look bent."],
     terms: [

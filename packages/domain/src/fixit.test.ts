@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fixitSections, isFixitContent, artIdsOf, fixitCheckStatus, fixitProblems, guideById, guidesForCheck, kitFor, MAX_STEP_WORDS, stepWords, trailsideGuides } from "./fixit";
+import { fixitSections, isFixitContent, artIdsOf, fixitCheckStatus, fixitProblems, guideById, guidesForCheck, kitFor, MAX_STEP_WORDS, stepWords } from "./fixit";
 import { FIXIT_ART_ALT, FIXIT_CHECKS, FIXIT_GUIDES, FIXIT_SECTIONS, FIXIT_TOOLS } from "./fixitContent";
 
 const content = { guides: FIXIT_GUIDES, tools: FIXIT_TOOLS, checks: FIXIT_CHECKS, sections: FIXIT_SECTIONS };
@@ -19,13 +19,6 @@ describe("Fix it content", () => {
     const b = guideById(content, "brakes-soft")!;
     expect(b.difficulty).toBe("hard");
     expect(b.steps.some((s) => /do not try to bleed or repair/i.test(s.text))).toBe(true);
-  });
-  it("keeps the roadside list short, easiest first", () => {
-    const list = trailsideGuides(content);
-    expect(list.length).toBeGreaterThanOrEqual(4);
-    expect(list.length).toBeLessThanOrEqual(8);
-    const rank = { easy: 0, moderate: 1, hard: 2 } as const;
-    for (let i = 1; i < list.length; i++) expect(rank[list[i]!.difficulty]).toBeGreaterThanOrEqual(rank[list[i - 1]!.difficulty]);
   });
   it("adds the remote tools only for remote rides", () => {
     expect(kitFor(content, false).every((t) => t.kit === "base")).toBe(true);

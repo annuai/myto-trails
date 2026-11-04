@@ -14,7 +14,7 @@ export async function getFixitContent(sql: Sql): Promise<FixitContent> {
     select
       (select coalesce(json_agg(x order by x.sort, x.id), '[]'::json) from (select id, name, why, kit, sort from fixit_tool) x) as tools,
       (select coalesce(json_agg(x order by x.sort, x.id), '[]'::json) from (
-        select id, title, summary, difficulty, minutes, trailside, hero, section, tools, stop_if, reviewed_by, reviewed_on::text as reviewed_on, sort from fixit_guide where published) x) as guides,
+        select id, title, summary, difficulty, minutes, hero, section, tools, stop_if, reviewed_by, reviewed_on::text as reviewed_on, sort from fixit_guide where published) x) as guides,
       (select coalesce(json_agg(x order by x.sort, x.id), '[]'::json) from (select id, title, cover, sort from fixit_section) x) as sections,
       (select coalesce(json_agg(x order by x.guide_id, x.position), '[]'::json) from (
         select s.guide_id, s.position, s.text, s.warn, s.expect, s.art from fixit_step s join fixit_guide g on g.id = s.guide_id where g.published) x) as steps,
@@ -41,7 +41,7 @@ export async function getFixitContent(sql: Sql): Promise<FixitContent> {
     sections: sections.map((s): FixitSection => ({ id: s.id, title: s.title, cover: s.cover ?? null })),
     checks: checks.map((c) => ({ id: c.id, label: c.label, how: c.how, guides: ((c.guides ?? []) as string[]).filter((g) => publishedIds.has(g)), ...(c.route ? { route: c.route } : {}) })),
     guides: guides.map((g): FixitGuide => ({
-      id: g.id, title: g.title, summary: g.summary, difficulty: g.difficulty, minutes: g.minutes, trailside: g.trailside,
+      id: g.id, title: g.title, summary: g.summary, difficulty: g.difficulty, minutes: g.minutes,
       ...(g.section ? { section: g.section } : {}), ...(g.hero ? { hero: g.hero } : {}), tools: g.tools ?? [], stopIf: g.stop_if ?? [],
       steps: steps.filter((s) => s.guide_id === g.id).map((s) => ({ text: s.text, ...(s.warn ? { warn: s.warn } : {}), ...(s.expect ? { expect: s.expect } : {}), ...(s.art ? { art: s.art } : {}) })),
       terms: terms.filter((t) => t.guide_id === g.id).map((t) => ({ term: t.term, meaning: t.meaning })),
@@ -73,9 +73,9 @@ export async function importFixit(sql: Sql, content: Pick<FixitContent, "tools" 
     }
     for (const [i, g] of content.guides.entries()) {
       const [had] = await tx`select 1 as ok from fixit_guide where id = ${g.id}`;
-      await tx`insert into fixit_guide (id, title, summary, difficulty, minutes, trailside, hero, section, tools, stop_if, sort)
-        values (${g.id}, ${g.title}, ${g.summary}, ${g.difficulty}, ${g.minutes}, ${g.trailside}, ${g.hero ?? null}, ${g.section ?? null}, ${g.tools}, ${g.stopIf}, ${i})
-        on conflict (id) do ${opts.overwrite ? tx`update set title = excluded.title, summary = excluded.summary, difficulty = excluded.difficulty, minutes = excluded.minutes, trailside = excluded.trailside, hero = excluded.hero, section = excluded.section, tools = excluded.tools, stop_if = excluded.stop_if, sort = excluded.sort` : tx`nothing`}`;
+      await tx`insert into fixit_guide (id, title, summary, difficulty, minutes, hero, section, tools, stop_if, sort)
+        values (${g.id}, ${g.title}, ${g.summary}, ${g.difficulty}, ${g.minutes}, ${g.hero ?? null}, ${g.section ?? null}, ${g.tools}, ${g.stopIf}, ${i})
+        on conflict (id) do ${opts.overwrite ? tx`update set title = excluded.title, summary = excluded.summary, difficulty = excluded.difficulty, minutes = excluded.minutes, hero = excluded.hero, section = excluded.section, tools = excluded.tools, stop_if = excluded.stop_if, sort = excluded.sort` : tx`nothing`}`;
       if (had && !opts.overwrite) {
         // A guide that is already there keeps its text, but is placed in a section and given a cover picture if it had none, so adding sections later never needs an overwrite.
         await tx`update fixit_guide set section = ${g.section ?? null} where id = ${g.id} and section is null`;

@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ClipboardCheck, Compass, Wrench } from 'lucide-react-native';
+import { ClipboardCheck, Wrench } from 'lucide-react-native';
 import { fixitCheckStatus, fixitSections, kitFor } from '@moto-trails/domain';
 import { refreshFixit, useFixitContent } from '@/fixit/content';
 import { Unavailable } from '@/features/fixit/Unavailable';
@@ -65,7 +65,6 @@ export default function FixIt() {
       <SectionTitle>Be ready</SectionTitle>
       <ListCard>
         <Row label="Toolkit" sub="What to carry, and why" value={`${base.filter((t) => packed[t.id]).length} of ${base.length}`} mono onPress={() => router.push('/fixit/toolkit')} />
-        <Row icon={Compass} label="Roadside mode" sub="Big steps, one at a time, for when you are stopped" onPress={() => router.push('/fixit/trailside')} />
       </ListCard>
       <Text variant="caption" tone="muted" style={{ marginTop: space[5] }}>
         General advice only. Your bike’s manual has the exact numbers.{fixed ? ` You have fixed ${fixed} thing${fixed === 1 ? '' : 's'} yourself.` : ''}

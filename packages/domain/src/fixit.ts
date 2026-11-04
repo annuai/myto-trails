@@ -33,8 +33,6 @@ export type FixitGuide = {
   stopIf: string[];
   steps: FixitStep[];
   terms: FixitTerm[];
-  /** On the short list for a rider stopped on the road. */
-  trailside: boolean;
   /** Art id of the picture at the top of the guide. */
   hero?: string;
   /** Who checked it. null until a mechanic has really checked it: never fill this in on someone's behalf. */
@@ -67,12 +65,6 @@ export const FIXIT_ART_ID = /^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/;
 export const fixitArtKey = (artId: string, width: number) => `fixit/${artId}-${width}.webp`;
 
 export const guideById = (c: Pick<FixitContent, "guides">, id: string): FixitGuide | undefined => c.guides.find((g) => g.id === id);
-
-/** The short list for a rider stopped on the road, easiest first. */
-export function trailsideGuides(c: Pick<FixitContent, "guides">): FixitGuide[] {
-  const rank = { easy: 0, moderate: 1, hard: 2 } as const;
-  return c.guides.filter((g) => g.trailside).sort((a, b) => rank[a.difficulty] - rank[b.difficulty] || a.minutes - b.minutes);
-}
 
 export const guidesForCheck = (c: Pick<FixitContent, "guides">, item: FixitCheckItem): FixitGuide[] => item.guides.map((id) => guideById(c, id)).filter((g): g is FixitGuide => !!g);
 

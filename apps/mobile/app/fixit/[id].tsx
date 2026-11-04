@@ -21,17 +21,17 @@ import { TextButton } from '@/ui/TextButton';
 import { Text } from '@/ui/Text';
 
 /**
- * One repair guide. It opens as a page to read: what it takes, when to stop, then every step. "Walk me through it" (and the roadside
- * list) opens the same steps one at a time in large type, with the screen kept awake, for a rider stopped on the road with gloves on.
+ * One repair guide. It opens as a page to read: what it takes, when to stop, then every step. "Walk me through it" opens the same steps one at a time
+ * in large type, with the screen kept awake, for a rider with gloves on.
  */
 export default function Guide() {
-  const { id, walk } = useLocalSearchParams<{ id: string; walk?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { c } = useTheme();
   const content = useFixitContent();
   const guide = content ? guideById(content, id) : undefined;
   const packed = useFixit((s) => s.packed);
-  const [walking, setWalking] = useState(walk === '1');
+  const [walking, setWalking] = useState(false);
   const [i, setI] = useState(0);
   useEffect(() => {
     if (!walking) return;
