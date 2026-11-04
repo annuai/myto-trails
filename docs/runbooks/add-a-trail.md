@@ -41,6 +41,18 @@ background, saying where a fact comes from and leaving out anything you cannot c
 
 EXIF and GPS are removed from photos and videos automatically by the scripts below.
 
+## Shortcut: steps 3 and 4 in one command
+
+After the privacy checks, one command makes the web files, trims the GPX, starts the data file from the template and runs the validator:
+
+```bash
+npm run trail:prepare -w @moto-trails/web -- <slug> --name "Trail name" --credit "Rider name" \
+  --gpx ~/Downloads/ride.gpx --trim-start-km 2 --trim-end-km 2 \
+  -p ~/Downloads/a.jpg ~/Downloads/b.HEIC -v ~/Downloads/c.mp4 --plates-checked
+```
+
+It refuses photos and videos without `--plates-checked`. What it cannot know stays as placeholder text (summary, district, access, hazards, alt text); the validator fails until every placeholder is replaced, so nothing ships by accident.
+
 ## 3. Make the web files
 
 ```bash

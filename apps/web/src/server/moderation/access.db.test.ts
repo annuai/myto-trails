@@ -4,7 +4,7 @@ import { seedRegions } from "../db/seed-regions";
 import { asAnon, createTestDatabase } from "../testing/db";
 import { insertTrailFixture } from "../testing/fixtures";
 import { makeUser } from "../testing/submission-fixture";
-import { getTrailForModeration, listDueForRecheck, release, setCondition, unpublish, verifyAccess } from "./access";
+import { getTrailForModeration, listDueForRecheck, listNeedingRide, release, setCondition, unpublish, verifyAccess } from "./access";
 import { listReports, resolveReport } from "./reports";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
@@ -190,5 +190,28 @@ describe("release and input validation (M6 review)", () => {
     const [r] = await db.sql`insert into trail_report (trail_id, reporter_id, type, details) values (${t.trailId}, ${rider}, 'other', 'Something else is wrong with the signage here.') returning id`;
     expect(await resolveReport(db.sql, { actorId: m, reportId: r!.id, outcome: "accepted", note: "", condition: { status: "temporarily_closed" }, now })).toEqual({ ok: false, reason: "invalid" });
     expect((await db.sql`select status from trail_report where id = ${r!.id}`)[0]!.status).toBe("open");
+  });
+});
+
+describe("listNeedingRide", () => {
+  it("lists unverified trails never checked or checked long ago, and drops one a moderator checked lately", async () => {
+    const m = await mod();
+    const never = await trail();
+    const old = await trail();
+    const fresh = await trail();
+    await setCondition(db.sql, { actorId: m, trailId: old.trailId, now: new Date("2026-03-01T12:00:00Z"), status: "open", note: "Rode it." });
+    await setCondition(db.sql, { actorId: m, trailId: fresh.trailId, now: new Date("2026-05-20T12:00:00Z"), status: "open", note: "Rode it." });
+    const r = await listNeedingRide(db.sql, m, now);
+    if (!r.ok) throw new Error("expected ok");
+    const slugs = r.items.map((i) => i.slug);
+    expect(slugs).toContain(never.slug);
+    expect(slugs).toContain(old.slug);
+    expect(slugs).not.toContain(fresh.slug);
+    expect(slugs.indexOf(never.slug)).toBeLessThan(slugs.indexOf(old.slug));
+    expect(r.items.find((i) => i.slug === old.slug)).toMatchObject({ lastChecked: "2026-03-01", daysSince: 92 });
+  });
+
+  it("is for moderators only", async () => {
+    expect(await listNeedingRide(db.sql, await makeUser(db.sql), now)).toEqual({ ok: false, reason: "forbidden" });
   });
 });

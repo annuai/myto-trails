@@ -167,6 +167,32 @@ export async function listDueForRecheck(sql: Sql, actorId: string, now: Date, wi
   return { ok: true, items: rows.map((r) => ({ slug: r.slug, name: r.name, accessClass: r.access_class, level: r.level, validUntil: r.valid_until, overdue: r.valid_until <= today })) };
 }
 
+export type RideItem = { slug: string; name: string; level: string; lastChecked: string | null; daysSince: number | null; riderReports: number };
+
+/**
+ * Published trails that no moderator has verified, where nobody has set a condition (a moderator ride-check) in the last
+ * `staleDays` days. These carry no expiry, so `listDueForRecheck` never shows them. Never-checked first, then oldest.
+ * A moderator who rides a trail records it by setting its condition on the trail page, with a note of what was seen.
+ */
+export async function listNeedingRide(sql: Sql, actorId: string, now: Date, staleDays = 60): Promise<{ ok: true; items: RideItem[] } | typeof FORBIDDEN> {
+  const actor = await getActor(sql, actorId);
+  if (!actor) return FORBIDDEN;
+  const cutoff = isoDate(new Date(now.getTime() - staleDays * 86_400_000));
+  const since = new Date(now.getTime() - 30 * 86_400_000).toISOString();
+  const rows = await sql`
+    select t.slug, rev.name, t.access_verification_level_current as level,
+      (select max(c.effective_from)::text from condition_event c where c.trail_id = t.id and c.source = 'moderator') as last_checked,
+      (select count(*)::int from condition_report r where r.trail_id = t.id and r.status = 'visible' and r.reported_at >= ${since}) as rider_reports
+    from trail t join trail_revision rev on rev.id = t.published_revision_id
+    where t.lifecycle = 'published'
+      and t.access_verification_level_current in ('community_reported', 'unverified')
+      and (${actor.countryIds === null} or t.country_id = any(${actor.countryIds ?? []}::uuid[]))
+      and coalesce((select max(c.effective_from)::text from condition_event c where c.trail_id = t.id and c.source = 'moderator'), '') < ${cutoff}
+    order by last_checked asc nulls first, t.slug limit 500`;
+  const day = (d: string) => Math.floor((now.getTime() - Date.parse(`${d}T00:00:00Z`)) / 86_400_000);
+  return { ok: true, items: rows.map((r) => ({ slug: r.slug, name: r.name, level: r.level, lastChecked: r.last_checked ?? null, daysSince: r.last_checked ? day(r.last_checked) : null, riderReports: r.rider_reports })) };
+}
+
 export type TrailModerationView = {
   trailId: string; slug: string; name: string; lifecycle: string; accessClass: string; level: string; validUntil: string | null;
   condition: string; permissionContact: string | null; evidenceCount: number;

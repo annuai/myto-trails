@@ -12,6 +12,7 @@ import { attachRoute, createDraft, getMine, listMine, saveStep, submit } from ".
 import { completeUpload, getUploadStatus, requestUpload } from "../uploads/service";
 import { exchangeAppCode } from "../auth/app-auth";
 import { listBikeMakes, listBikeModels } from "../community/bikes";
+import { getFixitContent } from "../fixit/fixit";
 import { clubPageSize } from "../community/club-paging";
 import { getClub, listMembers, searchClubs, setClubCover } from "../community/clubs";
 import { parseGender } from "../community/gender";
@@ -183,6 +184,12 @@ export const routes: RouteDef[] = [
     method: "GET", path: "/bikes/makes", access: "public", cache: "day", summary: "Bike makes with their model counts (all=1 counts models without a picture too)",
     async handler(c) {
       return ok(await listBikeMakes(c.sql, { all: c.url.searchParams.get("all") === "1" }));
+    },
+  },
+  {
+    method: "GET", path: "/fixit", access: "public", cache: "none", /* not cached at the edge: an edit in the database should reach riders at once */ summary: "Fix it: the repair guides, the pre-ride check items, the toolkit and the pictures that have been uploaded, in one document the app keeps for offline use",
+    async handler(c) {
+      return ok(await getFixitContent(c.sql));
     },
   },
   {

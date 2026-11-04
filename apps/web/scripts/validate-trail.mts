@@ -22,6 +22,8 @@ for (const record of Array.isArray(raw) ? raw : [raw]) {
   if (t.gpxFile && !existsSync(join(dirname(file), t.gpxFile))) problems.push(`GPX file not found: ${t.gpxFile}`);
   for (const m of t.media) for (const u of Object.values(m.variants)) if (u.startsWith("/") && !existsSync(join("public", u))) problems.push(`missing photo file: ${u}`);
   for (const v of t.videos) for (const u of [v.mp4, v.poster]) if (u.startsWith("/") && !existsSync(join("public", u))) problems.push(`missing video file: ${u}`);
+  const placeholder = /TODO|Replace with|One or two sentences, 40|Optional longer text|Who may ride, and anything|What can go wrong, and what|What the ground is like|When it is best, and when|Anything riders should know|Ridden by the contributor on DATE|What the picture shows|What the clip shows/;
+  if (placeholder.test(JSON.stringify(record))) problems.push("template placeholder text is still in the file (search for TODO and the template sentences)");
   if (t.media.length && !t.media.some((m) => m.role === "cover")) problems.push("no photo has role \"cover\"");
   if (problems.length) {
     bad++;

@@ -12,3 +12,5 @@ export * from "./bikes";
 export * from "./legal";
 export * from "./countries";
 export * from "./trailCarry";
+export * from "./fixit";
+export * from "./fixitContent";
