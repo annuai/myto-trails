@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fixitSections, isFixitContent, artIdsOf, fixitCheckStatus, fixitProblems, guideById, guidesForCheck, kitFor, MAX_STEP_WORDS, stepWords } from "./fixit";
+import { FIXIT_CARRY_ART, fixitSections, isFixitContent, artIdsOf, fixitCheckStatus, fixitProblems, guideById, guidesForCheck, kitFor, MAX_STEP_WORDS, stepWords } from "./fixit";
 import { FIXIT_ART_ALT, FIXIT_CHECKS, FIXIT_GUIDES, FIXIT_SECTIONS, FIXIT_TOOLS } from "./fixitContent";
 
 const content = { guides: FIXIT_GUIDES, tools: FIXIT_TOOLS, checks: FIXIT_CHECKS, sections: FIXIT_SECTIONS };
@@ -27,10 +27,10 @@ describe("Fix it content", () => {
   it("offers real guides for a check that needs fixing", () => {
     expect(guidesForCheck(content, FIXIT_CHECKS[0]!).length).toBeGreaterThan(0);
   });
-  it("names 19 pictures, each with a description", () => {
+  it("names 19 guide pictures and the carry picture, each with a description", () => {
     const ids = [...new Set(artIdsOf(content))].sort();
     expect(ids).toHaveLength(19);
-    expect(Object.keys(FIXIT_ART_ALT).sort()).toEqual(ids);
+    expect(Object.keys(FIXIT_ART_ALT).sort()).toEqual([...ids, FIXIT_CARRY_ART].sort());
   });
 });
 

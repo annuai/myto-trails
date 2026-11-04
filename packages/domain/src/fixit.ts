@@ -60,6 +60,8 @@ export type FixitContent = {
 
 export const FIXIT_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 /** An art id is the guide id, a slash, and a slot: "flat-tyre-tubeless/plug". */
+/** The picture on the "What to carry" card. It belongs to no guide. */
+export const FIXIT_CARRY_ART = "carry/kit";
 export const FIXIT_ART_ID = /^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/;
 /** The R2 key of one width of one picture, under the public bucket: organised by guide. */
 export const fixitArtKey = (artId: string, width: number) => `fixit/${artId}-${width}.webp`;

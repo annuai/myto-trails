@@ -390,6 +390,7 @@ export const FIXIT_ART_ALT: Record<string, string> = {
   "blown-fuse/box": "A fuse box with its lid open and a gloved finger pointing at one fuse.",
   "spark-plug/hero": "A spark plug held in a gloved hand, with a plug spanner beside it.",
   "overheating/hero": "The front of a water-cooled motorcycle with the coolant reservoir visible, and the rider standing back, waiting.",
+  "carry/kit": "A flat lay of a roadside repair kit: a tyre-plug kit, T-handle tool, pressure gauge, hand pump, jump-starter pack with clips, multitool, spanner, chain lube and a headlamp.",
   "brakes-soft/hero": "A brake lever on the handlebar and the front disc brake, a gloved hand squeezing the lever.",
   "bike-down/hero": "An adventure motorcycle lying on its side on dirt, the rider standing beside it, the handlebar turned to full lock.",
   "bike-down/lift": "The rider’s lifting posture: back to the seat, knees bent, one hand on the handlebar and one on the frame.",

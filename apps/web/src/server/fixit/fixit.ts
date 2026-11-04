@@ -22,7 +22,7 @@ export async function getFixitContent(sql: Sql): Promise<FixitContent> {
         select t.guide_id, t.position, t.term, t.meaning from fixit_term t join fixit_guide g on g.id = t.guide_id where g.published) x) as terms,
       (select coalesce(json_agg(x order by x.sort, x.id), '[]'::json) from (select id, label, how, guides, route, sort from fixit_check_item) x) as checks,
       (select coalesce(json_agg(x order by x.id), '[]'::json) from (
-        select a.id, a.alt, a.variants from fixit_art a join fixit_guide g on g.id = a.guide_id where g.published and a.variants <> '{}'::jsonb) x) as art,
+        select a.id, a.alt, a.variants from fixit_art a left join fixit_guide g on g.id = a.guide_id where (a.guide_id is null or g.published) and a.variants <> '{}'::jsonb) x) as art,
       greatest(
         (select max(updated_at) from fixit_tool), (select max(updated_at) from fixit_guide), (select max(updated_at) from fixit_step),
         (select max(updated_at) from fixit_term), (select max(updated_at) from fixit_check_item), (select max(updated_at) from fixit_art), (select max(updated_at) from fixit_section)) as at`;
@@ -92,8 +92,9 @@ export async function importFixit(sql: Sql, content: Pick<FixitContent, "tools" 
         on conflict (id) do ${opts.overwrite ? tx`update set label = excluded.label, how = excluded.how, guides = excluded.guides, route = excluded.route, sort = excluded.sort` : tx`nothing`}`;
     }
     for (const [id, alt] of Object.entries(FIXIT_ART_ALT)) {
-      const guideId = id.split("/")[0]!;
-      await tx`insert into fixit_art (id, guide_id, alt) values (${id}, ${guideId}, ${alt})
+      // A picture belongs to the guide named before the slash, or to none (the cover of the What to carry card).
+      const [owner] = await tx`select id from fixit_guide where id = ${id.split("/")[0]!}`;
+      await tx`insert into fixit_art (id, guide_id, alt) values (${id}, ${owner?.id ?? null}, ${alt})
         on conflict (id) do ${opts.overwrite ? tx`update set alt = excluded.alt` : tx`nothing`}`;
     }
   });
