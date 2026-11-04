@@ -171,3 +171,49 @@ describe('ready-for-your-next-ride reminders', () => {
     expect(planReminders(input({ rides: sat, prefs: on, trip })).filter((r) => r.kind === 'ride')).toEqual([]);
   });
 });
+
+describe('the quick bike check reminder', () => {
+  const on = { ...prefs, check: true };
+  const trip = { slug: 'trip1', name: 'Nandi ride', iso: '2026-10-31', startTime: 8 * 60, days: [{ iso: '2026-10-31', title: 'Day' }], tripId: 'trip1' };
+  const checks = (over: Partial<PlanInput> = {}) => planReminders(input({ prefs: on, trip, ...over })).filter((r) => r.id.startsWith('check:'));
+  it('comes 30 minutes before a planned trip starts and opens the check', () => {
+    const [r] = checks();
+    expect(r.fireAt).toBe(at('2026-10-31', 7, 30));
+    expect(r.route).toBe('/fixit/check');
+    expect(r.title).toBe('Quick check before you ride');
+    expect(r.lock).not.toMatch(/tyres|brakes/);
+  });
+  it('is off unless the setting is on', () => {
+    expect(planReminders(input({ prefs, trip })).some((r) => r.id.startsWith('check:'))).toBe(false);
+  });
+  it('moves to the evening before when 30 minutes before the start is in quiet hours', () => {
+    expect(checks({ trip: { ...trip, startTime: 6 * 60 } })[0].fireAt).toBe(at('2026-10-30', 19, 30));
+  });
+  it('is at 7:00 on the day when the trip has no start time', () => {
+    expect(checks({ trip: { slug: 't', name: 'Nandi', iso: '2026-10-31' } })[0].fireAt).toBe(at('2026-10-31', 7, 0));
+  });
+  it('is skipped when a check was done in the last week, or a check reminder came due in the last week', () => {
+    expect(checks({ lastCheckAt: at('2026-10-27', 9) })).toEqual([]);
+    expect(checks({ lastCheckReminderAt: at('2026-10-26', 9) })).toEqual([]);
+    expect(checks({ lastCheckAt: at('2026-10-20', 9) })).toHaveLength(1);
+  });
+  it('is skipped once the trip has started', () => {
+    expect(checks({ trip: { ...trip, started: true } })).toEqual([]);
+  });
+  it('is only ever one reminder in a plan', () => {
+    const sat = [at('2026-10-10', 6, 5), at('2026-10-17', 6, 10), at('2026-10-24', 6, 0)].map((startedAt) => ({ startedAt }));
+    expect(planReminders(input({ prefs: { ...on, habit: true }, trip, rides: sat })).filter((r) => r.id.startsWith('check:'))).toHaveLength(1);
+  });
+  it('folds into the next ready-for-your-next-ride reminder on a usual riding day, replacing it', () => {
+    const sat = [at('2026-10-10', 6, 5), at('2026-10-17', 6, 10), at('2026-10-24', 6, 0)].map((startedAt) => ({ startedAt }));
+    const out = planReminders(input({ prefs: { ...on, habit: true }, rides: sat }));
+    expect(out.map((r) => r.id)).toEqual(['check:habit:2026-10-31:360']);
+    expect(out[0].title).toBe('Ready for your next ride?');
+    expect(out[0].body).toMatch(/Two minutes to check the bike first/);
+    expect(out[0].route).toBe('/fixit/check');
+  });
+  it('leaves the ready-for-your-next-ride reminders alone when a check was done lately', () => {
+    const sat = [at('2026-10-10', 6, 5), at('2026-10-17', 6, 10), at('2026-10-24', 6, 0)].map((startedAt) => ({ startedAt }));
+    expect(planReminders(input({ prefs: { ...on, habit: true }, rides: sat, lastCheckAt: at('2026-10-27', 9) })).map((r) => r.id)).toEqual(['habit:2026-10-31:360']);
+  });
+});

@@ -32,6 +32,8 @@ export default function SmartNotifications() {
       <ListCard>
         <Row label="Ready for your next ride?" sub="Before the time of day you usually set off, once you have ridden then on three days" chevron={false}
           right={<Checkbox checked={prefs.habit} label="Ready for your next ride?" onChange={(v) => set.setPref('habit', v)} />} />
+        <Row label="Quick bike check" sub="Before a planned trip or a usual ride, at most once a week, and not if you have checked lately" chevron={false}
+          right={<Checkbox checked={prefs.check ?? true} label="Quick bike check" onChange={(v) => set.setPref('check', v)} />} />
         <Row label="Daylight alert" sub="About 45 minutes before sunset while you ride" chevron={false}
           right={<Checkbox checked={prefs.daylightAlert} label="Daylight alert" onChange={(v) => set.setPref('daylightAlert', v)} />} />
       </ListCard>

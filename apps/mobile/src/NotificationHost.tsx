@@ -4,6 +4,7 @@ import { useRootNavigationState, useRouter } from 'expo-router';
 import { notifier, useTappedRoute } from '@/lib/notifier';
 import { createSyncer } from '@/lib/reminderSync';
 import { useNotifications } from '@/store/notifications';
+import { useFixit } from '@/store/fixit';
 import { useRecorder } from '@/store/recorder';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
@@ -27,6 +28,7 @@ const syncer = createSyncer({
       todos: useTodos.getState().todos,
       appKm: totalKm(useRides.getState().rides),
       rides: useRides.getState().rides,
+      lastCheckAt: useFixit.getState().last?.at,
       trip,
       paused: rec.status !== 'idle' && rec.paused ? { since: rec.pausedAt } : undefined,
     };
@@ -51,7 +53,7 @@ export function NotificationHost() {
     let prefs = useNotifications.getState().prefs;
     let pause = '';
     const off = [
-      useTodos.subscribe(soon), useRides.subscribe(soon), useTrailStore.subscribe(soon), useTrips.subscribe(soon),
+      useTodos.subscribe(soon), useFixit.subscribe(soon), useRides.subscribe(soon), useTrailStore.subscribe(soon), useTrips.subscribe(soon),
       useNotifications.subscribe((s) => { if (s.prefs !== prefs) { prefs = s.prefs; soon(); } }),
       useRecorder.subscribe((s) => { const k = `${s.status}:${s.paused}:${s.pausedAt}`; if (k !== pause) { pause = k; soon(); } }),
     ];

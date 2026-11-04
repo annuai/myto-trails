@@ -4,7 +4,7 @@ import type { Todo } from './todos';
 import { REMIND_BEFORE_MIN } from './tripPlan';
 
 /** What the rider has switched on. */
-export type ReminderPrefs = { todos: boolean; trips: boolean; paused: boolean; /** "Ready for your next ride?" before the time of day the rider usually sets off. Off when not set. */ habit?: boolean; /** Minutes before the usual time to send that reminder. Ten when not set. */ habitLeadMin?: number; /** Minutes before a trip starts to be reminded to start it; 0 is off. Ten when not set. */ tripLeadMin?: number };
+export type ReminderPrefs = { todos: boolean; trips: boolean; paused: boolean; /** "Ready for your next ride?" before the time of day the rider usually sets off. Off when not set. */ habit?: boolean; /** Minutes before the usual time to send that reminder. Ten when not set. */ habitLeadMin?: number; /** Minutes before a trip starts to be reminded to start it; 0 is off. Ten when not set. */ tripLeadMin?: number; /** A "quick check before you ride" reminder, at most once a week, around a planned trip or a usual ride. Off here when not set; the settings turn it on by default. */ check?: boolean };
 
 /** One notification the app wants to show. `title` and `body` are the full text; `lock` is what shows when details are hidden. */
 export type Reminder = { id: string; fireAt: number; title: string; body: string; lock: string; route: string; kind: 'todo' | 'trip' | 'ride' };
@@ -17,6 +17,10 @@ export type PlanInput = {
   paused?: { since: number };
   /** The rider's past rides, which the "ready for your next ride?" reminder learns their usual time from. */
   rides?: { startedAt: number; sample?: boolean }[];
+  /** When the rider last finished a pre-ride check. */
+  lastCheckAt?: number;
+  /** When a check reminder last came due, so there is never more than one a week. */
+  lastCheckReminderAt?: number;
 };
 
 const PAUSE_REMINDER_MS = 30 * 60_000;
@@ -69,6 +73,32 @@ function tripReminders(trip: NonNullable<PlanInput['trip']>, todos: Todo[], lead
   return [eve, ...mornings];
 }
 
+/** A check reminder is never closer than this to the last check or the last check reminder. */
+export const CHECK_EVERY_MS = 7 * 86_400_000;
+const CHECK_LEAD_MIN = 30;
+const CHECK_ROUTE = '/fixit/check';
+
+/**
+ * The one "quick check before you ride" reminder to schedule, or nothing. It is tied to a ride the rider has told the app about, never to the
+ * calendar: 30 minutes before a planned trip starts (the evening before if that falls in quiet hours, 7:00 when the trip has no start time),
+ * or folded into the next "Ready for your next ride?" reminder on a day they usually ride. The earliest is taken, and only when the last
+ * check, and the last check reminder, were at least a week before it.
+ */
+function checkReminder(i: PlanInput, habit: Reminder[]): { reminder: Reminder; replaces?: string } | undefined {
+  const since = Math.max(i.lastCheckAt ?? 0, i.lastCheckReminderAt ?? 0);
+  const out: { reminder: Reminder; replaces?: string }[] = [];
+  const trip = i.trip;
+  if (trip?.iso && !trip.started) {
+    const day = trip.days?.[0]?.iso ?? trip.iso;
+    let fireAt = trip.startTime !== undefined ? at(day, Math.floor(trip.startTime / 60), trip.startTime % 60) - CHECK_LEAD_MIN * 60_000 : at(day, 7, 0);
+    if (quiet(fireAt)) fireAt = at(addDays(day, -1), 19, 30);
+    out.push({ reminder: { id: `check:trip:${trip.slug}:${day}`, fireAt, title: 'Quick check before you ride', body: 'Two minutes: tyres, brakes, chain, lights.', lock: 'A reminder for your bike check', route: CHECK_ROUTE, kind: 'ride' } });
+  }
+  const h = habit[0];
+  if (h) out.push({ replaces: h.id, reminder: { ...h, id: `check:${h.id}`, body: `${h.body}. Two minutes to check the bike first?`, route: CHECK_ROUTE } });
+  return out.filter((c) => c.reminder.fireAt > i.now && c.reminder.fireAt - since >= CHECK_EVERY_MS).sort((x, y) => x.reminder.fireAt - y.reminder.fireAt)[0];
+}
+
 /** Every reminder that should be scheduled from now on, soonest first. Pure: it depends only on its input. */
 export function planReminders(i: PlanInput): Reminder[] {
   const all: Reminder[] = [];
@@ -78,11 +108,15 @@ export function planReminders(i: PlanInput): Reminder[] {
     const fireAt = i.paused.since + PAUSE_REMINDER_MS;
     if (!quiet(fireAt)) all.push({ id: `ride:paused:${i.paused.since}`, fireAt, title: 'Your ride is paused', body: 'Resume it or finish it so it is not lost', lock: 'Your ride is paused', route: '/ride/live', kind: 'ride' });
   }
-  if (i.prefs.habit && i.rides) {
+  let habit: Reminder[] = [];
+  if ((i.prefs.habit || i.prefs.check) && i.rides) {
     // A day with a planned trip already has its own start reminder, so it gets no second one.
     const tripDays = new Set(i.trip ? [i.trip.iso, ...(i.trip.days ?? []).map((d) => d.iso)] : []);
-    all.push(...habitReminders(i.rides, i.now, i.prefs.habitLeadMin).filter((r) => !tripDays.has(r.id.slice(6, 16))));
+    habit = habitReminders(i.rides, i.now, i.prefs.habitLeadMin).filter((r) => !tripDays.has(r.id.slice(6, 16)));
   }
+  const check = i.prefs.check ? checkReminder(i, habit) : undefined;
+  if (i.prefs.habit) all.push(...habit.filter((r) => r.id !== check?.replaces));
+  if (check) all.push(check.reminder);
   return all.filter((r) => r.fireAt > i.now).sort((a, b) => a.fireAt - b.fireAt);
 }
 

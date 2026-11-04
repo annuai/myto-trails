@@ -18,7 +18,7 @@ export type Notifier = {
 };
 
 /** What the plan is built from, read fresh on every sync. */
-export type World = Pick<PlanInput, 'todos' | 'appKm' | 'trip' | 'paused' | 'rides'>;
+export type World = Pick<PlanInput, 'todos' | 'appKm' | 'trip' | 'paused' | 'rides' | 'lastCheckAt'>;
 
 /** iOS keeps at most 64 pending local notifications; the soonest 60 are scheduled and the rest are picked up at the next sync. */
 export const MAX_SCHEDULED = 60;
@@ -36,10 +36,12 @@ export function createSyncer(deps: { now: () => number; world: () => World; stor
     const { store, notifier } = deps;
     const now = deps.now();
     store.getState().absorb(now);
-    const { prefs, kmNotified } = store.getState();
+    const { prefs, kmNotified, inbox } = store.getState();
     const world = deps.world();
     const allowed = (await notifier.permission()) === 'granted';
-    const planned = planReminders({ ...world, now, prefs });
+    // The reminders that already came due are in the inbox: the last check one holds back the next for a week.
+    const lastCheckReminderAt = inbox.filter((n) => n.id.startsWith('check:')).reduce((m, n) => Math.max(m, n.at), 0) || undefined;
+    const planned = planReminders({ ...world, now, prefs, lastCheckReminderAt });
 
     for (const r of serviceKmReminders(world.todos, world.appKm, kmNotified, now, prefs)) {
       const cut = r.id.lastIndexOf(':');

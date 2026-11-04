@@ -19,7 +19,7 @@ import { useTraceSetting } from '@/store/trace';
 import { useNotifications } from '@/store/notifications';
 import type { Prefs } from '@/store/notificationsCore';
 
-const toggles: { key: Exclude<keyof Prefs, 'tripLeadMin' | 'breakEveryMin' | 'habitLeadMin'>; label: string; sub: string }[] = [
+const toggles: { key: Exclude<keyof Prefs, 'tripLeadMin' | 'breakEveryMin' | 'habitLeadMin' | 'check'>; label: string; sub: string }[] = [
   { key: 'todos', label: 'To-dos and documents', sub: 'A week, a day and the day it is due, and once if it is overdue' },
   { key: 'trips', label: 'Trip plans', sub: '9 pm the evening before a trip, with what is still to pack' },
   { key: 'groupSignals', label: 'Group ride signals', sub: 'When someone in your group asks for help, needs fuel or a break' },
