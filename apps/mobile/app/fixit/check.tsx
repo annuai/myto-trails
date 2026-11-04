@@ -24,8 +24,9 @@ type Answer = 'ok' | 'fix';
 /** Items that are not a repair have no guide to borrow a picture from: they get an icon tile. */
 const ICON: Record<string, LucideIcon> = { walk: Eye, papers: IdCard };
 
-/** The picture of the section the item's first guide sits in, so the tyre check shows the tyre picture. */
+/** The item's own picture, else the picture of the section its first guide sits in, so the tyre check shows the tyre picture. */
 function coverOf(content: FixitContent, item: FixitCheckItem): string | null {
+  if (item.cover) return item.cover;
   const guide = guidesForCheck(content, item)[0];
   return content.sections?.find((s) => s.id === guide?.section)?.cover ?? null;
 }

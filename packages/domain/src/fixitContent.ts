@@ -33,8 +33,8 @@ export const FIXIT_CHECKS: FixitCheckItem[] = [
   { id: "controls", label: "Throttle and clutch", how: "The throttle must snap shut when released. The clutch lever should have a little free play and spring back.", guides: ["clutch-adjust", "clutch-cable"] },
   { id: "lights", label: "Lights and horn", how: "Headlight low and high beam, brake light, both indicators and the horn.", guides: ["blown-fuse"] },
   { id: "fluids", label: "Fuel, oil and coolant", how: "Enough fuel for the ride and some spare. Oil on the dipstick or window. Coolant above the minimum.", guides: ["overheating"] },
-  { id: "walk", label: "Walk-round", how: "Look for loose bolts, a wobbling mirror, leaks under the bike, and that the stand folds up.", guides: [] },
-  { id: "papers", label: "Papers", how: "Licence, registration, insurance and pollution certificate with you, or on your phone.", guides: [], route: "/documents" },
+  { id: "walk", label: "Walk-round", how: "Look for loose bolts, a wobbling mirror, leaks under the bike, and that the stand folds up.", guides: [], cover: "check/walk-round" },
+  { id: "papers", label: "Papers", how: "Licence, registration, insurance and pollution certificate with you, or on your phone.", guides: [], route: "/documents", cover: "check/papers" },
 ];
 
 /** The major parts of the bike the guides are grouped under, in the order to show them. Each cover is the picture of one of its guides. */
@@ -390,6 +390,8 @@ export const FIXIT_ART_ALT: Record<string, string> = {
   "blown-fuse/box": "A fuse box with its lid open and a gloved finger pointing at one fuse.",
   "spark-plug/hero": "A spark plug held in a gloved hand, with a plug spanner beside it.",
   "overheating/hero": "The front of a water-cooled motorcycle with the coolant reservoir visible, and the rider standing back, waiting.",
+  "check/walk-round": "A rider crouching beside the rear half of an adventure motorcycle, a gloved hand run along the frame to check the bolts.",
+  "check/papers": "A zip pouch with a registration booklet, a driving licence, an insurance paper and a pollution-certificate card.",
   "carry/kit": "A flat lay of a roadside repair kit: a tyre-plug kit, T-handle tool, pressure gauge, hand pump, jump-starter pack with clips, multitool, spanner, chain lube and a headlamp.",
   "brakes-soft/hero": "A brake lever on the handlebar and the front disc brake, a gloved hand squeezing the lever.",
   "bike-down/hero": "An adventure motorcycle lying on its side on dirt, the rider standing beside it, the handlebar turned to full lock.",

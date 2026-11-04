@@ -23,6 +23,8 @@ Use these words with the style reference attached: "use the attached image as th
 | `wont-start/hero` | The right handlebar: kill switch, start button, a gloved thumb on the start button | The kill switch |
 | `weak-battery/hero` | Seat lifted, battery visible beneath, a small jump pack beside it | The battery's positive terminal |
 | `weak-battery/jump` | Two clips on the battery: one on the positive terminal, one on a bare frame bolt, shown in a close top view | The clip on the frame bolt |
+| `check/walk-round` | A rider crouching beside the rear half of the adventure motorcycle, side view, a gloved hand run along the frame as if checking the bolts. Not a guide's picture: it is the tile on the Walk-round card of the pre-ride check | The gloved hand on the frame |
+| `check/papers` | A flat lay: a zip pouch with a registration booklet, a driving licence, a folded insurance paper and a pollution-certificate card. Text is only abstract lines, no readable words. The tile on the Papers card of the pre-ride check | A small red tab on the registration booklet |
 | `carry/kit` | A flat lay of the roadside repair kit from above: plug kit and T-handle tool, pressure gauge, hand pump, jump-starter pack with clips, multitool, spanner, chain lube, headlamp. Not a guide's picture: it is the tile on the What to carry card | The T-handle of the plug tool |
 | `brakes-soft/hero` | A brake lever on the left or right handlebar and the front disc brake behind it, a gloved hand squeezing the lever | The lever tip |
 | `chain-slack/hero` | Rear sprocket and chain from the side, a gloved hand on the swingarm adjuster | The adjuster bolt |

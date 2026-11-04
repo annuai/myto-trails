@@ -27,10 +27,10 @@ describe("Fix it content", () => {
   it("offers real guides for a check that needs fixing", () => {
     expect(guidesForCheck(content, FIXIT_CHECKS[0]!).length).toBeGreaterThan(0);
   });
-  it("names 19 guide pictures and the carry picture, each with a description", () => {
+  it("names 19 guide pictures, the carry picture and the check pictures, each with a description", () => {
     const ids = [...new Set(artIdsOf(content))].sort();
     expect(ids).toHaveLength(19);
-    expect(Object.keys(FIXIT_ART_ALT).sort()).toEqual([...ids, FIXIT_CARRY_ART].sort());
+    expect(Object.keys(FIXIT_ART_ALT).sort()).toEqual([...ids, FIXIT_CARRY_ART, ...FIXIT_CHECKS.flatMap((c) => (c.cover ? [c.cover] : []))].sort());
   });
 });
 
