@@ -27,9 +27,9 @@ describe("parseCatalogue", () => {
     ["years the wrong way round", `${HEAD}a-b,A,B,retro,,2020,2010\n`, /year_to/],
     ["a short row", `${HEAD}a-b,A,B\n`, /columns/],
   ])("refuses %s", (_n, text, re) => expect(() => parseCatalogue(text)).toThrow(re));
-  it("accepts the shipped catalogue: 363 models", () => {
+  it("accepts the shipped catalogue: 364 models", () => {
     const rows = parseCatalogue(readFileSync(new URL("../../../data/bikes/catalogue.csv", import.meta.url), "utf8"));
-    expect(rows).toHaveLength(363);
+    expect(rows).toHaveLength(364);
   });
 });
 
