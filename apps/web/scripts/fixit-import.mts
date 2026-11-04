@@ -1,7 +1,7 @@
 // Loads the first version of the Fix it content (packages/domain/src/fixitContent.ts) into the database. Without --overwrite it only adds
 // what is missing and never touches a row that is already there. After the first load the database is the source of truth: edit it there.
 // Run: npm run fixit:import -w @moto-trails/web [-- --dry-run] [-- --overwrite]
-import { FIXIT_CHECKS, FIXIT_GUIDES, FIXIT_TOOLS } from "@moto-trails/domain";
+import { FIXIT_CHECKS, FIXIT_GUIDES, FIXIT_TOOLS } from "@moto-trails/domain/fixit-seed";
 import { createSql } from "../src/server/db/client";
 import { importFixit } from "../src/server/fixit/fixit";
 

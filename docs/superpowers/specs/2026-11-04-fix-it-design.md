@@ -12,7 +12,7 @@ Date: 2026-11-04 · [ADR 0011](../../adr/0011-fix-it-offline-guides.md)
 
 **Design.** Text first, no card per item, one primary action per screen (Survey sheet, DESIGN.md). Status is glyph, word and colour. A picture is shown at the top of a guide or with one step, only when it exists. Nothing needs typing. The live-ride button shows only while stopped, so the ride screen is no more crowded while moving.
 
-**Where the content lives.** Database rows and R2 pictures, served by `GET /api/v1/fixit`, kept on the phone, with the first version bundled ([ADR 0011](../../adr/0011-fix-it-offline-guides.md)). Edit a guide in the database; upload pictures with `npm run fixit:art`.
+**Where the content lives.** Database rows and R2 pictures, served by `GET /api/v1/fixit`, downloaded at app start and kept on the phone (the app ships no guides) ([ADR 0011](../../adr/0011-fix-it-offline-guides.md)). Edit a guide in the database; upload pictures with `npm run fixit:art`.
 
 **Readable by design.** One action per step, 22 words at most (a test and the importer enforce it); a green "what you should see" line on the steps that can be checked; plain-word meanings for jargon on each guide; roadside mode shows one step at 28 pt.
 

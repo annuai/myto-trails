@@ -1,5 +1,6 @@
 import type { Sql } from "postgres";
-import { FIXIT_ART_ALT, fixitProblems, type FixitContent, type FixitGuide } from "@moto-trails/domain";
+import { fixitProblems, type FixitContent, type FixitGuide } from "@moto-trails/domain";
+import { FIXIT_ART_ALT } from "@moto-trails/domain/fixit-seed";
 
 /** The widths a Fix it picture is stored at, in R2 under public/fixit/<guide>/<slot>-<width>.webp. */
 export const FIXIT_ART_WIDTHS = [400, 800, 1200] as const;

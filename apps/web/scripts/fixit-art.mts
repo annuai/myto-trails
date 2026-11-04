@@ -4,7 +4,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
-import { FIXIT_ART_ALT, fixitArtKey } from "@moto-trails/domain";
+import { fixitArtKey } from "@moto-trails/domain";
+import { FIXIT_ART_ALT } from "@moto-trails/domain/fixit-seed";
 import { createSql } from "../src/server/db/client";
 import { FIXIT_ART_WIDTHS } from "../src/server/fixit/fixit";
 import { getStorage } from "../src/server/storage";
