@@ -1,3 +1,4 @@
+import { APP_HEADERS } from './appHeaders';
 import type { LatLng } from './geo';
 
 export type Place = { name: string; /** Where it is, e.g. "Mysuru, Karnataka, India". */ detail: string; point: LatLng };
@@ -29,7 +30,7 @@ export function parsePlaces(json: unknown): Place[] {
 export async function searchPlaces(query: string, opts: { near?: LatLng; signal?: AbortSignal } = {}): Promise<Place[]> {
   const q = new URLSearchParams({ q: query.trim(), limit: '6', lang: 'en' });
   if (opts.near) { q.set('lat', String(opts.near.lat)); q.set('lon', String(opts.near.lng)); }
-  const res = await fetch(`${PHOTON}?${q}`, { signal: opts.signal });
+  const res = await fetch(`${PHOTON}?${q}`, { signal: opts.signal, headers: APP_HEADERS });
   if (!res.ok) throw new Error(`place search ${res.status}`);
   return parsePlaces(await res.json());
 }

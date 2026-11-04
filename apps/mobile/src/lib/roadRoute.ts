@@ -1,3 +1,4 @@
+import { APP_HEADERS } from './appHeaders';
 import type { LatLng } from './geo';
 import { simplify, type PlannedRoute } from './routePlan';
 
@@ -36,7 +37,7 @@ export async function roadRoute(stops: LatLng[], signal?: AbortSignal): Promise<
   let km = 0, seconds = 0;
   for (const run of chunkStops(stops)) {
     const res = await fetch(VALHALLA, {
-      method: 'POST', signal, headers: { 'Content-Type': 'application/json' },
+      method: 'POST', signal, headers: { ...APP_HEADERS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ locations: run.map((p) => ({ lat: p.lat, lon: p.lng, type: 'break' })), costing: 'motorcycle', directions_options: { units: 'kilometers' } }),
     });
     if (!res.ok) throw new Error(`routing ${res.status}`);
