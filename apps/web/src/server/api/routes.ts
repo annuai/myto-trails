@@ -13,6 +13,7 @@ import { completeUpload, getUploadStatus, requestUpload } from "../uploads/servi
 import { exchangeAppCode } from "../auth/app-auth";
 import { listBikeMakes, listBikeModels } from "../community/bikes";
 import { getFixitContent, getFixitVersion } from "../fixit/fixit";
+import { listQuotes } from "../quotes/quotes";
 import { clubPageSize } from "../community/club-paging";
 import { getClub, listMembers, searchClubs, setClubCover } from "../community/clubs";
 import { parseGender } from "../community/gender";
@@ -194,6 +195,12 @@ export const routes: RouteDef[] = [
       const version = have ? await getFixitVersion(c.sql) : null;
       if (have && have === version) return ok({ unchanged: true, version });
       return ok(await getFixitContent(c.sql));
+    },
+  },
+  {
+    method: "GET", path: "/quotes", access: "public", cache: "day", summary: "The pull-down quotes shown on the Dash, as { quotes: string[] }. The app asks once a week and keeps them for offline use",
+    async handler(c) {
+      return ok(await listQuotes(c.sql));
     },
   },
   {
