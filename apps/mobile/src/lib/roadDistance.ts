@@ -1,3 +1,4 @@
+import { APP_HEADERS } from './appHeaders';
 import type { LatLng } from './geo';
 
 /** The public OSRM demo server: free and keyless, but shared, so it is asked once per list and the answer is kept. */
@@ -18,6 +19,6 @@ export function parseTable(body: unknown, count: number): (number | null)[] | un
 
 export async function roadDistancesKm(from: LatLng, to: LatLng[], signal?: AbortSignal): Promise<(number | null)[] | undefined> {
   if (!to.length) return [];
-  const res = await fetch(tableUrl(from, to), { signal });
+  const res = await fetch(tableUrl(from, to), { signal, headers: APP_HEADERS });
   return res.ok ? parseTable(await res.json(), to.length) : undefined;
 }

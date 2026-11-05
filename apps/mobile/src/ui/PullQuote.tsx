@@ -34,32 +34,3 @@ export function PullQuote({ scrollY, top }: { scrollY: Animated.Value; top: numb
     </Animated.View>
   );
 }
-
-/**
- * Android's version. The screen cannot be stretched past its top there, so the pull comes from the system's own pull-to-refresh and this
- * strip slides open over the same line, holds a moment, and closes. `height` is also the spacer that pushes the page down while it is open.
- */
-export function QuoteStrip({ open, height, top, onClosed }: { open: boolean; height: Animated.Value; top: number; onClosed: () => void }) {
-  const { c } = useTheme();
-  const [line, setLine] = useState('');
-  useEffect(() => {
-    if (!open) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- a new line is taken each time the strip opens
-    setLine(useQuotes.getState().next());
-    const run = Animated.sequence([
-      Animated.timing(height, { toValue: pullQuote.open, duration: pullQuote.slide, useNativeDriver: false }),
-      Animated.delay(pullQuote.hold),
-      Animated.timing(height, { toValue: 0, duration: pullQuote.slide, useNativeDriver: false }),
-    ]);
-    run.start(({ finished }) => { if (finished) onClosed(); });
-    return () => run.stop();
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-  return (
-    <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: 'absolute', left: pullQuote.inset, right: pullQuote.inset, top, height, borderRadius: radius.card, overflow: 'hidden' }}>
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: c.ink, opacity: opacity.overlay }} />
-      <View style={{ height: pullQuote.open - pullQuote.textInset, paddingHorizontal: space[6], alignItems: 'center', justifyContent: 'center' }}>
-        <Text variant="label" tone="muted" style={{ textAlign: 'center' }}>{line}</Text>
-      </View>
-    </Animated.View>
-  );
-}

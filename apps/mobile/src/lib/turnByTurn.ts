@@ -1,3 +1,4 @@
+import { APP_HEADERS } from './appHeaders';
 import { haversine, type LatLng } from './geo';
 import { decodePolyline } from './roadRoute';
 import { nearestOnLine } from './routeFollow';
@@ -40,7 +41,7 @@ export function parseDirections(body: Trip): Directions {
 /** The road to `to` for a motorcycle, with its turns. */
 export async function fetchDirections(from: LatLng, to: LatLng, signal?: AbortSignal): Promise<Directions> {
   const res = await fetch(VALHALLA, {
-    method: 'POST', signal, headers: { 'Content-Type': 'application/json' },
+    method: 'POST', signal, headers: { ...APP_HEADERS, 'Content-Type': 'application/json' },
     body: JSON.stringify({ locations: [from, to].map((p) => ({ lat: p.lat, lon: p.lng, type: 'break' })), costing: 'motorcycle', directions_options: { units: 'kilometers' } }),
   });
   if (!res.ok) throw new Error(`routing ${res.status}`);
