@@ -12,6 +12,10 @@
       "schedule": "30 3 * * *"
     },
     {
+      "path": "/api/cron/purge-retention",
+      "schedule": "30 2 * * *"
+    },
+    {
       "path": "/api/cron/keepalive",
       "schedule": "0 4 * * 1,4"
     }
