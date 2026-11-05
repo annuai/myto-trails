@@ -1,12 +1,13 @@
 // @vitest-environment node
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { StorageProvider } from "../storage";
+import { seedRegions } from "../db/seed-regions";
 import { createTestDatabase } from "../testing/db";
 import { makeUser, submittedSubmission } from "../testing/submission-fixture";
 import { purgeRetention, RETENTION_DAYS } from "./purge";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
-beforeAll(async () => { db = await createTestDatabase(); });
+beforeAll(async () => { db = await createTestDatabase(); await seedRegions(db.sql); });
 afterAll(async () => { await db.drop(); });
 
 const NOW = new Date("2026-11-05T03:00:00Z");
@@ -151,6 +152,7 @@ describe("purgeRetention", () => {
   });
 
   it("finds nothing left to do on a second run", async () => {
+    await purgeRetention(db.sql, storage, NOW);
     const r = await purgeRetention(db.sql, storage, NOW);
     expect(r.failed).toEqual([]);
     expect(Object.values(r.purged).every((x) => x === 0)).toBe(true);
