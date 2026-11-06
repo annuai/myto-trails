@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { View } from 'react-native';
 import { Navigation2 } from 'lucide-react-native';
 import { formatShort, toISO } from '@/lib/dates';
 import { NUDGE_META } from '@/lib/nudge/types';
@@ -35,7 +36,7 @@ export default function PlannedNudges() {
             <ListCard>{past.map((h) => <Row key={h.id} label={NUDGE_META[h.type].label} sub={`${when(h.fireAt)} · ${h.opened ? 'opened' : 'not opened'}`} chevron={false} />)}</ListCard>
           ) : <Text variant="label" tone="muted">None yet.</Text>}
           <Text variant="caption" tone="muted" style={{ marginTop: space[4] }}>If you do not open them, there are fewer. A kind that is ignored four times rests for three weeks.</Text>
-          <Button variant="soft" label="Plan again now" onPress={() => void syncReminders()} />
+          <View style={{ marginTop: space[4] }}><Button variant="soft" label="Plan again now" onPress={() => void syncReminders()} /></View>
         </>
       )}
     </Screen>
