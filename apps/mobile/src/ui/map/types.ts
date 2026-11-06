@@ -1,4 +1,5 @@
 import type { LatLng } from '@/lib/geo';
+import type { HeatMap } from '@/lib/heat';
 import type { RiderMark } from '@/lib/riderClusters';
 
 export type OsmMapProps = {
@@ -6,6 +7,8 @@ export type OsmMapProps = {
   height: number | 'fill';
   /** A route to follow or plan (a published trail). */
   line?: LatLng[];
+  /** A heat map under everything else: the rider's own tracks cut by how often each stretch was ridden, and a glow of the places ridden. The map fits it when nothing else is given to fit. */
+  heat?: HeatMap;
   /** The recorded track, drawn as it grows. */
   track?: LatLng[];
   /** Indices into `track` where a new GPS segment starts; no line is drawn across a gap. */

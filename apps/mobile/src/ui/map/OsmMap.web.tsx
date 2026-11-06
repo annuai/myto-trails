@@ -10,6 +10,8 @@ import { turnBetween, unwrapBearing } from '@/lib/rideCamera';
 import { IconButton } from '../IconButton';
 import { Text } from '../Text';
 import { ClusterList, ClusterPin, DestinationPin, HeadingPointer, RiderPin } from './RiderPins';
+import { heatLineLayout, heatPaints } from './heat.tokens';
+import { heatDotFeatures, heatLineFeatures } from '@/lib/heat';
 import { mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
 import { trackFeature } from './geojson';
 import { useMapDark } from './useMapDark';
@@ -21,7 +23,7 @@ const lineFeature = (pts?: LatLng[]) => ({ type: 'Feature' as const, properties:
 const pointsFeature = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 
 /** OpenStreetMap through MapLibre GL, the same stack as the website. Two-finger or Ctrl+scroll to move, so it never traps page scrolling. */
-function OsmMapView({ height, line, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, arrowHeading, glideMs, covered, onPicker, pickFrom, onCenter, pointer, dark: darkProp, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
+function OsmMapView({ height, line, heat, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, arrowHeading, glideMs, covered, onPicker, pickFrom, onCenter, pointer, dark: darkProp, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
   const dark = useMapDark(darkProp);
   const box = useRef<HTMLDivElement>(null);
   const coverTop = covered?.top ?? 0, coverBottom = covered?.bottom ?? 0, coverLeft = covered?.left ?? 0;
@@ -85,6 +87,11 @@ function OsmMapView({ height, line, track, trackBreaks, position, waypoints, rid
         m.on('click', (e) => tap.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }));
         m.on('error', (e) => setProblem(e.error?.message?.slice(0, 120) ?? 'The map reported an error.'));
         m.on('load', () => {
+          m.addSource('heat-dots', { type: 'geojson', data: heatDotFeatures() });
+          m.addSource('heat-lines', { type: 'geojson', data: heatLineFeatures() });
+          m.addLayer({ id: 'heat-glow', type: 'heatmap', source: 'heat-dots', paint: heatPaints(dark).glow as never });
+          m.addLayer({ id: 'heat-halo', type: 'line', source: 'heat-lines', layout: heatLineLayout as never, paint: heatPaints(dark).halo as never });
+          m.addLayer({ id: 'heat-line', type: 'line', source: 'heat-lines', layout: heatLineLayout as never, paint: heatPaints(dark).line as never });
           m.addSource('guide', { type: 'geojson', data: lineFeature() });
           m.addSource('line', { type: 'geojson', data: lineFeature() });
           m.addSource('track', { type: 'geojson', data: trackFeature() });
@@ -120,6 +127,8 @@ function OsmMapView({ height, line, track, trackBreaks, position, waypoints, rid
   useEffect(() => {
     const m = map.current;
     if (!m || !ready) return;
+    (m.getSource('heat-dots') as GeoJSONSource).setData(heatDotFeatures(heat));
+    (m.getSource('heat-lines') as GeoJSONSource).setData(heatLineFeatures(heat));
     (m.getSource('guide') as GeoJSONSource).setData(lineFeature(guide));
     (m.getSource('line') as GeoJSONSource).setData(lineFeature(line));
     (m.getSource('track') as GeoJSONSource).setData(trackFeature(track, trackBreaks));
@@ -129,7 +138,7 @@ function OsmMapView({ height, line, track, trackBreaks, position, waypoints, rid
     (m.getSource('regroup') as GeoJSONSource).setData(pointsFeature(regroup ? [regroup] : []));
     if (m.getLayer('osm')) m.setPaintProperty('osm', 'raster-brightness-max', dark ? 0.6 : 1);
     if (follow && position) { if (followingRef.current) m.easeTo({ center: [position.lng, position.lat], zoom: zoomTarget.current, bearing: heading === undefined ? m.getBearing() : unwrapBearing(m.getBearing(), heading), padding: { top: coverTop, right: 0, bottom: coverBottom, left: coverLeft }, duration: glideMs ?? 500, easing: (t) => t }); return; }
-    const all = [...coords(line), ...coords(track)];
+    const all = [...coords(line), ...coords(track), ...(heat?.lines.length ? heat.lines.flatMap((l) => l.points) : heat?.dots ?? []).map((p) => [p.lng, p.lat] as [number, number])];
     // While a route is being built by tapping, the camera stays where the rider put it.
     if (!all.length || tap.current || fitted.current && follow) return;
     import('maplibre-gl').then((ml) => {
@@ -138,7 +147,7 @@ function OsmMapView({ height, line, track, trackBreaks, position, waypoints, rid
       m.fitBounds(b, { padding: space[8], maxZoom: 15, animate: fitted.current });
       fitted.current = true;
     });
-  }, [ready, line, track, trackBreaks, position, waypoints, riders, riderMarks, guide, regroup, follow, heading, glideMs, arrow, coverTop, coverBottom, coverLeft, dark]);
+  }, [ready, line, heat, track, trackBreaks, position, waypoints, riders, riderMarks, guide, regroup, follow, heading, glideMs, arrow, coverTop, coverBottom, coverLeft, dark]);
 
   const recenter = () => {
     followingRef.current = true; setFollowing(true);
