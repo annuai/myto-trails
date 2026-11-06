@@ -26,3 +26,14 @@ export const dominarBike = {
   front: { x: 1339, y: 783 },
   wheel: 384,
 } as const;
+
+/** The grey Dominar 400 with lime-green trim and a woman rider in matching gear: the same bike drawing, measured on its own picture. */
+export const dominarLimeBike = {
+  width: 1774,
+  /** The lower axle (784) plus a wheel's radius (192), rounded up. */
+  height: 976,
+  bodyHeight: 887,
+  rear: { x: 408, y: 781 },
+  front: { x: 1344, y: 784 },
+  wheel: 384,
+} as const;
