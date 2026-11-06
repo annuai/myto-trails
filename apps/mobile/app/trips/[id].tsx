@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { goBack } from '@/lib/goBack';
 import { Copy, ListPlus, Users, Pencil, Play, Route as RouteIcon, Square, Trash2 } from 'lucide-react-native';
 import { GroupSheet } from '@/features/GroupSheet';
 import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
@@ -138,7 +139,7 @@ export default function TripDetail() {
 
       {trip.startDate && status !== 'done' ? <View style={{ marginTop: space[6] }}><Button variant="soft" icon={Users} label="Ride this together" onPress={() => setGroupOpen(true)} /><Text variant="caption" tone="muted" style={{ marginTop: space[2] }}>Starts a group ride named after this trip, with a code and link to invite riders. Positions are shared only while you ride.</Text></View> : null}
       {trip.startDate ? <View style={{ marginTop: space[6] }}><Button variant="soft" icon={Copy} label="Plan this trip again" onPress={() => { const copy = useTrips.getState().duplicate(trip.id, addDays(todayISO(), 7)); if (copy) router.push(`/trips/${copy}`); }} /><Text variant="caption" tone="muted" style={{ marginTop: space[2] }}>Makes a copy a week from today with the same days, stops and pack list. Change the date with the pencil.</Text></View> : null}
-      <View style={{ marginTop: space[8] }}><Button variant="danger" icon={Trash2} label="Delete this trip" onPress={() => { useTrips.getState().remove(trip.id); router.replace('/trips'); }} /></View>
+      <View style={{ marginTop: space[8] }}><Button variant="danger" icon={Trash2} label="Delete this trip" onPress={() => { useTrips.getState().remove(trip.id); goBack(router, '/trips'); }} /></View>
     </Screen>
   );
 }

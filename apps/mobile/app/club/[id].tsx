@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { goBack } from '@/lib/goBack';
 import { Image as ImageIcon, LogOut, MessageSquare } from 'lucide-react-native';
 import { decideRequest, leaveClub, postToClub, removeMember, removePost, requestJoin, respondToRide, setMemberRole, withdrawJoin } from '@/api/community';
 import { ApiFailure, api } from '@/api/client';
@@ -141,7 +142,7 @@ export default function ClubScreen() {
       <ConfirmSheet open={open?.kind === 'removePost'} title="Remove this post?" body="The post and its replies disappear for everyone in the club." confirmLabel="Remove post" busy={act.busy} problem={act.problem} onClose={close}
         onConfirm={() => void submit(() => removePost(token!, post!.id))} />
       <ConfirmSheet open={open?.kind === 'leave'} title={`Leave ${club.name}?`} body="You will stop seeing its posts and members. You can ask to join again later." confirmLabel="Leave club" busy={act.busy} problem={act.problem} onClose={close}
-        onConfirm={() => void submit(() => leaveClub(ref), () => router.replace('/clubs'))} />
+        onConfirm={() => void submit(() => leaveClub(ref), () => goBack(router, '/clubs'))} />
       <ConfirmSheet open={open?.kind === 'removeMember'} title={`Remove ${member?.name ?? ''}?`} body="They lose access to the club’s posts and members. They can ask to join again." confirmLabel="Remove from club" busy={act.busy} problem={act.problem} onClose={close}
         onConfirm={() => void submit(() => removeMember(ref, member!.handle))} />
       <Sheet open={open?.kind === 'manage'} title={member?.name ?? ''} onClose={close}>
