@@ -49,6 +49,14 @@ describe.each(themes)('contrast, %s theme', (_name, p) => {
     }
   });
 
+  it('ink and tabLabel read on every Dash action card colour (4.5:1), and the card stands apart from the page (1.1:1)', () => {
+    for (const [k, bg] of Object.entries(p.cardTint)) {
+      expect(ratio(p.ink, bg), `ink on ${k}`).toBeGreaterThanOrEqual(TEXT);
+      expect(ratio(p.tabLabel, bg), `tabLabel on ${k}`).toBeGreaterThanOrEqual(TEXT);
+      expect(ratio(bg, p.paper), `${k} on paper`).toBeGreaterThanOrEqual(1.1);
+    }
+  });
+
   it('rider colours read as text on paper and raised', () => {
     for (const r of p.riders) for (const s of ['paper', 'raised'] as const) expect(ratio(r, p[s]), `${r} on ${s}`).toBeGreaterThanOrEqual(TEXT);
   });

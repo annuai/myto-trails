@@ -15,7 +15,7 @@ export const opacity = { overlay: 0.07, pressed: 0.85, disabled: 0.45, stale: 0.
 /** `chip` is a pill or a circle (any shape rounded all the way); `sheet` is the top corners of a bottom sheet. */
 export const radius = { control: 16, card: 24, chip: 999, thumb: 18, sheet: 28 } as const;
 /** Fixed sizes of pictures: riders, club covers and bikes. */
-export const media = { riderGrid: 380, avatarSm: 44, avatarMd: 52, avatarLg: 64, coverCard: 110, coverHero: 180, mapCard: 160, bikePhoto: 190, bikeThumbW: 72, bikeThumbH: 54, riderTile: 168, trailThumb: 76, trailTileW: 176, trailTileH: 120, trailPhotoW: 260, trailPhotoH: 180 } as const;
+export const media = { riderGrid: 380, avatarSm: 44, avatarMd: 52, avatarLg: 64, coverCard: 110, coverHero: 180, mapCard: 160, bikePhoto: 190, bikeThumbW: 72, bikeThumbH: 54, riderTile: 168, trailThumb: 76, trailTileW: 176, trailTileH: 120, trailPhotoW: 260, trailPhotoH: 180, heatMap: 460 } as const;
 /**
  * Sizes of controls and rows. `target` is the smallest thing a thumb is asked to hit; `compact` is a small round or square control;
  * `chip` is a chip's height; `row` and `rowTall` are list rows; `dot` is the small unread marker on a bell; `rule` is a border line.
