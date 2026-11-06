@@ -8,7 +8,7 @@ const at = (iso: string, h: number, m = 0) => new Date(+iso.slice(0, 4), +iso.sl
 const NOW = at('2026-10-28', 10);
 const doc = (id: string, due: string): Todo => ({ id, title: `Doc ${id}`, category: 'document', kind: 'date', due, done: false });
 
-function setup(opts: { permission?: 'granted' | 'denied' | 'undetermined'; todos?: Todo[]; appKm?: number; now?: () => number } = {}) {
+function setup(opts: { permission?: 'granted' | 'denied' | 'undetermined'; todos?: Todo[]; appKm?: number; now?: () => number; nudges?: (now: number, others: import('./reminders').Reminder[]) => import('./reminders').Reminder[] } = {}) {
   const store = create(notificationsSlice());
   const log: string[] = [];
   const scheduled: Shown[] = [], now: Shown[] = [];
@@ -21,7 +21,7 @@ function setup(opts: { permission?: 'granted' | 'denied' | 'undetermined'; todos
     openSettings: () => {},
   };
   const world = { todos: opts.todos ?? [], appKm: opts.appKm ?? 0 };
-  const syncer = createSyncer({ now: opts.now ?? (() => NOW), world: () => world, store, notifier });
+  const syncer = createSyncer({ now: opts.now ?? (() => NOW), world: () => world, store, notifier, nudges: opts.nudges });
   return { store, log, scheduled, now, syncer, world };
 }
 
@@ -106,5 +106,37 @@ describe('syncReminders', () => {
     fail = false;
     await expect(bad.sync()).resolves.toBeUndefined();
     void orig;
+  });
+});
+
+describe('ride nudges in the sync', () => {
+  const nudge = (id: string, fireAt: number) => ({ id, fireAt, title: 'Good riding weather tomorrow', body: 'Clear skies, 28°C and dry.', lock: 'A ride idea', route: '/ride', kind: 'nudge' as const });
+
+  it('schedules the nudges with the other reminders, in time order, and hides their words like any reminder unless details are shown', async () => {
+    const t = setup({ todos: [doc('a', '2026-11-20')], nudges: () => [nudge('nudge:weather:x:v0', at('2026-10-29', 18, 30))] });
+    await t.syncer.sync();
+    expect(t.scheduled.map((n) => n.id)).toContain('nudge:weather:x:v0');
+    const times = t.scheduled.map((n) => n.fireAt);
+    expect(times).toEqual([...times].sort((a, b) => a - b));
+    expect(t.scheduled.find((n) => n.id.startsWith('nudge:'))).toMatchObject({ title: 'Myto Moto reminder', body: 'A ride idea', route: '/ride' });
+    expect(t.store.getState().scheduled.some((r) => r.kind === 'nudge')).toBe(true);
+  });
+
+  it('hands the nudges the other reminders so they can keep clear of them', async () => {
+    let seen: string[] = [];
+    const t = setup({ todos: [doc('a', '2026-11-20')], nudges: (_now, others) => { seen = others.map((o) => o.id); return []; } });
+    await t.syncer.sync();
+    expect(seen.length).toBe(4);
+    expect(seen.every((id) => id.startsWith('todo:'))).toBe(true);
+  });
+
+  it('plans nothing extra without a nudge source, and schedules nothing at all without permission', async () => {
+    const a = setup({ todos: [doc('a', '2026-11-20')] });
+    await a.syncer.sync();
+    expect(a.scheduled).toHaveLength(4);
+    const b = setup({ permission: 'denied', nudges: () => [nudge('nudge:x:y:v0', at('2026-10-29', 18, 30))] });
+    await b.syncer.sync();
+    expect(b.scheduled).toHaveLength(0);
+    expect(b.store.getState().scheduled).toHaveLength(1);
   });
 });

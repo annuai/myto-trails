@@ -11,6 +11,7 @@ import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
+import { RideNudgeSettings } from '@/features/RideNudgeSettings';
 import { useNotifications } from '@/store/notifications';
 import { useRides } from '@/store/rides';
 
@@ -37,6 +38,7 @@ export default function SmartNotifications() {
         <Row label="Daylight alert" sub="About 45 minutes before sunset while you ride" chevron={false}
           right={<Checkbox checked={prefs.daylightAlert} label="Daylight alert" onChange={(v) => set.setPref('daylightAlert', v)} />} />
       </ListCard>
+      <RideNudgeSettings />
       <SectionTitle>Your usual ride times</SectionTitle>
       <Card style={{ gap: space[2] }}>
         {habits.length ? habits.map((h) => (

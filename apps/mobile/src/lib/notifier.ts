@@ -39,9 +39,9 @@ export const notifier: Notifier = {
 };
 
 /** The screen the rider last tapped a notification to open, or null. Changes each time one is tapped. */
-export function useTappedRoute(): { route: string; key: string } | null {
+export function useTappedRoute(): { route: string; key: string; id: string } | null {
   const last = Notifications.useLastNotificationResponse();
   const route = last?.notification.request.content.data?.route;
   // A press on one of a notification's buttons is not a tap: it must not open the screen.
-  return last && last.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER && typeof route === 'string' ? { route, key: last.notification.request.identifier + last.notification.date } : null;
+  return last && last.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER && typeof route === 'string' ? { route, id: last.notification.request.identifier, key: last.notification.request.identifier + last.notification.date } : null;
 }

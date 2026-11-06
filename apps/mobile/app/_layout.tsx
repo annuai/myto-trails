@@ -14,6 +14,7 @@ import { useAppearance } from '@/store/appearance';
 import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
+import { NudgeHost } from '@/NudgeHost';
 import { PhotoOutboxHost } from '@/PhotoOutboxHost';
 import { SubmissionQueueHost } from '@/SubmissionQueueHost';
 import { refreshFixit } from '@/fixit/content';
@@ -72,6 +73,7 @@ export default function Root() {
       <CompanionHost />
       <SubmissionQueueHost />
       <PhotoOutboxHost />
+      <NudgeHost />
       <ResumeHost />
       <RideNotificationHost />
           <VoiceHost />

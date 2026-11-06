@@ -10,4 +10,4 @@ export const notifier: Notifier = {
   openSettings: () => {},
 };
 
-export const useTappedRoute = (): { route: string; key: string } | null => null;
+export const useTappedRoute = (): { route: string; key: string; id: string } | null => null;

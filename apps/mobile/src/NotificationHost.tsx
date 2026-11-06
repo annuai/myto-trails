@@ -11,11 +11,14 @@ import { useTodos } from '@/store/todos';
 import { useTrailStore } from '@/store/trails';
 import { useTrips } from '@/store/trips';
 import { dayDate, soonestTrip } from '@/lib/tripPlan';
+import { planForSync } from '@/nudgeWorld';
+import { useNudges } from '@/store/nudges';
 
 const syncer = createSyncer({
   now: Date.now,
   store: useNotifications,
   notifier,
+  nudges: planForSync,
   world: () => {
     // A planned trip (with its days and pack to-dos) is what the reminders follow; a trail planned the old way is the fallback.
     const planned = soonestTrip(useTrips.getState().trips);
@@ -55,11 +58,17 @@ export function NotificationHost() {
     const off = [
       useTodos.subscribe(soon), useFixit.subscribe(soon), useRides.subscribe(soon), useTrailStore.subscribe(soon), useTrips.subscribe(soon),
       useNotifications.subscribe((s) => { if (s.prefs !== prefs) { prefs = s.prefs; soon(); } }),
+      useNudges.subscribe((s, prev) => { if (s.level !== prev.level || s.muted !== prev.muted || s.forecast !== prev.forecast || s.clubs !== prev.clubs) soon(); }),
       useRecorder.subscribe((s) => { const k = `${s.status}:${s.paused}:${s.pausedAt}`; if (k !== pause) { pause = k; soon(); } }),
     ];
     return () => { app.remove(); off.forEach((f) => f()); clearTimeout(timer); };
   }, []);
-  useEffect(() => { if (tap && ready) router.push(tap.route as never); }, [tap?.key, ready]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!tap || !ready) return;
+    // A tap on a ride nudge counts as opening it, which the plan learns from.
+    if (tap.id.startsWith('nudge:')) useNudges.getState().markTapped(tap.id, Date.now());
+    router.push(tap.route as never);
+  }, [tap?.key, ready]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 

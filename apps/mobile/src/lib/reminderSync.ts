@@ -30,7 +30,7 @@ const shown = (r: Reminder, showDetails: boolean): Shown => ({ id: r.id, fireAt:
  * Rebuilds the schedule from what the rider has now, so it is always right: finished to-dos, a moved date, a cancelled trip or a restored
  * backup all just change the input. Syncs run one at a time.
  */
-export function createSyncer(deps: { now: () => number; world: () => World; store: { getState: () => NotificationsState }; notifier: Notifier }) {
+export function createSyncer(deps: { now: () => number; world: () => World; store: { getState: () => NotificationsState }; notifier: Notifier; /** Ride nudges to add to the plan, given the other reminders so they keep clear of them. */ nudges?: (now: number, others: Reminder[]) => Reminder[] }) {
   const serial = createSerial();
   const run = async () => {
     const { store, notifier } = deps;
@@ -41,7 +41,8 @@ export function createSyncer(deps: { now: () => number; world: () => World; stor
     const allowed = (await notifier.permission()) === 'granted';
     // The reminders that already came due are in the inbox: the last check one holds back the next for a week.
     const lastCheckReminderAt = inbox.filter((n) => n.id.startsWith('check:')).reduce((m, n) => Math.max(m, n.at), 0) || undefined;
-    const planned = planReminders({ ...world, now, prefs, lastCheckReminderAt });
+    const base = planReminders({ ...world, now, prefs, lastCheckReminderAt });
+    const planned = deps.nudges ? [...base, ...deps.nudges(now, base)].sort((a, b) => a.fireAt - b.fireAt) : base;
 
     for (const r of serviceKmReminders(world.todos, world.appKm, kmNotified, now, prefs)) {
       const cut = r.id.lastIndexOf(':');
