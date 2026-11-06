@@ -1,12 +1,13 @@
 import { Animated, Image, View } from 'react-native';
-import { adventureBike, dominarBike } from './AdventureBike.tokens';
+import { adventureBike, dominarBike, dominarLimeBike } from './AdventureBike.tokens';
 
-/** Which rider is on the bike: the man on the adventure bike, or the woman on the black Dominar 400. */
-export type Rider = 'man' | 'woman';
+/** Which rider is on the bike: the man on the adventure bike, the woman on the black Dominar 400, or the woman on the grey Dominar with lime-green trim. */
+export type Rider = 'man' | 'woman' | 'womanLime';
 
 const BIKES = {
   man: { art: adventureBike, body: require('../../assets/bike/adventure-body.webp') as number, wheel: require('../../assets/bike/adventure-wheel.webp') as number },
   woman: { art: dominarBike, body: require('../../assets/bike/dominar-woman-body.webp') as number, wheel: require('../../assets/bike/dominar-wheel.webp') as number },
+  womanLime: { art: dominarLimeBike, body: require('../../assets/bike/dominar-lime-woman-body.webp') as number, wheel: require('../../assets/bike/dominar-lime-wheel.webp') as number },
 } as const;
 
 /** The numbers (in the body picture's pixels) of one rider's bike. */
