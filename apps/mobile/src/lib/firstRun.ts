@@ -1,11 +1,11 @@
 /**
  * Whether this phone already has someone's data on it. The welcome flow is for a fresh install; a rider who updated the app has rides,
- * trips or documents and goes straight in. A fresh install has only the sample ride and the example to-dos, which do not count.
+ * trips or documents and goes straight in. A fresh install has only the sample ride, which does not count (and, on a phone that had the app before, the example to-dos it used to start with).
  */
 export type KnownData = {
   rides: { sample?: boolean }[];
   trips: unknown[];
-  /** A fresh install starts with a few example to-dos whose ids begin `seed-`; those are not the rider's. */
+  /** Older installs started with a few example to-dos whose ids begin `seed-`; those are not the rider's. New installs start with none. */
   todos: { id: string }[];
   profile: { licence?: unknown; vehicle?: unknown; contacts: unknown[] };
 };
