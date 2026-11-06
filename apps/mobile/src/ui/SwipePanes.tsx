@@ -1,9 +1,12 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, PanResponder, View } from 'react-native';
+import { Animated, Dimensions, PanResponder, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isSideways, swipeOffset, swipeTarget } from '@/lib/swipePanes';
 import { useLatest } from '@/lib/useLatest';
 import { EASE, useReducedMotion } from './motion';
 import { swipePanes } from './SwipePanes.tokens';
+import { tabBar } from './TabBar.tokens';
+import { space } from '@/theme/tokens';
 import { useAnimatedValue } from './useAnimatedValue';
 
 /**
@@ -11,11 +14,17 @@ import { useAnimatedValue } from './useAnimatedValue';
  * finger, carries on out of sight when let go far enough or flicked, and the next one slides in from the side it was swiped towards; a short pull
  * springs back. Tapping the tabs slides the new view in a little instead. Pass the chosen view as `children`, and the same `keys` and `value` as the tabs.
  * The swipe takes over only once the move is clearly sideways, so scrolling the page and pressing cards still work.
+ * The swipeable area runs from the top of the views to the tab bar, even where a view is short or empty, so a swipe works on the empty part of the page too.
  */
 export function SwipePanes<T extends string>({ keys, value, onChange, enabled = true, children }: { keys: readonly T[]; value: T; onChange: (key: T) => void; enabled?: boolean; children: ReactNode }) {
   const reduced = useReducedMotion();
   const x = useAnimatedValue(0);
   const [width, setWidth] = useState(0);
+  const frame = useRef<React.ComponentRef<typeof View>>(null);
+  const insets = useSafeAreaInsets();
+  /** How tall the swipeable area is at least: from where the views start to just above the tab bar. */
+  const [fill, setFill] = useState(0);
+  const reserve = tabBar.height + space[6] + insets.bottom;
   const index = Math.max(0, keys.indexOf(value));
   const now = useLatest(() => ({ index, count: keys.length, width, enabled, reduced }));
   const change = useLatest((i: number) => onChange(keys[i]!));
@@ -60,7 +69,12 @@ export function SwipePanes<T extends string>({ keys, value, onChange, enabled = 
 
   const span = width || 1;
   return (
-    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ overflow: 'hidden' }} {...pan.panHandlers}>
+    <View ref={frame} style={{ overflow: 'hidden', minHeight: fill }} {...pan.panHandlers}
+      onLayout={(e) => {
+        setWidth(e.nativeEvent.layout.width);
+        // Where the views start on the screen, measured once laid out: the rest of the screen down to the tab bar is theirs to swipe.
+        frame.current?.measureInWindow((_x, y) => setFill(Math.max(0, Math.round(Dimensions.get('window').height - y - reserve))));
+      }}>
       <Animated.View style={{ opacity: x.interpolate({ inputRange: [-span, 0, span], outputRange: [1 - swipePanes.fade, 1, 1 - swipePanes.fade], extrapolate: 'clamp' }), transform: [{ translateX: x }] }}>{children}</Animated.View>
     </View>
   );

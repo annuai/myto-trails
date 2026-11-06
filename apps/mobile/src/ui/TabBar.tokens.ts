@@ -1,2 +1,2 @@
-/** The tab bar and the record button in it. `lift` is how far the button rises above the bar; `ring` is the bar-coloured edge around it; `mark` is the size of the white navigation arrow inside. */
-export const tabBar = { height: 68, heightLandscape: 60, record: 72, recordLandscape: 60, lift: -30, liftLandscape: -22, ring: 6, mark: 30 } as const;
+/** The tab bar and the record button in it. `lift` is how far the button rises above the bar; `ring` is the bar-coloured edge around it; `mark` is the width of the drawing area of the white arrow inside (the arrow fills a little over half of it). */
+export const tabBar = { height: 68, heightLandscape: 60, record: 72, recordLandscape: 60, lift: -30, liftLandscape: -22, ring: 6, mark: 44 } as const;

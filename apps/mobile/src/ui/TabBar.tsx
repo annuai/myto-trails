@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Motorbike, Navigation, Route, User, Users, type LucideIcon } from 'lucide-react-native';
+import { Motorbike, Route, User, Users, type LucideIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChrome } from '@/store/chrome';
 import { fixed, space, layout, radius, shadow, opacity } from '@/theme/tokens';
 import { useLayout } from './useLayout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Icon } from './Icon';
+import { RideArrow } from './RideArrow';
 import { Text } from './Text';
 import { EASE, ScalePressable } from './motion';
 import { tabBarFade } from './tabBarFade';
@@ -48,7 +49,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
             <View key={name} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
               <ScalePressable scaleTo={0.92} accessibilityRole="button" accessibilityLabel="Ride" onPress={() => router.push('/ride')}
                 style={({ pressed }) => ({ marginTop: landscape ? tabBar.liftLandscape : tabBar.lift, width: landscape ? tabBar.recordLandscape : tabBar.record, height: landscape ? tabBar.recordLandscape : tabBar.record, borderRadius: radius.chip, backgroundColor: c.record, alignItems: 'center', justifyContent: 'center', borderWidth: tabBar.ring, borderColor: bar, opacity: pressed ? opacity.pressed : 1, ...shadow.record })}>
-                <Icon icon={Navigation} size={tabBar.mark} color={fixed.white} strokeWidth={2.25} />
+                <RideArrow size={tabBar.mark} color={fixed.white} />
               </ScalePressable>
               <Text variant="caption" style={{ marginTop: space.half, fontFamily: 'Geist_500Medium' }}>Ride</Text>
             </View>
