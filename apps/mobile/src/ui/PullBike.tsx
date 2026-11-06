@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, View } from 'react-native';
 import { buzz } from '@/lib/haptics';
-import { AdventureBike, adventureBikeWidth } from './AdventureBike';
-import { adventureBike } from './AdventureBike.tokens';
+import { useMe } from '@/api/useApi';
+import { chooseRider, type PullRider } from '@/lib/pullBikeRider';
+import { useLatest } from '@/lib/useLatest';
+import { AdventureBike, adventureBikeWidth, bikeArt } from './AdventureBike';
 import { pullBike } from './PullBike.tokens';
 import { useAnimatedValue } from './useAnimatedValue';
 import { useReducedMotion } from './motion';
 
 
 /**
- * A small delight: pull the page down well past the quote and an adventure bike with its rider rides across, wheels on the top edge of the
+ * A small delight: pull the page down well past the quote and a bike with its rider rides across (a woman on a black Dominar 400, or a man on an adventure bike; a woman only ever sees the woman), wheels on the top edge of the
  * first card, with a firm tap as it sets off and a soft engine rumble while it crosses. It rides once per pull; letting the page settle
  * back to its top arms it again. Placed in the page's scrolling content, `baseline` points from the top of that content to the card's top edge.
  */
@@ -20,15 +22,21 @@ export function PullBike({ scrollY, baseline }: { scrollY: Animated.Value; basel
   const riding = useRef(false);
   const armed = useRef(true);
   const rumble = useRef<ReturnType<typeof setInterval>>(undefined);
-  const w = adventureBikeWidth(pullBike.height);
+  // Who rides is picked on every pull, from the rider's own private profile (the same one the Profile page shows).
+  const [rider, setRider] = useState<PullRider>('man');
+  const gender = useMe().data?.profile.gender;
+  const pick = useLatest(() => chooseRider(gender, Math.random()));
+  const art = bikeArt(rider);
+  const w = adventureBikeWidth(pullBike.height, rider);
   // The wheels turn as far as the bike travels: the page's width and its own, over a wheel's circumference.
-  const turns = (width + w) / (Math.PI * adventureBike.wheel * (pullBike.height / adventureBike.height));
+  const turns = (width + w) / (Math.PI * art.wheel * (pullBike.height / art.height));
 
   useEffect(() => {
     if (reduced) return;
     const go = () => {
       riding.current = true;
       armed.current = false;
+      setRider(pick());
       run.setValue(0);
       buzz.rev();
       rumble.current = setInterval(buzz.rumble, pullBike.rumbleMs);
@@ -42,7 +50,7 @@ export function PullBike({ scrollY, baseline }: { scrollY: Animated.Value; basel
       else if (value >= 0) armed.current = true;
     });
     return () => { scrollY.removeListener(id); clearInterval(rumble.current); };
-  }, [scrollY, reduced, run]);
+  }, [scrollY, reduced, run, pick]);
 
   if (reduced) return null;
   const bobs = Array.from({ length: pullBike.bobs * 2 + 1 }, (_, i) => i / (pullBike.bobs * 2));
@@ -52,7 +60,7 @@ export function PullBike({ scrollY, baseline }: { scrollY: Animated.Value; basel
         { translateX: run.interpolate({ inputRange: [0, 1], outputRange: [-w, width] }) },
         { translateY: run.interpolate({ inputRange: bobs, outputRange: bobs.map((_, i) => (i % 2 ? -pullBike.bob : 0)) }) },
       ] }}>
-        <AdventureBike height={pullBike.height} turns={run.interpolate({ inputRange: [0, 1], outputRange: [0, turns] })} />
+        <AdventureBike height={pullBike.height} rider={rider} turns={run.interpolate({ inputRange: [0, 1], outputRange: [0, turns] })} />
       </Animated.View>
     </View>
   );
