@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { fromKm, toKm } from '@/lib/units';
 import { useDistanceUnit } from '@/store/region';
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CalendarClock, FileText, PenLine, Wrench, Package } from 'lucide-react-native';
 import { templates, type Template } from '@/data/todoTemplates';
 import { addDays, todayISO } from '@/lib/dates';
@@ -30,7 +30,9 @@ export default function NewTodo() {
   const add = useTodos((s) => s.add);
   const unit = useDistanceUnit();
   const appKm = totalKm(useRides((s) => s.rides));
-  const [draft, setDraft] = useState<Draft | null>(null);
+  // Arriving from a quick-add row on the To-do list: the sheet for that reminder opens straight away.
+  const { template } = useLocalSearchParams<{ template?: string }>();
+  const [draft, setDraft] = useState<Draft | null>(() => { const t = templates.find((x) => x.key === template); return t ? fromTemplate(t) : null; });
   const [error, setError] = useState<string>();
   const set = (p: Partial<Draft>) => setDraft((d) => (d ? { ...d, ...p } : d));
 

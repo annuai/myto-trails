@@ -8,6 +8,14 @@ import { isMember } from "./members";
 import type { ClubMember, ClubSummary, ClubView } from "@moto-trails/domain";
 import { bikeFromRow, ownsMedia, pickVariant } from "./profile";
 import { normalizePhone } from "./phone";
+import { photoUrls, type PhotoUrls, type Reaction } from "./photo-shared";
+
+/**
+ * The cursor's time is sent as text and cast in the database (`::text::timestamptz`): a timestamptz parameter goes through a JavaScript Date,
+ * which keeps only milliseconds, and the next row is then skipped when it was created within a millisecond of the cursor's row.
+ */
+/** Posts in a page of a club's feed. */
+const FEED_PAGE_DEFAULT = 50, FEED_PAGE_MAX = 100;
 
 type Db = Sql | TransactionSql;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -16,12 +24,12 @@ const line = (s: unknown) => cleanBody(s).replace(/\s*\n\s*/g, " ");
 const uniqueViolation = (e: unknown) => typeof e === "object" && e !== null && (e as { code?: string }).code === "23505";
 
 type Club = { id: string; womenOnly: boolean };
-async function findClub(sql: Db, publicId: string): Promise<Club | null> {
+export async function findClub(sql: Db, publicId: string): Promise<Club | null> {
   if (!UUID.test(publicId)) return null;
   const [c] = await sql`select id, women_only from club where public_id = ${publicId} and archived_at is null`;
   return c ? { id: c.id as string, womenOnly: c.women_only as boolean } : null;
 }
-async function roleIn(sql: Db, clubId: string, userId: string): Promise<"admin" | "member" | null> {
+export async function roleIn(sql: Db, clubId: string, userId: string): Promise<"admin" | "member" | null> {
   if (!UUID.test(userId)) return null;
   const [m] = await sql`select cm.role from club_member cm join app_user u on u.id = cm.user_id where cm.club_id = ${clubId} and cm.user_id = ${userId} and u.status = 'active'`;
   return m ? (m.role as "admin" | "member") : null;
@@ -96,7 +104,7 @@ export async function searchClubs(sql: Sql, userId: string, o: { q?: unknown; cu
     where c.archived_at is null
       ${o.scope === "mine" ? sql`and ${mine}` : o.scope === "others" ? sql`and not ${mine}` : sql``}
       ${like ? sql`and (c.name ilike ${like} or c.description ilike ${like})` : sql``}
-      ${cursor ? sql`and (c.created_at, c.id) < (${cursor.at}::timestamptz, ${cursor.id}::uuid)` : sql``}
+      ${cursor ? sql`and (c.created_at, c.id) < (${cursor.at}::text::timestamptz, ${cursor.id}::uuid)` : sql``}
     order by c.created_at desc, c.id desc
     limit ${limit + 1}`;
   const page = rows.slice(0, limit);
@@ -326,30 +334,55 @@ export type FeedReply = { id: string; authorName: string; body: string; createdA
 export type FeedPost = {
   id: string; kind: "post" | "ride_plan"; authorName: string; authorHandle: string; body: string; createdAt: Date; mine: boolean;
   at: Date | null; timeZone: string; place: string | null; going: number; maybe: number; myResponse: "going" | "maybe" | null; replies: FeedReply[];
+  /** The photos, in the order they were added. */
+  photos: PhotoUrls[];
+  /** How many of each reaction, and the one the caller picked. */
+  reactions: Record<string, number>; myReaction: Reaction | null;
+  /** The ride event whose album the post belongs to. */
+  eventId: string | null;
 };
 
-/** Members of the club only (null for anyone else). */
-export async function listFeed(sql: Sql, i: { userId: string; clubId: string }): Promise<{ posts: FeedPost[] } | null> {
+/** Members of the club only (null for anyone else). Newest first; `nextCursor` is set while older posts remain, and goes back in as `before`. */
+export async function listFeed(
+  sql: Sql,
+  i: { userId: string; clubId: string; publicUrl?: (key: string) => string; before?: string | null; limit?: number },
+): Promise<{ posts: FeedPost[]; nextCursor: string | null } | null> {
+  const cursor = decodeClubCursor(i.before);
+  if (cursor === null) return null;
   if (!(await isMember(sql, i.userId))) return null;
   const club = await findClub(sql, i.clubId);
   if (!club || !(await roleIn(sql, club.id, i.userId))) return null;
-  const posts = await sql`
-    select p.id, p.kind, p.body, p.created_at, p.ride_at, p.time_zone, p.ride_place, p.author_id, u.display_name, u.public_id,
+  const limit = Math.max(1, Math.min(FEED_PAGE_MAX, i.limit ?? FEED_PAGE_DEFAULT));
+  const rows = await sql`
+    select p.id, p.kind, p.body, p.created_at, p.created_at::text as created_text, p.ride_at, p.time_zone, p.ride_place, p.author_id, u.display_name, u.public_id,
+      p.reaction_counts, e.public_id as event_public_id,
       (select count(*)::int from club_ride_response r where r.post_id = p.id and r.response = 'going') as going,
       (select count(*)::int from club_ride_response r where r.post_id = p.id and r.response = 'maybe') as maybe,
-      (select r.response from club_ride_response r where r.post_id = p.id and r.user_id = ${i.userId}) as mine_response
-    from club_post p join app_user u on u.id = p.author_id
-    where p.club_id = ${club.id} and p.parent_id is null and p.status = 'visible' order by p.created_at desc limit 50`;
+      (select r.response from club_ride_response r where r.post_id = p.id and r.user_id = ${i.userId}) as mine_response,
+      (select x.emoji from reaction x where x.target_kind = 'post' and x.target_id = p.id and x.user_id = ${i.userId}) as my_reaction
+    from club_post p join app_user u on u.id = p.author_id left join ride_event e on e.id = p.event_id
+    where p.club_id = ${club.id} and p.parent_id is null and p.status = 'visible'
+      ${cursor ? sql`and (p.created_at, p.id) < (${cursor.at}::text::timestamptz, ${cursor.id}::uuid)` : sql``}
+    order by p.created_at desc, p.id desc limit ${limit + 1}`;
+  const posts = rows.slice(0, limit);
+  const last = posts[posts.length - 1];
   const ids = posts.map((p) => p.id as string);
   const replies = ids.length
     ? await sql`select p.id, p.parent_id, p.body, p.created_at, p.author_id, u.display_name from club_post p join app_user u on u.id = p.author_id where p.parent_id in ${sql(ids)} and p.status = 'visible' order by p.created_at`
     : [];
+  const media = ids.length
+    ? await sql`select m.post_id, a.id, a.stem, a.width, a.height, a.colour from post_media m join asset a on a.id = m.asset_id where m.post_id in ${sql(ids)} order by m.position`
+    : [];
+  const publicUrl = i.publicUrl ?? ((key: string) => key);
   return {
     posts: posts.map((p) => ({
       id: p.id, kind: p.kind, authorName: p.display_name, authorHandle: p.public_id, body: p.body, createdAt: p.created_at, mine: p.author_id === i.userId,
       at: p.ride_at, timeZone: p.time_zone, place: p.ride_place, going: p.going, maybe: p.maybe, myResponse: p.mine_response,
       replies: replies.filter((r) => r.parent_id === p.id).map((r) => ({ id: r.id, authorName: r.display_name, body: r.body, createdAt: r.created_at, mine: r.author_id === i.userId })),
+      photos: media.filter((m) => m.post_id === p.id).map((m) => photoUrls(publicUrl, { id: m.id, stem: m.stem, width: m.width, height: m.height, colour: m.colour })),
+      reactions: (p.reaction_counts ?? {}) as Record<string, number>, myReaction: (p.my_reaction ?? null) as Reaction | null, eventId: (p.event_public_id ?? null) as string | null,
     })),
+    nextCursor: rows.length > limit && last ? encodeClubCursor({ at: last.created_text as string, id: last.id as string }) : null,
   };
 }
 

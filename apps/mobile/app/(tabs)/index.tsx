@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BookOpen, CalendarClock, Camera, ClipboardList, Luggage, MoreHorizontal, Route as RouteIcon, Trash2 } from 'lucide-react-native';
+import { BookOpen, CalendarClock, Camera, ClipboardCheck, ClipboardList, ListChecks, Luggage, MoreHorizontal, Play, Route as RouteIcon, Trash2 } from 'lucide-react-native';
 import { groupByRide, summarise } from '@/lib/journalEntries';
 import { journalDate, journalTitle } from '@/lib/journalTitle';
 import { notifier } from '@/lib/notifier';
@@ -11,6 +11,8 @@ import { syncReminders } from '@/NotificationHost';
 import { useJournal } from '@/store/journal';
 import { useNotifications } from '@/store/notifications';
 import { CheckinSheet } from '@/features/CheckinSheet';
+import { actionCards } from '@/lib/actionCards';
+import { useFixit } from '@/store/fixit';
 import { GroupSheet } from '@/features/GroupSheet';
 import { checkinStatus } from '@/lib/checkinCore';
 import { clockLabel } from '@/lib/community';
@@ -36,6 +38,7 @@ import { totalKm, useRides } from '@/store/rides';
 import { justFinishedRide } from '@/lib/justFinished';
 import { ScalePressable } from '@/ui/motion';
 import { useTodos } from '@/store/todos';
+import { ActionCardGrid } from '@/ui/ActionCardGrid';
 import { Banner } from '@/ui/Banner';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
@@ -52,6 +55,8 @@ import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
 import { TextButton } from '@/ui/TextButton';
 import { nowMs as readClock } from '@/lib/clock';
+
+const WEEK_MS = 7 * 86_400_000;
 
 export default function Home() {
   const router = useRouter();
@@ -91,7 +96,8 @@ export default function Home() {
     }),
   ].sort((a, b) => a.sort - b.sort);
   const latest = rides[0];
-  const journals = groupByRide(useJournal((s) => s.entries)).slice(0, 3);
+  const entries = useJournal((s) => s.entries);
+  const journals = groupByRide(entries).slice(0, 3);
   const journalTitles = useJournal((s) => s.titles);
   const { permission, refresh } = usePermission();
   const location = useRideLocationAccess();
@@ -103,6 +109,20 @@ export default function Home() {
   const group = useCompanion((s) => s.group);
   const nowMs = readClock();
   const finished = justFinishedRide(rides, nowMs);
+  const recordingSince = useRecorder((s) => (s.status === 'running' ? s.startedAt : undefined));
+  const lastCheckAt = useFixit((s) => s.last?.at);
+  const cards = actionCards({
+    now: nowMs, recordingSince, nextTripName: nextTripPlan?.name ?? trail?.name, checkedAt: lastCheckAt,
+    journalEntries: entries.length, journalThisWeek: entries.filter((e) => nowMs - e.at < WEEK_MS).length,
+    overdueTodos: overdue.length, nextDue: dueRows[0] ? `${dueRows[0].label}, ${dueRows[0].value}` : undefined,
+  });
+  const cardGo: Record<string, { icon: typeof Play; go: () => void }> = {
+    ride: { icon: recordingSince !== undefined ? Play : Luggage, go: () => (recordingSince !== undefined ? router.push('/ride/live') : setPlanTripOpen(true)) },
+    check: { icon: ClipboardCheck, go: () => router.push('/fixit/check') },
+    journal: { icon: BookOpen, go: () => router.push(entries.length ? '/journal' : `/journal/${readClock()}`) },
+    todo: { icon: ListChecks, go: () => router.push('/todos') },
+  };
+  const cardColour = { ride: 'clay', check: 'sage', journal: 'sand', todo: 'sky' } as const;
 
   return (
     <Screen tabs brand bike overlay={<>
@@ -201,7 +221,7 @@ export default function Home() {
           : trail && !nextTripPlan ? <RideStartActions route={{ kind: 'trail', slug: trail.slug, name: trail.name, status: trail.status, statusLabel: trail.statusLabel }} label="Start ride" onStart={() => recordNow(router)} />
           : firstTimer ? null
           : <Button label={trail ? 'Start ride' : 'Find a trail'} arrow onPress={() => router.push(trail ? '/ride' : '/trails')} />}
-        {firstTimer ? null : <Button variant="soft" label="Plan a trip" onPress={() => setPlanTripOpen(true)} />}
+        {firstTimer ? null : <ActionCardGrid items={cards.map((cd) => ({ key: cardColour[cd.kind], icon: cardGo[cd.kind]!.icon, title: cd.title, detail: cd.detail, onPress: cardGo[cd.kind]!.go }))} />}
         {overdue.length ? (
           <Banner eyebrow="Needs attention" title={overdue.length === 1 ? `${overdue[0].t.title}: ${overdue[0].d.text.toLowerCase()}` : `${overdue.length} things are overdue`} onPress={() => router.push('/todos')} />
         ) : contacts.length === 0 ? (
@@ -238,7 +258,7 @@ export default function Home() {
             <Row key={r.key} icon={r.icon} label={r.label} sub={r.sub} value={r.value} onPress={() => router.push(r.go as never)} chevron={false} />
           ))}
         </ListCard>
-      ) : <EmptyState icon={ClipboardList} title="You're all caught up" body="Add a reminder for your PUC, insurance or a chain lube and we'll nudge you in time." />}
+      ) : <EmptyState icon={ClipboardList} title="You're all caught up" body="Add a reminder for your PUC, insurance or a chain lube and we'll nudge you in time." action={{ label: 'Add a reminder', onPress: () => router.push('/todos') }} />}
       <View style={{ marginTop: space[3] }}><Button variant="soft" label="See all" arrow onPress={() => router.push('/todos')} /></View>
 
         </>}

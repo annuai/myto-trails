@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Platform, View, useWindowDimensions } from 'react-native';
+import { AppState, Platform, View, useWindowDimensions } from 'react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
@@ -14,8 +14,10 @@ import { useAppearance } from '@/store/appearance';
 import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
+import { PhotoOutboxHost } from '@/PhotoOutboxHost';
 import { SubmissionQueueHost } from '@/SubmissionQueueHost';
 import { refreshFixit } from '@/fixit/content';
+import { refreshQuotes } from '@/store/quotes';
 import { ResumeHost } from '@/ResumeHost';
 import { CrashHost } from '@/CrashHost';
 import { NavigateChoiceHost } from '@/NavigateChoiceHost';
@@ -52,6 +54,12 @@ export default function Root() {
   useEffect(() => { void startCachePersistence(); }, []);
   // Download the Fix it guides while there is a signal, so they are on the phone when there is not one.
   useEffect(() => { void refreshFixit(Date.now()); }, []);
+  // The pull-down quotes: fetched on first open and then weekly, on start and whenever the app comes back to the front.
+  useEffect(() => {
+    void refreshQuotes(Date.now());
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') void refreshQuotes(Date.now()); });
+    return () => sub.remove();
+  }, []);
   // Under inverted colours the page behind every screen is the dark paper, as the screens are drawn in the opposite mode.
   const paper = useAppearance((s) => s.inverted) ? dark.paper : light.paper;
   const [loaded] = useFonts({ Michroma_400Regular, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, GeistMono_400Regular, GeistMono_500Medium });
@@ -63,6 +71,7 @@ export default function Root() {
       <NotificationHost />
       <CompanionHost />
       <SubmissionQueueHost />
+      <PhotoOutboxHost />
       <ResumeHost />
       <RideNotificationHost />
           <VoiceHost />

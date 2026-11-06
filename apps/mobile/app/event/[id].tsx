@@ -9,6 +9,7 @@ import { ClubCover } from '@/ui/ClubCover';
 import type { DeclineReason, EventRole } from '@/api/types';
 import { useEvent } from '@/api/useApi';
 import { ConfirmSheet } from '@/features/community/ConfirmSheet';
+import { EventAlbum } from '@/features/community/EventAlbum';
 import { DeclineSheet } from '@/features/event/DeclineSheet';
 import { RosterSheet } from '@/features/event/RosterSheet';
 import { RESPONSE_LABEL } from '@/features/event/labels';
@@ -165,6 +166,8 @@ export default function EventScreen() {
           </View>
         </>
       ) : null}
+
+      {ev.clubId ? <EventAlbum clubId={ev.clubId} eventId={id} /> : null}
     </Screen>
   );
 }

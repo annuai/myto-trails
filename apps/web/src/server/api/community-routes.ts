@@ -2,6 +2,7 @@ import { isValidSlug } from "@moto-trails/domain";
 import { validTimeZone } from "@/lib/time-zone";
 import { clubAdminIds, createClub, decideJoinRequest, hidePost, leaveClub, listFeed, listJoinRequests, postToClub, removeMember, requestJoin, respondToRide, setMemberRole, withdrawJoinRequest } from "../community/clubs";
 import { listMyRidden, markRidden, unmarkRidden } from "../community/ridden";
+import { createPhotoIntents, isReaction, listEventPhotos, postPhotosToClub, reactToPost, removePostFiles, type PhotoSize } from "../community/photos";
 import { deleteComment, editComment, listComments, postComment, reportContent } from "../community/comments";
 import { joinDecisionEmail, joinRequestEmail } from "../community/emails";
 import { sendToUser } from "../moderation/notify";
@@ -56,6 +57,12 @@ const JOIN: Reasons = {
   rate_limited: [429, "Too many requests today. Try again tomorrow."],
 };
 const DECIDE: Reasons = { ...COMMON, wrong_state: [409, "That request was already decided."], women_only: [409, "This rider no longer qualifies for a women-only club."] };
+const PHOTO: Reasons = {
+  ...COMMON,
+  invalid: [422, "Send 1 to 10 photos, with no web addresses in the text, and keep the text to 1000 characters."],
+  rate_limited: [429, "You are sending photos too fast. Try again later."],
+  bad_photo: [422, "One of the photos did not arrive or is not a valid picture. Try sending it again."],
+};
 const POST: Reasons = {
   ...COMMON,
   invalid: [422, "Write 1 to 1000 characters, leave out web addresses, and give a future date and a place for a ride."],
@@ -165,9 +172,10 @@ export const communityRoutes: RouteDef[] = [
     },
   },
   {
-    method: "GET", path: "/clubs/{id}/posts", access: "token", summary: "The club's posts and ride plans with replies and Going/Maybe counts, newest first (club members only)",
+    method: "GET", path: "/clubs/{id}/posts", access: "token", summary: "The club's posts and ride plans with photos, reactions, replies and Going/Maybe counts, newest first, in pages (query: limit, before = the previous page's nextCursor). Club members only",
     async handler(c) {
-      const feed = await listFeed(c.sql, { userId: c.userId, clubId: c.params.id! });
+      const limit = Number(c.url.searchParams.get("limit"));
+      const feed = await listFeed(c.sql, { userId: c.userId, clubId: c.params.id!, publicUrl: (key) => c.storage.publicUrl(key), before: c.url.searchParams.get("before"), limit: Number.isFinite(limit) && limit > 0 ? limit : undefined });
       return feed ? ok(feed) : fail(403, "not_member", "Posts are only visible to the club's members.");
     },
   },
@@ -184,6 +192,42 @@ export const communityRoutes: RouteDef[] = [
     },
   },
   {
+    method: "POST", path: "/clubs/{id}/photo-uploads", access: "write:submission", summary: "Step one of posting photos: say how big the three copies of each photo are (body: photos, a list of up to 10 of {thumb, view, full} in bytes) and get an address to PUT each JPEG to",
+    async handler(c) {
+      const b = await asObject(c);
+      const list = Array.isArray(b.photos) ? b.photos : [];
+      const sizes = list.map((p) => { const o = (typeof p === "object" && p !== null ? p : {}) as Record<string, unknown>; return { thumb: Number(o.thumb), view: Number(o.view), full: Number(o.full) } satisfies Record<PhotoSize, number>; });
+      const r = await createPhotoIntents(c.sql, c.storage, { userId: c.userId, clubId: c.params.id!, sizes });
+      return r.ok ? ok({ photos: r.photos }, 201) : failWith(PHOTO, r.reason);
+    },
+  },
+  {
+    method: "POST", path: "/clubs/{id}/photo-posts", access: "write:submission", summary: "Step two: post the photos you sent (body: photos = the assetIds in order, body = optional text, eventId = a ride event of this club whose album it joins)",
+    async handler(c) {
+      const b = await asObject(c);
+      const r = await postPhotosToClub(c.sql, c.storage, {
+        userId: c.userId, clubId: c.params.id!, body: str(b.body), assetIds: Array.isArray(b.photos) ? b.photos.map(str) : [], eventId: str(b.eventId) || null, now: c.now,
+      });
+      return r.ok ? ok({ postId: r.postId }, 201) : failWith(PHOTO, r.reason);
+    },
+  },
+  {
+    method: "GET", path: "/clubs/{id}/events/{eventId}/photos", access: "token", summary: "The photos in a ride event's album, newest first (club members only)",
+    async handler(c) {
+      const r = await listEventPhotos(c.sql, (key) => c.storage.publicUrl(key), { userId: c.userId, clubId: c.params.id!, eventId: c.params.eventId! });
+      return r ? ok(r) : fail(403, "not_member", "Photos are only visible to the club's members.");
+    },
+  },
+  {
+    method: "PUT", path: "/club-posts/{postId}/reaction", access: "write:submission", summary: "React to a post, or take your reaction back (body: reaction like|love|fire|laugh|wow|thanks, or null). One per person; a new one replaces it",
+    async handler(c) {
+      const b = await asObject(c);
+      if (b.reaction !== null && !isReaction(b.reaction)) return fail(422, "invalid", "Pick one of the six reactions.");
+      const r = await reactToPost(c.sql, { userId: c.userId, postId: c.params.postId!, reaction: b.reaction as never });
+      return r.ok ? ok({ reactions: r.counts, myReaction: r.mine }) : failWith(COMMON, r.reason);
+    },
+  },
+  {
     method: "PUT", path: "/club-posts/{postId}/response", access: "write:submission", summary: "Say you are going or maybe going to a ride plan (body: response going|maybe|null)",
     async handler(c) {
       const b = await asObject(c);
@@ -195,6 +239,8 @@ export const communityRoutes: RouteDef[] = [
     method: "DELETE", path: "/club-posts/{postId}", access: "write:submission", summary: "Remove a post and its replies: its author or a club admin",
     async handler(c) {
       const r = await hidePost(c.sql, { userId: c.userId, postId: c.params.postId! });
+      // A removed post's photos stop being reachable now; a failure here is logged and never undoes the removal.
+      if (r.ok) await removePostFiles(c.sql, c.storage, c.params.postId!).catch((e) => console.error("Post photos", e instanceof Error ? e.message : "unknown"));
       return r.ok ? noContent() : failWith(HIDE, r.reason);
     },
   },

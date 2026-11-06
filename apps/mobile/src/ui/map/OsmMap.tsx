@@ -12,6 +12,8 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { IconButton } from '../IconButton';
 import { Text } from '../Text';
 import { ClusterList, ClusterPin, DestinationPin, HeadingPointer, RiderPin } from './RiderPins';
+import { heatLineLayout, heatPaints } from './heat.tokens';
+import { heatDotFeatures, heatLineFeatures } from '@/lib/heat';
 import { mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
 import { trackFeature } from './geojson';
 import { useMapDark } from './useMapDark';
@@ -36,7 +38,7 @@ const BEARING_READ_MS = 100;
 /** If the map stays this far from the way it was told to face for this long, the camera is set again outright (see the effect below). */
 const OFF_DEG = 40, OFF_MS = 2000;
 
-function OsmMapView({ height, line: route, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, arrowHeading, glideMs, covered, onPicker, pickFrom, onCenter, debug, pointer, dark: darkProp, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
+function OsmMapView({ height, line: route, heat, track, trackBreaks, position, waypoints, riders, riderMarks, destination, guide, regroup, onTap, follow, focus, heading, arrowHeading, glideMs, covered, onPicker, pickFrom, onCenter, debug, pointer, dark: darkProp, onFullscreen, fullscreen, radius = 0, interactive = true }: OsmMapProps) {
   const dark = useMapDark(darkProp);
   const camera = useRef<CameraRef>(null);
   const [zoom, setZoom] = useState(FOLLOW_ZOOM);
@@ -62,6 +64,9 @@ function OsmMapView({ height, line: route, track, trackBreaks, position, waypoin
   const guideData = useMemo(() => line(guide), [guide]);
   const trackData = useMemo(() => trackFeature(track, trackBreaks), [track, trackBreaks]);
   const wptsData = useMemo(() => points(waypoints), [waypoints]);
+  const heatLines = useMemo(() => heatLineFeatures(heat), [heat]);
+  const heatDots = useMemo(() => heatDotFeatures(heat), [heat]);
+  const heatPaint = useMemo(() => heatPaints(dark), [dark]);
   const ridersData = useMemo(() => points(riders), [riders]);
   const regroupData = useMemo(() => points(regroup ? [regroup] : []), [regroup]);
   // The arrow replaces the dot as soon as the way the rider is facing is known, followed or not.
@@ -79,11 +84,11 @@ function OsmMapView({ height, line: route, track, trackBreaks, position, waypoin
   const start = useMapStart();
   useEffect(() => { if (focus) camera.current?.flyTo({ center: [focus.lng, focus.lat], zoom: 12 }); }, [focus]);
   const bounds = useMemo(() => {
-    const all = [...(route ?? []), ...(track ?? [])];
+    const all = [...(route ?? []), ...(track ?? []), ...(heat?.lines.length ? heat.lines.flatMap((l) => l.points) : heat?.dots ?? [])];
     if (!all.length) return undefined;
     const lngs = all.map((p) => p.lng), lats = all.map((p) => p.lat);
     return [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)] as [number, number, number, number];
-  }, [route, track]);
+  }, [route, track, heat]);
   // The camera's first view can be set before the map has its size, which leaves it on the wrong spot with no line in sight. Fit again once the map is drawn, and whenever the route changes.
   const coverTop = covered?.top ?? 0, coverBottom = covered?.bottom ?? 0, coverLeft = covered?.left ?? 0;
   // What floats over the map is kept out of the view in one of two ways. On iPhone the map's own inset: its centre and the point it turns about are both the middle of what is left,
@@ -139,6 +144,11 @@ function OsmMapView({ height, line: route, track, trackBreaks, position, waypoin
     <View onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })} style={{ height: height === 'fill' ? undefined : height, flex: height === 'fill' ? 1 : undefined, borderRadius: radius, overflow: 'hidden' }}>
       <Map mapStyle={mapStyleUrl(dark)} attribution={interactive} logo={interactive} attributionPosition={{ bottom: ornamentBottom, right: space[2] }} logoPosition={{ bottom: ornamentBottom, left: (insetMap ? 0 : coverLeft) + space[2] }} contentInset={inset} onDidFinishLoadingMap={fit} onRegionWillChange={(e) => { if (e.nativeEvent.userInteraction && follow) setFollowing(false); }} onRegionIsChanging={(e) => readBearing(e.nativeEvent.bearing)} onRegionDidChange={(e) => { onCenter?.({ lng: e.nativeEvent.center[0], lat: e.nativeEvent.center[1] }); setZoom(e.nativeEvent.zoom); bearingAt.current = 0; readBearing(e.nativeEvent.bearing); if (e.nativeEvent.userInteraction && follow) setFollowing(false); }} compassPosition={{ top: size.compact + space[4], right: space[3] }} style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive && !(follow && following)} doubleTapZoom={interactive && !(follow && following)} onPress={onTap ? (e) => onTap({ lat: e.nativeEvent.lngLat[1], lng: e.nativeEvent.lngLat[0] }) : undefined}>
         <Camera ref={camera} initialViewState={pickFrom ? { center: [pickFrom.lng, pickFrom.lat], zoom: PICK_ZOOM, bearing: 0, padding: undefined } : follow && position ? { center: [position.lng, position.lat], zoom: FOLLOW_ZOOM, bearing: heading ?? 0, padding } : bounds ? { bounds, padding: FIT_PADDING } : start.kind === 'bounds' ? { bounds: start.bounds, padding: FIT_PADDING } : { center: start.center, zoom: start.zoom }} />
+        <GeoJSONSource id="heat-dots" data={heatDots}><Layer id="heat-glow" type="heatmap" paint={heatPaint.glow as never} /></GeoJSONSource>
+        <GeoJSONSource id="heat-lines" data={heatLines}>
+          <Layer id="heat-halo" type="line" layout={heatLineLayout as never} paint={heatPaint.halo as never} />
+          <Layer id="heat-line" type="line" layout={heatLineLayout as never} paint={heatPaint.line as never} />
+        </GeoJSONSource>
         <GeoJSONSource id="guide" data={guideData}><Layer id="guide-line" type="line" layout={round} paint={{ 'line-color': GUIDE_COLOR, 'line-width': 6 }} /></GeoJSONSource>
         <GeoJSONSource id="route" data={routeData}><Layer id="route-line" type="line" layout={round} paint={{ 'line-color': ROUTE_COLOR, 'line-width': 4 }} /></GeoJSONSource>
         <GeoJSONSource id="track" data={trackData}><Layer id="track-line" type="line" layout={round} paint={{ 'line-color': TRACK_COLOR, 'line-width': 5 }} /></GeoJSONSource>

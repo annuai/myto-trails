@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload, Wrench } from 'lucide-react-native';
+import { Bell, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload, Wrench } from 'lucide-react-native';
 import Constants from 'expo-constants';
 import { CONTACT_EMAIL, DISCORD_URL, MYTO_URL, versionLabel } from '@moto-trails/domain';
 import { useMe } from '@/api/useApi';
@@ -94,6 +94,7 @@ export default function You() {
       <SectionTitle>Keep track</SectionTitle>
       <ListCard>
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
+        <Row icon={Flame} label="Where I ride" sub="A heat map of your own rides" onPress={() => router.push('/rides/heat')} />
         <Row icon={CalendarDays} label="Your year" value={asText(distanceKm(yearRecap(rides, new Date().getFullYear()).distanceKm))} mono onPress={() => router.push('/recap')} />
         <Row icon={Fuel} label="Fuel logs" sub="What your rides cost in petrol" onPress={() => router.push('/fuel')} />
         <Row icon={Stamp} label="Trails ridden" onPress={() => router.push('/passport')} />

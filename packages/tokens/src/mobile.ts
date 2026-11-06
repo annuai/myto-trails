@@ -34,6 +34,8 @@ export type Palette = {
   inkFill: InkFill;
   /** The Record button. */
   record: string;
+  /** The four backgrounds of the Dash action cards, one per kind of card: the light tints on light, deep muted versions on dark. `ink` and `tabLabel` read on every one (4.5:1 or more). */
+  cardTint: { clay: string; sage: string; sand: string; sky: string };
   /** The floating bars (bottom nav, header pill): white on light, the card colour on dark. */
   bar: string;
   /** The Myto logo. */
@@ -54,6 +56,7 @@ export const light: Palette = {
   accent: "#1f4a6b", accentInk: "#ffffff", accentSubtle: "#e3ebf1",
   good: "#2d6a3e", caution: "#8a5a00", stop: "#a32d1c", unknown: "#6b6560",
   onInk: "#ffffff", tabLabel: "#58524d", edge: "#857e77", inkFill: inkFillBlack, record: "#b0442e", bar: "#ffffff", logo: "#1a1a1a",
+  cardTint: { clay: "#efcfc2", sage: "#cfe0c8", sand: "#e8dccb", sky: "#cfdde8" },
   riders: ["#1e7380", "#a34393", "#5a6e1c", "#5241aa", "#89613e", "#b03b66", "#3d7157", "#8644a7"],
   gradient: ["#f8f4ef", "#f2ede8", "#e7ebee"],
 };
@@ -63,6 +66,7 @@ export const dark: Palette = {
   accent: "#8fbbdc", accentInk: "#121211", accentSubtle: "#223644",
   good: "#6fbf83", caution: "#e0a43a", stop: "#ec8272", unknown: "#a8a29b",
   onInk: "#121211", tabLabel: "#bdb7b0", edge: "#7f7a73", inkFill: inkFillCream, record: "#b0442e", bar: "#1c1c1a", logo: "#ffffff",
+  cardTint: { clay: "#4a2f27", sage: "#2f3d2f", sand: "#3d352a", sky: "#27363f" },
   riders: ["#45c0d3", "#ca7dbd", "#afd147", "#988cd4", "#bb8f68", "#d47d9d", "#6aaf8c", "#b484cd"],
   gradient: ["#1b1b19", "#121211", "#0f1317"],
 };
@@ -89,5 +93,9 @@ export const fixed = {
   artNight: "#2b2a27",
   route: "#1f4a6b",
   track: "#d9480f",
+  /** The heat map colours on the light map, from a road ridden once to the road ridden most: a soft red, a warm red, the brand red (#be3a23), and a deep red. */
+  heat: ["#f2a28c", "#e0553a", "#be3a23", "#7e1f12"],
+  /** The same, for the dark map (inverted colours), where deep reds would vanish: the brand red brightens to orange-red, light orange and a pale glow. */
+  heatNight: ["#b0442e", "#e2553a", "#ff8a5c", "#ffd9c4"],
   position: "#1f6feb",
 } as const;

@@ -38,3 +38,9 @@ export function dueInfo(t: Todo, appKm: number, today: string = todayISO()): Due
 
 export const isDueSoon = (d: Due) => d.state === 'overdue' || d.state === 'soon';
 export { addDays };
+
+/**
+ * Older installs started with three example to-dos whose ids begin `seed-`. A rider who never touched one (it has no `updatedAt`,
+ * which every edit, tick and "done" sets) did not choose it, so it is dropped; one they changed stays.
+ */
+export const withoutUntouchedExamples = (todos: Todo[]): Todo[] => todos.filter((t) => !(t.id.startsWith('seed-') && t.updatedAt === undefined));
