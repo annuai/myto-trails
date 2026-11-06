@@ -12,6 +12,9 @@ import { useJournal } from '@/store/journal';
 import { useNotifications } from '@/store/notifications';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { actionCards } from '@/lib/actionCards';
+import { NudgeConsentSheet } from '@/features/NudgeConsentSheet';
+import { inAppNudge } from '@/lib/nudge/inApp';
+import { useNudges } from '@/store/nudges';
 import { useFixit } from '@/store/fixit';
 import { GroupSheet } from '@/features/GroupSheet';
 import { checkinStatus } from '@/lib/checkinCore';
@@ -109,6 +112,13 @@ export default function Home() {
   const group = useCompanion((s) => s.group);
   const nowMs = readClock();
   const finished = justFinishedRide(rides, nowMs);
+  // After a first ride the rider is asked once whether they want ride nudges. Without notifications allowed, the nudge shows here as a card.
+  const nudgeLevel = useNudges((s) => s.level);
+  const nudgesPlanned = useNudges((s) => s.planned);
+  const nudgesHistory = useNudges((s) => s.history);
+  const nudgesSeen = useNudges((s) => s.seen);
+  const askNudges = nudgeLevel === undefined && rides.some((r) => !r.sample);
+  const idea = nudgeLevel && nudgeLevel !== 'off' && permission !== 'granted' ? inAppNudge(nudgesPlanned, nudgesHistory, nudgesSeen, nowMs) : undefined;
   const recordingSince = useRecorder((s) => (s.status === 'running' ? s.startedAt : undefined));
   const lastCheckAt = useFixit((s) => s.last?.at);
   const cards = actionCards({
@@ -131,6 +141,7 @@ export default function Home() {
         <Button variant="danger" icon={Trash2} label="Cancel this plan" onPress={() => { useTrailStore.getState().cancelPlan(); setMenu(false); }} />
         <Button variant="soft" label="Keep it" onPress={() => setMenu(false)} />
       </Sheet>
+      <NudgeConsentSheet open={askNudges} />
       <PlanTripSheet open={planTripOpen} onClose={() => setPlanTripOpen(false)} onCreated={(id) => router.push(`/trips/${id}`)} />
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
       <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} />
@@ -173,6 +184,16 @@ export default function Home() {
         <View style={{ marginBottom: space[3] }}>
           <Banner eyebrow="Reminders" title="Get a nudge before a to-do is due or a ride starts" onPress={() => setRemindOpen(true)} />
         </View>
+      ) : null}
+      {idea ? (
+        <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`${idea.title}. ${idea.body}`} style={{ marginBottom: space[3] }}
+          onPress={() => { useNudges.getState().markSeen(idea.id, readClock()); useNudges.getState().markTapped(idea.id, readClock()); router.push(idea.route as never); }}>
+          <Card style={{ gap: space[1] }}>
+            <Text variant="label" tone="muted">Ride idea</Text>
+            <Text variant="bodyMedium">{idea.title}</Text>
+            <Text variant="label" tone="muted">{idea.body}</Text>
+          </Card>
+        </ScalePressable>
       ) : null}
       {finished ? (
         <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`Open the story of ${finished.name}`} onPress={() => router.push(`/story/${finished.id}`)} style={{ marginBottom: space[3] }}>
