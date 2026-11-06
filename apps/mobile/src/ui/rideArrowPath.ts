@@ -1,5 +1,5 @@
 /**
- * The Ride button's arrow, from the designer's Image-Trace.svg (56.534 by 52.765): an outlined arrow with a notch at the bottom.
+ * The Ride button's arrow, the path of `assets/icons/ride-arrow.svg` (56.534 by 52.765; the designer's file, named for what it is): an outlined arrow with a notch at the bottom.
  * The viewBox is moved so the arrow sits in the middle of it, not a little to the left as drawn.
  */
 export const RIDE_ARROW_PATH =
