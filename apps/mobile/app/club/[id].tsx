@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image as ImageIcon, LogOut, MessageSquare } from 'lucide-react-native';
 import { decideRequest, leaveClub, postToClub, removeMember, removePost, requestJoin, respondToRide, setMemberRole, withdrawJoin } from '@/api/community';
 import { ApiFailure, api } from '@/api/client';
 import { createGroupRide, getClubGroupRide, joinGroupRide } from '@/api/groups';
-import type { ClubMember, ClubPost } from '@/api/types';
+import type { ClubMember, ClubPost, PostReaction } from '@/api/types';
+import { olderPosts, reactToPost } from '@/api/photos';
 import { createEvent } from '@/api/events';
 import { forgetProfile, useClub, useClubPosts, useClubRequests, useEvents } from '@/api/useApi';
 import { CreateEventSheet } from '@/features/event/CreateEventSheet';
@@ -16,12 +17,18 @@ import { ConfirmSheet } from '@/features/community/ConfirmSheet';
 import { JoinRequestCard } from '@/features/community/JoinRequestCard';
 import { JoinSheet } from '@/features/community/JoinSheet';
 import { MemberCard } from '@/features/community/MemberCard';
+import { PendingPosts } from '@/features/community/PendingPosts';
+import { PhotoViewer } from '@/features/community/PhotoViewer';
 import { PostSheet } from '@/features/community/PostSheet';
 import { TextSheet } from '@/features/community/TextSheet';
+import { queuePhotoPost } from '@/lib/queuePhotoPost';
+import { withMyReaction } from '@/lib/reactions';
+import { savedText, savePhotos } from '@/lib/savePhotos';
 import { pickAndUploadImage } from '@/lib/uploadImage';
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '@/store/auth';
 import { useCompanion } from '@/store/companion';
+import { usePhotoOutbox } from '@/store/photoOutbox';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { ClubCover } from '@/ui/ClubCover';
@@ -56,8 +63,18 @@ export default function ClubScreen() {
     getClubGroupRide(token, id).then((r) => on && setLive(r.ride)).catch(() => undefined);
     return () => { on = false; };
   }, [token, id, role]);
+  // Older posts, loaded a page at a time under the newest; reactions set a moment ago, shown before the site has answered; and the photo viewer.
+  const [older, setOlder] = useState<{ posts: ClubPost[]; cursor: string | null } | undefined>();
+  const [reacts, setReacts] = useState<Record<string, { counts: ClubPost['reactions']; mine: PostReaction | null }>>({});
+  const [viewer, setViewer] = useState<{ photos: ClubPost['photos']; start: number } | null>(null);
+  const [saveNote, setSaveNote] = useState<string>();
+  const [moreBusy, setMoreBusy] = useState(false);
   const close = () => { setOpen(undefined); act.clear(); };
-  const refresh = () => { c.reload(); posts.reload(); requests.reload(); events.reload(); };
+  const refresh = () => { c.reload(); posts.reload(); requests.reload(); events.reload(); setOlder(undefined); setReacts({}); };
+  // A post of photos that finished sending shows up in the feed.
+  const waiting = usePhotoOutbox((s) => s.items.filter((i) => i.clubId === id).length);
+  const waitingBefore = useRef(waiting);
+  useEffect(() => { if (waiting < waitingBefore.current) { c.reload(); posts.reload(); setOlder(undefined); setReacts({}); } waitingBefore.current = waiting; }, [waiting]); // eslint-disable-line react-hooks/exhaustive-deps
   /** Runs a server action; on success the screen reloads and any open sheet closes. */
   const submit = async (fn: () => Promise<unknown>, then?: () => void) => {
     if (!token) return;
@@ -115,7 +132,10 @@ export default function ClubScreen() {
       <CreateEventSheet open={open?.kind === 'event'} clubId={clubId} clubName={club.name} busy={act.busy} problem={act.problem} onClose={close}
         onSubmit={(b) => void submit(async () => { const r = await createEvent(token!, b); router.push(`/event/${r.id}`); })} />
       <PostSheet open={open?.kind === 'post'} busy={act.busy} problem={act.problem} onClose={close}
-        onSubmit={(p) => void submit(() => postToClub(ref, p))} />
+        onSubmit={(p) => void submit(() => (p.photos?.length ? queuePhotoPost({ clubId, body: p.body, uris: p.photos }) : postToClub(ref, { body: p.body, rideAt: p.rideAt, place: p.place })))} />
+      <PhotoViewer photos={viewer?.photos ?? []} start={viewer?.start ?? null} note={saveNote} onClose={() => { setViewer(null); setSaveNote(undefined); }}
+        onSave={(p) => void savePhotos([p.fullUrl]).then((r) => setSaveNote(r.problem ?? savedText(r.saved)))}
+        onSaveAll={() => void savePhotos((viewer?.photos ?? []).map((p) => p.fullUrl)).then((r) => setSaveNote(r.problem ?? savedText(r.saved)))} />
       <TextSheet open={open?.kind === 'reply'} title={`Reply to ${post?.authorName ?? ''}`} label="Your reply" submitLabel="Reply" max={1000} busy={act.busy} problem={act.problem} onClose={close}
         onSubmit={(t) => void submit(() => postToClub(ref, { body: t, parentId: post!.id }))} />
       <ConfirmSheet open={open?.kind === 'removePost'} title="Remove this post?" body="The post and its replies disappear for everyone in the club." confirmLabel="Remove post" busy={act.busy} problem={act.problem} onClose={close}
@@ -188,19 +208,38 @@ export default function ClubScreen() {
       {isMember ? (
         <>
           <SectionTitle onAdd={() => setOpen({ kind: 'post' })} addLabel="New post or ride plan">Posts and rides</SectionTitle>
+          <PendingPosts clubId={clubId} />
           {posts.error && !posts.data ? (
             <Card style={{ gap: space[3] }}><Text variant="label" tone="stop">{posts.error}</Text><Button variant="soft" label="Try again" onPress={posts.reload} /></Card>
           ) : !posts.data ? <Text variant="label" tone="muted">Loading…</Text>
-          : posts.data.length === 0 ? <EmptyState icon={MessageSquare} title="Quiet in here" body="Be the first to post, or plan the club’s next ride." />
+          : posts.data.posts.length === 0 && waiting === 0 ? <EmptyState icon={MessageSquare} title="Quiet in here" body="Be the first to post, or plan the club’s next ride." />
           : (
             <View style={{ gap: space[3] }}>
-              {posts.data.map((p) => (
+              {[...posts.data.posts, ...(older?.posts ?? [])].map((shown) => {
+                const p = reacts[shown.id] ? { ...shown, reactions: reacts[shown.id]!.counts, myReaction: reacts[shown.id]!.mine } : shown;
+                return (
                 <ClubPostCard key={p.id} post={p} busy={act.busy} canRemove={p.mine || isAdmin}
+                  onOpenPhoto={(start) => setViewer({ photos: p.photos, start })}
+                  onReact={(next) => {
+                    if (!token) return;
+                    setReacts((r) => ({ ...r, [p.id]: { counts: withMyReaction(p.reactions, p.myReaction, next), mine: next } }));
+                    reactToPost(token, p.id, next).then((r2) => setReacts((r) => ({ ...r, [p.id]: { counts: r2.reactions, mine: r2.myReaction } }))).catch(() => setReacts((r) => { const { [p.id]: _gone, ...rest } = r; return rest; }));
+                  }}
                   group={live ? { label: 'Join the group ride', onPress: () => void joinGroup() } : p.mine || isAdmin ? { label: 'Start a group ride', onPress: () => void startGroup() } : undefined}
                   onRespond={(r) => void submit(() => respondToRide(token!, p.id, r))}
                   onReply={() => setOpen({ kind: 'reply', post: p })} onRemove={() => setOpen({ kind: 'removePost', post: p })}
                   onRepeat={p.kind === 'ride_plan' && p.at && (p.mine || isAdmin) ? () => void submit(() => postToClub(ref, { body: p.body, ...(p.place ? { place: p.place } : {}), rideAt: nextWeek(p.at!) })) : undefined} />
-              ))}
+                );
+              })}
+              {(older ? older.cursor : posts.data.nextCursor) ? (
+                <Button variant="soft" label={moreBusy ? 'Loading…' : 'Show older posts'} disabled={moreBusy}
+                  onPress={() => {
+                    const cursor = older ? older.cursor : posts.data?.nextCursor;
+                    if (!token || !cursor) return;
+                    setMoreBusy(true);
+                    olderPosts(token, id, cursor).then((page) => setOlder((o) => ({ posts: [...(o?.posts ?? []), ...page.posts], cursor: page.nextCursor }))).catch(() => undefined).finally(() => setMoreBusy(false));
+                  }} />
+              ) : null}
             </View>
           )}
         </>

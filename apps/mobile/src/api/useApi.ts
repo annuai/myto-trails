@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '@/lib/geo';
 import { ApiFailure, api } from './client';
-import { toLatLng, type BikeMakeList, type BikeModelPage, type ClubDetail, type ClubJoinRequest, type ClubPost, type ClubSummary, type Me, type RideEvent, type RideEventDetail, type RouteDto, type SavedItem, type SearchResult, type TrailComment, type TrailDetail } from './types';
+import { toLatLng, type AlbumPhoto, type BikeMakeList, type BikeModelPage, type ClubDetail, type ClubFeed, type ClubJoinRequest, type ClubSummary, type Me, type RideEvent, type RideEventDetail, type RouteDto, type SavedItem, type SearchResult, type TrailComment, type TrailDetail } from './types';
 import { cacheDelete, cacheDeleteWhere, cacheGet, cacheSet, clearUserCache, isFresh } from './cacheStore';
 import { countryAt } from '@/lib/countryBoundaries';
 import { useDebounced } from '@/lib/useDebounced';
@@ -159,9 +159,15 @@ export function useClub(id: string): Async<ClubDetail> {
 }
 
 /** A club's posts and ride plans. Members only: pass `enabled` false for anyone else. */
-export function useClubPosts(id: string, enabled: boolean): Async<ClubPost[]> {
+export function useClubPosts(id: string, enabled: boolean): Async<ClubFeed> {
   const token = useAuth((s) => s.token);
-  return useFetch(token && enabled ? `club:${id}:posts` : null, async (signal) => (await api<{ posts: ClubPost[] }>(`/clubs/${id}/posts`, { token, signal })).posts);
+  return useFetch(token && enabled ? `club:${id}:posts` : null, (signal) => api<ClubFeed>(`/clubs/${id}/posts`, { token, signal }));
+}
+
+/** The photos in a ride event's album. Empty for someone who is not in the club (the site refuses them). */
+export function useEventAlbum(clubId: string | null, eventId: string, enabled: boolean): Async<AlbumPhoto[]> {
+  const token = useAuth((s) => s.token);
+  return useFetch(token && clubId && enabled ? `club:${clubId}:album:${eventId}` : null, async (signal) => (await api<{ photos: AlbumPhoto[] }>(`/clubs/${clubId}/events/${eventId}/photos`, { token, signal })).photos);
 }
 
 /** Upcoming and live events: the open ones (discover), one club's, or those I host or answered. Pass `enabled` false to skip the request. */
