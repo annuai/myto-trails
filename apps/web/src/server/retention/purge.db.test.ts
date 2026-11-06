@@ -141,6 +141,22 @@ describe("purgeRetention", () => {
     expect(remove).not.toHaveBeenCalledWith("quarantine", named.key);
   });
 
+  it("removes a club photo with no post a day on, with its three files, and keeps one that is posted", async () => {
+    remove.mockClear();
+    const u = await makeUser(db.sql);
+    const [club] = await db.sql`insert into club (name, created_by) values (${`Purge Club ${++n}`}, ${u}) returning id`;
+    const [post] = await db.sql`insert into club_post (club_id, author_id, body, photo_count) values (${club!.id}, ${u}, 'x', 1) returning id`;
+    const stem = (id: string) => `post/${u}/${id}`;
+    const orphan = crypto.randomUUID(), kept = crypto.randomUUID();
+    for (const id of [orphan, kept]) await db.sql`insert into asset (id, owner_id, stem, width, height, bytes, created_at) values (${id}, ${u}, ${stem(id)}, 100, 100, 1000, ${ago(3)})`;
+    await db.sql`insert into post_media (post_id, asset_id, position) values (${post!.id}, ${kept}, 0)`;
+    await purgeRetention(db.sql, storage, NOW);
+    expect(await left("asset", "id::text", orphan)).toBe(0);
+    expect(await left("asset", "id::text", kept)).toBe(1);
+    expect(remove).toHaveBeenCalledWith("public", `${stem(orphan)}-2048.jpg`);
+    expect(remove).not.toHaveBeenCalledWith("public", `${stem(kept)}-2048.jpg`);
+  });
+
   it("changes nothing in a dry run, and reports what a real run would remove", async () => {
     remove.mockClear();
     const u = await makeUser(db.sql);

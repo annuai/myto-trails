@@ -1,5 +1,6 @@
 import type { Sql, TransactionSql } from "postgres";
 import { publicVariantKeys } from "../account/delete";
+import { photoCopyKeys } from "../community/photo-shared";
 import type { StorageBucket, StorageProvider } from "../storage";
 
 type Db = Sql | TransactionSql;
@@ -24,6 +25,7 @@ export const RETENTION_DAYS = {
   draft: 365,
   rejectedSubmission: 365,
   abandonedFile: 365,
+  orphanPhoto: 1,
 } as const;
 
 /** Most files removed in one run, so a backlog is cleared over a few nights instead of in one request that times out. */
@@ -90,6 +92,19 @@ const rules: Rule[] = [
           order by created_at limit ${FILE_BATCH})
         returning bucket, storage_key`;
       for (const r of rows) doomed.push({ bucket: r.bucket as StorageBucket, key: r.storage_key as string });
+      return rows.length;
+    },
+  },
+  {
+    // A club photo whose post is gone (removed, or never finished posting) is a file nobody can reach through the app: it goes, with its three copies.
+    name: "orphanPhotos",
+    run: async (db, now, doomed) => {
+      const rows = await db`
+        delete from asset where id in (
+          select a.id from asset a where a.created_at < ${ago(now, RETENTION_DAYS.orphanPhoto)} and not exists (select 1 from post_media m where m.asset_id = a.id)
+          order by a.created_at limit ${FILE_BATCH})
+        returning stem`;
+      for (const r of rows) for (const key of photoCopyKeys(r.stem as string)) doomed.push({ bucket: "public", key });
       return rows.length;
     },
   },

@@ -56,11 +56,25 @@ export type MeProfile = { displayName: string; email: string; scopes: string[]; 
 
 /** A reply under a club post. */
 export type ClubReply = { id: string; authorName: string; body: string; createdAt: string; mine: boolean };
+/** A photo on a club post: three public copies (400, 1080 and 2048 pixels wide) and its main colour, shown while the thumbnail loads. */
+export type ClubPhoto = { id: string; width: number; height: number; colour: string | null; thumbUrl: string; viewUrl: string; fullUrl: string };
+export const POST_REACTIONS = ["like", "love", "fire", "laugh", "wow", "thanks"] as const;
+export type PostReaction = (typeof POST_REACTIONS)[number];
 /** A club post or ride plan. `at` and `place` are set on ride plans only. */
 export type ClubPost = {
   id: string; kind: "post" | "ride_plan"; authorName: string; authorHandle: string; body: string; createdAt: string; mine: boolean;
   at: string | null; place: string | null; going: number; maybe: number; myResponse: "going" | "maybe" | null; replies: ClubReply[];
+  /** In the order they were added. */
+  photos: ClubPhoto[];
+  /** How many of each reaction the post has, and the one the caller chose. */
+  reactions: Partial<Record<PostReaction, number>>; myReaction: PostReaction | null;
+  /** The ride event whose album the post belongs to. */
+  eventId: string | null;
 };
+/** One page of a club's posts; `nextCursor` goes back in as `before` while older posts remain. */
+export type ClubFeed = { posts: ClubPost[]; nextCursor: string | null };
+/** A photo in a ride event's album. */
+export type AlbumPhoto = ClubPhoto & { postId: string; authorName: string };
 /** Admins only. `phone` is null once its retention time has passed. */
 export type ClubJoinRequest = { id: string; name: string; phone: string | null; message: string | null; status: "pending" | "accepted" | "declined" | "withdrawn"; createdAt: string };
 

@@ -9,5 +9,6 @@ export const PHONE_OFFERS_PER_DAY = 3;
 export const CLUB_CREATES_PER_DAY = 2;
 export const JOIN_REQUESTS_PER_DAY = 5;
 export const CLUB_POSTS_PER_HOUR = 20;
+export const PHOTOS_PER_DAY = 40; // photos one rider may send to clubs in a day
 export const JOIN_PHONE_RETENTION_DAYS = 7; // a join request's phone number is wiped this long after the decision
 export const JOIN_REQUEST_TTL_DAYS = 30; // an undecided request is withdrawn, and its phone number wiped, after this long

@@ -1,6 +1,7 @@
 import { DELETE_CONFIRMATION } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
 import type { StorageBucket, StorageProvider } from "../storage";
+import { photoCopyKeys } from "../community/photo-shared";
 
 type Db = Sql | TransactionSql;
 
@@ -86,6 +87,11 @@ export async function deleteAccount(sql: Sql, storage: StorageProvider, userId: 
       update media set credit = null
       where credit = ${user.display_name as string}
         and (uploaded_by = ${userId} or revision_id in (select revision_id from submission where user_id = ${userId} and revision_id is not null))`;
+
+    // Their club photos (three public files each) go with them; the rows follow the account.
+    for (const a of await tx`select stem from asset where owner_id = ${userId}`) {
+      for (const k of photoCopyKeys(a.stem as string)) doomed.push({ bucket: "public", key: k });
+    }
 
     await tx`delete from login_token where email = ${user.email as string}`;
     await tx`delete from app_user where id = ${userId}`;
