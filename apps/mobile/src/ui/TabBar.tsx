@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Motorbike, Navigation, Route, User, Users, type LucideIcon } from 'lucide-react-native';
+import { Motorbike, Navigation2, Route, User, Users, type LucideIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChrome } from '@/store/chrome';
 import { fixed, space, layout, radius, shadow, opacity } from '@/theme/tokens';
@@ -48,7 +48,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
             <View key={name} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
               <ScalePressable scaleTo={0.92} accessibilityRole="button" accessibilityLabel="Ride" onPress={() => router.push('/ride')}
                 style={({ pressed }) => ({ marginTop: landscape ? tabBar.liftLandscape : tabBar.lift, width: landscape ? tabBar.recordLandscape : tabBar.record, height: landscape ? tabBar.recordLandscape : tabBar.record, borderRadius: radius.chip, backgroundColor: c.record, alignItems: 'center', justifyContent: 'center', borderWidth: tabBar.ring, borderColor: bar, opacity: pressed ? opacity.pressed : 1, ...shadow.record })}>
-                <Icon icon={Navigation} size={tabBar.mark} color={fixed.white} strokeWidth={2.25} />
+                <Icon icon={Navigation2} size={tabBar.mark} color={fixed.white} strokeWidth={2.25} />
               </ScalePressable>
               <Text variant="caption" style={{ marginTop: space.half, fontFamily: 'Geist_500Medium' }}>Ride</Text>
             </View>
