@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { goBack } from '@/lib/goBack';
 import { ChevronLeft, Plus } from 'lucide-react-native';
 import { rhythm, size, space } from '@/theme/tokens';
 import { IconButton } from './IconButton';
@@ -11,7 +12,7 @@ export function BackHeader({ title, right }: { title?: string; right?: React.Rea
   return (
     <View style={{ height: size.header, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: space[2], marginLeft: -space[2] }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space[1] }}>
-        <IconButton icon={ChevronLeft} label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} plain />
+        <IconButton icon={ChevronLeft} label="Back" onPress={() => goBack(router)} plain />
         {title ? <Text variant="bodyMedium">{title}</Text> : null}
       </View>
       {right}

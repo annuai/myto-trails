@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Image, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { goBack } from '@/lib/goBack';
 import { ImagePlus, Send } from 'lucide-react-native';
 import { ACCESS_BASES, CARRY_ITEMS, CARRY_ITEM_LABEL, INDIA_STATES, TERRAINS } from '@moto-trails/domain';
 import type { CarryItem } from '@moto-trails/domain';
@@ -106,13 +107,13 @@ export default function Submit() {
     try {
       const res = await submitRide(token, { ...form, clientId, points, waypoints: ride.waypoints }, setBusy);
       useRides.getState().setSubmission(ride.id, { status: 'submitted', at: Date.now(), trailName: name.trim(), slug: res.slug, clientId });
-      router.replace(`/story/${ride.id}`);
+      goBack(router, '/rides');
     } catch (e) {
       // No signal: keep the form on the phone and send it when there is one, so the rider can put the phone away.
       if (e instanceof ApiFailure && e.status === 0) {
         useSubmissionQueue.getState().setItems(enqueueSubmission(useSubmissionQueue.getState().items, { rideId: ride.id, clientId, trim, form }, Date.now()));
         useRides.getState().setSubmission(ride.id, { status: 'queued', at: Date.now(), trailName: name.trim(), slug: '', clientId });
-        router.replace(`/story/${ride.id}`);
+        goBack(router, '/rides');
         return;
       }
       setError(e instanceof ApiFailure ? (e.fields ? `${e.message} ${Object.values(e.fields).join(' ')}` : e.message) : 'Something went wrong. Try again.');
