@@ -34,6 +34,7 @@ export function RideNudgeSettings() {
   return (
     <>
       <SectionTitle>Ride nudges</SectionTitle>
+      <View style={{ gap: space[3] }}>
       <Card style={{ gap: space[3] }}>
         <Text variant="label" tone="muted">An occasional idea to go for a ride: a dry day coming, a club ride, a weekend that looks free. Never more than one a day, never at night, and fewer the less you open them. Worked out on this phone from your own rides.</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
@@ -49,12 +50,11 @@ export function RideNudgeSettings() {
                 right={<Checkbox checked={!muted.includes(t)} label={NUDGE_META[t].label} onChange={(v) => { useNudges.getState().setMuted(t, !v); void syncReminders(); }} />} />
             ))}
           </ListCard>
-          <View style={{ marginTop: space[3] }}>
-            <ListCard><Row label="What is planned" sub="The next nudges, and the ones you have had" onPress={() => router.push('/notifications/nudges')} /></ListCard>
-          </View>
-          <Text variant="caption" tone="muted" style={{ marginTop: space[3] }}>The weather comes from a free service (Open-Meteo), which is asked about a place rounded to about 11 km, never the exact spot of a ride.</Text>
+          <ListCard><Row label="What is planned" sub="The next nudges, and the ones you have had" onPress={() => router.push('/notifications/nudges')} /></ListCard>
+          <Text variant="caption" tone="muted">The weather comes from a free service (Open-Meteo), which is asked about a place rounded to about 11 km, never the exact spot of a ride.</Text>
         </>
       ) : null}
+      </View>
     </>
   );
 }
