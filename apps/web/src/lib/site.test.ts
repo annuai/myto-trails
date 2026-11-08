@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAppDownloadUrl, getSiteUrl } from "./site";
+import { getAppDownloadUrl, getBetaApk, getSiteUrl, getWaitlistUrl } from "./site";
 
 describe("getSiteUrl", () => {
   it("strips the trailing slash", () => {
@@ -36,5 +36,24 @@ describe("getAppDownloadUrl", () => {
     expect(getAppDownloadUrl({ APP_DOWNLOAD_URL: "  " })).toBeUndefined();
     expect(getAppDownloadUrl({ APP_DOWNLOAD_URL: "http://example.com/app" })).toBeUndefined();
     expect(getAppDownloadUrl({ APP_DOWNLOAD_URL: "javascript:alert(1)" })).toBeUndefined();
+  });
+});
+
+describe("getBetaApk", () => {
+  it("needs an https link, and fills in a version and size", () => {
+    expect(getBetaApk({})).toBeUndefined();
+    expect(getBetaApk({ APP_BETA_APK_URL: "http://x.com/a.apk" })).toBeUndefined();
+    expect(getBetaApk({ APP_BETA_APK_URL: "not a url" })).toBeUndefined();
+    expect(getBetaApk({ APP_BETA_APK_URL: "https://x.com/a.apk" })).toEqual({ url: "https://x.com/a.apk", version: "0.10", size: "60 MB" });
+    expect(getBetaApk({ APP_BETA_APK_URL: "https://x.com/a.apk", APP_BETA_VERSION: "0.11", APP_BETA_SIZE: "58 MB" })).toMatchObject({ version: "0.11", size: "58 MB" });
+  });
+});
+
+describe("getWaitlistUrl", () => {
+  it("allows https, and http only on this machine", () => {
+    expect(getWaitlistUrl({ MYTO_WAITLIST_URL: "https://myto-moto.com/api/waitlist" })).toBe("https://myto-moto.com/api/waitlist");
+    expect(getWaitlistUrl({ MYTO_WAITLIST_URL: "http://localhost:3100/api/waitlist" })).toBe("http://localhost:3100/api/waitlist");
+    expect(getWaitlistUrl({ MYTO_WAITLIST_URL: "http://example.com/api/waitlist" })).toBeUndefined();
+    expect(getWaitlistUrl({})).toBeUndefined();
   });
 });
