@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ALWAYS_CHOICE } from '@/lib/locationWords';
 import { BookOpen, CalendarClock, Camera, ClipboardCheck, ClipboardList, ListChecks, Luggage, MoreHorizontal, Play, Route as RouteIcon, Trash2 } from 'lucide-react-native';
 import { groupByRide, summarise } from '@/lib/journalEntries';
 import { journalDate, journalTitle } from '@/lib/journalTitle';
@@ -177,7 +178,7 @@ export default function Home() {
       ) : null}
       {location.access !== 'always' ? (
         <View style={{ marginBottom: space[3] }}>
-          <Banner eyebrow="Location" title={location.access === 'unknown' ? 'Allow location Always, so your rides keep recording when the screen locks' : location.access === 'denied' ? 'Location is off. Turn it on in Settings and choose Always.' : 'Location is set to While Using. Choose Always so rides record with the screen locked.'} onPress={() => void location.ask()} />
+          <Banner eyebrow="Location" title={location.access === 'unknown' ? `Allow location ${ALWAYS_CHOICE}, so your rides keep recording when the screen locks` : location.access === 'denied' ? `Location is off. Turn it on in Settings and choose ${ALWAYS_CHOICE}.` : `Location is set to While Using. Choose ${ALWAYS_CHOICE} so rides record with the screen locked.`} onPress={() => void location.ask()} />
         </View>
       ) : null}
       {permission === 'undetermined' && !asked ? (
