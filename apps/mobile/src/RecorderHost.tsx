@@ -73,8 +73,11 @@ export function RecorderHost() {
     const stopMotion = () => { unsubMotion(); clearInterval(tick); stopShake(); traceEnd(); useMotion.getState().reset(); useCrash.getState().resetDetector(); };
     let cancelled = false;
     let unsub: (() => void) | undefined;
-    // Paused: the map dot keeps moving, but nothing is recorded and the background task is not running.
-    if (paused) return () => { stopMotion(); release(); if (Platform.OS === 'web') void Promise.resolve(deactivateKeepAwake(KEEP_AWAKE)).catch(() => undefined); };
+    // On Android the location service stays up while paused or resumed (ingest drops the points while paused) and stops only when the ride ends. Without it the phone may end the app in the background, and the Resume button on the notification then has nothing to answer it.
+    const keepService = () => Platform.OS === 'android' && useRecorder.getState().status === 'running';
+    // Paused: the map dot keeps moving, but nothing is recorded.
+    if (paused) { if (Platform.OS === 'android') void startBackground(); }
+    if (paused) return () => { stopMotion(); release(); if (!keepService()) void stopBackground(); if (Platform.OS === 'web') void Promise.resolve(deactivateKeepAwake(KEEP_AWAKE)).catch(() => undefined); };
     // A GPS that goes quiet is asked for a position, not assumed lost: a phone standing still may send nothing for a while. An answer is a fix like any other.
     let probing = false, probedAt = 0;
     const probe = setInterval(() => {
@@ -106,7 +109,7 @@ export function RecorderHost() {
       stopMotion();
       release();
       setBackgrounded(false);
-      void stopBackground();
+      if (!keepService()) void stopBackground();
       if (Platform.OS === 'web') void Promise.resolve(deactivateKeepAwake(KEEP_AWAKE)).catch(() => undefined);
     };
   }, [status, source, paused]);

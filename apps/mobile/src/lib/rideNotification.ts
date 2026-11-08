@@ -1,9 +1,10 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { AndroidImportance } from 'expo-notifications';
+import { AndroidImportance, AndroidNotificationVisibility } from 'expo-notifications';
 import { CATEGORIES, isRideAction, type RideActionId, type RideCategory, type RideNotice } from './rideActions';
 
-const CHANNEL = 'ride-controls';
+// Versioned: a channel's settings cannot change once it exists. The first one was silent, which Android keeps off the lock screen.
+const CHANNEL = 'ride-controls-v2';
 /** The crash countdown has to be heard, so it gets its own channel that is allowed to make a sound and pop up. */
 const LOUD_CHANNEL = 'crash-alert';
 const ROUTE = '/ride/live';
@@ -12,7 +13,7 @@ let ready: Promise<unknown> | undefined;
 /** The buttons are registered once; on Android the notification also needs a quiet channel, so updating it never beeps or pops up. */
 const setup = () => (ready ??= Promise.all([
   ...Object.entries(CATEGORIES).map(([id, actions]) => Notifications.setNotificationCategoryAsync(id, actions.map((a) => ({ identifier: a.id, buttonTitle: a.label, options: { opensAppToForeground: !!a.opensApp, isDestructive: !!a.destructive } })))),
-  Platform.OS === 'android' ? Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Ride controls', importance: AndroidImportance.LOW }) : Promise.resolve(),
+  Platform.OS === 'android' ? Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Ride controls', importance: AndroidImportance.DEFAULT, sound: null, enableVibrate: false, showBadge: false, lockscreenVisibility: AndroidNotificationVisibility.PUBLIC }) : Promise.resolve(),
   Platform.OS === 'android' ? Notifications.setNotificationChannelAsync(LOUD_CHANNEL, { name: 'Crash alert', importance: AndroidImportance.MAX }) : Promise.resolve(),
 ]));
 
