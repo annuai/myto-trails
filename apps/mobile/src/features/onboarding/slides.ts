@@ -18,3 +18,6 @@ export const MAPS_ART: ImageSourcePropType = require('../../../assets/onboarding
 
 /** The picture above the setup page, which is not a slide. */
 export const SETUP_ART: ImageSourcePropType = require('../../../assets/onboarding/setup.webp');
+
+/** The picture on the "Ride together" sheet: a group regrouping at a fork in a tea-estate road, a red pennant on the leader's bike. */
+export const GROUP_ART: ImageSourcePropType = require('../../../assets/onboarding/group.webp');

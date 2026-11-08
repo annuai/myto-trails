@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Share, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
+import { startSignIn } from '@/lib/signIn';
 import { BellRing, Share2, X } from 'lucide-react-native';
 import { arriveCheckin, createCheckin, extendCheckin } from '@/api/checkins';
 import { checkinStatus } from '@/lib/checkinCore';
@@ -29,7 +30,10 @@ const shareLink = (name: string, expectedAt: number, url: string) =>
  * The rider shares the link themselves (WhatsApp, SMS, anything): the contact needs no app.
  */
 export function CheckinSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  // Sign-in starts the email-link round trip and comes back to this screen. (`/auth` is only where that trip ends.)
   const router = useRouter();
+  const here = usePathname();
+  const [signInProblem, setSignInProblem] = useState<string>();
   const token = useAuth((s) => s.token);
   const user = useAuth((s) => s.user);
   const checkin = useCompanion((s) => s.checkin);
@@ -71,7 +75,8 @@ export function CheckinSheet({ open, onClose }: { open: boolean; onClose: () => 
       {!token ? (
         <>
           <Text variant="label" tone="muted">Sign in so Myto Moto can tell someone when you have not arrived. Nobody is told anything until you set a time.</Text>
-          <Button label="Sign in" onPress={() => { onClose(); router.push('/auth'); }} />
+          <Button label="Sign in" onPress={() => { setSignInProblem(undefined); startSignIn(here).catch((e: Error) => setSignInProblem(e.message)); }} />
+          {signInProblem ? <Text variant="label" tone="stop">{signInProblem}</Text> : null}
         </>
       ) : checkin ? (
         <>

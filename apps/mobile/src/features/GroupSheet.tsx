@@ -1,23 +1,20 @@
 import { useState } from 'react';
-import { Share, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useGroupSession } from '@/features/group/useGroupSession';
+import { View } from 'react-native';
+import { usePathname } from 'expo-router';
+import { startSignIn } from '@/lib/signIn';
 import { LogOut, MapPin, Share2 } from 'lucide-react-native';
 import { ListCard, Row } from '@/ui/ListCard';
-import { createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, setRegroup } from '@/api/groups';
-import { SITE_BASE } from '@/api/config';
 import type { LatLng } from '@/lib/geo';
 import { distanceToLeaderM, riderTiles, STATUS_LABEL, type GroupStatus, type RiderTile } from '@/lib/groupCore';
 import { SIM_GROUP_ID } from '@/lib/groupSim';
-import { codeFromInvite, inviteUrl } from '@/lib/inviteLink';
-import { useAction } from '@/lib/useAction';
+import { codeFromInvite } from '@/lib/inviteLink';
 import { LeadConfirm, LeadPicker } from '@/features/group/PassTheLead';
 import { RiderSheet } from '@/features/group/RiderSheet';
 import { useLeadActions } from '@/features/group/useLeadActions';
 import { RiderTiles } from '@/features/group/RiderTiles';
 import { DestinationSheet } from '@/features/group/DestinationSheet';
 import { useCanNavigate } from '@/features/group/useCanNavigate';
-import { useAuth } from '@/store/auth';
-import { useCompanion } from '@/store/companion';
 import { Button } from '@/ui/Button';
 import { ChoiceChip } from '@/ui/Chip';
 import { Field } from '@/ui/Field';
@@ -38,15 +35,11 @@ const km = (m: number) => withUnit(shortDistanceM(m));
  */
 /** `defaultName` pre-fills the name of a new ride, for one made from a trip. */
 export function GroupSheet({ open, onClose, position, defaultName, onRider }: { open: boolean; onClose: () => void; position?: LatLng; defaultName?: string; /** Called with a rider's id when their tile is tapped; the page then shows where they are. */ onRider?: (id: string) => void }) {
-  const router = useRouter();
-  const token = useAuth((s) => s.token);
-  const user = useAuth((s) => s.user);
-  const group = useCompanion((s) => s.group);
-  const live = useCompanion((s) => s.live);
-  const [name, setName] = useState(defaultName ?? '');
-  const [code, setCode] = useState('');
-  const { busy, problem, run } = useAction();
-  const leader = group?.role === 'leader';
+  // Sign-in starts the email-link round trip and comes back to this screen. (`/auth` is only where that trip ends.)
+  const here = usePathname();
+  const [signInProblem, setSignInProblem] = useState<string>();
+  const session = useGroupSession(defaultName);
+  const { token, group, live, leader, name, setName, code, setCode, typedCode, busy, problem, start, join, invite, signal, leave, pin } = session;
   const [pickedId, setPickedId] = useState<string>();
   const [destOpen, setDestOpen] = useState(false);
   /** A leader leaving: choosing who gets the lead, then confirming, in this same sheet. */
@@ -55,29 +48,6 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
   const [passing, setPassing] = useState(false);
   const lead = useLeadActions();
   const canNavigate = useCanNavigate();
-
-  const start = async () => {
-    if (!token) return;
-    const r = await run(() => createGroupRide(token, { name: name.trim() || 'Group ride' }));
-    if (r) useCompanion.getState().setGroup({ id: r.value.id, code: r.value.code, name: r.value.name, role: 'leader' });
-  };
-  const typedCode = codeFromInvite(code);
-  const join = async () => {
-    if (!token || !typedCode) return;
-    const r = await run(() => joinGroupRide(token, { code: typedCode, displayName: user?.displayName ?? 'Rider' }));
-    if (r) useCompanion.getState().setGroup({ id: r.value.id, code: typedCode, name: r.value.name, role: r.value.role });
-  };
-  // An https link, so WhatsApp and SMS make it tappable; the page it opens points at the app. The code is repeated for riders who type it.
-  const invite = () => group && Share.share({ message: `Join my group ride "${group.name}" on Myto Moto: ${inviteUrl(SITE_BASE, group.code)}  (or open Ride, then Group ride, and enter code ${group.code})` });
-  const signal = (s: GroupStatus) => useCompanion.getState().setLive({ myStatus: s });
-  const leave = async () => {
-    // A simulated group has nothing on the server to leave.
-    if (group?.id === SIM_GROUP_ID) { useCompanion.getState().setGroup(null); onClose(); return; }
-    if (!token || !group) return;
-    if (await run(() => (leader ? endGroupRide(token, group.id) : leaveGroupRide(token, group.id)))) { useCompanion.getState().setGroup(null); onClose(); }
-  };
-  /** The group's one shared point: its destination, named when it came from a search. */
-  const pin = (p: LatLng | null, note?: string) => token && group && run(() => setRegroup(token, group.id, p && { lat: p.lat, lng: p.lng, note }));
 
   const me = live.me;
   const now = nowMs();
@@ -101,7 +71,8 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
       {!token && group?.id !== SIM_GROUP_ID ? (
         <>
           <Text variant="label" tone="muted">Sign in to ride with a group. Your position is shared with the group only while the ride is on.</Text>
-          <Button label="Sign in" onPress={() => { onClose(); router.push('/auth'); }} />
+          <Button label="Sign in" onPress={() => { setSignInProblem(undefined); startSignIn(here).catch((e: Error) => setSignInProblem(e.message)); }} />
+          {signInProblem ? <Text variant="label" tone="stop">{signInProblem}</Text> : null}
         </>
       ) : !group ? (
         <>
@@ -129,7 +100,7 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
             </>
           ) : live.regroup ? <Text variant="label" tone="muted">{`Group destination: ${live.regroup.note ?? 'a spot on the map'}. Everyone sees the road to it.`}</Text> : null}
           {leader && tiles.some((t) => !t.isMe) ? <Button icon={LogOut} label="Pass the lead and leave" disabled={busy} onPress={() => setExit('pick')} /> : null}
-          <Button variant="danger" icon={LogOut} label={leader ? 'End the group ride for everyone' : 'Leave the group'} disabled={busy} onPress={() => void leave()} />
+          <Button variant="danger" icon={LogOut} label={leader ? 'End the group ride for everyone' : 'Leave the group'} disabled={busy} onPress={() => void leave(onClose)} />
           {live.error ? <Text variant="label" tone="caution">{live.error}</Text> : null}
         </>
       )}

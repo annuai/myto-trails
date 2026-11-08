@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { rideLocationAccess } from '@/lib/backgroundLocation';
+import { ALWAYS_CHOICE } from '@/lib/locationWords';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { asText, distanceKm, speedKmh } from '@/lib/units';
 import { isWeak, startGpsHealth, stepGpsHealth } from '@/lib/gpsHealth';
@@ -148,6 +150,14 @@ function LiveBody() {
   }, [r.paused]);
   const [journalOpen, setJournalOpen] = useState(false);
   const [compassOpen, setCompassOpen] = useState(false);
+  // Whether the phone lets the ride record with the screen locked. Read from the permission itself, and again on coming back from Settings.
+  const [lockedOk, setLockedOk] = useState(true);
+  useEffect(() => {
+    const read = () => void rideLocationAccess().then((a) => setLockedOk(a === 'always')).catch(() => undefined);
+    read();
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') read(); });
+    return () => sub.remove();
+  }, []);
   const [docsOpen, setDocsOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -262,7 +272,7 @@ function LiveBody() {
   const lostSignal = nextHealth.lost;
   const weakSignal = !lostSignal && r.source === 'gps' && !r.paused && isWeak(fix?.accuracy);
   // The background task is what keeps recording with the screen locked; tell the rider when it is not running.
-  const foregroundOnly = r.source === 'gps' && !r.paused && Platform.OS !== 'web' && !r.backgrounded && nowMs() - r.startedAt > 3000;
+  const foregroundOnly = r.source === 'gps' && !r.paused && Platform.OS !== 'web' && !lockedOk && nowMs() - r.startedAt > 3000;
   // One quiet line under the numbers: how fresh the position is, and while guided by a route, how far the group's meeting place is.
   const regroupKm = regroup && last ? haversine(last, regroup) / 1000 : null;
   const fixNote = [
@@ -281,7 +291,7 @@ function LiveBody() {
         </View>
       ) : null}
       {checkin ? <Pressable accessibilityRole="button" onPress={() => setCheckinOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="label" tone="muted">Check-in on · back by {clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}</Text></Pressable> : null}
-      {foregroundOnly ? <Banner eyebrow="Heads up" title="Recording stops if you lock the phone. Tap to allow Always in Settings." onPress={() => void Linking.openSettings()} /> : null}
+      {foregroundOnly ? <Banner eyebrow="Heads up" title={`Recording stops if you lock the phone. Tap to allow ${ALWAYS_CHOICE} in Settings.`} onPress={() => void Linking.openSettings()} /> : null}
     </View>
   );
   // The other riders of the group ride, with how far they are and a way to navigate to them (once stopped).

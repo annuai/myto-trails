@@ -11,6 +11,7 @@
     "tooling"
   ],
   "scripts": {
+    "postinstall": "patch-package",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
@@ -18,5 +19,8 @@
     "check:colors": "node tooling/check-colors.mjs",
     "check:tokens": "node tooling/check-tokens.mjs",
     "check:versions": "node tooling/check-versions.mjs"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.1"
   }
 }

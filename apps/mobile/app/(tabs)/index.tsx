@@ -18,6 +18,7 @@ import { inAppNudge } from '@/lib/nudge/inApp';
 import { useNudges } from '@/store/nudges';
 import { useFixit } from '@/store/fixit';
 import { GroupSheet } from '@/features/GroupSheet';
+import { LiveGroupCard } from '@/features/group/LiveGroupCard';
 import { checkinStatus } from '@/lib/checkinCore';
 import { clockLabel } from '@/lib/community';
 import { useCompanion } from '@/store/companion';
@@ -110,7 +111,6 @@ export default function Home() {
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(false);
   const checkin = useCompanion((s) => s.checkin);
-  const group = useCompanion((s) => s.group);
   const nowMs = readClock();
   const finished = justFinishedRide(rides, nowMs);
   // After a first ride the rider is asked once whether they want ride nudges. Without notifications allowed, the nudge shows here as a card.
@@ -121,6 +121,11 @@ export default function Home() {
   const askNudges = nudgeLevel === undefined && rides.some((r) => !r.sample);
   const idea = nudgeLevel && nudgeLevel !== 'off' && permission !== 'granted' ? inAppNudge(nudgesPlanned, nudgesHistory, nudgesSeen, nowMs) : undefined;
   const recordingSince = useRecorder((s) => (s.status === 'running' ? s.startedAt : undefined));
+  // While a ride is recording or a group ride is on, Dash is about that ride: no previous ride, no planning, nothing that starts another.
+  const riding = recordingSince !== undefined;
+  const group = useCompanion((s) => s.group);
+  // A group ride that is on counts too, recording or not: Dash is about that ride until it ends.
+  const focused = riding || !!group;
   const lastCheckAt = useFixit((s) => s.last?.at);
   const cards = actionCards({
     now: nowMs, recordingSince, nextTripName: nextTripPlan?.name ?? trail?.name, checkedAt: lastCheckAt,
@@ -171,11 +176,6 @@ export default function Home() {
           <Banner eyebrow="I haven't arrived" title={checkinStatus(nowMs, checkin.expectedAt) === 'overdue' ? `You are overdue. ${checkin.contactName} can see where you were last seen.` : `${checkin.contactName} is told if you are not back by ${clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}. Tap to change.`} onPress={() => setCheckinOpen(true)} />
         </View>
       ) : null}
-      {group ? (
-        <View style={{ marginBottom: space[3] }}>
-          <Banner eyebrow="Group ride" title={`${group.name} · code ${group.code}`} onPress={() => setGroupOpen(true)} />
-        </View>
-      ) : null}
       {location.access !== 'always' ? (
         <View style={{ marginBottom: space[3] }}>
           <Banner eyebrow="Location" title={location.access === 'unknown' ? `Allow location ${ALWAYS_CHOICE}, so your rides keep recording when the screen locks` : location.access === 'denied' ? `Location is off. Turn it on in Settings and choose ${ALWAYS_CHOICE}.` : `Location is set to While Using. Choose ${ALWAYS_CHOICE} so rides record with the screen locked.`} onPress={() => void location.ask()} />
@@ -196,7 +196,14 @@ export default function Home() {
           </Card>
         </ScalePressable>
       ) : null}
-      {finished ? (
+      {riding ? (
+        <View style={{ marginBottom: space[3] }}>
+          <HeroCard eyebrow="Ride in progress" title={`Recording · ${Math.max(1, Math.floor((nowMs - recordingSince) / 60_000))} min`}>
+            <Button big variant="accent" label="Back to your ride" arrow onPress={() => router.push('/ride/live')} />
+          </HeroCard>
+        </View>
+      ) : null}
+      {finished && !focused ? (
         <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`Open the story of ${finished.name}`} onPress={() => router.push(`/story/${finished.id}`)} style={{ marginBottom: space[3] }}>
         <HeroCard eyebrow="Just finished" title={finished.name}>
           <View style={{ flexDirection: 'row' }}>
@@ -205,6 +212,7 @@ export default function Home() {
         </HeroCard>
         </ScalePressable>
       ) : null}
+      {focused ? null : <>
       {nextTripPlan ? (
         <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} footer={planStatus === 'ready' || planStatus === 'active' ? (
           <RideStartActions route={nextTripPlan.days?.[dayIndexOn(nextTripPlan, today) ?? 0]?.route} onNavigate={() => chooseDayRoute(nextTripPlan.id)}
@@ -238,11 +246,14 @@ export default function Home() {
           </ScalePressable>
         )
       )}
+      </>}
       <View style={{ marginTop: space[3], gap: space[3] }}>
-        {nextTripPlan && (planStatus === 'ready' || planStatus === 'active') ? null
+        {focused || (nextTripPlan && (planStatus === 'ready' || planStatus === 'active')) ? null
           : trail && !nextTripPlan ? <RideStartActions route={{ kind: 'trail', slug: trail.slug, name: trail.name, status: trail.status, statusLabel: trail.statusLabel }} label="Start ride" onStart={() => recordNow(router)} />
           : firstTimer ? null
           : <Button label={trail ? 'Start ride' : 'Find a trail'} arrow onPress={() => router.push(trail ? '/ride' : '/trails')} />}
+        <LiveGroupCard onOpen={() => setGroupOpen(true)} />
+        {group && !riding ? <Button big variant="accent" label="Start the ride" arrow onPress={() => router.push('/ride')} /> : null}
         {firstTimer ? null : <ActionCardGrid items={cards.map((cd) => ({ key: cardColour[cd.kind], icon: cardGo[cd.kind]!.icon, title: cd.title, detail: cd.detail, onPress: cardGo[cd.kind]!.go }))} />}
         {overdue.length ? (
           <Banner eyebrow="Needs attention" title={overdue.length === 1 ? `${overdue[0].t.title}: ${overdue[0].d.text.toLowerCase()}` : `${overdue.length} things are overdue`} onPress={() => router.push('/todos')} />
@@ -285,6 +296,7 @@ export default function Home() {
 
         </>}
         right={<>
+      {focused ? null : <>
       <SectionTitle>Your latest ride</SectionTitle>
       {latest ? (
         <ScalePressable scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`Open the story of ${latest.name}`} onPress={() => router.push(`/story/${latest.id}`)}>
@@ -302,6 +314,7 @@ export default function Home() {
       {latest ? <View style={{ marginTop: space[3], gap: space[3] }}>
         <Button variant="soft" label="All rides" arrow onPress={() => router.push('/rides')} />
       </View> : null}
+      </>}
         </>}
       />
     </Screen>

@@ -18,6 +18,12 @@ import { useTrips } from '@/store/trips';
 import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { GroupSheet } from '@/features/GroupSheet';
+import { GroupIntroSheet } from '@/features/group/GroupIntroSheet';
+import { GroupStart } from '@/features/group/GroupStart';
+import { useGroupSession } from '@/features/group/useGroupSession';
+import { startSignIn } from '@/lib/signIn';
+import { SegmentedTabs } from '@/ui/SegmentedTabs';
+import { useGroupIntro, useGroupIntroDue } from '@/store/groupIntro';
 import { clockLabel } from '@/lib/community';
 import { SIM_GROUP_ID } from '@/lib/groupSim';
 import { prepareSimRide, SIM_TRAIL_SLUG } from '@/lib/simRide';
@@ -77,8 +83,18 @@ export default function RideReady() {
   const [explain, setExplain] = useState(false);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [groupOpen, setGroupOpen] = useState(false);
+  // Solo or with a group. A group that is on always shows as Group; the first time this screen opens, the explainer opens over it.
+  const [together, setTogether] = useState(false);
+  const introDue = useGroupIntroDue();
+  const [howOpen, setHowOpen] = useState(false);
+  const showHow = howOpen || introDue;
+  const closeHow = () => { setHowOpen(false); useGroupIntro.getState().markSeen(); };
   const checkin = useCompanion((s) => s.checkin);
   const group = useCompanion((s) => s.group);
+  const session = useGroupSession();
+  const live = useCompanion((s) => s.live);
+  const groupMode = !!group || together;
+  const [signInProblem, setSignInProblem] = useState<string>();
   const autoPause = useCompanion((s) => s.autoPause);
   const myRoute = useMyRoutes((s) => s.routes.find((r) => r.id === s.followId));
   const { licence, vehicle, contacts } = useProfile();
@@ -104,7 +120,10 @@ export default function RideReady() {
   const dest = useRideDraft((s) => s.dest);
   const setDest = useRideDraft((s) => s.setDest);
   const [destOpen, setDestOpen] = useState(false);
-  const { directions: toDest, failed: toDestFailed } = useDirections(here, dest, { reroute: false });
+  // In Group mode the place is the group's: once there is a group it is the one the leader pinned, before that the one chosen for it.
+  const groupDest = group && live.regroup ? { lat: live.regroup.lat, lng: live.regroup.lng, name: live.regroup.note ?? 'A spot on the map' } : undefined;
+  const mapDest = group ? groupDest ?? dest : dest;
+  const { directions: toDest, failed: toDestFailed } = useDirections(here, mapDest, { reroute: false });
 
   const gps: Check = source === 'sim' ? { label: 'GPS', status: 'unknown', word: 'Simulated' }
     : fix ? (fix.accuracy === undefined || fix.accuracy <= 30 ? { label: 'GPS', status: 'good', word: fix.accuracy ? `Good, ±${Math.round(fix.accuracy)} m` : 'Good' } : { label: 'GPS', status: 'caution', word: `Weak, ±${Math.round(fix.accuracy)} m` })
@@ -145,6 +164,8 @@ export default function RideReady() {
   const [clockNow] = useState(Date.now);
   const title = rideTitle({ now: new Date(clockNow), habits: useMemo(() => findHabits(rides, clockNow), [rides, clockNow]), rides: rides.length, planned: slots.length > 0 || !!loneTrail || !!myRoute });
   const chosen = choices.find((c) => c.key === picked) ?? choices.find((c) => c.key !== 'place')!;
+  // The road to a place shows on the map for a place chosen to ride to, and in Group mode for the group's.
+  const showDest = groupMode ? !!mapDest : !!dest && chosen.key === 'place';
 
   /** The simulated group rides the real road from where this phone is to the trail's start. Without a position or a connection it rides the built-in test loop instead, and says so. */
   const prepareSim = async () => {
@@ -160,10 +181,13 @@ export default function RideReady() {
     // false means an unfinished ride is still on disk: go home, where it is offered for saving or discarding.
     if (!running && source === 'sim' && simGroup) await prepareSim();
     if (!running && source === 'sim' && simGroup) useCompanion.getState().setGroup({ id: SIM_GROUP_ID, code: 'SIMGRP', name: 'Simulated group ride', role: 'leader' });
-    if (!running && chosen.key === 'place' && dest) useGuideTarget.getState().set(dest);
+    // A place chosen here is what the ride guides to, whether it is starting now or is already recording. A route or trail still in hand
+    // would take the screen's guidance over, so the place replaces it (as "Roam free" clears it).
+    const toPlace = !groupMode && chosen.key === 'place' && !!dest;
+    if (toPlace) { useMyRoutes.getState().follow(undefined); useTrailStore.getState().cancelPlan(); useGuideTarget.getState().set(dest); }
     const ok = running || (await useRecorder.getState().start(source));
     // The place chosen here is the ride's own now; the next visit to this page starts clean.
-    if (ok && !running) useRideDraft.getState().clear();
+    if (ok && (!running || toPlace)) useRideDraft.getState().clear();
     router.replace(ok ? '/ride/live' : '/');
   };
   // Before the system asks for Always location, say why: without it, recording stops when the phone locks.
@@ -174,8 +198,12 @@ export default function RideReady() {
   const autostarted = useRef(false);
   useEffect(() => { if (autostart === '1' && !autostarted.current && !running) { autostarted.current = true; void start(); } });
 
+  // A group ride is started from the Group side, and then recorded like any other ride, guided by the group's destination, not a plan of the rider's own.
+  const freeChoice = choices.find((c) => c.key === 'free')!;
+  const signIn = () => { setSignInProblem(undefined); startSignIn('/ride').catch((e: Error) => setSignInProblem(e.message)); };
+
   return (
-    <Screen footer={running ? <Button big variant="accent" label="Back to your ride" onPress={() => void start()} /> : <StartBar route={chosen.route} label={chosen.word} onNavigate={chosen.onNavigate} onStart={chosen.onStart} />} overlay={<>
+    <Screen footer={running ? <Button big variant="accent" label="Back to your ride" onPress={() => void start()} /> : <StartBar route={groupMode ? undefined : chosen.route} label={groupMode ? (group ? 'Start ride' : session.token ? 'Start group' : 'Sign in to start') : chosen.word} onNavigate={chosen.onNavigate} onStart={groupMode ? (group ? freeChoice.onStart : session.token ? () => void session.start(dest) : signIn) : chosen.onStart} />} overlay={<>
       <Sheet open={explain} title="Keep recording when your phone is locked" onClose={() => setExplain(false)}>
         <Text variant="label" tone="muted">{Platform.OS === 'android' ? 'Settings opens next. Tap Permissions, then Location, then choose Allow all the time, and come back to press Start.' : 'Choose Always Allow on the next screen.'} Without it, your ride stops recording whenever the screen locks or another app, like Google Maps, is in front.</Text>
         <Button label="Allow always" onPress={() => void allow()} />
@@ -183,11 +211,19 @@ export default function RideReady() {
       </Sheet>
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
       <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} position={here} />
-      <DestinationSheet open={destOpen} onClose={() => setDestOpen(false)} near={here} current={dest} onSet={(p, name) => setDest({ lat: p.lat, lng: p.lng, name: name ?? 'A spot on the map' })} />
+      <GroupIntroSheet open={showHow} onClose={closeHow} onStart={() => setTogether(true)} />
+      <DestinationSheet open={destOpen} onClose={() => setDestOpen(false)} near={here} current={group ? groupDest : dest} onSet={async (p, name) => { if (group) await session.pin(p, name); else setDest({ lat: p.lat, lng: p.lng, name: name ?? 'A spot on the map' }); }} />
     </>}>
       <BackHeader />
-      <PageTitle fit sub={choices.length === 1 ? 'No plans. Record wherever you go.' : 'Pick a place to ride to, or roam free.'}>{title}</PageTitle>
-      {choices.length > 1 ? <View accessibilityRole="radiogroup" style={{ gap: space[3] }}>
+      <PageTitle fit sub={groupMode ? (group ? 'Your group is ready. Start when everyone is in.' : 'Start a group, or join one with a code.') : choices.length === 1 ? 'No plans. Record wherever you go.' : 'Pick a place to ride to, or roam free.'}>{groupMode ? 'Ride together' : title}</PageTitle>
+      <View style={{ marginBottom: space[3] }}>
+        <SegmentedTabs label="Ride solo or with a group" value={group || together ? 'group' : 'solo'} onChange={(k) => { setTogether(k === 'group'); }}
+          tabs={[{ key: 'solo', label: 'Solo' }, { key: 'group', label: 'Group' }]} />
+      </View>
+      {groupMode ? (
+        <GroupStart session={session} here={here} destinationLabel={mapDest?.name} onDestination={() => setDestOpen(true)} onHow={() => setHowOpen(true)} onManage={() => setGroupOpen(true)} onSignIn={signIn} signInProblem={signInProblem} />
+      ) : null}
+      {!groupMode && choices.length > 1 ? <View accessibilityRole="radiogroup" style={{ gap: space[3] }}>
         {choices.map((c) => (
           <DestinationOption key={c.key} title={c.title} sub={c.sub} selected={c.key === chosen.key} onSelect={() => setPicked(c.key)}>
             {c.chip ? <View style={{ flexDirection: 'row' }}><StatusChip status={c.chip.status} label={c.chip.label} /></View> : null}
@@ -198,12 +234,12 @@ export default function RideReady() {
       </View> : null}
       {source === 'gps' ? (
         <View style={{ marginTop: space[4] }}>
-          {dest && chosen.key === 'place'
-            ? <OsmMap height={260} radius={24} interactive={false} position={here} line={toDest?.line} destination={dest} />
+          {showDest && mapDest
+            ? <OsmMap height={260} radius={24} interactive={false} position={here} line={toDest?.line} destination={mapDest} />
             : <OsmMap height={220} radius={24} follow interactive={false} position={here} />}
-          {dest && chosen.key === 'place' ? (
+          {showDest && mapDest ? (
             <View pointerEvents="none" style={{ position: 'absolute', left: space[3], bottom: space[3], right: space[3], borderRadius: radius.control, backgroundColor: colors.card, paddingHorizontal: space[4], paddingVertical: space[3], gap: space.half }}>
-              <Text variant="bodyMedium" numberOfLines={1}>{dest.name}</Text>
+              <Text variant="bodyMedium" numberOfLines={1}>{mapDest.name}</Text>
               <Text variant="label" tone="muted">{toDest ? `${asText(distanceKm(toDest.totalM / 1000))} · about ${asText(durationParts(Math.max(1, toDest.etaMin) * 60))}` : toDestFailed ? 'The road service could not be reached. You will still be guided once you are riding.' : here ? 'Finding the road…' : 'Finding your location…'}</Text>
             </View>
           ) : null}
@@ -222,7 +258,6 @@ export default function RideReady() {
       <SectionTitle>Options</SectionTitle>
       <ListCard>
         <Row icon={RouteIcon} label="Route" value={myRoute?.name ?? trail?.name ?? 'None'} onPress={() => router.push('/plan')} />
-        <Row icon={Users} label="Group" value={group ? `Code ${group.code}` : 'Off'} onPress={() => setGroupOpen(true)} />
         <Row icon={Pause} label="Pause when stopped" sub="After 5 minutes still. It carries on when you move." value={autoPause ? 'On' : 'Off'} onPress={() => useCompanion.getState().setAutoPause(!autoPause)} chevron={false} />
         <Row icon={BellRing} label="I haven't arrived" value={checkin ? `Back by ${clockLabel(new Date(checkin.expectedAt).getHours() * 60 + new Date(checkin.expectedAt).getMinutes())}` : 'Off'} onPress={() => setCheckinOpen(true)} />
       </ListCard>
