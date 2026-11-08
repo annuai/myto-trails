@@ -10,18 +10,18 @@ import { Text } from './Text';
  * Like Slack: pulling down past the top of the page opens a slightly darker strip above the content with one line,
  * and it closes again when let go. A new line is taken each time the page is pulled down.
  */
-export function PullQuote({ scrollY, top }: { scrollY: Animated.Value; top: number }) {
+export function PullQuote({ scrollY, top, fingerDown }: { scrollY: Animated.Value; top: number; fingerDown?: { current: boolean } }) {
   const { c } = useTheme();
   const [line, setLine] = useState('');
   const pulling = useRef(false);
 
   useEffect(() => {
     const id = scrollY.addListener(({ value }) => {
-      if (value < -pullQuote.trigger && !pulling.current) { pulling.current = true; setLine(useQuotes.getState().next()); }
+      if (value < -pullQuote.trigger && !pulling.current && (!fingerDown || fingerDown.current)) { pulling.current = true; setLine(useQuotes.getState().next()); }
       else if (value >= 0) pulling.current = false;
     });
     return () => scrollY.removeListener(id);
-  }, [scrollY]);
+  }, [scrollY, fingerDown]);
 
   const open = scrollY.interpolate({ inputRange: [-pullQuote.open * 2, 0], outputRange: [pullQuote.open * 2, 0], extrapolate: 'clamp' });
   const textOpacity = scrollY.interpolate({ inputRange: [-pullQuote.open, -pullQuote.textAt, 0], outputRange: [1, 0, 0], extrapolate: 'clamp' });
