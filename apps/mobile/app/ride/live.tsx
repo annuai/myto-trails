@@ -8,6 +8,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, Eye, EyeOff, Flag, Megaphone, Mic, Minus, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { DocumentsSheet } from '@/features/DocumentsSheet';
+import { Compass } from '@/ui/Compass';
+import { compass } from '@/ui/Compass.tokens';
+import { CompassOverlay } from '@/ui/CompassOverlay';
+import { headingDegrees, headingWord } from '@/lib/compass';
 import { useEmergency } from '@/features/emergency/useEmergency';
 import { GroupSheet } from '@/features/GroupSheet';
 import { NoteSheet } from '@/features/NoteSheet';
@@ -142,6 +146,7 @@ function LiveBody() {
     return () => { void Promise.resolve(deactivateKeepAwake('myto-live-screen')).catch(() => undefined); };
   }, [r.paused]);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [compassOpen, setCompassOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -350,6 +355,7 @@ function LiveBody() {
       {picked ? <RiderSheet open={riderOpen} tile={picked} me={spot} heading={heading} road={followRoad} canNavigate={canNavigate} onClose={() => setRiderOpen(false)} onGo={() => setGroupOpen(false)} /> : null}
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
       <DocumentsSheet open={docsOpen} onClose={() => setDocsOpen(false)} />
+      <CompassOverlay open={compassOpen} heading={heading} onClose={() => setCompassOpen(false)} />
       <NoteSheet open={noteOpen} canType={j.canType} onSave={j.addNote} onClose={() => setNoteOpen(false)} />
       <Sheet open={journalOpen} title="Ride journal" onClose={() => setJournalOpen(false)}>
         <Button icon={j.recording ? Square : Mic} label={j.recording ? `Stop recording ${Math.floor(j.seconds / 60)}:${String(j.seconds % 60).padStart(2, '0')}` : 'Record a voice note'} onPress={() => void j.toggleVoice()} />
@@ -370,6 +376,9 @@ function LiveBody() {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: size.target }}>
         <View style={{ flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
           <View accessible accessibilityLabel={r.paused ? 'Paused' : 'Recording'} style={{ width: size.dot, height: size.dot, borderRadius: radius.chip, backgroundColor: r.paused ? c.muted : c.stop }} />
+          <Pressable accessibilityRole="button" accessibilityLabel={heading === undefined ? 'Compass, no heading yet. Open full screen' : `Compass, heading ${headingWord(heading)}, ${headingDegrees(heading)} degrees. Open full screen`} hitSlop={space[2]} onPress={() => setCompassOpen(true)}>
+            <Compass heading={heading} size={compass.mini} />
+          </Pressable>
           {/* Upright there is no room for a word beside the buttons: the dot says recording (red) or paused (grey), and Pause turns into Resume. */}
           {landscape ? <Text variant="labelMedium" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>{r.paused ? 'Paused' : r.source === 'sim' ? 'Recording (simulated)' : 'Recording'}</Text> : null}
         </View>
