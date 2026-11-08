@@ -33,7 +33,7 @@ export function CompassOverlay({ open, heading, onClose }: { open: boolean; head
         </Pressable>
         <View pointerEvents="none" style={{ alignItems: 'center', gap: space[2] }}>
           <Text variant="hero" style={{ color: k.white }}>{known ? headingLetters(heading) : '--'}</Text>
-          <Text variant="body" style={{ color: k.white }}>{known ? `${headingDegrees(heading)}°` : 'Heading appears once you are moving'}</Text>
+          <Text variant="body" style={{ color: k.white }}>{known ? `${headingDegrees(heading)}°` : 'Waiting for the compass'}</Text>
         </View>
       </View>
     </View>
