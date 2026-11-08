@@ -19,6 +19,7 @@ import { useAnimatedValue } from '@/ui/useAnimatedValue';
 import { pager } from './OnboardingFlow.tokens';
 import { driftStops, fadeInStops, fadeOutStops, fadeStops, frameHeights, type Stops } from './pagerMotion';
 import { SETUP_ART, SLIDES } from './slides';
+import { ALWAYS_CHOICE } from '@/lib/locationWords';
 
 type Access = 'unknown' | 'always' | 'foreground' | 'denied';
 const ACCESS_WORD: Record<Access, string> = { unknown: 'Allow', always: 'Always on', foreground: 'Open Settings', denied: 'Open Settings' };
@@ -139,7 +140,7 @@ export function OnboardingFlow({ onDone, onPickCountry }: { onDone: () => void; 
                 </View>
                 <ListCard>
                   <Row icon={Globe} label="Home country" sub="Sets your trails, clubs and currency" value={home ? countryName(home) : 'Not set'} onPress={onPickCountry} />
-                  <Row icon={MapPin} label="Location: Always" sub="Required, so rides keep recording when your screen locks" chevron={false} right={<Text variant="labelMedium" tone={access === 'always' ? 'muted' : 'accent'}>{ACCESS_WORD[access]}</Text>} onPress={access === 'always' ? undefined : () => void (access === 'unknown' ? allow() : Linking.openSettings())} />
+                  <Row icon={MapPin} label={`Location: ${ALWAYS_CHOICE}`} sub="Required, so rides keep recording when your screen locks" chevron={false} right={<Text variant="labelMedium" tone={access === 'always' ? 'muted' : 'accent'}>{ACCESS_WORD[access]}</Text>} onPress={access === 'always' ? undefined : () => void (access === 'unknown' ? allow() : Linking.openSettings())} />
                 </ListCard>
                 <View style={{ flexDirection: 'row', gap: space[2] }}>
                   <ChoiceChip label="Kilometres" selected={unit !== 'mi'} onPress={() => useRegion.getState().setUnit('km')} />
