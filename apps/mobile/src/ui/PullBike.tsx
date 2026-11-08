@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, View } from 'react-native';
-import { buzz } from '@/lib/haptics';
+import { startEngine } from '@/lib/haptics';
 import { useMe } from '@/api/useApi';
 import { chooseRider, type PullRider } from '@/lib/pullBikeRider';
 import { useLatest } from '@/lib/useLatest';
@@ -15,13 +15,13 @@ import { useReducedMotion } from './motion';
  * first card, with a firm tap as it sets off and a soft engine rumble while it crosses. It rides once per pull; letting the page settle
  * back to its top arms it again. Placed in the page's scrolling content, `baseline` points from the top of that content to the card's top edge.
  */
-export function PullBike({ scrollY, baseline }: { scrollY: Animated.Value; baseline: number }) {
+export function PullBike({ scrollY, baseline, fingerDown }: { scrollY: Animated.Value; baseline: number; /** Android: set while a finger is on the page, so a flick that merely coasts up to the top never sends the bike. */ fingerDown?: { current: boolean } }) {
   const reduced = useReducedMotion();
   const [width, setWidth] = useState(Dimensions.get('window').width);
   const run = useAnimatedValue(0);
   const riding = useRef(false);
   const armed = useRef(true);
-  const rumble = useRef<ReturnType<typeof setInterval>>(undefined);
+  const stopEngine = useRef<() => void>(undefined);
   // Who rides is picked on every pull, from the rider's own private profile (the same one the Profile page shows).
   const [rider, setRider] = useState<PullRider>('man');
   const gender = useMe().data?.profile.gender;
@@ -38,19 +38,18 @@ export function PullBike({ scrollY, baseline }: { scrollY: Animated.Value; basel
       armed.current = false;
       setRider(pick());
       run.setValue(0);
-      buzz.rev();
-      rumble.current = setInterval(buzz.rumble, pullBike.rumbleMs);
+      stopEngine.current = startEngine(pullBike.runMs, pullBike.rumbleMs);
       Animated.timing(run, { toValue: 1, duration: pullBike.runMs, easing: Easing.inOut(Easing.quad), useNativeDriver: true }).start(() => {
-        clearInterval(rumble.current);
+        stopEngine.current?.();
         riding.current = false;
       });
     };
     const id = scrollY.addListener(({ value }) => {
-      if (value <= -pullBike.trigger && armed.current && !riding.current) go();
+      if (value <= -pullBike.trigger && armed.current && !riding.current && (!fingerDown || fingerDown.current)) go();
       else if (value >= 0) armed.current = true;
     });
-    return () => { scrollY.removeListener(id); clearInterval(rumble.current); };
-  }, [scrollY, reduced, run, pick]);
+    return () => { scrollY.removeListener(id); stopEngine.current?.(); };
+  }, [scrollY, reduced, run, pick, fingerDown]);
 
   if (reduced) return null;
   const bobs = Array.from({ length: pullBike.bobs * 2 + 1 }, (_, i) => i / (pullBike.bobs * 2));

@@ -32,6 +32,9 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   /** A footer's own height, so a tall one never covers the end of the page. */
   const [footerHeight, setFooterHeight] = useState(88);
   const [page, setPage] = useState({ content: 0, layout: 0 });
+  /** The scroll area's height, so a short page on Android is still tall enough to rest at the top of its pull space. */
+  const [viewHeight, setViewHeight] = useState(0);
+  const fingerDown = useRef(false);
   const setBar = (to: number, animate: boolean) => {
     bar.value = to;
     tabBarFade.stopAnimation();
@@ -78,18 +81,19 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
       scrollEventThrottle={16}
       contentOffset={zone ? { x: 0, y: zone } : undefined}
       overScrollMode={zone ? 'never' : undefined}
-      onScrollEndDrag={zone ? (e) => { if (Math.abs(e.nativeEvent.velocity?.y ?? 0) < 0.1) settle(e.nativeEvent.contentOffset.y); } : undefined}
+      onScrollBeginDrag={zone ? () => { fingerDown.current = true; } : undefined}
+      onScrollEndDrag={zone ? (e) => { fingerDown.current = false; if (Math.abs(e.nativeEvent.velocity?.y ?? 0) < 0.1) settle(e.nativeEvent.contentOffset.y); } : undefined}
       onMomentumScrollEnd={zone ? (e) => settle(e.nativeEvent.contentOffset.y) : undefined}
       onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false, listener: onScrollEvent })}
-      onLayout={fadeTabs || endCap || onNearEnd ? (e) => { const h = e.nativeEvent.layout.height; bar.layout = h; if (endCap) setPage((p) => ({ ...p, layout: h })); } : undefined}
+      onLayout={zone || fadeTabs || endCap || onNearEnd ? (e) => { const h = e.nativeEvent.layout.height; bar.layout = h; if (zone) setViewHeight(h); if (endCap) setPage((p) => ({ ...p, layout: h })); } : undefined}
       onContentSizeChange={fadeTabs || endCap || onNearEnd ? (_w, h) => { bar.content = h - zone; if (endCap) setPage((p) => ({ ...p, content: h })); if (onNearEnd && bar.layout > 0 && h - zone < bar.layout * 2) onNearEnd(); } : undefined}
       onTouchStart={fadeTabs ? (e) => { bar.touch = touchPoint(e.nativeEvent); } : undefined}
       onTouchEnd={fadeTabs ? (e) => { if (bar.value < 1 && bar.touch && isTap(bar.touch, touchPoint(e.nativeEvent))) setBar(1, true); } : undefined}
-      contentContainerStyle={{ paddingTop: zone + top, paddingBottom: endCap ? 0 : bottom, paddingLeft: padL, paddingRight: padR }}
+      contentContainerStyle={{ minHeight: zone ? viewHeight + zone : undefined, paddingTop: zone + top, paddingBottom: endCap ? 0 : bottom, paddingLeft: padL, paddingRight: padR }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-      {bike ? <PullBike scrollY={pulled} baseline={zone + top} /> : null}
+      {bike ? <PullBike scrollY={pulled} baseline={zone + top} fingerDown={zone ? fingerDown : undefined} /> : null}
       {frame(children)}
       {endCap ? <View style={{ height: capHeight }} /> : null}
     </Animated.ScrollView>
@@ -98,7 +102,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   );
   return (
     <LinearGradient colors={c.gradient as unknown as [string, string, string]} locations={[0, 0.45, 1]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={{ flex: 1, backgroundColor: c.paper }}>
-      {tabs && scroll ? <PullQuote scrollY={pulled} top={top - 8} /> : null}
+      {tabs && scroll ? <PullQuote scrollY={pulled} top={top - 8} fingerDown={zone ? fingerDown : undefined} /> : null}
       {endCap ? (
         <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: uncovered, overflow: 'hidden' }}>
           <View onLayout={(e) => setCapHeight(e.nativeEvent.layout.height)} style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>{endCap}</View>
