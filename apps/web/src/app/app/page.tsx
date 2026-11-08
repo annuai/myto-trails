@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { JoinListForm } from "@/features/app-beta/JoinListForm";
 import { getBetaApk } from "@/lib/site";
 import { Notice } from "@/ui/Notice/Notice";
@@ -14,6 +15,12 @@ const features = [
   { title: "Work without signal", body: "Download maps before you leave. What you need on the road does not wait on a connection." },
   { title: "Tell the next rider", body: "After a ride, check in with what the trail was like: open, muddy, closed." },
   { title: "Ride with a group", body: "Live status for everyone on the ride, and a Help button that tells the group where you are." },
+];
+
+const screens = [
+  { src: "/images/app/app-dash.webp", alt: "The app's home screen: the last ride, 6 minutes and 2.9 kilometres, with shortcuts to plan a trip and find a trail" },
+  { src: "/images/app/app-ride.webp", alt: "A group ride: turn-by-turn directions, each rider's live distance, and Pause, Waypoint and Hold to stop" },
+  { src: "/images/app/app-trails.webp", alt: "The Trails screen: trails near you with road distances, and a search box" },
 ];
 
 const steps = [
@@ -32,6 +39,15 @@ export default function AppPage() {
           One app for the whole ride: find a trail on Moto Trails, take it offline, ride it and record it. It is in beta on Android now, and free.
         </p>
       </header>
+
+      <figure className="flex max-w-3xl flex-col gap-3">
+        <div className="grid grid-cols-3 gap-3 sm:gap-6">
+          {screens.map((s, i) => (
+            <Image key={s.src} src={s.src} alt={s.alt} width={600} height={1220} sizes="(min-width: 768px) 220px, 30vw" priority={i === 0} className="h-auto w-full rounded-lg border border-border" />
+          ))}
+        </div>
+        <figcaption className="text-sm text-muted">Home, a group ride and Trails, from the beta.</figcaption>
+      </figure>
 
       <section id="beta" aria-labelledby="beta-title" className="flex scroll-mt-24 flex-col gap-6">
         <h2 id="beta-title" className="display-md">Try the beta</h2>
