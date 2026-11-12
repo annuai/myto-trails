@@ -3,6 +3,7 @@ import { nowMs } from '@/lib/clock';
 import { useStory } from '@/store/story';
 import { space } from '@/theme/tokens';
 import { Card } from '@/ui/Card';
+import { Pillion } from '@/ui/Pillion';
 import { Text } from '@/ui/Text';
 import { TextButton } from '@/ui/TextButton';
 
@@ -15,7 +16,8 @@ export function MomentCard() {
   if (!latest || seen.includes(latest.moment.id) || nowMs() - latest.at > DAY_MS) return null;
   return (
     <View style={{ marginBottom: space[3] }}>
-      <Card style={{ gap: space[2] }}>
+      <Card style={{ gap: space[2], alignItems: 'center' }}>
+        <Pillion pose={latest.moment.pose} size="sm" />
         <Text variant="bodyMedium">{latest.moment.title}</Text>
         <TextButton label="Got it" onPress={() => useStory.getState().markSeen(latest.moment.id)} />
       </Card>

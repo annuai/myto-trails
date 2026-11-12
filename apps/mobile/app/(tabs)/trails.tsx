@@ -95,7 +95,7 @@ export default function Trails() {
               <Button variant="soft" label="Try again" onPress={f === 'Saved' ? saved.reload : search.reload} />
             </View>
           ) : null}
-          {!loading && !error && list.length === 0 ? <EmptyState icon={Search} title={f === 'Offline' ? 'Nothing saved for offline yet' : f === 'Saved' ? 'No saved trails yet' : 'No trails match'} body={f === 'Offline' ? 'Download a trail from its page and it works without signal.' : f === 'Saved' ? 'Tap Save on a trail you want to come back to.' : 'Try another name, or clear the filter.'} /> : null}
+          {!loading && !error && list.length === 0 ? <EmptyState icon={Search} pose="map" title={f === 'Offline' ? 'Nothing saved for offline yet' : f === 'Saved' ? 'No saved trails yet' : 'No trails match'} body={f === 'Offline' ? 'Download a trail from its page and it works without signal.' : f === 'Saved' ? 'Tap Save on a trail you want to come back to.' : 'Try another name, or clear the filter.'} /> : null}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[3] }}>
             {list.map((t, i) => <Reveal key={t.slug} delay={Math.min(i, 8) * 45} style={{ width: landscape ? '48.9%' : '100%' }}><TrailRow trail={toTrailLike(t)} onPress={() => router.push(`/trail/${t.slug}`)} /></Reveal>)}
           </View>
