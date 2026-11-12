@@ -15,6 +15,6 @@ export const useStandingPref = create<StandingPrefState>()(
       current: () => { const c = currentStanding(useRides.getState().rides, Date.now()); return c && { ...c, period: localPeriod(Date.now()) }; },
       fetchCohort: (cell, period, metric) => getCohort(undefined, cell, period, metric),
     }),
-    { name: 'myto-standing', storage, partialize: (s) => ({ optIn: s.optIn, queue: s.queue, cohort: s.cohort }) as StandingPrefState },
+    { name: 'myto-standing', storage, partialize: (s) => ({ optIn: s.optIn, queue: s.queue, cohort: s.cohort, pendingOptOut: s.pendingOptOut }) as StandingPrefState },
   ),
 );

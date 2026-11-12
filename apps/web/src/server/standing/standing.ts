@@ -5,7 +5,10 @@ type Db = Sql | TransactionSql;
 
 export type RideSummaryInput = { ref: string; day: string; distanceKm: number; durationSec: number; cell: string; bikeClass?: string };
 
-/** Turning it off also deletes every summary this rider uploaded, in the same transaction. */
+/**
+ * Turning it off also deletes every summary this rider uploaded, in the same transaction. The upsert takes the row lock on rider_standing_pref
+ * before the delete, and an upload reads the same row `for share`, so an upload in flight waits and then sees opt_in false instead of inserting after the delete.
+ */
 export async function setOptIn(sql: Sql, i: { userId: string; optIn: boolean }): Promise<void> {
   await sql.begin(async (tx) => {
     await tx`
@@ -17,7 +20,7 @@ export async function setOptIn(sql: Sql, i: { userId: string; optIn: boolean }):
 
 export async function upsertSummaries(sql: Sql, i: { userId: string; rides: RideSummaryInput[] }): Promise<{ ok: true } | { ok: false; reason: "not_opted_in" }> {
   return sql.begin(async (tx) => {
-    const [pref] = await tx`select opt_in from rider_standing_pref where user_id = ${i.userId}`;
+    const [pref] = await tx`select opt_in from rider_standing_pref where user_id = ${i.userId} for share`;
     if (!pref || pref.opt_in !== true) return { ok: false as const, reason: "not_opted_in" as const };
     for (const r of i.rides) {
       await tx`

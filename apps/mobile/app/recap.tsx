@@ -7,7 +7,7 @@ import { asText, distanceKm, durationParts, speedKmh } from '@/lib/units';
 import { TITLES } from '@/lib/story/titles';
 import { yearRecap, yearsWithRides } from '@/lib/yearRecap';
 import { chooseStanding } from '@/lib/standingSync';
-import { standingMoment } from '@/lib/story/standing';
+import { localPeriod, standingMoment } from '@/lib/story/standing';
 import { useRides } from '@/store/rides';
 import { useStandingPref } from '@/store/standingPref';
 import { useStory } from '@/store/story';
@@ -44,7 +44,7 @@ export default function Recap() {
   const optIn = useStandingPref((s) => s.optIn);
   const cohort = useStandingPref((s) => s.cohort);
   const invited = useStory((s) => s.seen.includes(INVITE_ID));
-  const standing = optIn && cohort ? standingMoment({ metric: cohort.metric, value: cohort.value, row: cohort.row, region: cohort.region }) : undefined;
+  const standing = optIn && cohort && year === current && cohort.period === localPeriod(Date.now()) ? standingMoment({ metric: cohort.metric, value: cohort.value, row: cohort.row, region: cohort.region }) : undefined;
   const fullRef = useRef<ComponentRef<typeof View>>(null);
   const [message, setMessage] = useState<string>();
   const share = async () => {

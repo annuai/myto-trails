@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { buzz } from '@/lib/haptics';
 import { syncMarks } from '@/lib/markSync';
-import { syncStanding } from '@/lib/standingSync';
+import { syncStandingWhenReady } from '@/lib/standingSync';
 import { markDef } from '@/lib/marks';
 import { useMarkToast } from '@/store/markToast';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -29,7 +29,7 @@ export function MarkHost() {
   const enter = useAnimatedValue(0);
   const ring = useAnimatedValue(0);
   const busy = useRef(false);
-  useEffect(() => { syncMarks(); void syncStanding(); }, []);
+  useEffect(() => { syncMarks(); return syncStandingWhenReady(); }, []);
   useEffect(() => {
     const id = queue[0];
     if (!id || busy.current) return;

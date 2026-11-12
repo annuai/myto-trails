@@ -46,6 +46,7 @@ export default function You() {
   const haptics = useAppearance((s) => s.haptics);
   const speedTicks = useAppearance((s) => s.speedTicks);
   const standingOn = useStandingPref((s) => s.optIn);
+  const standingError = useStandingPref((s) => s.error);
   const osmOn = useOsm((s) => s.asked && s.enabled);
   const unit = useDistanceUnit(); // re-draws this page's distances when the unit changes
   const rides = useRides((s) => s.rides);
@@ -131,6 +132,7 @@ export default function You() {
       <ListCard>
         <Row icon={Users} label="Compare with riders near you" sub="Share each ride's date, distance and a rough area (about 100 km wide). Never your route. Turn off any time and it is deleted." value={standingOn ? 'On' : 'Off'} onPress={() => void chooseStanding(!standingOn)} />
       </ListCard>
+      {standingError ? <Text variant="label" tone="stop" style={{ marginTop: space[2] }}>{standingError}</Text> : null}
       <SectionTitle>Backup</SectionTitle>
       <ListCard>
         <Row icon={Upload} label="Export my data" sub="One encrypted file you keep" onPress={() => router.push('/backup/export')} />
