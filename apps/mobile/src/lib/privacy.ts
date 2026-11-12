@@ -28,6 +28,9 @@ export function trimNearPlacesWithBreaks(points: LatLng[], breaks: number[] | un
   return { points: points.slice(from, to), breaks: breaks?.filter((b) => b > from && b < to).map((b) => b - from) };
 }
 
+/** Whether `gpxForExport` would give a file: cheap enough for a button's disabled state, without building the text. */
+export const canExportGpx = (points: LatLng[], places: LatLng[], breaks?: number[]): boolean => trimNearPlacesWithBreaks(points, breaks, places).points.length >= 2;
+
 /** A GPX file of a ride or route for the share sheet, without its ends near Home or Work. Null when nothing is left to export. */
 export function gpxForExport(name: string, points: LatLng[], places: LatLng[], waypoints: { name: string; lat: number; lng: number; kind?: string }[] = [], breaks?: number[]): string | null {
   const t = trimNearPlacesWithBreaks(points, breaks, places);

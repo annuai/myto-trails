@@ -9,7 +9,10 @@ import type { Contact, Licence, Medical, Vehicle } from '@/store/profile';
 import type { PlaceKind, SavedPlace } from '@/store/placesCore';
 
 export const FORMAT = 'myto-backup';
-/** Bump with every change to `BackupPayload` and add a `migrate` step from the old number. */
+/**
+ * New optional keys in `Snapshot` are added without a bump (older files simply lack them). Bump, with a `migrate` step, only for a
+ * change old files cannot meet: the stream reader (import.ts) refuses any version but this one, so a bump makes older files unimportable.
+ */
 export const CURRENT_VERSION = 3;
 export const MIN_PASSPHRASE_LENGTH = 10;
 export const FILE_EXTENSION = 'myto';

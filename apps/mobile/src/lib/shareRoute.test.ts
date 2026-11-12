@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { haversine, type LatLng } from './geo';
 import { buildSharedRoute, sharedIdOf, MAX_SHARED_POINTS } from './shareRoute';
-import { forSubmission, gpxForExport, placesOf, trimEnds } from './privacy';
+import { canExportGpx, forSubmission, gpxForExport, placesOf, trimEnds } from './privacy';
 import { buildRideCard } from './rideCard';
 import { traceFor } from './osm';
 
@@ -109,5 +109,13 @@ describe('Home and Work stay out of anything that leaves the phone', () => {
     expect(gpx.match(/<trkseg>/g)).toHaveLength(2);
     expect(gpxForExport('R', pottering, places)).toBeNull();
     expect(gpxForExport('R', long, [])).toContain('lat="12.000000"');
+  });
+  it('whether a GPX file can be exported matches whether one is built', () => {
+    const twoLeft: LatLng[] = [home, { lat: 12.01, lng: 77 }, { lat: 12.02, lng: 77 }];
+    const oneLeft: LatLng[] = [home, { lat: 12.001, lng: 77 }, { lat: 12.01, lng: 77 }];
+    for (const pts of [long, pottering, twoLeft, oneLeft]) expect(canExportGpx(pts, places, [5])).toBe(gpxForExport('R', pts, places, [], [5]) !== null);
+    expect(canExportGpx(long, places)).toBe(true);
+    expect(canExportGpx(pottering, places)).toBe(false);
+    expect(canExportGpx(oneLeft, places)).toBe(false);
   });
 });
