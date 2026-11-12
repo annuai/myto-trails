@@ -16,6 +16,7 @@ export type Ride = {
   /** The group ride and check-in that were live when this ride finished. */ groupId?: string; checkinId?: string;
   /** The published trail the rider had chosen to ride when this ride finished. Absent for a ride of their own: only a trail has conditions to report. */ trailSlug?: string;
   /** Set once the rider has been asked how the trail was, so the question comes once. */ conditionAsked?: boolean;
+  /** Recorded from the simulator, not the GPS: shown like any ride, but no habit, offer or nudge counts it. Absent on real and older rides. */ simulated?: true;
 };
 
 type State = {

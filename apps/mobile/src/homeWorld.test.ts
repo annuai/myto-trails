@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const acquire = vi.hoisted(() => vi.fn());
-type Ride = { startedAt: number; durationSec: number; pausedSec?: number; distanceKm: number; sample?: boolean };
+type Ride = { startedAt: number; durationSec: number; pausedSec?: number; distanceKm: number; sample?: boolean; simulated?: true };
 vi.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
 vi.mock('expo-location', () => ({ Accuracy: { Balanced: 3 } }));
 const mk = vi.hoisted(() => async <T extends object>(init: T) => (await import('zustand')).create<T>(() => init));
@@ -21,6 +21,7 @@ import { useTrips as trips } from '@/store/trips';
 import { useCompanion as companion } from '@/store/companion';
 
 import { buildHomeWorld, needsQuickReading } from './homeWorld';
+import { decideHomeOffer } from './lib/homeRoute/offer';
 import { resetQuickPosition } from './features/home/quickPosition';
 
 const NOW = new Date(2026, 10, 12, 18, 0, 0).getTime();
@@ -46,6 +47,19 @@ describe('buildHomeWorld', () => {
     expect(buildHomeWorld(NOW).lastRide).toEqual({ endedAt: NOW - 2 * H, sample: undefined });
     rides.setState({ rides: [{ startedAt: NOW - 1 * H, durationSec: 600, distanceKm: 3, sample: true }] as never });
     expect(buildHomeWorld(NOW).lastRide).toBeUndefined();
+  });
+  it('ignores simulated rides: a simulated ride just ended offers no Ride home and teaches no habit', () => {
+    const at = (d: number) => new Date(2026, 10, 12 - d, 8, 10).getTime();
+    rides.setState({ rides: [
+      ...[1, 2, 3].map((d) => ({ startedAt: at(d), durationSec: 1800, distanceKm: 10, simulated: true as const })),
+      { startedAt: NOW - 20 * 60_000, durationSec: 600, distanceKm: 3, simulated: true as const },
+    ] as never });
+    places.setState({ home: { lat: 0, lng: 0, label: 'H', setAt: 1 } });
+    loc.setState({ fix: { lat: 0.05, lng: 0, t: NOW }, fixAt: NOW - 1000 });
+    const w = buildHomeWorld(NOW);
+    expect(w.lastRide).toBeUndefined();
+    expect(w.usualStartMins).toEqual([]);
+    expect(decideHomeOffer({ ...w, sunsetMs: undefined })).toBeNull();
   });
   it('learns usual start minutes from three rides at about the same time', () => {
     const at = (d: number) => new Date(2026, 10, 12 - d, 8, 10).getTime();

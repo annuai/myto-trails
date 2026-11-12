@@ -54,6 +54,10 @@ const LINES: Record<NudgeType, ((d: CopyData) => [string, string])[]> = {
     () => ['Share today\'s ride', 'Add a few photos for your club.'],
     () => ['Any good photos from the ride?', 'Your club would like to see them.'],
   ],
+  home: [
+    () => ['Heading home?', 'Open Myto Moto for the way back.'],
+    () => ['Ride finished', 'Want a route home? It is one tap away.'],
+  ],
   standing: [
     (d) => [`You are ahead of ${shownPercent(d.aheadOf ?? 50)}% of riders near ${d.region ?? 'your area'}`, d.nextGap !== undefined ? `${km(d.nextGap)} more this month moves you up a band. A short loop does it.` : 'Nice riding this month.'],
   ],

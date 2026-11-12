@@ -61,6 +61,7 @@ import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
 import { TextButton } from '@/ui/TextButton';
 import { nowMs as readClock } from '@/lib/clock';
+import { HomeOfferCard } from '@/features/home/HomeOfferCard';
 
 const WEEK_MS = 7 * 86_400_000;
 
@@ -214,6 +215,7 @@ export default function Home() {
         </HeroCard>
         </ScalePressable>
       ) : null}
+      {focused ? null : <HomeOfferCard />}
       {focused ? null : <>
       {nextTripPlan ? (
         <TripCard trip={nextTripPlan} onOpen={() => router.push(`/trips/${nextTripPlan.id}`)} footer={planStatus === 'ready' || planStatus === 'active' ? (

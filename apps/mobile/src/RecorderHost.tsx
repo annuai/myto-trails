@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { startBackground, stopBackground } from '@/lib/backgroundLocation';
+import { activeRecordingProfile, startBackground, stopBackground } from '@/lib/backgroundLocation';
 import type { Fix } from '@/lib/location';
 import { noisyFix, SIM_GROUP_ID, SIM_ME, SIM_ME_NAME, SIM_ROAD_SPEED_MPS, SIM_SPEED_MPS, SIM_TRAIL, simMePoint, simRegroup, simRiders } from '@/lib/groupSim';
 import { simPoint } from '@/lib/sim';
@@ -9,7 +9,8 @@ import { useCompanion } from '@/store/companion';
 import { useSimRide } from '@/store/simRide';
 import { useBattery } from '@/store/battery';
 import { useLocation } from '@/store/location';
-import { shouldProbe } from '@/lib/gpsHealth';
+import { probeAfterMs, shouldProbe } from '@/lib/gpsHealth';
+import { PROFILE_OPTIONS } from '@/lib/recordingProfile';
 import { probePosition } from '@/lib/gpsProbe';
 import { startShakeSensor } from '@/lib/shakeSensor';
 import { traceBegin, traceEnd } from '@/lib/motionTraceFile';
@@ -79,10 +80,11 @@ export function RecorderHost() {
     if (paused) { if (Platform.OS === 'android') void startBackground(); }
     if (paused) return () => { stopMotion(); release(); if (!keepService()) void stopBackground(); if (Platform.OS === 'web') void Promise.resolve(deactivateKeepAwake(KEEP_AWAKE)).catch(() => undefined); };
     // A GPS that goes quiet is asked for a position, not assumed lost: a phone standing still may send nothing for a while. An answer is a fix like any other.
+    // In the idle profile the wait is longer, so the probe does not keep the GPS awake between idle's own fixes.
     let probing = false, probedAt = 0;
     const probe = setInterval(() => {
       const now = Date.now();
-      if (!shouldProbe({ now, lastSignalAt: Math.max(useRecorder.getState().lastFixAt, useLocation.getState().fixAt ?? 0), probing, lastProbeAt: probedAt })) return;
+      if (!shouldProbe({ now, lastSignalAt: Math.max(useRecorder.getState().lastFixAt, useLocation.getState().fixAt ?? 0), probing, lastProbeAt: probedAt, afterMs: probeAfterMs(PROFILE_OPTIONS[activeRecordingProfile()].timeInterval) })) return;
       probing = true; probedAt = now;
       void probePosition().then((f) => {
         probing = false;

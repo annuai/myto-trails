@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { ApiFailure } from '@/api/client';
-import { trimEnds } from '@/lib/geo';
+import { awayFromPlaces, forSubmission } from '@/lib/privacy';
+import { savedPlaces } from '@/lib/savedPlaces';
 import { submitRide } from '@/lib/submit';
 import { dueSubmission, removeSubmission, retryLater } from '@/lib/submissionQueue';
 import { useAuth } from '@/store/auth';
@@ -24,8 +25,16 @@ async function flush() {
     for (let item = dueSubmission(useSubmissionQueue.getState().items, Date.now()); item; item = dueSubmission(useSubmissionQueue.getState().items, Date.now())) {
       const ride = useRides.getState().rides.find((r) => r.id === item.rideId);
       if (!ride) { set(removeSubmission(useSubmissionQueue.getState().items, item.rideId)); continue; }
+      // The same trim as when it was queued, and nothing near Home or Work as they are now.
+      const places = savedPlaces();
+      const points = forSubmission(ride.points, item.trim, places);
+      if (points.length < 2) {
+        useRides.getState().setSubmission(ride.id, { status: 'failed', at: Date.now(), trailName: item.form.name, slug: '', clientId: item.clientId, error: 'Nothing is left of the track after trimming.' });
+        set(removeSubmission(useSubmissionQueue.getState().items, item.rideId));
+        continue;
+      }
       try {
-        const res = await submitRide(token, { ...item.form, clientId: item.clientId, points: trimEnds(ride.points, item.trim), waypoints: ride.waypoints });
+        const res = await submitRide(token, { ...item.form, clientId: item.clientId, points, waypoints: awayFromPlaces(ride.waypoints, places) });
         useRides.getState().setSubmission(ride.id, { status: 'submitted', at: Date.now(), trailName: item.form.name, slug: res.slug, clientId: item.clientId });
         set(removeSubmission(useSubmissionQueue.getState().items, item.rideId));
       } catch (e) {

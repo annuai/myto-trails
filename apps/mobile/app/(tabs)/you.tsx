@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Award, Users, Bell, Gauge, Vibrate, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload, Wrench } from 'lucide-react-native';
+import { Award, Bell, House, Gauge, Vibrate, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload, Wrench, Users } from 'lucide-react-native';
 import Constants from 'expo-constants';
 import { CONTACT_EMAIL, DISCORD_URL, MYTO_URL, versionLabel } from '@moto-trails/domain';
 import { useMe } from '@/api/useApi';
+import { usePlaces } from '@/store/places';
 import { countryName } from '@/lib/countryNames';
 import { signOut, startSignIn } from '@/lib/signIn';
 import { useOsm } from '@/store/osm';
@@ -43,6 +44,7 @@ import { ScalePressable } from '@/ui/motion';
 export default function You() {
   const router = useRouter();
   const home = useHomeCountry();
+  const homePlace = usePlaces((s) => s.home);
   const inverted = useAppearance((s) => s.inverted);
   const haptics = useAppearance((s) => s.haptics);
   const speedTicks = useAppearance((s) => s.speedTicks);
@@ -123,6 +125,7 @@ export default function You() {
         <Row icon={Contrast} label="Inverted colours" sub="Light riding screen, dark everywhere else" value={inverted ? 'On' : 'Off'} onPress={() => useAppearance.getState().setInverted(!inverted)} />
         <Row icon={Vibrate} label="Haptics" sub="Taps and vibration for checks, finished tasks and marks" value={haptics ? 'On' : 'Off'} onPress={() => useAppearance.getState().setHaptics(!haptics)} />
         {haptics ? <Row icon={Gauge} label="Speed ticks" sub="A soft tick each time your speed passes a multiple of 10, and as numbers roll" value={speedTicks ? 'On' : 'Off'} onPress={() => useAppearance.getState().setSpeedTicks(!speedTicks)} /> : null}
+        <Row icon={House} label="Home and work" sub="Used for the ride home offer and to end a ride when you arrive" value={homePlace?.label ?? 'Not set'} onPress={() => router.push('/home-place')} />
         <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
         <Row icon={MapIcon} label="Improve the map" sub="Share rides with OpenStreetMap" value={osmOn ? 'On' : 'Off'} onPress={() => router.push('/osm')} />
         <Row icon={Sparkles} label="Smart notifications" sub="Usual ride time, daylight and break reminders" onPress={() => router.push('/notifications/smart')} />

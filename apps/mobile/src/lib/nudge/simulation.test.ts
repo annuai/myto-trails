@@ -19,7 +19,12 @@ type Rider = {
   clubRideEvery?: number;
   standing?: boolean;
   muted?: NudgeType[];
+  /** The rider has saved Home, and every ride ends 5 km from it. The app is also opened as each ride ends, which is when a home nudge is planned. */
+  home?: boolean;
 };
+
+const HOME = { lat: 12.97, lng: 77.59 };
+const FAR_END = { lat: 12.97 + 0.045, lng: 77.59 };
 
 /** Pretends to be a rider for DAYS days: plans on the days the app is opened, lets the phone show what was scheduled, and records what the rider did. */
 function simulate(r: Rider) {
@@ -29,12 +34,14 @@ function simulate(r: Rider) {
   const fired: (Nudge & { opened: boolean })[] = [];
   for (let day = 0; day < DAYS; day++) {
     const now = at(START, day, 9);
-    if (r.rides(day)) { const startedAt = at(START, day, 7); rides.push({ startedAt, endedAt: startedAt + 90 * 60_000, distanceKm: 40 }); }
+    const rode = r.rides(day);
+    if (rode) { const startedAt = at(START, day, r.home ? 10 : 7); rides.push({ startedAt, endedAt: startedAt + 90 * 60_000, distanceKm: 40 }); }
     if (r.opens(day)) {
       const forecast: DayForecast[] = r.weather ? Array.from({ length: 7 }, (_, i) => ({ iso: isoOf(at(now, i, 12)), code: 0, tempMax: 28, rainPct: 5 })) : [];
       const clubRides = r.clubRideEvery ? Array.from({ length: 5 }, (_, i) => at(now, i, 6, 30)).filter((_, i) => (day + i) % r.clubRideEvery! === 0).map((startsAt, i) => ({ id: `e${day}:${i}`, title: 'Ride', clubName: 'Club', startsAt, going: 5 })) : [];
-      const w: NudgeWorld = { now, level: r.level, muted: r.muted ?? [], firstSeenAt: START, rides: [...rides], yearKm: rides.length * 40, usualWeekdays: [6], forecast, clubRides, clubs: 1, ...(r.standing ? { standing: { aheadOf: 70, nextGap: 8, region: 'your area' } } : {}), history: [...history], others: [], tripDays: [] };
+      const w: NudgeWorld = { now, level: r.level, muted: r.muted ?? [], firstSeenAt: START, rides: [...rides], yearKm: rides.length * 40, usualWeekdays: [6], forecast, clubRides, clubs: 1, ...(r.standing ? { standing: { aheadOf: 70, nextGap: 8, region: 'your area' } } : {}), history: [...history], others: [], tripDays: [], ...(r.home ? { home: HOME, lastRideEnd: FAR_END } : {}) };
       scheduled = planNudges(w);
+      if (r.home && rode) scheduled = planNudges({ ...w, now: rides[rides.length - 1]!.endedAt + 60_000 });
     }
     const until = at(START, day + 1, 9);
     for (const n of scheduled.filter((x) => x.fireAt > now - DAY && x.fireAt <= until && x.fireAt >= at(START, day, 9) )) {
@@ -109,6 +116,30 @@ describe('simulated riders over six months', () => {
       if (judged) expect(ride[i]!.fireAt - ride[i - 1]!.fireAt).toBeGreaterThanOrEqual(7 * DAY);
     }
     expect(fired.length).toBeLessThanOrEqual(Math.ceil(DAYS / 7));
+  });
+
+  it('a rider with Home who ends rides far from it gets home nudges, at most one every four days, inside the window, one a day', () => {
+    const fired = simulate({ level: 'occasional', rides: (d) => d % 3 === 0, opens: () => true, taps: () => true, home: true });
+    checkInvariants(fired, 'occasional');
+    const home = fired.filter((n) => n.type === 'home');
+    expect(home.length).toBeGreaterThan(10);
+    expect(home.length).toBeLessThanOrEqual(Math.ceil(DAYS / 4));
+    for (let i = 1; i < home.length; i++) expect(home[i]!.fireAt - home[i - 1]!.fireAt).toBeGreaterThanOrEqual(4 * DAY - 1);
+    expect(home.every((n) => n.route === '/(tabs)')).toBe(true);
+  });
+
+  it('a rider with Home who ignores every home nudge is left alone after four: it rests three weeks, and returns only a few times in six months', () => {
+    const fired = simulate({ level: 'occasional', rides: (d) => d % 3 === 0, opens: () => true, taps: () => false, home: true });
+    checkInvariants(fired, 'occasional');
+    const home = fired.filter((n) => n.type === 'home');
+    expect(home.length).toBeGreaterThanOrEqual(4);
+    expect(home.length).toBeLessThanOrEqual(12);
+    expect(home[4]!.fireAt - home[3]!.fireAt).toBeGreaterThanOrEqual(21 * DAY - DAY);
+  });
+
+  it('a rider without Home never gets a home nudge', () => {
+    const fired = simulate({ level: 'regular', rides: (d) => d % 3 === 0, opens: () => true, taps: () => true });
+    expect(fired.some((n) => n.type === 'home')).toBe(false);
   });
 
   it('a rider who opens every nudge keeps getting them', () => {

@@ -1,6 +1,6 @@
 import { haversine, pathLength, type LatLng } from './geo';
 import { elevationProfile } from './elevation';
-import { forSharing, SHARE_TRIM_M } from './privacy';
+import { awayFromPlaces, forSharing, SHARE_TRIM_M } from './privacy';
 import { simplifyTo } from './routePlan';
 
 export const MAX_SHARED_POINTS = 2000;
@@ -19,15 +19,16 @@ const r5 = (n: number) => Math.round(n * 1e5) / 1e5;
 const noLinks = (s: string) => s.replace(/https?:\/\/\S+|www\.\S+/gi, '').replace(/\s+/g, ' ').trim();
 
 /**
- * The body of `POST /shared-routes`. Both ends are trimmed (a home or workplace is never shared), the track is thinned to
- * at most 2000 points and rounded to five decimals (about a metre), and waypoints near either end are dropped. Null
- * when the route is too short to share without showing where it began.
+ * The body of `POST /shared-routes`. Both ends are trimmed (a home or workplace is never shared), and so is anything within 500 m
+ * of the rider's Home or Work (`places`) at either end. The track is thinned to at most 2000 points and rounded to five decimals
+ * (about a metre), and waypoints near either end or near Home or Work are dropped. Null when the route is too short to share
+ * without showing where it began.
  */
-export function buildSharedRoute(r: { name: string; points: LatLng[]; waypoints?: { name: string; lat: number; lng: number }[]; elevationGainM?: number }): SharedRoutePayload | null {
-  const trimmed = forSharing(r.points);
+export function buildSharedRoute(r: { name: string; points: LatLng[]; waypoints?: { name: string; lat: number; lng: number }[]; elevationGainM?: number; places?: LatLng[] }): SharedRoutePayload | null {
+  const trimmed = forSharing(r.points, r.places);
   if (trimmed.length < 2) return null;
   const ends = [r.points[0], r.points[r.points.length - 1]];
-  const waypoints = (r.waypoints ?? [])
+  const waypoints = awayFromPlaces(r.waypoints ?? [], r.places ?? [])
     .filter((w) => ends.every((e) => haversine(e, w) > SHARE_TRIM_M))
     .slice(0, MAX_SHARED_WAYPOINTS)
     .map((w) => ({ name: noLinks(w.name).slice(0, MAX_NAME) || 'Waypoint', lat: r5(w.lat), lng: r5(w.lng) }));

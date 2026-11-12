@@ -137,11 +137,18 @@ function mergeById<T extends { id: string } & Stamped>(local: T[], incoming: T[]
 }
 
 /** Copy of `incoming` as a Snapshot, without the photo files. */
-const plain = (p: Snapshot): Snapshot => ({ licence: p.licence, vehicle: p.vehicle, contacts: p.contacts, medical: p.medical, photos: p.photos, todos: p.todos, rides: p.rides, journal: p.journal, journalTitles: p.journalTitles, routes: p.routes, trips: p.trips, fuel: p.fuel, bike: p.bike });
+const plain = (p: Snapshot): Snapshot => ({ licence: p.licence, vehicle: p.vehicle, contacts: p.contacts, medical: p.medical, photos: p.photos, todos: p.todos, rides: p.rides, journal: p.journal, journalTitles: p.journalTitles, routes: p.routes, trips: p.trips, fuel: p.fuel, bike: p.bike, places: p.places, rideSwitches: p.rideSwitches });
 
 /** Both lists joined, the same id kept once (the phone's copy), and no list at all when neither side has one. */
 const union = <T extends { id: string }>(local: T[] | undefined, incoming: T[] | undefined): T[] | undefined =>
   local || incoming ? [...new Map([...(incoming ?? []), ...(local ?? [])].map((x) => [x.id, x])).values()] : undefined;
+
+/** Home and Work each from the phone when it has one, else from the file, with that copy's strikes. */
+function mergePlaces(local: Snapshot['places'], incoming: Snapshot['places']): Snapshot['places'] {
+  if (!local || !incoming) return local ?? incoming;
+  const home = local.home ? local : incoming, work = local.work ? local : incoming;
+  return { home: home.home, work: work.work, endStrikes: { home: home.endStrikes.home, work: work.endStrikes.work } };
+}
 
 export function mergeSnapshots(local: Snapshot, incoming: Snapshot): Snapshot {
   const contacts = mergeById(local.contacts, incoming.contacts);
@@ -161,6 +168,9 @@ export function mergeSnapshots(local: Snapshot, incoming: Snapshot): Snapshot {
     // the same start date is the same setting: the phone's copy stays
     fuel: local.fuel || incoming.fuel ? [...new Map([...(incoming.fuel ?? []), ...(local.fuel ?? [])].map((x) => [x.from, x])).values()].sort((a, b) => a.from.localeCompare(b.from)) : undefined,
     bike: incoming.bike !== undefined && local.bike === undefined ? incoming.bike : local.bike,
+    places: mergePlaces(local.places, incoming.places),
+    // the phone's switches stay
+    rideSwitches: local.rideSwitches ?? incoming.rideSwitches,
   };
 }
 

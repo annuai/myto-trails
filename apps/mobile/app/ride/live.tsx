@@ -186,8 +186,9 @@ function LiveBody() {
   const [resumedAt, setResumedAt] = useState(0);
   useEffect(() => { const sub = AppState.addEventListener('change', (st) => { if (st === 'active') setResumedAt(nowMs()); }); return () => sub.remove(); }, []);
   useEffect(() => { const id = setInterval(() => tick((n) => n + 1), 1000); return () => clearInterval(id); }, []);
-  // Auto-end (AutoEndHost) saves the ride itself and opens its story, so the screen does not send the rider Home over it.
-  useEffect(() => { if (r.status === 'idle' && !stopping.current && !useAutoEndPrompt.getState().ending) router.replace('/'); }, [r.status, router]);
+  // Auto-end (AutoEndHost) saves the ride itself and opens its story, so the screen does not send the rider Home over it. Saved with
+  // the phone locked, the screen goes Home when the rider comes back to it.
+  useEffect(() => { if (r.status === 'idle' && !stopping.current && !useAutoEndPrompt.getState().ending) router.replace('/'); }, [r.status, router, resumedAt]);
   const autoEnd = useAutoEndPrompt();
   // A place the rider asked to be guided to is for this ride only.
   useEffect(() => () => { if (useRecorder.getState().status === 'idle') { useGuideTarget.getState().clear(); useSimRide.getState().clear(); useLead.getState().dismiss(); useLead.getState().closeBackup(); } }, []);

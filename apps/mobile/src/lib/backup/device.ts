@@ -11,6 +11,8 @@ import { useFuel } from '@/store/fuel';
 import { useRides } from '@/store/rides';
 import { useTrips } from '@/store/trips';
 import { useTodos } from '@/store/todos';
+import { usePlaces } from '@/store/places';
+import { useCompanion } from '@/store/companion';
 import { writeBackup } from './export';
 import { backupFileName, type OpenedBackup, type Snapshot } from './format';
 import { openBackupFile, type Target } from './import';
@@ -18,7 +20,9 @@ import { openBackupFile, type Target } from './import';
 /** Reads the phone's data. The sign-in token, trail packs and the quote queue are not part of it. */
 export function currentSnapshot(): Snapshot {
   const { licence, vehicle, contacts, medical, photos } = useProfile.getState();
-  return { licence, vehicle, contacts, medical, photos, todos: useTodos.getState().todos, rides: useRides.getState().rides, journal: useJournal.getState().entries, journalTitles: useJournal.getState().titles, routes: useMyRoutes.getState().routes, trips: useTrips.getState().trips, fuel: useFuel.getState().history };
+  const { home, work, endStrikes } = usePlaces.getState();
+  const { autoEnd, batterySaver } = useCompanion.getState();
+  return { places: { home, work, endStrikes }, rideSwitches: { autoEnd, batterySaver }, licence, vehicle, contacts, medical, photos, todos: useTodos.getState().todos, rides: useRides.getState().rides, journal: useJournal.getState().entries, journalTitles: useJournal.getState().titles, routes: useMyRoutes.getState().routes, trips: useTrips.getState().trips, fuel: useFuel.getState().history };
 }
 
 export const phoneTarget: Target = {
@@ -32,6 +36,9 @@ export const phoneTarget: Target = {
     if (s.routes) useMyRoutes.setState({ routes: s.routes });
     if (s.trips) useTrips.setState({ trips: s.trips });
     if (s.fuel) useFuel.getState().restore(s.fuel);
+    // Nor does one made before Home, Work and the ride switches were backed up.
+    if (s.places) usePlaces.setState({ home: s.places.home, work: s.places.work, endStrikes: s.places.endStrikes });
+    if (s.rideSwitches) useCompanion.setState({ autoEnd: s.rideSwitches.autoEnd, batterySaver: s.rideSwitches.batterySaver });
   },
   photos: { stage: stagePhoto, commit: commitStaged, discard: discardStaged },
   journal: { stage: (kind, id, b64) => stageMedia(id, kind, b64), commit: commitJournalMedia, discard: discardJournalMedia },

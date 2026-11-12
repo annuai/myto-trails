@@ -1,5 +1,5 @@
 /** The kinds of ride nudge. `cls` groups them for the spacing rules: a "ride" nudge asks the rider to go riding, an "after" nudge follows a ride. */
-export type NudgeType = 'first' | 'lapse' | 'weekend' | 'weather' | 'club' | 'milestone' | 'photos' | 'standing';
+export type NudgeType = 'first' | 'lapse' | 'weekend' | 'weather' | 'club' | 'milestone' | 'photos' | 'home' | 'standing';
 export type NudgeLevel = 'off' | 'occasional' | 'regular';
 
 export const NUDGE_META: Record<NudgeType, { label: string; hint: string; cls: 'ride' | 'after' }> = {
@@ -10,6 +10,7 @@ export const NUDGE_META: Record<NudgeType, { label: string; hint: string; cls: '
   club: { label: 'Club rides', hint: 'A club ride coming up that you have not answered', cls: 'ride' },
   milestone: { label: 'Milestones', hint: 'When you are close to a round number of kilometres this year', cls: 'ride' },
   photos: { label: 'Photos after a ride', hint: 'A reminder to share your ride photos with your club', cls: 'after' },
+  home: { label: 'Ride home', hint: 'A reminder to head home after a ride', cls: 'after' },
   standing: { label: 'Standing', hint: 'How you compare near home, if you chose that', cls: 'ride' },
 };
 export const NUDGE_TYPES = Object.keys(NUDGE_META) as NudgeType[];
@@ -39,6 +40,12 @@ export type NudgeWorld = {
   clubRides: ClubRide[];
   /** How many clubs the rider is in. */
   clubs: number;
+  /** Home, when the rider has saved it. */
+  home?: { lat: number; lng: number };
+  /** Where the last real ride ended. */
+  lastRideEnd?: { lat: number; lng: number };
+  /** The last real ride was part of a group ride (the group finds its own way home). */
+  lastRideGroup?: boolean;
   nextTrail?: { slug: string; name: string };
   /** Nudges that came due before, with whether they were opened. */
   history: NudgeHistory[];

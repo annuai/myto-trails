@@ -5,6 +5,7 @@ import type { NudgeWorld } from '@/lib/nudge/types';
 import type { Reminder } from '@/lib/reminders';
 import { percentileBelow, type CohortRow } from '@moto-trails/domain';
 import { useNudges } from '@/store/nudges';
+import { usePlaces } from '@/store/places';
 import { useRides } from '@/store/rides';
 import { useTrailStore } from '@/store/trails';
 import { useStandingPref } from '@/store/standingPref';
@@ -31,13 +32,17 @@ export function standingFor(now: number): NudgeWorld['standing'] {
 /** What the engine reads, taken from the phone's stores as plain values. */
 export function buildNudgeWorld(now: number, others: Reminder[]): NudgeWorld {
   const n = useNudges.getState();
-  const real = useRides.getState().rides.filter((r) => !r.sample);
+  // Neither the demo ride nor a simulated one is a ride the rider made.
+  const real = useRides.getState().rides.filter((r) => !r.sample && !r.simulated);
   const rides = real.map((r) => ({ startedAt: r.startedAt, endedAt: r.startedAt + (r.durationSec + (r.pausedSec ?? 0)) * 1000, distanceKm: r.distanceKm }));
   const year = new Date(now).getFullYear();
   const today = isoOf(now);
   const trips = useTrips.getState().trips;
   const tripDays = trips.flatMap((t) => (t.startDate ? [t.startDate, ...(t.days ?? []).map((_, i) => dayDate(t.startDate!, i))] : []));
   const next = useTrailStore.getState().nextTrip;
+  const newest = real.reduce<(typeof real)[number] | undefined>((m, r) => (!m || r.startedAt > m.startedAt ? r : m), undefined);
+  const end = newest?.points[newest.points.length - 1];
+  const home = usePlaces.getState().home;
   return {
     now,
     level: n.level ?? 'off',
@@ -49,6 +54,9 @@ export function buildNudgeWorld(now: number, others: Reminder[]): NudgeWorld {
     forecast: (n.forecast?.days ?? []).filter((d) => d.iso >= today),
     clubRides: (n.clubs?.rides ?? []).filter((r) => r.startsAt > now),
     clubs: n.clubs?.count ?? 0,
+    home: home ? { lat: home.lat, lng: home.lng } : undefined,
+    lastRideEnd: end ? { lat: end.lat, lng: end.lng } : undefined,
+    lastRideGroup: !!newest?.groupId,
     nextTrail: next ? { slug: next.slug, name: next.name } : undefined,
     history: n.history,
     others: others.map((o) => ({ id: o.id, fireAt: o.fireAt })),

@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Platform, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { BellRing, MapPin, Pause, Route as RouteIcon, Users } from 'lucide-react-native';
+import { BellRing, House, MapPin, Pause, Route as RouteIcon, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { DestinationOption } from '@/features/trip/DestinationOption';
 import { DestinationSheet } from '@/features/group/DestinationSheet';
 import { useDirections } from '@/features/ride/useDirections';
 import { StartBar, TrailHint } from '@/features/trip/RideStartActions';
 import { useGuideTarget } from '@/store/guideTarget';
+import { goHome } from '@/features/home/goHome';
+import { usePlaces } from '@/store/places';
 import { useRideDraft } from '@/store/rideDraft';
 import { findHabits } from '@/lib/habit';
 import { rideTitle } from '@/lib/rideTitle';
@@ -69,6 +71,7 @@ async function fixWithin(ms: number): Promise<{ lat: number; lng: number } | und
 /** Record, ready: where are you going, the map, what we can truly check before a ride, then one big Start. */
 export default function RideReady() {
   const router = useRouter();
+  const home = usePlaces((s) => s.home);
   const { c: colors } = useTheme();
   const { autostart } = useLocalSearchParams<{ autostart?: string }>();
   const running = useRecorder((s) => s.status === 'running');
@@ -250,6 +253,7 @@ export default function RideReady() {
           : fix ? 'Your position is shown above. It is only saved once you start.'
           : gpsError ?? 'Finding your location. If asked, allow location access.'}
       </Text>
+      {home ? <View style={{ marginTop: space[3] }}><ListCard><Row icon={House} label="Ride home" sub="Directions home" onPress={() => goHome(router, home)} /></ListCard></View> : null}
       <SectionTitle>Before you go</SectionTitle>
       <Columns rightStartsWithSection left={<>
       <ListCard>

@@ -4,6 +4,8 @@ import { Image as ImageIcon, Link2 } from 'lucide-react-native';
 import { createSharedRoute } from '@/api/sharedRoutes';
 import { layoutAreaMap, layoutCardMap, mapBoxOf } from '@/lib/cardMap';
 import { forSharing } from '@/lib/privacy';
+import { trimNearPlaces } from '@/lib/geo';
+import { useSavedPlaces } from '@/lib/savedPlaces';
 import { buildRideCard, CARD_SIZE, MAX_CARD_STATS, type CardFormat, type CardStat } from '@/lib/rideCard';
 import { buildSharedRoute } from '@/lib/shareRoute';
 import { shareCard } from '@/lib/shareCard';
@@ -25,7 +27,8 @@ const PREVIEW_W = 220;
 
 /**
  * Share a ride as a picture (Instagram, WhatsApp, anything on the share sheet) or as a route link. The picture and the link both
- * leave out the first and last 300 m, so a home or workplace is never shown. The picture is made on the phone and not uploaded.
+ * leave out the first and last 300 m, and any start or end within 500 m of Home or Work, so neither is ever shown. The picture is
+ * made on the phone and not uploaded.
  */
 export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: boolean; onClose: () => void }) {
   const token = useAuth((s) => s.token);
@@ -34,14 +37,17 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   /** A short ride has nothing left once its start and end are cut off: the rider may choose to show it whole. */
   const [fullRoute, setFullRoute] = useState(false);
   const [readyKey, setReadyKey] = useState('');
-  const tooShort = useMemo(() => forSharing(ride.points).length < 2, [ride.points]);
+  const places = useSavedPlaces();
+  const tooShort = useMemo(() => forSharing(ride.points, places).length < 2, [ride.points, places]);
+  /** What may be shown at all: a ride that never got 500 m from Home or Work has nothing, not even the area map. */
+  const away = useMemo(() => trimNearPlaces(ride.points, places), [ride.points, places]);
   const fullRef = useRef<ComponentRef<typeof View>>(null);
   const { busy, problem, run } = useAction();
   const [message, setMessage] = useState<string>();
   const gain = useMemo(() => elevationProfile(ride.points)?.gainM, [ride.points]);
   const model = useMemo(
-    () => buildRideCard({ name: ride.name, startedAt: ride.startedAt, distanceKm: ride.distanceKm, durationSec: ride.durationSec, maxKmh: ride.maxKmh, waypoints: ride.waypoints.length, points: ride.points, elevationGainM: gain }, { format: card.format, stats: card.stats, hideRoute, fullRoute }),
-    [ride, card.format, card.stats, hideRoute, fullRoute, gain],
+    () => buildRideCard({ name: ride.name, startedAt: ride.startedAt, distanceKm: ride.distanceKm, durationSec: ride.durationSec, maxKmh: ride.maxKmh, waypoints: ride.waypoints.length, points: ride.points, elevationGainM: gain }, { format: card.format, stats: card.stats, hideRoute, fullRoute, places }),
+    [ride, card.format, card.stats, hideRoute, fullRoute, gain, places],
   );
   const full = CARD_SIZE[card.format];
   // The route over its map; or, when the route is hidden (too short to trim, or hidden by the rider), the map of the area alone.
@@ -49,11 +55,11 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   const map = useMemo(() => {
     if (hideRoute) return null;
     if (model.geoRoute) return layoutCardMap(model.geoRoute, mapBoxOf(model));
-    const p = ride.points;
+    const p = away;
     if (!p.length) return null;
     const centre = { lat: p.reduce((n, x) => n + x.lat, 0) / p.length, lng: p.reduce((n, x) => n + x.lng, 0) / p.length };
     return layoutAreaMap(centre, mapBoxOf(model));
-  }, [model, hideRoute, ride.points]);
+  }, [model, hideRoute, away]);
   // A new map (another size, another route) has to load its tiles again before the picture can be saved.
   const mapKey = map ? `${map.zoom}:${map.tiles.map((t) => t.url).join('|')}` : 'none';
   const mapReady = readyKey === mapKey;
@@ -67,8 +73,8 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   };
   const shareLink = async () => {
     if (!token) return setMessage('Sign in to share a route as a link.');
-    const body = buildSharedRoute({ name: ride.name, points: ride.points, waypoints: ride.waypoints });
-    if (!body) return setMessage('This ride is too short to share. The first and last 300 m are always left out.');
+    const body = buildSharedRoute({ name: ride.name, points: ride.points, waypoints: ride.waypoints, places });
+    if (!body) return setMessage('This ride is too short to share. The first and last 300 m, and anything within 500 m of Home or Work, are always left out.');
     setMessage(undefined);
     const made = await run(() => createSharedRoute(token, body));
     if (made) await Share.share({ message: `${ride.name} on Myto Moto: ${made.value.url}` }).catch(() => undefined);
@@ -88,7 +94,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
       </View>
       <Button icon={ImageIcon} label={mapReady ? 'Share picture' : 'Preparing the map…'} disabled={busy || !mapReady} onPress={() => void sharePicture()} />
       <Button variant="soft" icon={Link2} label="Share route as a link" disabled={busy} onPress={() => void shareLink()} />
-      <Text variant="caption" tone="muted">The first and last 300 m are left out of the picture and the link.</Text>
+      <Text variant="caption" tone="muted">The first and last 300 m, and the part near Home or Work, are left out of the picture and the link.</Text>
       {message ?? problem ? <Text variant="label" tone="stop">{message ?? problem}</Text> : null}
       {/* The picture that is saved is drawn at its full size, off screen, so it is sharp whatever the preview's size. */}
       <View pointerEvents="none" style={{ position: 'absolute', left: -full.width - 50, top: 0 }}>

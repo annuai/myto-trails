@@ -1,6 +1,6 @@
-import type { LatLng } from './geo';
+import { trimNearPlaces, type LatLng } from './geo';
 import { elevationM, distanceKm, durationParts, speedKmh, type Quantity } from './units';
-import { forSharing } from './privacy';
+import { forSharing, PLACE_TRIM_M } from './privacy';
 import { cardTokens } from './rideCard.tokens';
 import { simplifyTo } from './routePlan';
 import { deviceLocale } from './locale';
@@ -44,9 +44,10 @@ const dateText = (t: number) => new Date(t).toLocaleDateString(deviceLocale(), {
 
 /**
  * What a ride card shows. At most four stats (three by default), values in the app's own units, and the route
- * trimmed at both ends exactly like a shared route, so a card never shows where the rider lives.
+ * trimmed at both ends exactly like a shared route, so a card never shows where the rider lives. Its ends near Home or Work
+ * (`places`) are left out even when the rider chose to show the whole route.
  */
-export function buildRideCard(ride: CardRide, opts: { format?: CardFormat; stats?: CardStat[]; hideRoute?: boolean; /** Show the route without cutting off its start and end. The rider's choice, for a ride too short to trim. */ fullRoute?: boolean } = {}): CardModel {
+export function buildRideCard(ride: CardRide, opts: { format?: CardFormat; stats?: CardStat[]; hideRoute?: boolean; /** Show the route without cutting off its start and end. The rider's choice, for a ride too short to trim. */ fullRoute?: boolean; /** The rider's Home and Work. */ places?: LatLng[] } = {}): CardModel {
   const format = opts.format ?? 'story';
   const chosen = (opts.stats?.length ? opts.stats : DEFAULT_STATS).filter((s, i, a) => a.indexOf(s) === i).slice(0, MAX_CARD_STATS);
   const parts = (s: CardStat): Quantity[] | null => {
@@ -59,7 +60,7 @@ export function buildRideCard(ride: CardRide, opts: { format?: CardFormat; stats
     }
   };
   const stats = chosen.flatMap((key) => { const p = parts(key); return p ? [{ key, label: LABEL[key], parts: p }] : []; });
-  const shown = opts.hideRoute ? [] : opts.fullRoute ? ride.points : forSharing(ride.points);
+  const shown = opts.hideRoute ? [] : opts.fullRoute ? trimNearPlaces(ride.points, opts.places ?? [], PLACE_TRIM_M) : forSharing(ride.points, opts.places);
   const thin = shown.length >= 2 ? simplifyTo(shown, ROUTE_POINTS) : null;
   const route = thin ? normaliseRoute(thin) : null;
   return { format, ...CARD_SIZE[format], title: ride.name, date: dateText(ride.startedAt), stats, route: route?.points ?? null, routeAspect: route?.aspect ?? 1, geoRoute: thin };
