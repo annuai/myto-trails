@@ -45,3 +45,6 @@ It only asks, never ends, for Work unless guided there and for a place the rider
 Auto-end is off by default (`useCompanion.autoEnd`); `src/AutoEndHost.tsx` runs it only when the recorder hears a fix, with no timer and no reading of its own, and saves through the same `endRide` as Stop.
 The warning is one local notification plus a line on the live screen; Keep recording (or tapping the warning) cancels that place for the ride and adds a strike, and a completed end clears the strikes.
 It never runs in a group ride, and during a trip or a route with waypoints ahead only when guided to that place.
+The background recording runs at one of three GPS profiles (`src/lib/recordingProfile.ts`): full (best for navigation, every second), saver (high accuracy, every 3 s) and idle (balanced, every 10 s); the on-screen watch stays at full.
+Saver is used at 20 % or less unplugged (10 % or less while navigating) and left at 25 %; idle after 2 minutes still, and full again at once at 5 km/h, on resuming, or on a fix too poor to judge. Switches otherwise wait 60 s.
+The trade-off: in saver and idle, distance and top speed may read slightly low. It is on by default (`useCompanion.batterySaver`); off keeps full. Auto-end stops the GPS on arrival.

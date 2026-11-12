@@ -5,6 +5,8 @@ vi.mock('react-native', () => ({ AppState: { currentState: 'active' } }));
 vi.mock('expo-router', () => ({ usePathname: () => '/', useRouter: () => ({ replace: () => {} }) }));
 vi.mock('@/lib/notifier', () => ({ notifier: { notifyNow: n.notifyNow, dismiss: n.dismiss }, useTappedRoute: () => null }));
 vi.mock('@/features/ride/endRide', () => ({ endRide: n.endRide }));
+vi.mock('@/lib/backgroundLocation', () => ({ setRecordingProfile: async () => {} }));
+vi.mock('expo-location', () => ({ Accuracy: { Balanced: 3, High: 4, BestForNavigation: 6 } }));
 const mk = vi.hoisted(() => async <T extends object>(init: T) => (await import('zustand')).create<T>(() => init));
 type Kind = 'home' | 'work';
 vi.mock('@/store/places', async () => {
@@ -27,6 +29,7 @@ import { usePlaces as places } from '@/store/places';
 import { useRecorder as rec } from '@/store/recorder';
 import { useMotion as motion } from '@/store/motion';
 import { useCompanion as companion } from '@/store/companion';
+import { useBattery as battery } from '@/store/battery';
 import { useAutoEndPrompt, watchAutoEnd } from './AutoEndHost';
 
 const S = 1000;
@@ -150,5 +153,65 @@ describe('AutoEndHost', () => {
     expect(timeout).not.toHaveBeenCalled();
     interval.mockRestore(); timeout.mockRestore();
     await flush();
+  });
+
+  describe('recording profile', () => {
+    const setProfile = vi.fn();
+    const ride = (kmh: number, t: number) => { now = t; rec.setState((s) => ({ speedKmh: kmh, lastFixAt: t })); };
+    beforeEach(() => {
+      stop();
+      companion.setState({ autoEnd: false, batterySaver: true } as never);
+      rec.setState({ backgrounded: true, speedKmh: 0 } as never);
+      battery.setState({ level: 80, charging: false });
+      stop = watchAutoEnd({ now: () => now, liveShowing: () => liveShowing, replace, setProfile });
+    });
+
+    it('goes idle after 2 minutes standing and back to full at 5 km/h at once', () => {
+      const T = 10 * 60 * S;
+      ride(40, T);
+      expect(setProfile).toHaveBeenLastCalledWith('full');
+      for (let x = T + 10 * S; x <= T + 120 * S; x += 10 * S) ride(0, x);
+      expect(setProfile).toHaveBeenLastCalledWith('full');
+      ride(0, T + 130 * S);
+      expect(setProfile).toHaveBeenLastCalledWith('idle');
+      ride(6, T + 140 * S);
+      expect(setProfile).toHaveBeenLastCalledWith('full');
+    });
+
+    it('a resume after a pause counts as moving off', () => {
+      const T = 10 * 60 * S;
+      for (let x = T; x <= T + 130 * S; x += 10 * S) ride(0, x);
+      expect(setProfile).toHaveBeenLastCalledWith('idle');
+      rec.setState({ paused: true });
+      now = T + 400 * S;
+      rec.setState({ paused: false });
+      expect(setProfile).toHaveBeenLastCalledWith('full');
+    });
+
+    it('saver on a low battery, and never anything but full with batterySaver off', () => {
+      battery.setState({ level: 15, charging: false });
+      ride(40, 10 * 60 * S);
+      expect(setProfile).toHaveBeenLastCalledWith('saver');
+      companion.setState({ batterySaver: false } as never);
+      ride(40, 12 * 60 * S);
+      expect(setProfile).toHaveBeenLastCalledWith('full');
+      for (let x = 13 * 60 * S; x <= 20 * 60 * S; x += 10 * S) ride(0, x);
+      expect(setProfile.mock.calls.every(([p], i) => i === 0 || p === 'full')).toBe(true);
+    });
+
+    it('idle wakes on a fix too poor to judge, since it cannot see the rider move', () => {
+      const T = 10 * 60 * S;
+      for (let x = T; x <= T + 130 * S; x += 10 * S) ride(0, x);
+      expect(setProfile).toHaveBeenLastCalledWith('idle');
+      now = T + 140 * S;
+      rec.setState({ lastFixAt: now, fixPoor: true } as never);
+      expect(setProfile).toHaveBeenLastCalledWith('full');
+    });
+
+    it('does not ask for a profile when the background task is not recording', () => {
+      rec.setState({ backgrounded: false } as never);
+      ride(40, 10 * 60 * S);
+      expect(setProfile).not.toHaveBeenCalled();
+    });
   });
 });

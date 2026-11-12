@@ -48,6 +48,8 @@ type State = {
   flush: () => Promise<void>;
   /** When the last fix arrived, drawn or not. The live screen warns when this gets old. */
   lastFixAt: number;
+  /** The last fix was too poor to judge speed or position by (the GPS profile leaves idle on one). */
+  fixPoor: boolean;
   /** True while the phone's background task is the one recording (it keeps going with the screen locked). */
   backgrounded: boolean;
   setBackgrounded: (b: boolean) => void;
@@ -71,7 +73,7 @@ type State = {
   reset: () => void;
 };
 
-const blank = { status: 'idle' as const, startedAt: 0, rideId: '', points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0, moving: false, paused: false, pausedAt: 0, pausedMs: 0, pauseBreaks: [] as number[], skipStep: false, resumed: undefined };
+const blank = { status: 'idle' as const, startedAt: 0, rideId: '', points: [], waypoints: [], meters: 0, speedKmh: 0, maxKmh: 0, notes: 0, lastFixAt: 0, fixPoor: false, moving: false, paused: false, pausedAt: 0, pausedMs: 0, pauseBreaks: [] as number[], skipStep: false, resumed: undefined };
 
 /** The live recorder. Every fix goes to the journal first; the store only shows what the screen needs. */
 export function createRecorder(journal: Journal, hooks: { stopBackground?: () => Promise<void> } = {}) {
@@ -121,7 +123,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       const kmh = fixSpeedKmh({ stepM: step, dtSec: dt, inside, reportedMps: p.speed });
       const poor = p.acc != null && p.acc > MAX_ACCURACY_M;
       // A fix too poor to draw says nothing about whether the rider is moving, so it leaves that as it was.
-      set(poor ? { lastFixAt: Date.now() } : { lastFixAt: Date.now(), moving: kmh >= 3.6, speedKmh: kmh });
+      set(poor ? { lastFixAt: Date.now(), fixPoor: true } : { lastFixAt: Date.now(), fixPoor: false, moving: kmh >= 3.6, speedKmh: kmh });
       if (poor) return queue as Promise<void>;
       if (!last) { set({ points: [p] }); return queue as Promise<void>; }
       if (get().skipStep) { set({ points: [...points, p], pauseBreaks: [...get().pauseBreaks, points.length], skipStep: false }); return queue as Promise<void>; }
