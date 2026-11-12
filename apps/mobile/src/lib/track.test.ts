@@ -93,7 +93,7 @@ describe('trackStats', () => {
     expect(s.distanceM).toBeCloseTo(100, -1);
   });
   it('empty input is all zeros', () => {
-    expect(trackStats([])).toEqual({ distanceM: 0, movingSec: 0, gapM: 0, maxKmh: 0 });
+    expect(trackStats([])).toEqual({ distanceM: 0, movingSec: 0, gapM: 0, bridgeM: 0, maxKmh: 0 });
   });
 });
 

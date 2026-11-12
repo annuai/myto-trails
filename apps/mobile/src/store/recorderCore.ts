@@ -4,7 +4,7 @@ import { uid } from '@/lib/id';
 import { fixSpeedKmh } from '@/lib/liveSpeed';
 import { medianOf, TOP_SPEED_WINDOW } from '@/lib/topSpeed';
 import type { Journal } from '@/lib/journal';
-import { breaksOf, cleanTrack, driftRadius, splitSegments, trackStats } from '@/lib/track';
+import { BRIDGE_MAX_M, breaksOf, cleanTrack, driftRadius, splitSegments, trackStats } from '@/lib/track';
 import { WAYPOINT_LABEL, type WaypointKind } from '@/lib/waypointKinds';
 import { GAP_MIN_MS, lastFixAt } from '@/lib/resumeRide';
 import type { Waypoint } from './rides';
@@ -30,7 +30,7 @@ type State = {
   notes: number;
   /** Indices into `points` where the live track starts again after a pause, so no line is drawn across one. */
   pauseBreaks: number[];
-  /** The first fix after a resume starts a new stretch: the distance from before the pause is not counted. */
+  /** The first fix after a resume starts a new stretch: no line is drawn back to before the pause, but the ground covered meanwhile (a rider who forgot to resume) is counted. */
   skipStep: boolean;
   /** The rider paused the ride (a tea break): nothing is recorded until they resume. */
   paused: boolean;
@@ -126,7 +126,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       set(poor ? { lastFixAt: Date.now(), fixPoor: true } : { lastFixAt: Date.now(), fixPoor: false, moving: kmh >= 3.6, speedKmh: kmh });
       if (poor) return queue as Promise<void>;
       if (!last) { set({ points: [p] }); return queue as Promise<void>; }
-      if (get().skipStep) { set({ points: [...points, p], pauseBreaks: [...get().pauseBreaks, points.length], skipStep: false }); return queue as Promise<void>; }
+      if (get().skipStep) { set({ points: [...points, p], pauseBreaks: [...get().pauseBreaks, points.length], skipStep: false, meters: meters + (step <= BRIDGE_MAX_M ? step : 0) }); return queue as Promise<void>; }
       if (derived > MAX_KMH || inside) return queue as Promise<void>;
       recent = [...recent, kmh].slice(-TOP_SPEED_WINDOW);
       set({ points: [...points, p], meters: meters + step, maxKmh: recent.length >= 3 ? Math.max(maxKmh, medianOf(recent)) : maxKmh });
@@ -166,7 +166,7 @@ export function createRecorder(journal: Journal, hooks: { stopBackground?: () =>
       const points = cleanTrack(r.points);
       const stats = trackStats(splitSegments(points, pauses));
       const pausedMs = pauses.reduce((n, x) => n + (x.to !== undefined ? x.to - x.from : 0), 0);
-      set({ ...blank, status: 'running', source: r.meta.source, startedAt: r.meta.startedAt, rideId: r.meta.rideId ?? '', points, waypoints: r.waypoints, meters: stats.distanceM, maxKmh: stats.maxKmh, lastFixAt: now, recoverable: null, paused: !!open, pausedAt: open?.from ?? 0, pausedMs, pauseBreaks: breaksOf(splitSegments(points, pauses)), skipStep: !open, ...(gapMs ? { resumed: { at: now, gapMs } } : {}) });
+      set({ ...blank, status: 'running', source: r.meta.source, startedAt: r.meta.startedAt, rideId: r.meta.rideId ?? '', points, waypoints: r.waypoints, meters: stats.distanceM + stats.bridgeM, maxKmh: stats.maxKmh, lastFixAt: now, recoverable: null, paused: !!open, pausedAt: open?.from ?? 0, pausedMs, pauseBreaks: breaksOf(splitSegments(points, pauses)), skipStep: !open, ...(gapMs ? { resumed: { at: now, gapMs } } : {}) });
       return gapMs;
     },
     discardRecovered: async () => { await hooks.stopBackground?.(); await journal.clear(); set({ recoverable: null }); },

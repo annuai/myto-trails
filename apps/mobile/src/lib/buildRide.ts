@@ -18,6 +18,6 @@ export function buildRide(raw: JournalRide, now: number): Omit<Ride, 'id'> | und
   const pausedMs = raw.pauses.reduce((n, p) => n + Math.max(0, Math.min(p.to ?? now, endedAt) - Math.max(p.from, raw.meta.startedAt)), 0);
   return {
     name: `${formatShort(iso)} ${part(d.getHours())} ride`, startedAt: raw.meta.startedAt, durationSec: Math.max(0, Math.round((endedAt - raw.meta.startedAt - pausedMs) / 1000)), pausedSec: Math.round(pausedMs / 1000),
-    distanceKm: +(stats.distanceM / 1000).toFixed(1), maxKmh: Math.round(stats.maxKmh), points, breaks: breaksOf(segments), waypoints: raw.waypoints,
+    distanceKm: +((stats.distanceM + stats.bridgeM) / 1000).toFixed(1), maxKmh: Math.round(stats.maxKmh), points, breaks: breaksOf(segments), waypoints: raw.waypoints,
   };
 }

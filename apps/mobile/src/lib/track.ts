@@ -57,9 +57,12 @@ export function splitSegments(points: LatLng[], pauses: Pause[] = []): LatLng[][
   return segments;
 }
 
-/** Distance and moving time from the real segments only; the straight line across a break is reported as `gapM`. */
-export function trackStats(segments: LatLng[][]): { distanceM: number; movingSec: number; gapM: number; maxKmh: number } {
-  let distanceM = 0, movingSec = 0, gapM = 0;
+/** A break shorter than this is ground the rider covered (they forgot to resume, or lost signal briefly) and counts toward the distance; a longer jump is a lift or a ferry and does not. */
+export const BRIDGE_MAX_M = 2000;
+
+/** Distance and moving time from the real segments only; the straight line across a break is reported as `gapM`; `bridgeM` is the part of it short enough to be the rider's own ground (see BRIDGE_MAX_M), which the ride's total includes. */
+export function trackStats(segments: LatLng[][]): { distanceM: number; movingSec: number; gapM: number; bridgeM: number; maxKmh: number } {
+  let distanceM = 0, movingSec = 0, gapM = 0, bridgeM = 0;
   segments.forEach((seg, s) => {
     for (let i = 1; i < seg.length; i++) {
       const step = haversine(seg[i - 1], seg[i]);
@@ -71,9 +74,9 @@ export function trackStats(segments: LatLng[][]): { distanceM: number; movingSec
       }
     }
     const prev = segments[s - 1];
-    if (prev?.length && seg.length) gapM += haversine(prev[prev.length - 1], seg[0]);
+    if (prev?.length && seg.length) { const g = haversine(prev[prev.length - 1], seg[0]); gapM += g; if (g <= BRIDGE_MAX_M) bridgeM += g; }
   });
-  return { distanceM, movingSec, gapM, maxKmh: topSpeedKmh(segments) };
+  return { distanceM, movingSec, gapM, bridgeM, maxKmh: topSpeedKmh(segments) };
 }
 
 /** Rebuild segments from a flat track and the indices where each new segment starts (absent on rides saved before gaps were tracked). */

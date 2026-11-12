@@ -32,6 +32,8 @@ A ride gets its `rideId` **when recording starts** (`recorderCore.start`). It is
 
 A ride has no stored status. What exists is derived: the recorder is `idle` or `running` (and `paused`); a trip is `logged | upcoming | ready | active | done | missed`; a ride is "contributed" when `ride.submission` is set. A stored `draft | planned | active | completed | contributed` status is added with the plan object in Phase 2, when something reads it.
 
+Distance across a pause: ground covered while paused (a rider who forgot to resume) counts if the straight line to the first fix after resuming is 2 km or less (`BRIDGE_MAX_M`, lib/track.ts); no line is drawn across it. A longer jump is a lift, not riding, and is not counted.
+
 ## Existing data
 
 On start, `runRideIdMigration` gives older journal entries the id of the ride that started at their `rideKey`. If any entry needs it, it first writes `journal-before-ride-ids-<time>.json` (the entries as they were) to the app's document folder. If that copy cannot be written, nothing is changed and the next start tries again. It does not run in the browser test build.
@@ -39,3 +41,7 @@ On start, `runRideIdMigration` gives older journal entries the id of the ride th
 ## Going back
 
 `rideId` is optional on journal entries and the journal meta, and the SQLite column is added only if missing, so the 0.8 app (`legacy/0.8-companion`) should read this data unchanged: it ignores the extra field and column. This is from reading the code; it has not been tested by opening this data in a 0.8 build.
+
+## Home-screen widget
+
+One `expo-widgets` widget, `QuickActions` (Android 4x2, iOS small and medium): Start/Pause/Resume, SOS, Group, Check-in. Its buttons are `myto://` links (`QUICK_LINKS`, lib/quickWidget.ts) or the ride card's own `ride.pause`/`ride.resume` events. The app pushes state from `QuickWidgetHost`; the iOS and Android layouts are separate `.tokens` files named in `app.json`. SOS is the ride's sheet while recording; idle it opens emergency contacts, as that sheet exists only on the live screen. Needs a new native build; not yet seen on a device.

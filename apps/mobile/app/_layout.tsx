@@ -25,6 +25,7 @@ import { ResumeHost } from '@/ResumeHost';
 import { CrashHost } from '@/CrashHost';
 import { NavigateChoiceHost } from '@/NavigateChoiceHost';
 import { OsmAskHost } from '@/features/osm/OsmAskHost';
+import { QuickWidgetHost } from '@/QuickWidgetHost';
 import { RideNotificationHost } from '@/RideNotificationHost';
 import { VoiceHost } from '@/VoiceHost';
 import { runRideIdMigration } from '@/lib/rideIdMigration.run';
@@ -79,6 +80,7 @@ export default function Root() {
       <AutoEndHost />
       <ResumeHost />
       <RideNotificationHost />
+      <QuickWidgetHost />
           <VoiceHost />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: paper }, animation: 'slide_from_right' }}>
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />

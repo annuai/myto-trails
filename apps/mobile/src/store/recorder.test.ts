@@ -171,6 +171,21 @@ describe('pause', () => {
     expect((await j.read())!.points).toHaveLength(3);
     vi.restoreAllMocks();
   });
+  it('ground covered while paused counts: the distance to the first fix after resuming is added, with no line drawn across it', async () => {
+    const set = clock(T);
+    const rec = createRecorder(createMemoryJournal());
+    await rec.getState().start('gps');
+    await rec.getState().ingest(pt(0, 0));
+    await rec.getState().ingest(pt(300, 30));
+    set(T + 40_000);
+    await rec.getState().pause();
+    set(T + 120_000);
+    await rec.getState().resume();
+    await rec.getState().ingest(pt(900, 120));
+    expect(rec.getState().meters).toBeCloseTo(900, -1);
+    expect(rec.getState().pauseBreaks).toEqual([2]);
+    vi.restoreAllMocks();
+  });
   it('elapsed time leaves out paused time and is frozen while paused', async () => {
     const set = clock(T);
     const rec = createRecorder(createMemoryJournal());

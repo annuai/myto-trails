@@ -82,7 +82,29 @@
         "expo-widgets",
         {
           "frequentUpdates": true,
-          "enableAndroid": true
+          "enableAndroid": true,
+          "widgets": [
+            {
+              "name": "QuickActions",
+              "displayName": "Quick actions",
+              "description": "Start or pause a ride, SOS, group ride and check-in.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium"
+                ],
+                "initialLayout": "src/features/widgets/QuickActions.ios.tokens.tsx"
+              },
+              "android": {
+                "targetCellWidth": 4,
+                "targetCellHeight": 2,
+                "minWidth": 250,
+                "minHeight": 110,
+                "resizeMode": "horizontal",
+                "initialLayout": "src/features/widgets/QuickActions.android.tokens.tsx"
+              }
+            }
+          ]
         }
       ]
     ],
