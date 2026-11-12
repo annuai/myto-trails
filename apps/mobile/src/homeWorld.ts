@@ -15,7 +15,8 @@ import { useTrips } from '@/store/trips';
 /** What the "Ride home" offer reads, from the phone's stores as plain values. Reads positions only: it never starts a GPS watch. */
 export function buildHomeWorld(now: number): HomeWorld {
   const home = usePlaces.getState().home;
-  const real = useRides.getState().rides.filter((r) => !r.sample);
+  // Neither the demo ride nor a simulated one is a ride the rider made: no offer or habit comes from them.
+  const real = useRides.getState().rides.filter((r) => !r.sample && !r.simulated);
   const ends = real.map((r) => r.startedAt + (r.durationSec + (r.pausedSec ?? 0)) * 1000);
   const rec = useRecorder.getState();
   const loc = useLocation.getState();

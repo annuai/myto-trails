@@ -7,9 +7,9 @@ const M = 1 / 111_320;
 const T0 = 1_700_000_000_000;
 const pt = (north: number, tSec: number): LatLng => ({ lat: 13 + north * M, lng: 77.6, t: T0 + tSec * 1000 });
 
-async function setup(opts: { persist?: () => Promise<void>; existing?: string; fixes?: LatLng[]; rideId?: string } = {}) {
+async function setup(opts: { persist?: () => Promise<void>; existing?: string; fixes?: LatLng[]; rideId?: string; source?: 'gps' | 'sim' } = {}) {
   const journal = createMemoryJournal();
-  await journal.begin({ startedAt: T0, source: 'gps', ...(opts.rideId ? { rideId: opts.rideId } : {}) });
+  await journal.begin({ startedAt: T0, source: opts.source ?? 'gps', ...(opts.rideId ? { rideId: opts.rideId } : {}) });
   for (const f of opts.fixes ?? [pt(0, 0), pt(100, 10), pt(200, 20)]) await journal.append(f);
   const calls: string[] = [];
   const addRide = vi.fn((_r: unknown, _id?: string) => { calls.push('add'); return 'ride-1'; });
@@ -31,6 +31,14 @@ describe('finishing a ride', () => {
     expect(await finish()).toBe('ride-1');
     expect(calls).toEqual(['stop', 'flush', 'add', 'persist']);
     expect(await journal.read()).toBeNull();
+  });
+  it('marks a simulated recording as simulated, and leaves a real one unmarked', async () => {
+    const sim = await setup({ source: 'sim' });
+    await sim.finish();
+    expect(sim.addRide.mock.calls[0][0]).toMatchObject({ simulated: true });
+    const real = await setup();
+    await real.finish();
+    expect(real.addRide.mock.calls[0][0]).not.toHaveProperty('simulated');
   });
   it('a double tap saves one ride', async () => {
     const { finish, addRide } = await setup();

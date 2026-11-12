@@ -14,7 +14,7 @@ const AHEAD_MS = 5 * DAY;
 
 /** Where the rider rides from: the start of their latest real ride, or nothing. */
 const home = () => {
-  const r = useRides.getState().rides.find((x) => !x.sample && x.points.length);
+  const r = useRides.getState().rides.find((x) => !x.sample && !x.simulated && x.points.length);
   const p = r?.points[0];
   return p ? { lat: p.lat, lng: p.lng } : undefined;
 };

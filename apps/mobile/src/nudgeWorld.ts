@@ -13,7 +13,8 @@ import { dayDate } from '@/lib/tripPlan';
 /** What the engine reads, taken from the phone's stores as plain values. */
 export function buildNudgeWorld(now: number, others: Reminder[]): NudgeWorld {
   const n = useNudges.getState();
-  const real = useRides.getState().rides.filter((r) => !r.sample);
+  // Neither the demo ride nor a simulated one is a ride the rider made.
+  const real = useRides.getState().rides.filter((r) => !r.sample && !r.simulated);
   const rides = real.map((r) => ({ startedAt: r.startedAt, endedAt: r.startedAt + (r.durationSec + (r.pausedSec ?? 0)) * 1000, distanceKm: r.distanceKm }));
   const year = new Date(now).getFullYear();
   const today = isoOf(now);
