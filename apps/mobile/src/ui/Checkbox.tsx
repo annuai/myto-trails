@@ -7,10 +7,11 @@ import { DrawnCheck } from './DrawnCheck';
 import { InkFill } from './InkFill';
 import { ARRIVE, ScalePressable, useReducedMotion } from './motion';
 import { useAnimatedValue } from './useAnimatedValue';
+import { checkboxPress } from './checkboxPress';
 import { checkbox } from './Checkbox.tokens';
 
 /** 28 px box inside a 48 px target. Ticking fills the box and draws the check, with a soft tick; unticking is instant and silent. */
-export function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+export function Checkbox({ checked, onChange, label, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; /** Announced as disabled; a press does nothing, not even the tick. */ disabled?: boolean }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const fill = useAnimatedValue(checked ? 1 : 0);
@@ -19,9 +20,9 @@ export function Checkbox({ checked, onChange, label }: { checked: boolean; onCha
     fill.setValue(0);
     Animated.timing(fill, { toValue: 1, duration: motion.duration.quick, easing: ARRIVE, useNativeDriver: true }).start();
   }, [checked, reduced, fill]);
-  const press = () => { if (!checked) buzz.tick(); onChange(!checked); };
+  const press = () => checkboxPress(checked, disabled, onChange, buzz.tick);
   return (
-    <ScalePressable scaleTo={0.9} accessibilityRole="checkbox" accessibilityLabel={label} accessibilityState={{ checked }} onPress={press} style={{ width: size.target, height: size.target, alignItems: 'center', justifyContent: 'center' }}>
+    <ScalePressable scaleTo={0.9} accessibilityRole="checkbox" accessibilityLabel={label} accessibilityState={{ checked, disabled: !!disabled }} disabled={disabled} onPress={press} style={{ width: size.target, height: size.target, alignItems: 'center', justifyContent: 'center' }}>
       {checked ? (
         <Animated.View style={{ opacity: fill, transform: [{ scale: fill.interpolate({ inputRange: [0, 1], outputRange: [checkbox.tick.from, 1] }) }] }}>
           <InkFill style={{ width: checkbox.box, height: checkbox.box, borderRadius: checkbox.radius, alignItems: 'center', justifyContent: 'center' }}>

@@ -8,7 +8,9 @@ import type { CarryItem } from '@moto-trails/domain';
 import { ApiFailure } from '@/api/client';
 import { asText, distanceKm } from '@/lib/units';
 import { newUuid } from '@/lib/uuid';
-import { pathLength, trimEnds } from '@/lib/geo';
+import { pathLength } from '@/lib/geo';
+import { awayFromPlaces, forSubmission } from '@/lib/privacy';
+import { useSavedPlaces } from '@/lib/savedPlaces';
 import { startSignIn } from '@/lib/signIn';
 import { submitRide } from '@/lib/submit';
 import { MAX_SUBMISSION_PHOTOS } from '@/lib/submitPhotos';
@@ -73,7 +75,9 @@ export default function Submit() {
   const [filter, setFilter] = useState('');
   const [busy, setBusy] = useState<string>();
   const [error, setError] = useState<string>();
-  const points = useMemo(() => (ride ? trimEnds(ride.points, trim) : []), [ride, trim]);
+  const places = useSavedPlaces();
+  // The rider's trim of each end, then anything near Home or Work at either end: neither is ever sent.
+  const points = useMemo(() => (ride ? forSubmission(ride.points, trim, places) : []), [ride, trim, places]);
   if (!ride) return <Screen><BackHeader /><Text>Ride not found.</Text></Screen>;
   const km = pathLength(points) / 1000;
 
@@ -89,7 +93,7 @@ export default function Submit() {
     const carryIssue = carryProblem({ water, notes: carryNotes, arrival, arrivalNote });
     if (carryIssue) return carryIssue;
     if (photos.some((p) => !p.altText.trim())) return 'Describe each photo in a few words, for people who cannot see it.';
-    if (points.length < 2) return 'Nothing is left of the track after trimming. Choose a smaller trim.';
+    if (points.length < 2) return 'Nothing is left of the track after trimming. Choose a smaller trim (the part within 500 m of Home or Work is always left out).';
     if (!agreed) return 'Accept the contribution licence to submit.';
     return undefined;
   })();
@@ -105,7 +109,7 @@ export default function Submit() {
       carry: carryFields({ water, items, notes: carryNotes, arrival, arrivalNote }), photos: photos.map((p) => ({ mediaId: p.mediaId, altText: p.altText })),
     };
     try {
-      const res = await submitRide(token, { ...form, clientId, points, waypoints: ride.waypoints }, setBusy);
+      const res = await submitRide(token, { ...form, clientId, points, waypoints: awayFromPlaces(ride.waypoints, places) }, setBusy);
       useRides.getState().setSubmission(ride.id, { status: 'submitted', at: Date.now(), trailName: name.trim(), slug: res.slug, clientId });
       goBack(router, '/rides');
     } catch (e) {

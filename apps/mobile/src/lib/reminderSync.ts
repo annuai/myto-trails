@@ -14,6 +14,8 @@ export type Notifier = {
   cancelAll(): Promise<void>;
   schedule(n: Shown): Promise<void>;
   notifyNow(n: Shown): Promise<void>;
+  /** Takes one notification away, shown or still waiting (the auto-end warning, once the rider rides off). */
+  dismiss?(id: string): Promise<void>;
   openSettings(): void;
 };
 

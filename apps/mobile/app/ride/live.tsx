@@ -33,7 +33,6 @@ import { useSmoothedRide } from '@/features/ride/useSmoothedRide';
 import { fromDirections, fromTrail, type Instruction } from '@/lib/guidance';
 import { SIM_GROUP_ID, SIM_ROUTE } from '@/lib/groupSim';
 import { useSimRide } from '@/store/simRide';
-import { queueRideForOsm } from '@/lib/osmShare';
 import { useGuideTarget } from '@/store/guideTarget';
 import { LeadCards } from '@/features/group/LeadCards';
 import { LeaderExitSheet } from '@/features/group/LeaderExitSheet';
@@ -44,13 +43,13 @@ import { useCanNavigate } from '@/features/group/useCanNavigate';
 import { riderSlots, riderTiles, sortRiders } from '@/lib/groupCore';
 import { useCompanion } from '@/store/companion';
 import { useMyRoutes } from '@/store/myRoutes';
-import { useTrips } from '@/store/trips';
 import { ChoiceChip } from '@/ui/Chip';
 import { useJournalActions } from '@/lib/useJournalActions';
 import { Banner } from '@/ui/Banner';
 import { gapText, RESUMED_NOTICE_MS } from '@/lib/resumeRide';
 import { clock } from '@/lib/format';
-import { finishRide } from '@/lib/finishRide';
+import { endRide } from '@/features/ride/endRide';
+import { useAutoEndPrompt } from '@/AutoEndHost';
 import { breaksOf, mergeBreaks, splitSegments } from '@/lib/track';
 import { useProfile } from '@/store/profile';
 import { useRecorder } from '@/store/recorder';
@@ -187,7 +186,10 @@ function LiveBody() {
   const [resumedAt, setResumedAt] = useState(0);
   useEffect(() => { const sub = AppState.addEventListener('change', (st) => { if (st === 'active') setResumedAt(nowMs()); }); return () => sub.remove(); }, []);
   useEffect(() => { const id = setInterval(() => tick((n) => n + 1), 1000); return () => clearInterval(id); }, []);
-  useEffect(() => { if (r.status === 'idle' && !stopping.current) router.replace('/'); }, [r.status, router]);
+  // Auto-end (AutoEndHost) saves the ride itself and opens its story, so the screen does not send the rider Home over it. Saved with
+  // the phone locked, the screen goes Home when the rider comes back to it.
+  useEffect(() => { if (r.status === 'idle' && !stopping.current && !useAutoEndPrompt.getState().ending) router.replace('/'); }, [r.status, router, resumedAt]);
+  const autoEnd = useAutoEndPrompt();
   // A place the rider asked to be guided to is for this ride only.
   useEffect(() => () => { if (useRecorder.getState().status === 'idle') { useGuideTarget.getState().clear(); useSimRide.getState().clear(); useLead.getState().dismiss(); useLead.getState().closeBackup(); } }, []);
   // Heading to the start, then along the trail. Off the trail (only once on it, as lib/reroute decides): buzz, say so and guide back to a point ahead on it. Back on it: clear that.
@@ -251,13 +253,7 @@ function LiveBody() {
   const doStop = async () => {
     buzz.stop();
     stopping.current = true;
-    const recordedByGps = r.source === 'gps';
-    // If the ride could not be written, it stays on the phone and Home offers it back for saving.
-    const id = await finishRide().catch(() => undefined);
-    // A ride recorded while a trip is under way belongs to it.
-    if (id) useTrips.getState().attachToActive(id);
-    // With the rider's yes, the route goes to OpenStreetMap, trimmed and anonymous. A simulated ride never does.
-    if (id) queueRideForOsm(id, recordedByGps);
+    const id = await endRide();
     router.replace(id ? `/story/${id}` : '/');
   };
 
@@ -285,6 +281,15 @@ function LiveBody() {
   const status = (
     <View style={{ gap: space[2] }}>
       {r.error ? <Banner eyebrow="Storage" title={r.error} /> : null}
+      {autoEnd.prompt ? (
+        <View style={{ gap: space[2] }}>
+          <Banner eyebrow="Auto-end" title={autoEnd.prompt.text} onPress={autoEnd.prompt.action === 'warn' ? autoEnd.keep : undefined} />
+          <View style={{ flexDirection: 'row', gap: space[2] }}>
+            {autoEnd.prompt.action === 'ask' ? <Button flex label="End" onPress={() => { buzz.stop(); stopping.current = true; autoEnd.end(); }} /> : null}
+            <Button flex variant="soft" label="Keep recording" onPress={autoEnd.keep} />
+          </View>
+        </View>
+      ) : null}
       {r.resumed && nowMs() - r.resumed.at < RESUMED_NOTICE_MS ? <Banner eyebrow="Back on the road" title={`Picked up your ride after ${gapText(r.resumed.gapMs)}${group ? '. The group is still riding.' : '.'}`} /> : null}
       {lostSignal ? <Banner eyebrow="GPS" title="Lost GPS signal, still recording" /> : weakSignal ? <Banner eyebrow="GPS" title="Weak GPS signal. The route may be rough here." /> : null}
       {dropAt && nowMs() - dropAt < 6000 && r.waypoints.length ? (

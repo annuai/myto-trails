@@ -35,7 +35,7 @@ export function createFinisher(d: FinishDeps): () => Promise<string | undefined>
     let id: string | undefined;
     if (ride) {
       id = d.findSaved(raw.meta.startedAt);
-      if (!id) { id = d.addRide(ride, raw.meta.rideId); await d.persist(); }
+      if (!id) { id = d.addRide(raw.meta.source === 'sim' ? { ...ride, simulated: true } : ride, raw.meta.rideId); await d.persist(); }
     }
     await d.journal.clear();
     return id;

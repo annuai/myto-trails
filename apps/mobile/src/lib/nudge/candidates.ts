@@ -1,3 +1,5 @@
+import { AWAY_M } from '@/lib/homeRoute/types';
+import { haversine } from '@/lib/geo';
 import type { CopyData } from './copy';
 import { at, dayStart, DAY, HOUR, isoOf, MIN, weekdayOf } from './time';
 import type { NudgeType, NudgeWorld } from './types';
@@ -93,5 +95,16 @@ function photos(w: NudgeWorld): Candidate[] {
   return [{ type: 'photos', key: `photos:${r.startedAt}`, fireAt: r.endedAt + 30 * MIN, score: 0.5, route: '/clubs', data: {} }];
 }
 
+function homeNudge(w: NudgeWorld): Candidate[] {
+  const r = lastRide(w);
+  if (!r || !w.home || !w.lastRideEnd) return [];
+  // Like photos: only just after a ride finishes, from the plan rebuilt then.
+  if (w.now - r.endedAt > 20 * MIN || w.now < r.endedAt) return [];
+  // Like the Ride home offer: not on a trip day and not after a group ride.
+  if (w.lastRideGroup || w.tripDays.includes(isoOf(r.endedAt))) return [];
+  if (haversine(w.lastRideEnd, w.home) <= AWAY_M) return [];
+  return [{ type: 'home', key: `home:${r.endedAt}`, fireAt: r.endedAt + 10 * MIN, score: 0.6, route: '/(tabs)', data: {} }];
+}
+
 /** Every nudge the rider's situation suggests, in no particular order. */
-export const candidates = (w: NudgeWorld): Candidate[] => [...first(w), ...lapse(w), ...weekend(w), ...weather(w), ...club(w), ...milestone(w), ...photos(w)];
+export const candidates = (w: NudgeWorld): Candidate[] => [...first(w), ...lapse(w), ...weekend(w), ...weather(w), ...club(w), ...milestone(w), ...photos(w), ...homeNudge(w)];

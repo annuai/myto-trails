@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
+import { PROFILE_OPTIONS, type RecordingProfile } from './recordingProfile';
 import { createSerial } from './serial';
 import { useRecorder } from '@/store/recorder';
 
@@ -48,24 +49,48 @@ export async function needsAlwaysExplainer(): Promise<boolean> {
  * and the speed was never brought back to zero. The recorder drops the standing-still jitter.
  */
 export const startBackground = (): Promise<boolean> => inOrder(startNow);
+/** The profile the running task records with. A new start is always `full`; null when not known (a task left running from before the app was relaunched), so the first ask applies. */
+let profile: RecordingProfile | null = null;
+const optionsFor = (p: RecordingProfile): Location.LocationTaskOptions => ({
+  ...PROFILE_OPTIONS[p], distanceInterval: 0,
+  pausesUpdatesAutomatically: false, showsBackgroundLocationIndicator: true, activityType: Location.ActivityType.AutomotiveNavigation,
+  // Android makes a running location service show this notice, so it cannot be hidden. The ride card carries the controls: this one only says why location is on.
+  foregroundService: { notificationTitle: 'Location is on', notificationBody: 'Myto Moto uses it to record your ride.' },
+});
 async function startNow(): Promise<boolean> {
   try {
     if ((await Location.getBackgroundPermissionsAsync()).status !== 'granted') return false;
     if (await Location.hasStartedLocationUpdatesAsync(TASK_NAME)) return true;
-    await Location.startLocationUpdatesAsync(TASK_NAME, {
-      accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 0, timeInterval: 1000,
-      pausesUpdatesAutomatically: false, showsBackgroundLocationIndicator: true, activityType: Location.ActivityType.AutomotiveNavigation,
-      // Android makes a running location service show this notice, so it cannot be hidden. The ride card carries the controls: this one only says why location is on.
-      foregroundService: { notificationTitle: 'Location is on', notificationBody: 'Myto Moto uses it to record your ride.' },
-    });
+    profile = 'full';
+    await Location.startLocationUpdatesAsync(TASK_NAME, optionsFor(profile));
     return true;
   } catch {
     return false;
   }
 }
 
+/**
+ * Switch the running task to another GPS profile (lib/recordingProfile). Starting an already running task only changes its options, so
+ * recording never stops for the switch. Nothing happens when recording is not running. If the switch fails, the task keeps (or is
+ * started again with) the profile it had, and the same switch is tried again the next time it is asked for.
+ */
+export const setRecordingProfile = (p: RecordingProfile): Promise<void> => inOrder(async () => {
+  if (p === profile) return;
+  try {
+    if (!(await Location.hasStartedLocationUpdatesAsync(TASK_NAME))) return;
+    await Location.startLocationUpdatesAsync(TASK_NAME, optionsFor(p));
+    profile = p;
+  } catch {
+    try { if (!(await Location.hasStartedLocationUpdatesAsync(TASK_NAME))) await Location.startLocationUpdatesAsync(TASK_NAME, optionsFor(profile ?? 'full')); } catch { /* the recorder's lost-signal warning shows it */ }
+  }
+});
+
+/** The profile the background task is recording with, `full` when none is running or it is not known. */
+export const activeRecordingProfile = (): RecordingProfile => profile ?? 'full';
+
 export const stopBackground = (): Promise<void> => inOrder(stopNow);
 async function stopNow(): Promise<void> {
+  profile = null;
   try {
     if (await Location.hasStartedLocationUpdatesAsync(TASK_NAME)) await Location.stopLocationUpdatesAsync(TASK_NAME);
   } catch { /* already stopped */ }

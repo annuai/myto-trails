@@ -7,6 +7,7 @@ export const notifier: Notifier = {
   cancelAll: async () => {},
   schedule: async () => {},
   notifyNow: async () => {},
+  dismiss: async () => {},
   openSettings: () => {},
 };
 

@@ -10,8 +10,9 @@ import { RouteCheck } from '@/features/RouteCheck';
 import { elevationProfile } from '@/lib/elevation';
 import { exportGpx } from '@/lib/exportGpx';
 import { pathLength } from '@/lib/geo';
-import { buildGpx } from '@/lib/gpx';
 import { parseGpx } from '@/lib/gpxImport';
+import { gpxForExport } from '@/lib/privacy';
+import { useSavedPlaces } from '@/lib/savedPlaces';
 import { buildSharedRoute, sharedIdOf } from '@/lib/shareRoute';
 import { asText, distanceKm, elevationM } from '@/lib/units';
 import { useAction } from '@/lib/useAction';
@@ -38,6 +39,7 @@ export default function Plan() {
   const [open, setOpen] = useState<MyRoute>();
   const [problem, setProblem] = useState<string>();
   const share = useAction();
+  const places = useSavedPlaces();
   const followed = routes.find((r) => r.id === followId);
 
   const importGpx = async () => {
@@ -54,8 +56,8 @@ export default function Plan() {
   };
   const shareLink = async (r: MyRoute) => {
     if (!token) return setProblem('Sign in to share a route as a link.');
-    const body = buildSharedRoute({ name: r.name, points: r.points });
-    if (!body) return setProblem('This route is too short to share. The first and last 300 m are always left out, so nobody can see where you live.');
+    const body = buildSharedRoute({ name: r.name, points: r.points, places });
+    if (!body) return setProblem('This route is too short to share. The first and last 300 m, and anything within 500 m of Home or Work, are always left out, so nobody can see where you live.');
     const made = await share.run(() => createSharedRoute(token, body));
     if (!made) return;
     setShared(r.id, made.value.url);
@@ -68,12 +70,13 @@ export default function Plan() {
         {open ? (() => {
           const profile = elevationProfile(open.points);
           const gain = profile?.gainM;
+          const gpx = gpxForExport(open.name, open.points, places);
           return (<>
             <Text variant="label" tone="muted">{km(open)}{gain ? ` · ${asText(elevationM(gain))} climb` : ''}</Text>
             {profile ? <ElevationChart samples={profile.samples} /> : null}
             <Button icon={Play} label="Ride this route" onPress={() => { follow(open.id); setOpen(undefined); router.back(); }} />
             <Button variant="soft" icon={Link2} label={open.sharedUrl ? 'Share the link again' : 'Share as a link'} disabled={share.busy} onPress={() => (open.sharedUrl ? void Share.share({ message: `${open.name} on Myto Moto: ${open.sharedUrl}` }) : void shareLink(open))} />
-            <Button variant="soft" icon={Download} label="Export GPX file" onPress={() => void exportGpx(open.name, buildGpx(open.name, open.points))} />
+            <Button variant="soft" icon={Download} label="Export GPX file" disabled={!gpx} onPress={() => gpx && void exportGpx(open.name, gpx)} />
             <RouteCheck line={open.points} />
             <Button variant="danger" icon={Trash2} label="Delete this route" onPress={() => { if (token && open.sharedUrl) void deleteSharedRoute(token, sharedIdOf(open.sharedUrl)).catch(() => undefined); remove(open.id); setOpen(undefined); }} />
             {share.problem ? <Text variant="label" tone="stop">{share.problem}</Text> : null}

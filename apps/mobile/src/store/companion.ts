@@ -23,12 +23,18 @@ type State = {
   card: { format: CardFormat; stats: CardStat[] };
   /** Pause the ride by itself after a long stop (opt-in). */
   autoPause: boolean;
+  /** End the ride by itself on arrival at Home or Work (opt-in). */
+  autoEnd: boolean;
+  /** Sample the GPS less often on a low battery or a long stop (on by default). */
+  batterySaver: boolean;
   live: Live;
   setCheckin: (c: Checkin | null) => void;
   setGroup: (g: GroupSession | null) => void;
   setOutbox: (o: Outbox) => void;
   setCard: (c: Partial<State['card']>) => void;
   setAutoPause: (on: boolean) => void;
+  setAutoEnd: (on: boolean) => void;
+  setBatterySaver: (on: boolean) => void;
   setLive: (l: Partial<Live>) => void;
   /** This phone's part in the group changed (the lead was passed). */
   setGroupRole: (role: string) => void;
@@ -41,20 +47,22 @@ const noLive: Live = { riders: [], regroup: null, myStatus: 'ok' };
 export const useCompanion = create<State>()(
   persist(
     (set) => ({
-      checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, live: noLive,
+      checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, autoEnd: false, batterySaver: true, live: noLive,
       setCheckin: (checkin) => set({ checkin }),
       setGroup: (group) => set({ group, live: noLive }),
       setOutbox: (outbox) => set({ outbox }),
       setCard: (c) => set((s) => ({ card: { ...s.card, ...c } })),
       setAutoPause: (autoPause) => set({ autoPause }),
+      setAutoEnd: (autoEnd) => set({ autoEnd }),
+      setBatterySaver: (batterySaver) => set({ batterySaver }),
       setLive: (l) => set((s) => ({ live: { ...s.live, ...l } })),
       setGroupRole: (role) => set((s) => (s.group ? { group: { ...s.group, role } } : s)),
-      wipe: () => set({ checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, live: noLive }),
+      wipe: () => set({ checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, autoEnd: false, batterySaver: true, live: noLive }),
     }),
     {
       name: 'myto-companion', storage,
       // A simulated group ride is only for the test in front of the rider: it is never kept, and one left in storage by an older build is dropped.
-      partialize: (s) => ({ checkin: s.checkin, group: s.group?.id === SIM_GROUP_ID ? null : s.group, outbox: s.outbox, card: s.card, autoPause: s.autoPause }),
+      partialize: (s) => ({ checkin: s.checkin, group: s.group?.id === SIM_GROUP_ID ? null : s.group, outbox: s.outbox, card: s.card, autoPause: s.autoPause, autoEnd: s.autoEnd, batterySaver: s.batterySaver }),
       merge: (saved, current) => { const p = saved as Partial<State> | undefined; return { ...current, ...p, group: p?.group?.id === SIM_GROUP_ID ? null : p?.group ?? current.group }; },
     },
   ),

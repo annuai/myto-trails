@@ -50,3 +50,26 @@ export function trimEnds(points: LatLng[], meters: number): LatLng[] {
   };
   return [at(meters), ...points.filter((_, i) => cum[i] > meters && cum[i] < total - meters), at(total - meters)];
 }
+
+/**
+ * The index range [from, to) of `points` left once the leading and the trailing points within `meters` of any of `places` are
+ * dropped. A pass near a place in the middle of the route is kept.
+ */
+export function nearPlacesRange(points: LatLng[], places: LatLng[], meters = 500): [number, number] {
+  const near = (p: LatLng) => places.some((q) => haversine(p, q) <= meters);
+  let from = 0;
+  while (from < points.length && near(points[from]!)) from++;
+  let to = points.length;
+  while (to > from && near(points[to - 1]!)) to--;
+  return [from, to];
+}
+
+/**
+ * The route without its start and end near Home or Work (`places`): the first and last points within `meters` of either are dropped,
+ * so nothing shared shows where the rider lives or works. The route as given when no place is set; empty when all of it is that near.
+ */
+export function trimNearPlaces(points: LatLng[], places: LatLng[], meters = 500): LatLng[] {
+  if (!places.length) return points;
+  const [from, to] = nearPlacesRange(points, places, meters);
+  return from === 0 && to === points.length ? points : points.slice(from, to);
+}

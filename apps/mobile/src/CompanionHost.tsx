@@ -8,7 +8,6 @@ import { startArrive, stepArrive } from '@/lib/autoArrive';
 import { breakLabel, DEFAULT_BREAK_MIN, startBreak, stepBreak } from '@/lib/breakReminder';
 import { buzzThrice } from '@/lib/buzz';
 import { daylightAlertDue, fetchSunsetMs, sunsetClock } from '@/lib/daylight';
-import type { LatLng } from '@/lib/geo';
 import { shouldPing, type LastPing } from '@/lib/checkinCore';
 import { markFailed, markSent, nextBatch } from '@/lib/conditions';
 import { DEFAULT_STRETCH_KM, stretchAlert, stretchMessage, STRETCH_REPEAT_MS } from '@/lib/eventCore';
@@ -27,10 +26,9 @@ import { useAuth } from '@/store/auth';
 import { useCompanion } from '@/store/companion';
 import { useLocation } from '@/store/location';
 import { useMotion } from '@/store/motion';
-import { useMyRoutes } from '@/store/myRoutes';
-import { useTrailStore } from '@/store/trails';
 import { useNotifications } from '@/store/notifications';
 import { useRecorder } from '@/store/recorder';
+import { followedRouteEnd } from '@/features/ride/followedRouteEnd';
 
 const iso = (t: number) => new Date(t).toISOString();
 /**
@@ -65,16 +63,6 @@ async function flushOutbox() {
       if (e instanceof ApiFailure && e.status === 0) break; // no signal: the rest would fail too
     }
   }
-}
-
-/** The end of the route the rider is following: one of their own, or a published trail whose route is saved on the phone. */
-function followedRouteEnd(): LatLng | undefined {
-  const mine = useMyRoutes.getState();
-  const own = mine.routes.find((r) => r.id === mine.followId)?.points;
-  if (own?.length) return own[own.length - 1];
-  const trip = useTrailStore.getState().nextTrip;
-  const end = trip ? useTrailStore.getState().offline[trip.slug]?.route?.line.at(-1) : undefined;
-  return end ? { lat: end[1], lng: end[0] } : undefined;
 }
 
 /** Sends the rider's signal to the group now rather than at the next poll. Set while the host is mounted. */

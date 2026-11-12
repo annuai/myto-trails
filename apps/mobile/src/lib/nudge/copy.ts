@@ -51,6 +51,10 @@ const LINES: Record<NudgeType, ((d: CopyData) => [string, string])[]> = {
     () => ['Share today\'s ride', 'Add a few photos for your club.'],
     () => ['Any good photos from the ride?', 'Your club would like to see them.'],
   ],
+  home: [
+    () => ['Heading home?', 'Open Myto Moto for the way back.'],
+    () => ['Ride finished', 'Want a route home? It is one tap away.'],
+  ],
 };
 
 /** How many wordings a type has. */
