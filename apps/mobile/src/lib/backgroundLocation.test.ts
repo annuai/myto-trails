@@ -18,7 +18,7 @@ vi.mock('expo-location', () => ({
 vi.mock('expo-task-manager', () => ({ defineTask: () => {} }));
 vi.mock('@/store/recorder', () => ({ useRecorder: { getState: () => ({ ingest: async () => {} }) } }));
 
-import { setRecordingProfile, startBackground, stopBackground } from './backgroundLocation';
+import { activeRecordingProfile, setRecordingProfile, startBackground, stopBackground } from './backgroundLocation';
 
 const lastOptions = () => L.startLocationUpdatesAsync.mock.calls.at(-1)?.[1];
 
@@ -70,6 +70,15 @@ describe('backgroundLocation', () => {
     expect(lastOptions()).toMatchObject({ accuracy: 6, timeInterval: 1000 });
     await setRecordingProfile('full');
     expect(L.startLocationUpdatesAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('activeRecordingProfile says what the running task records with, full when not known', async () => {
+    expect(activeRecordingProfile()).toBe('full');
+    await startBackground();
+    await setRecordingProfile('idle');
+    expect(activeRecordingProfile()).toBe('idle');
+    await stopBackground();
+    expect(activeRecordingProfile()).toBe('full');
   });
 
   it('a failed switch leaves the running profile, and restarts it if the task stopped', async () => {

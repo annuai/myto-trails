@@ -85,6 +85,9 @@ export const setRecordingProfile = (p: RecordingProfile): Promise<void> => inOrd
   }
 });
 
+/** The profile the background task is recording with, `full` when none is running or it is not known. */
+export const activeRecordingProfile = (): RecordingProfile => profile ?? 'full';
+
 export const stopBackground = (): Promise<void> => inOrder(stopNow);
 async function stopNow(): Promise<void> {
   profile = null;

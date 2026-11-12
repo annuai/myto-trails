@@ -42,5 +42,12 @@ export function stepGpsHealth(s: GpsHealth, i: { now: number; lastFixAt: number;
 export const isWeak = (accuracyM: number | undefined) => accuracyM !== undefined && accuracyM > WEAK_ACCURACY_M;
 
 /** Whether to ask the phone for a position now: nothing has been heard for a while, and no question is already out or was asked a moment ago. */
-export const shouldProbe = (i: { now: number; lastSignalAt: number; probing: boolean; lastProbeAt: number }): boolean =>
-  !i.probing && i.lastSignalAt > 0 && i.now - i.lastSignalAt >= PROBE_AFTER_MS && i.now - i.lastProbeAt >= PROBE_EVERY_MS;
+export const shouldProbe = (i: { now: number; lastSignalAt: number; probing: boolean; lastProbeAt: number; /** The wait, from `probeAfterMs`; PROBE_AFTER_MS when not given. */ afterMs?: number }): boolean =>
+  !i.probing && i.lastSignalAt > 0 && i.now - i.lastSignalAt >= (i.afterMs ?? PROBE_AFTER_MS) && i.now - i.lastProbeAt >= PROBE_EVERY_MS;
+
+/**
+ * How long a silence must last before the GPS is asked, for the recording profile's interval (lib/recordingProfile). Intervals shorter
+ * than the usual wait keep it (full, saver); a longer one (idle, 10 s) waits a whole interval and the usual wait on top, so the probe does
+ * not keep the GPS awake between idle's own fixes.
+ */
+export const probeAfterMs = (intervalMs: number): number => (intervalMs < PROBE_AFTER_MS ? PROBE_AFTER_MS : intervalMs + PROBE_AFTER_MS);

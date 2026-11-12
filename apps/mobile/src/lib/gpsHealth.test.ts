@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLEAR_AFTER_MS, isWeak, LOST_AFTER_MS, PROBE_AFTER_MS, PROBE_EVERY_MS, shouldProbe, startGpsHealth, STOPPED_LOST_AFTER_MS, stepGpsHealth, type GpsHealth } from './gpsHealth';
+import { CLEAR_AFTER_MS, isWeak, LOST_AFTER_MS, PROBE_AFTER_MS, PROBE_EVERY_MS, probeAfterMs, shouldProbe, startGpsHealth, STOPPED_LOST_AFTER_MS, stepGpsHealth, type GpsHealth } from './gpsHealth';
 
 const run = (fixAt: (t: number) => number, from: number, to: number, start: GpsHealth = startGpsHealth) => {
   let s = start; const seen: boolean[] = [];
@@ -54,3 +54,28 @@ describe('shouldProbe', () => {
   });
   it('does not ask before the first fix', () => expect(shouldProbe({ ...base, lastSignalAt: 0 })).toBe(false));
 });
+
+describe('probeAfterMs', () => {
+  it('full and saver keep the usual wait', () => {
+    expect(probeAfterMs(1000)).toBe(8000);
+    expect(probeAfterMs(3000)).toBe(PROBE_AFTER_MS);
+  });
+  it('idle waits a whole interval and the usual wait on top, still before a stopped rider is warned', () => {
+    expect(probeAfterMs(10_000)).toBeGreaterThan(10_000);
+    expect(probeAfterMs(10_000)).toBe(18_000);
+    expect(probeAfterMs(10_000)).toBeLessThan(STOPPED_LOST_AFTER_MS);
+  });
+  it('shouldProbe uses the wait it is given, and the usual one without', () => {
+    const at = { now: 100_000, probing: false, lastProbeAt: 0 };
+    expect(shouldProbe({ ...at, lastSignalAt: 100_000 - 10_000, afterMs: probeAfterMs(10_000) })).toBe(false);
+    expect(shouldProbe({ ...at, lastSignalAt: 100_000 - 18_000, afterMs: probeAfterMs(10_000) })).toBe(true);
+    expect(shouldProbe({ ...at, lastSignalAt: 100_000 - 8_000 })).toBe(true);
+  });
+  it('idle cannot raise a false lost-signal warning: its fixes come far inside the stopped wait', () => {
+    // Idle runs only below walking pace, when the warning waits STOPPED_LOST_AFTER_MS; fixes 10 s apart never get near it.
+    let s = startGpsHealth;
+    for (let t = 0; t <= 600_000; t += 1000) s = stepGpsHealth(s, { now: t + 1000, lastFixAt: 1000 + Math.floor(t / 10_000) * 10_000, stopped: true });
+    expect(s.lost).toBe(false);
+  });
+});
+
