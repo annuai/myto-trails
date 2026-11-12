@@ -1,4 +1,3 @@
-import { setStandingOptIn } from '@/api/standing';
 import { arriveCheckin } from '@/api/checkins';
 import { deleteSharedRoute } from '@/api/sharedRoutes';
 import { traceDelete } from '@/lib/motionTraceFile';
@@ -14,7 +13,6 @@ import { useFuel } from '@/store/fuel';
 import { useJournal } from '@/store/journal';
 import { useMarks } from '@/store/marks';
 import { useSeen } from '@/store/seen';
-import { useStandingPref } from '@/store/standingPref';
 import { useStory } from '@/store/story';
 import { useMyRoutes } from '@/store/myRoutes';
 import { useNotifications } from '@/store/notifications';
@@ -33,12 +31,10 @@ export function eraseEverything(token: string | null) {
   const checkin = useCompanion.getState().checkin;
   if (token && checkin) void arriveCheckin(token, checkin.id).catch(() => undefined);
   if (token) for (const r of useMyRoutes.getState().routes) if (r.sharedUrl) void deleteSharedRoute(token, sharedIdOf(r.sharedUrl)).catch(() => undefined);
-  if (token) void setStandingOptIn(token, false).catch(() => undefined);
   eraseDocumentPhotos();
   useJournal.getState().wipe();
   useMarks.getState().wipe();
   useStory.getState().wipe();
-  useStandingPref.getState().reset();
   useSeen.setState({ played: {}, last: {} });
   useNotifications.getState().wipe();
   useCompanion.getState().wipe();
@@ -55,5 +51,6 @@ export function eraseEverything(token: string | null) {
   useTodos.setState({ todos: [] });
   useRides.setState({ rides: [] });
   useTrailStore.getState().clear();
+  // signOut sends the standing opt-out with the old token first, then revokes it and forgets the choice.
   void signOut();
 }

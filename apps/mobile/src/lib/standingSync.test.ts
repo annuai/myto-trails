@@ -65,6 +65,18 @@ describe('standing sync', () => {
     expect(useStandingPref.getState().pendingOptOut).toBe(false);
     expect(h.upload).not.toHaveBeenCalled();
   });
+  it('opting out while signed out leaves no pending opt-out to send later', async () => {
+    h.token = null;
+    await chooseStanding(true);
+    await chooseStanding(false);
+    expect(useStandingPref.getState().pendingOptOut).toBe(false);
+  });
+  it('says Could not reach only for network failures', async () => {
+    useStandingPref.getState().set(true); useStandingPref.getState().enqueue(['a']);
+    h.upload.mockRejectedValueOnce(new ApiFailure(500, 'internal_error', 'x'));
+    await syncStanding();
+    expect(useStandingPref.getState().error).toBe('Could not update this just now. Try again later.');
+  });
   it('reset forgets the choice, the queue, the cohort and a pending opt-out', () => {
     const s = useStandingPref.getState();
     s.set(true); s.enqueue(['a']); s.set(false); s.set(true); s.enqueue(['b']);
