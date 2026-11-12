@@ -16,6 +16,10 @@
       "schedule": "30 2 * * *"
     },
     {
+      "path": "/api/cron/cohort",
+      "schedule": "45 3 * * *"
+    },
+    {
       "path": "/api/cron/keepalive",
       "schedule": "0 4 * * 1,4"
     }
