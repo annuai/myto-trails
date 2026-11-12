@@ -6,6 +6,7 @@ import type { FuelSetting } from '@/lib/fuelCost';
 import type { Ride } from '@/store/rides';
 import type { Trip } from '@/store/trips';
 import type { Contact, Licence, Medical, Vehicle } from '@/store/profile';
+import type { PlaceKind, SavedPlace } from '@/store/placesCore';
 
 export const FORMAT = 'myto-backup';
 /** Bump with every change to `BackupPayload` and add a `migrate` step from the old number. */
@@ -31,6 +32,12 @@ export type Snapshot = {
   fuel?: FuelSetting[];
   /** Chosen bike, when the app stores one on the phone. */
   bike?: unknown;
+  /**
+   * Home and Work, and the rides in a row that ended away from each. They never leave the phone except inside this encrypted file.
+   * Like the auto-end and battery saver switches, backups made before they existed have none, and the phone keeps its own.
+   */
+  places?: { home?: SavedPlace; work?: SavedPlace; endStrikes: Record<PlaceKind, number> };
+  rideSwitches?: { autoEnd: boolean; batterySaver: boolean };
 };
 /** Plaintext inside the ciphertext. `photoFiles` maps a photo id to its JPEG as base64; `journalFiles` maps `photo:<id>` or `voice:<id>` to the file as base64. */
 export type BackupPayload = Snapshot & { photoFiles: Record<string, string>; journalFiles: Record<string, string> };

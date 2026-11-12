@@ -292,3 +292,33 @@ describe('journal in the backup', () => {
     expect(p.state.finalized).toEqual([]);
   });
 });
+
+describe('Home, Work and the ride switches in the backup', () => {
+  const home = { lat: 12.97, lng: 77.59, label: 'Home', setAt: 5 };
+  const work = { lat: 12.93, lng: 77.62, label: 'Work', setAt: 6 };
+  const mine = () => snapshot({ places: { home, work, endStrikes: { home: 2, work: 1 } }, rideSwitches: { autoEnd: true, batterySaver: false } });
+  const file = (s: Snapshot) => build(s);
+
+  it('round trips Home, Work, their strikes, auto-end and the battery saver', async () => {
+    const r = phone(snapshot());
+    await applyBackup(await open(await file(mine())), 'replace', r.target);
+    expect(r.state.snap.places).toEqual({ home, work, endStrikes: { home: 2, work: 1 } });
+    expect(r.state.snap.rideSwitches).toEqual({ autoEnd: true, batterySaver: false });
+  });
+  it('merge keeps the phone\'s own Home and switches and takes the file\'s Work when the phone has none', async () => {
+    const phoneHome = { ...home, label: 'New flat', setAt: 9 };
+    const m = phone(snapshot({ places: { home: phoneHome, endStrikes: { home: 0, work: 0 } }, rideSwitches: { autoEnd: false, batterySaver: true } }));
+    await applyBackup(await open(await file(mine())), 'merge', m.target);
+    expect(m.state.snap.places).toEqual({ home: phoneHome, work, endStrikes: { home: 0, work: 1 } });
+    expect(m.state.snap.rideSwitches).toEqual({ autoEnd: false, batterySaver: true });
+  });
+  it('a backup made before they existed still imports and leaves none in the result', async () => {
+    const r = phone(mine());
+    await applyBackup(await open(await file(snapshot())), 'replace', r.target);
+    expect(r.state.snap.places).toBeUndefined();
+    expect(r.state.snap.rideSwitches).toBeUndefined();
+    const m = phone(mine());
+    await applyBackup(await open(await file(snapshot())), 'merge', m.target);
+    expect(m.state.snap.places).toEqual(mine().places);
+  });
+});

@@ -10,7 +10,9 @@ import { useJournal } from '@/store/journal';
 import { useTrips } from '@/store/trips';
 import { Sheet } from '@/ui/Sheet';
 import { exportGpx } from '@/lib/exportGpx';
-import { buildGpx } from '@/lib/gpx';
+import { trimNearPlaces } from '@/lib/geo';
+import { gpxForExport } from '@/lib/privacy';
+import { useSavedPlaces } from '@/lib/savedPlaces';
 import { segmentsOf, trackStats } from '@/lib/track';
 import { asText, distanceKm, durationParts, speedKmh } from '@/lib/units';
 import { formatDate } from '@/lib/dates';
@@ -76,6 +78,7 @@ function StoryBody() {
   }, [token, slug, ride?.id]);
   useEffect(() => { if (reportOpen && ride && !ride.conditionAsked) useRides.getState().markConditionAsked(ride.id); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const allRides = useRides((s) => s.rides);
+  const places = useSavedPlaces();
   const ground = useMemo(() => (ride ? newGround(ride, allRides) : undefined), [ride, allRides]);
   // The first time a ride's story opens its route is inked onto the map and the figures count up with it. Later visits just show the finished ride; Replay plays it again.
   const first = useOnce(ride && !ride.sample ? `ink:${ride.id}` : undefined);
@@ -90,10 +93,13 @@ function StoryBody() {
   // The "Ride home" offer shows only on the story of the ride that just finished (the Dash's just-finished window).
   const justEnded = !ride.sample && justFinishedRide(allRides, nowMs())?.id === ride.id;
   const gapM = trackStats(segmentsOf(ride.points, ride.breaks)).gapM;
+  // What leaves the phone (a GPX file, a condition report's position) never shows the ends near Home or Work.
+  const gpx = gpxForExport(ride.name, ride.points, places, ride.waypoints, ride.breaks);
+  const away = trimNearPlaces(ride.points, places);
   return (
     <Screen overlay={<>
       <ShareRideSheet ride={ride} open={shareOpen} onClose={() => setShareOpen(false)} />
-      <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={ride.points[ride.points.length - 1]} trailSlug={ride.trailSlug} />
+      <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={away[away.length - 1]} trailSlug={ride.trailSlug} />
       <Sheet open={renaming} title="Rename this ride" onClose={() => setRenaming(false)}>
         <Field label="Name" value={draftName} onChangeText={setDraftName} maxLength={80} autoFocus returnKeyType="done" onSubmitEditing={() => { useRides.getState().renameRide(ride.id, draftName); setRenaming(false); }} />
         <Button label="Save name" disabled={!draftName.trim()} onPress={() => { useRides.getState().renameRide(ride.id, draftName); setRenaming(false); }} />
@@ -157,7 +163,7 @@ function StoryBody() {
         {ride.trailSlug ? <Button variant="soft" icon={Megaphone} label="Report the trail's condition" onPress={() => setReportOpen(true)} /> : null}
         <Button variant="soft" icon={Upload} label={sub ? 'Upload again' : 'Upload to Moto Trails'} arrow onPress={() => router.push(`/story/submit?id=${ride.id}`)} />
         <Button variant="soft" icon={BookOpen} label={journalCount ? `Journal · ${journalCount}` : 'Journal'} onPress={() => router.push(`/journal/${ride.startedAt}`)} />
-        <Button variant="soft" icon={Download} label="Export GPX file" onPress={() => exportGpx(ride.name, buildGpx(ride.name, ride.points, ride.waypoints, ride.breaks))} />
+        <Button variant="soft" icon={Download} label="Export GPX file" disabled={!gpx} onPress={() => gpx && exportGpx(ride.name, gpx)} />
         <ListCard><Row icon={Luggage} label="Trip" value={inTrips.length ? inTrips.map((t) => t.name).join(', ') : 'Not in a trip'} onPress={() => setTripOpen(true)} /></ListCard>
         <Button variant="danger" icon={Trash2} label="Delete this ride" onPress={() => (journalCount ? setConfirmDelete(true) : deleteRide())} />
       </View>

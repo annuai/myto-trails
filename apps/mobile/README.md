@@ -34,6 +34,8 @@ npm run web -w @moto-trails/mobile
 ## Home and recording power use
 
 Home and Work are saved on the phone only (store `myto-places`, `src/store/places.ts`). They are never sent to the server.
+Anything with a route that leaves the phone (route link, ride card, OpenStreetMap trace, trail submission, GPX export, a story's condition report) also drops its leading and trailing points within 500 m of Home or Work (`trimNearPlaces` in `src/lib/geo.ts`, via `src/lib/privacy.ts`); a pass in the middle stays. When nothing is left, the existing "too short" handling applies (GPX export is disabled).
+Home, Work, their strikes and the auto-end and battery saver switches are in the encrypted device backup (`places`, `rideSwitches`); older backups without them still import and leave the phone's own.
 
 The "Ride home" offer (`src/lib/homeRoute/offer.ts`) shows when Home is saved, the phone has a fresh fix more than 1.5 km from it, and one of these holds: sunset is within an hour, a ride ended in the last 30 minutes, or it is near a time the rider usually starts.
 It stays quiet at home, during a ride, group ride or trip, after a sample or simulated ride, for 3 hours after a dismissal, and for 14 days after three dismissals within 14 days.

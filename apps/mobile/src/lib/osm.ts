@@ -2,6 +2,7 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import type { LatLng } from './geo';
 import { trimEnds } from './geo';
 import { buildGpx } from './gpx';
+import { trimNearPlacesWithBreaks } from './privacy';
 import { breaksOf, segmentsOf } from './track';
 
 /**
@@ -34,17 +35,22 @@ export function worthSharing(ride: ShareableRide, recordedByGps: boolean): boole
   return recordedByGps && !ride.sample && ride.distanceKm >= OSM_MIN_KM && ride.points.length >= OSM_MIN_POINTS;
 }
 
-/** The ride's path with the first and last stretch removed. Each gap in the recording stays a gap, so no line is drawn across one. */
-export function trimmedForSharing(points: LatLng[], breaks: number[] | undefined, meters: number = OSM_TRIM_M): { points: LatLng[]; breaks: number[] } {
+/**
+ * The ride's path with the first and last stretch removed, and then any start or end within 500 m of Home or Work (`places`).
+ * Each gap in the recording stays a gap, so no line is drawn across one.
+ */
+export function trimmedForSharing(points: LatLng[], breaks: number[] | undefined, meters: number = OSM_TRIM_M, places: LatLng[] = []): { points: LatLng[]; breaks: number[] } {
   const segments = segmentsOf(points, breaks);
   const last = segments.length - 1;
-  const kept = segments.map((s, i) => (i === 0 || i === last ? trimEnds(s, meters) : s)).filter((s) => s.length > 1);
+  const ends = segments.map((s, i) => (i === 0 || i === last ? trimEnds(s, meters) : s)).filter((s) => s.length > 1);
+  const away = trimNearPlacesWithBreaks(ends.flat(), breaksOf(ends), places);
+  const kept = segmentsOf(away.points, away.breaks).filter((s) => s.length > 1);
   return { points: kept.flat(), breaks: breaksOf(kept) };
 }
 
 /** The file to send, or nothing when too little is left after trimming. It carries no ride name and none of the rider's waypoints. */
-export function traceFor(ride: ShareableRide): { gpx: string; points: number } | undefined {
-  const t = trimmedForSharing(ride.points, ride.breaks);
+export function traceFor(ride: ShareableRide, places: LatLng[] = []): { gpx: string; points: number } | undefined {
+  const t = trimmedForSharing(ride.points, ride.breaks, OSM_TRIM_M, places);
   if (t.points.length < OSM_MIN_POINTS) return undefined;
   return { gpx: buildGpx('Motorcycle ride', t.points, [], t.breaks), points: t.points.length };
 }

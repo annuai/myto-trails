@@ -2,6 +2,7 @@ import { useOsm, sharingOn } from '@/store/osm';
 import { useRides } from '@/store/rides';
 import { osmConfigured, traceFor, worthSharing } from './osm';
 import { hasOsmToken, uploadTrace } from './osmApi';
+import { savedPlaces } from './savedPlaces';
 
 /** A finished ride goes in the queue when the rider has said yes and it is worth sharing; `recordedByGps` is false for a simulated ride. */
 export function queueRideForOsm(rideId: string, recordedByGps: boolean): void {
@@ -14,7 +15,7 @@ export function queueRideForOsm(rideId: string, recordedByGps: boolean): void {
 let sending = false;
 
 /**
- * Sends what is waiting: each ride as a trimmed trace under the rider's own OpenStreetMap account. A ride that cannot be sent for lack
+ * Sends what is waiting: each ride as a trimmed trace (its ends, and any start or end near Home or Work, left out) under the rider's own OpenStreetMap account. A ride that cannot be sent for lack
  * of a connection stays queued for the next try; one OpenStreetMap refuses is dropped; a lapsed sign-in stops everything and shows as
  * "not connected" so the rider can sign in again.
  */
@@ -25,7 +26,7 @@ export async function shareQueued(): Promise<void> {
     if (!useOsm.getState().connected || !(await hasOsmToken())) { useOsm.getState().setConnected(false); return; }
     for (const id of [...useOsm.getState().pending]) {
       const ride = useRides.getState().rides.find((r) => r.id === id);
-      const trace = ride ? traceFor(ride) : undefined;
+      const trace = ride ? traceFor(ride, savedPlaces()) : undefined;
       if (!trace) { useOsm.getState().settle(id, false); continue; }
       const result = await uploadTrace(trace.gpx);
       if (result === 'sent') useOsm.getState().settle(id, true);
