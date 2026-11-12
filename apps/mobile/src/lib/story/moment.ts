@@ -18,4 +18,4 @@ export function pickMoment(candidates: readonly Moment[], ctx: { surface: Surfac
 
 export const markMoment = (markId: string, markTitle: string): Moment => ({ id: `mark:${markId}`, kind: 'mark', title: `${markTitle}. A new mark.`, body: '', pose: 'paw-up' });
 
-export const titleMoment = (id: TitleId): Moment => ({ id: `title:${id}`, kind: 'title', title: `You are a ${TITLES.find((t) => t.id === id)!.name} now.`, body: '', pose: 'standing-up' });
+export const titleMoment = (id: TitleId): Moment => ({ id: `title:${id}`, kind: 'title', title: `You are a ${TITLES.find((t) => t.id === id)?.name ?? 'rider'} now.`, body: '', pose: 'standing-up' });

@@ -4,7 +4,7 @@ import { useMarks } from '@/store/marks';
 import { useRides } from '@/store/rides';
 import { useStory } from '@/store/story';
 import { markDef } from './marks';
-import { markMoment, pickMoment, titleMoment, type Moment, type Surface } from './story/moment';
+import { markMoment, pickMoment, titleMoment, type Surface } from './story/moment';
 import { monthsRidden, titleFor } from './story/titles';
 
 /**
@@ -17,12 +17,15 @@ export function syncMarks(surface: Surface = 'dash'): MarkId[] {
   const fresh = marks.sync({ rides, servicesDone: marks.services, fixesDone: totalFixed(useFixit.getState().fixed) });
   const real = rides.filter((r) => !r.sample);
   const rose = useStory.getState().raiseTitle(titleFor({ rides: real.length, monthsRidden: monthsRidden(real), trailsRidden: new Set(real.map((r) => r.trailSlug).filter(Boolean)).size }));
-  // The first look only records what the rider had already earned, so an existing rider is not greeted with every mark at once.
+  // The first look only records what the rider had already earned (marks and title), so an existing rider is not greeted with all of it.
+  const storyQuiet = !useStory.getState().seeded;
+  if (storyQuiet) useStory.getState().setSeeded();
   if (!marks.seeded) { marks.setSeeded(); return []; }
   const story = useStory.getState();
-  const candidates: Moment[] = [...(rose && story.title ? [titleMoment(story.title)] : []), ...fresh.flatMap((id) => { const d = markDef(id); return d ? [markMoment(id, d.title)] : []; })];
-  const picked = pickMoment(candidates, { surface, shownThisSession: story.shownThisSession, seen: story.seen });
-  if (picked) { story.noteShown(picked.id); story.setLatest(picked, Date.now()); }
+  story.queue([...(rose && !storyQuiet && story.title ? [titleMoment(story.title)] : []), ...fresh.flatMap((id) => { const d = markDef(id); return d ? [markMoment(id, d.title)] : []; })]);
+  // Moments that lost an earlier pick wait in `pending` and come first.
+  const picked = pickMoment(useStory.getState().pending, { surface, shownThisSession: story.shownThisSession, seen: story.seen });
+  if (picked) { story.noteShown(picked.id); story.setLatest(picked, Date.now()); story.unqueue(picked.id); }
   return fresh;
 }
 
