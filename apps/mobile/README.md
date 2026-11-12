@@ -38,3 +38,5 @@ Home and Work are saved on the phone only (store `myto-places`, `src/store/place
 The "Ride home" offer (`src/lib/homeRoute/offer.ts`) shows when Home is saved, the phone has a fresh fix more than 1.5 km from it, and one of these holds: sunset is within an hour, a ride ended in the last 30 minutes, or it is near a time the rider usually starts.
 It stays quiet at home, during a ride, group ride or trip, after a sample or simulated ride, for 3 hours after a dismissal, and for 14 days after three dismissals within 14 days.
 Dismissals are kept on the phone only (store `myto-home-offer`, `src/store/homeOffer.ts`), the last 10.
+The offer never starts a GPS watch. It uses the recorder's latest point during a ride, else a fresh fix another screen already holds, else one low-accuracy reading (`Accuracy.Balanced`) on screen focus or returning to the app, at most once every 5 minutes (`src/features/home/quickPosition.ts`).
+There is no repeating timer; sunset is looked up once a day per area and cached.
