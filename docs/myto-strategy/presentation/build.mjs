@@ -130,8 +130,8 @@ function realPhone(file, cls = "") { return `<div class="phone ${cls}"><div clas
 // ---------- layouts ----------
 const L = {};
 L.cover = (d) => `
-  <div class="cv-row"><h1 class="t-cover cv-title">${esc(one(d, "headline"))}</h1>
-  <div class="cv-copy"><p class="t-title">${esc(one(d, "sub"))}</p><p class="t-body muted">${esc((d.body || [])[0])}</p></div></div>
+  <div class="cv-row"><h1 class="sr-only">${esc(one(d, "headline"))}</h1>
+  <div class="cv-copy"><p class="t-display cv-line">${esc(one(d, "sub"))}</p><p class="t-body muted">${esc((d.body || [])[0])}</p></div></div>
   <!--ART--><div class="cv-art"><img src="${picture(one(d, "img"))}" alt=""></div>
   <p class="cv-fine">${esc(one(d, "caption"))}</p><!--/ART-->`;
 
