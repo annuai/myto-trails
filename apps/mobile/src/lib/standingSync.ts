@@ -4,6 +4,7 @@ import { useAuth } from '@/store/auth';
 import { useRides } from '@/store/rides';
 import { useStandingPref } from '@/store/standingPref';
 import { uploadQueued } from './standingSyncCore';
+import { whenHydrated } from './whenHydrated';
 import { summarisable } from './story/standing';
 
 const OFFLINE = 'Could not reach Moto Trails. Your choice is saved and will be sent when you are back online.';
@@ -84,9 +85,5 @@ export async function flushStandingBeforeLeave(token: string | null): Promise<vo
 
 /** App open: waits until the saved rides and the choice are read from the phone, so an empty store is never mistaken for the real one. */
 export function syncStandingWhenReady(): () => void {
-  const stores = [useStandingPref, useRides];
-  const go = () => { if (stores.every((s) => s.persist.hasHydrated())) void syncStanding(); };
-  const offs = stores.map((s) => s.persist.onFinishHydration(go));
-  go();
-  return () => offs.forEach((off) => off());
+  return whenHydrated([useStandingPref, useRides], () => { void syncStanding(); });
 }

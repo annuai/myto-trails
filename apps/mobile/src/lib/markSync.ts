@@ -6,6 +6,7 @@ import { useStory } from '@/store/story';
 import { markDef } from './marks';
 import { markMoment, pickMoment, titleMoment, type Surface } from './story/moment';
 import { monthsRidden, titleFor } from './story/titles';
+import { whenHydrated, type Hydratable } from './whenHydrated';
 
 /**
  * Looks at everything the rider has done, records any new marks and the rider title, and lets the governor pick at most one Moment to
@@ -27,6 +28,14 @@ export function syncMarks(surface: Surface = 'dash'): MarkId[] {
   const picked = pickMoment(useStory.getState().pending, { surface, shownThisSession: story.shownThisSession, seen: story.seen });
   if (picked) { story.noteShown(picked.id); story.setLatest(picked, Date.now()); story.unqueue(picked.id); }
   return fresh;
+}
+
+/**
+ * App open: syncs once story, rides, marks and fixes are all read from the phone, so the quiet first look never seeds on an empty ride list
+ * (and later announces a title the rider already held) nor overwrites saved Moments. Returns a cancel.
+ */
+export function syncMarksWhenReady(stores: readonly Hydratable[] = [useStory, useRides, useMarks, useFixit]): () => void {
+  return whenHydrated(stores, () => { syncMarks(); });
 }
 
 /** The rider marked a service item as done. */

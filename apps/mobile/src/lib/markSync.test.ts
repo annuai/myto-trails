@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/store/persist', () => ({ storage: undefined }));
 
-import { syncMarks } from './markSync';
+import { syncMarks, syncMarksWhenReady } from './markSync';
+import { fakeStore } from './testHydration';
 import { useMarks } from '@/store/marks';
 import { useRides } from '@/store/rides';
 import { useStory } from '@/store/story';
@@ -39,5 +40,21 @@ describe('syncMarks', () => {
     syncMarks('dash');
     expect(useStory.getState().latest!.moment.id).not.toBe(first);
     expect(useStory.getState().pending.length).toBe(1);
+  });
+});
+
+describe('syncMarksWhenReady', () => {
+  it('does not seed on an empty ride list before story, rides and marks are read from the phone', () => {
+    const story = fakeStore(); const rides = fakeStore(); const marks = fakeStore();
+    syncMarksWhenReady([story, rides, marks]);
+    story.finish(); marks.finish();
+    expect(useMarks.getState().seeded).toBe(false);
+    expect(useStory.getState().seeded).toBe(false);
+    setRides([ride(0)]); // the saved rides arrive
+    rides.finish();
+    expect(useMarks.getState().seeded).toBe(true);
+    expect(useStory.getState().title).toBe('day-tripper'); // recorded quietly, not announced later
+    expect(useStory.getState().latest).toBeNull();
+    expect(useStory.getState().pending).toEqual([]);
   });
 });

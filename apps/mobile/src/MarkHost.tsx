@@ -3,7 +3,7 @@ import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { buzz } from '@/lib/haptics';
-import { syncMarks } from '@/lib/markSync';
+import { syncMarksWhenReady } from '@/lib/markSync';
 import { syncStandingWhenReady } from '@/lib/standingSync';
 import { markDef } from '@/lib/marks';
 import { useMarkToast } from '@/store/markToast';
@@ -29,7 +29,7 @@ export function MarkHost() {
   const enter = useAnimatedValue(0);
   const ring = useAnimatedValue(0);
   const busy = useRef(false);
-  useEffect(() => { syncMarks(); return syncStandingWhenReady(); }, []);
+  useEffect(() => { const offMarks = syncMarksWhenReady(); const offStanding = syncStandingWhenReady(); return () => { offMarks(); offStanding(); }; }, []);
   useEffect(() => {
     const id = queue[0];
     if (!id || busy.current) return;
