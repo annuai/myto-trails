@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { buildHomeWorld } from '@/homeWorld';
+import { buildHomeWorld, needsQuickReading } from '@/homeWorld';
+import { isoOf } from '@/lib/nudge/time';
 import { sunsetClock } from '@/lib/daylight';
 import { homeCopy } from '@/lib/homeRoute/copy';
 import { decideHomeOffer } from '@/lib/homeRoute/offer';
@@ -24,23 +25,22 @@ export function useHomeOfferNow(): { offer: HomeOffer | null; copy?: { title: st
   const dismissals = useHomeOffer((s) => s.dismissals);
   const fixAt = useLocation((s) => s.fixAt);
   const quickAt = useQuickPos((s) => s.at);
-  const recPoints = useRecorder((s) => s.points.length);
   const recStatus = useRecorder((s) => s.status);
   const [tick, setTick] = useState(0);
   const bump = useCallback(() => setTick((n) => n + 1), []);
 
-  const refresh = useCallback(() => { void quickPosition(Date.now()).then((p) => { if (p) bump(); }); bump(); }, [bump]);
+  const refresh = useCallback(() => { const now = Date.now(); if (needsQuickReading(now)) void quickPosition(now).then((p) => { if (p) bump(); }); bump(); }, [bump]);
   useFocusEffect(useCallback(() => { if (usePlaces.getState().home) refresh(); }, [refresh]));
   useEffect(() => {
     const sub = AppState.addEventListener('change', (st) => { if (st === 'active' && usePlaces.getState().home) refresh(); });
     return () => sub.remove();
   }, [refresh]);
 
-  const world = useMemo(() => buildHomeWorld(Date.now()), [tick, home, dismissals, fixAt, quickAt, recPoints, recStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+  const world = useMemo(() => buildHomeWorld(Date.now()), [tick, home, dismissals, fixAt, quickAt, recStatus]); // eslint-disable-line react-hooks/exhaustive-deps
   const { pos, now } = world;
   useEffect(() => {
     if (home && pos) void loadSunset(pos.lat, pos.lng, now).then((fresh) => { if (fresh) bump(); });
-  }, [home, pos?.lat, pos?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [home, pos?.lat, pos?.lng, isoOf(now)]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return useMemo(() => {
     const offer = decideHomeOffer(world);

@@ -41,3 +41,11 @@ export function buildHomeWorld(now: number): HomeWorld {
     dismissals: useHomeOffer.getState().dismissals,
   };
 }
+
+/** Whether the one-shot position read is needed: not when a ride is recording a point or a fresh fix is already held. */
+export function needsQuickReading(now: number): boolean {
+  const rec = useRecorder.getState();
+  if (rec.status === 'running' && rec.points.length > 0) return false;
+  const fixAt = useLocation.getState().fixAt;
+  return !(fixAt !== undefined && now - fixAt <= FIX_MAX_AGE_MS);
+}

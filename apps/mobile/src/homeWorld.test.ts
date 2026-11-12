@@ -20,7 +20,7 @@ import { useRides as rides } from '@/store/rides';
 import { useTrips as trips } from '@/store/trips';
 import { useCompanion as companion } from '@/store/companion';
 
-import { buildHomeWorld } from './homeWorld';
+import { buildHomeWorld, needsQuickReading } from './homeWorld';
 import { resetQuickPosition } from './features/home/quickPosition';
 
 const NOW = new Date(2026, 10, 12, 18, 0, 0).getTime();
@@ -65,5 +65,16 @@ describe('buildHomeWorld', () => {
     trips.setState({ trips: [{ startDate: '2026-11-12', days: [{}] }] as never });
     offer.setState({ dismissals: [4] });
     expect(buildHomeWorld(NOW)).toMatchObject({ inGroupRide: true, tripActive: true, dismissals: [4] });
+  });
+  it('needsQuickReading is false with a recording point or a fresh fix, true otherwise', () => {
+    rec.setState({ status: 'running', points: [{ lat: 1, lng: 1 }], lastFixAt: NOW });
+    expect(needsQuickReading(NOW)).toBe(false);
+    rec.setState({ status: 'running', points: [], lastFixAt: 0 });
+    expect(needsQuickReading(NOW)).toBe(true);
+    rec.setState({ status: 'idle', points: [] });
+    loc.setState({ fix: { lat: 1, lng: 1, t: NOW }, fixAt: NOW - 60_000 });
+    expect(needsQuickReading(NOW)).toBe(false);
+    loc.setState({ fixAt: NOW - 200_000 });
+    expect(needsQuickReading(NOW)).toBe(true);
   });
 });
