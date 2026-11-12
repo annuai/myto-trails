@@ -32,6 +32,6 @@ export async function finishRide(): Promise<string | undefined> {
   const links = companionLinks({ group, checkin, trailSlug: useTrailStore.getState().nextTrip?.slug });
   const id = await finish();
   if (id && links) useRides.getState().linkRide(id, links);
-  if (id) syncMarks();
+  if (id) syncMarks('ride-end');
   return id;
 }

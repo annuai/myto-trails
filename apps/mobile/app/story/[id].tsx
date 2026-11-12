@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BookOpen, Download, Luggage, Megaphone, Pencil, Share2, Trash2, Upload } from 'lucide-react-native';
 import { TellHome } from '@/features/group/TellHome';
+import { MomentCard } from '@/features/story/MomentCard';
 import { ReportSheet } from '@/features/ReportSheet';
 import { RideFuelCard } from '@/features/RideFuelCard';
 import { ShareRideSheet } from '@/features/ShareRideSheet';
@@ -106,6 +107,7 @@ function StoryBody() {
     </>}>
       <BackHeader title="Ride story" right={<IconButton icon={Pencil} label="Rename this ride" onPress={() => { setDraftName(ride.name); setRenaming(true); }} plain />} />
       <PageTitle sub={formatDate(new Date(ride.startedAt).toISOString().slice(0, 10)) + (ride.sample ? ' · sample' : '')}>{ride.name}</PageTitle>
+      <MomentCard />
       <Columns
         left={<>
       <View style={{ backgroundColor: c.accent, borderRadius: radius.card, padding: space[6], gap: space[1] }}>

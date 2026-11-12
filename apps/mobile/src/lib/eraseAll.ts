@@ -13,6 +13,7 @@ import { useFuel } from '@/store/fuel';
 import { useJournal } from '@/store/journal';
 import { useMarks } from '@/store/marks';
 import { useSeen } from '@/store/seen';
+import { useStory } from '@/store/story';
 import { useMyRoutes } from '@/store/myRoutes';
 import { useNotifications } from '@/store/notifications';
 import { useProfile } from '@/store/profile';
@@ -33,6 +34,7 @@ export function eraseEverything(token: string | null) {
   eraseDocumentPhotos();
   useJournal.getState().wipe();
   useMarks.getState().wipe();
+  useStory.getState().wipe();
   useSeen.setState({ played: {}, last: {} });
   useNotifications.getState().wipe();
   useCompanion.getState().wipe();
