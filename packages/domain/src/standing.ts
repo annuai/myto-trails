@@ -7,7 +7,13 @@ export type StandingMetric = (typeof STANDING_METRICS)[number];
 export const MIN_COHORT = 20;
 
 // Not the leaderboard's regex: that one also refuses "distance", which standing allows.
-const REFUSED = /speed|fast|pace|top_speed|lap|streak/i;
+// Matched on whole tokens (split on non-letters), so "workspace" or "overlap" stay unknown.
+const REFUSED_TOKENS = new Set(["speed", "fast", "pace", "lap", "streak"]);
+const isRefused = (raw: string) =>
+  raw
+    .toLowerCase()
+    .split(/[^a-z]+/)
+    .some((t) => REFUSED_TOKENS.has(t));
 
 export function parseStandingMetric(
   raw: unknown,
@@ -15,7 +21,7 @@ export function parseStandingMetric(
   if (typeof raw === "string") {
     const hit = STANDING_METRICS.find((m) => m === raw);
     if (hit) return { ok: true, metric: hit };
-    if (REFUSED.test(raw)) return { ok: false, reason: "refused" };
+    if (isRefused(raw)) return { ok: false, reason: "refused" };
   }
   return { ok: false, reason: "unknown" };
 }
@@ -28,11 +34,12 @@ export type CohortRow = { n: number; deciles: number[] };
  * a value >= decile k is at least k*10 (ties count as at or below). Between
  * deciles k and k+1 it moves linearly from k*10 to (k+1)*10. Below the first
  * decile the answer is capped at 10 (we do not know the minimum); above the
- * last decile it is 100. Flat (tied) deciles take the highest matching k.
+ * last decile it reads 100 by design (strictly above the last cut point). Flat (tied) deciles take the highest matching k.
  */
 export function percentileBelow(value: number, row: CohortRow): number | null {
-  if (row.n < MIN_COHORT || row.deciles.length !== 9) return null;
+  if (!(row.n >= MIN_COHORT) || !Number.isFinite(value)) return null;
   const d = row.deciles;
+  if (!Array.isArray(d) || d.length !== 9 || !d.every(Number.isFinite)) return null;
   const at = (i: number) => d[i] as number;
   if (value < at(0)) return 10;
   if (value > at(8)) return 100;

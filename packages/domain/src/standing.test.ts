@@ -29,6 +29,22 @@ describe("percentileBelow", () => {
     expect(percentileBelow(7, flat)).toBe(65);
     expect(percentileBelow(100, flat)).toBe(100);
   });
+  it("is null unless n is a finite number >= MIN_COHORT", () => {
+    const d = row(20).deciles;
+    for (const n of [undefined, NaN, 19, Infinity * 0]) {
+      expect(percentileBelow(50, { n: n as number, deciles: d })).toBeNull();
+    }
+    expect(percentileBelow(50, { n: 20, deciles: d })).not.toBeNull();
+  });
+  it("is null for a NaN value or a NaN decile", () => {
+    expect(percentileBelow(NaN, row(20))).toBeNull();
+    expect(percentileBelow(Infinity, row(20))).toBeNull();
+    const bad = { n: 20, deciles: [10, 20, NaN, 40, 50, 60, 70, 80, 90] };
+    expect(percentileBelow(50, bad)).toBeNull();
+  });
+  it("gives 10 for a value exactly at decile 1", () => {
+    expect(percentileBelow(10, row(20))).toBe(10);
+  });
   it("is null for a malformed decile table", () => {
     expect(percentileBelow(1, { n: 50, deciles: [1, 2] })).toBeNull();
   });
@@ -41,6 +57,13 @@ describe("parseStandingMetric", () => {
   });
   it("refuses speed-like metrics", () => {
     for (const m of ["top_speed", "speed", "fast", "pace", "lap_time", "streak"]) {
+      expect(parseStandingMetric(m)).toEqual({ ok: false, reason: "refused" });
+    }
+  });
+  it("matches whole tokens only", () => {
+    expect(parseStandingMetric("workspace")).toEqual({ ok: false, reason: "unknown" });
+    expect(parseStandingMetric("overlap")).toEqual({ ok: false, reason: "unknown" });
+    for (const m of ["speed", "top_speed", "fast", "pace", "lap", "streak"]) {
       expect(parseStandingMetric(m)).toEqual({ ok: false, reason: "refused" });
     }
   });
@@ -61,7 +84,12 @@ describe("bandOf", () => {
   it("labels bands and never goes negative", () => {
     expect(bandOf(95)).toBe("top 10%");
     expect(bandOf(90)).toBe("top 10%");
+    expect(bandOf(89)).toBe("top 25%");
     expect(bandOf(80)).toBe("top 25%");
+    expect(bandOf(75)).toBe("top 25%");
+    expect(bandOf(74)).toBe("top half");
+    expect(bandOf(50)).toBe("top half");
+    expect(bandOf(49)).toBe("riding along");
     expect(bandOf(60)).toBe("top half");
     expect(bandOf(10)).toBe("riding along");
     expect(bandOf(0)).toBe("riding along");
