@@ -30,10 +30,27 @@ describe('yearRecap', () => {
     expect(yearRecap(edge, 2027)).toMatchObject({ rides: 1, distanceKm: 50 });
   });
   it('is zeros and nothing for a year with no rides', () => {
-    expect(yearRecap(rides, 2024)).toEqual({ year: 2024, rides: 0, distanceKm: 0, durationSec: 0, daysRidden: 0, longest: null, topSpeedKmh: 0, busiestMonth: null, averageKm: 0 });
+    expect(yearRecap(rides, 2024)).toEqual({ year: 2024, rides: 0, distanceKm: 0, durationSec: 0, daysRidden: 0, longest: null, topSpeedKmh: 0, busiestMonth: null, averageKm: 0, monthsRidden: 0, title: null });
   });
   it('has no busiest month when no distance was ridden', () => {
     expect(yearRecap([ride(new Date(2026, 4, 1), 0)], 2026).busiestMonth).toBeNull();
+  });
+});
+
+describe('yearRecap title', () => {
+  it('counts the months ridden in the year', () => {
+    expect(yearRecap(rides, 2026).monthsRidden).toBe(2);
+    const three = [ride(new Date(2026, 0, 5), 10), ride(new Date(2026, 3, 5), 10), ride(new Date(2026, 8, 5), 10)];
+    expect(yearRecap(three, 2026).monthsRidden).toBe(3);
+  });
+  it('names the title from the year\'s rides only', () => {
+    expect(yearRecap(rides, 2026).title).toBe('day-tripper');
+    const five = [0, 1, 2, 3, 4].map((m) => ride(new Date(2026, m, 3), 10));
+    expect(yearRecap(five, 2026).title).toBe('trail-regular');
+  });
+  it('keeps a sample-only year at zero rides and no title', () => {
+    const only = [ride(new Date(2026, 5, 1), 10, { sample: true })];
+    expect(yearRecap(only, 2026)).toMatchObject({ rides: 0, monthsRidden: 0, title: null });
   });
 });
 

@@ -1,4 +1,5 @@
 import { toISO } from './dates';
+import { monthsRidden, titleFor, type TitleId } from './story/titles';
 import type { Ride } from '@/store/rides';
 
 type RecapRide = Pick<Ride, 'name' | 'startedAt' | 'durationSec' | 'distanceKm' | 'maxKmh' | 'sample'>;
@@ -15,6 +16,10 @@ export type YearRecap = {
   /** The month with the most distance, or null when the year has no distance. */
   busiestMonth: { name: string; distanceKm: number } | null;
   averageKm: number;
+  /** Different calendar months with a ride this year. */
+  monthsRidden: number;
+  /** The title this year's rides earn on their own (no trails counted), or null with no rides. */
+  title: TitleId | null;
 };
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -31,6 +36,7 @@ export function yearsWithRides(rides: RecapRide[]): number[] {
 /** What a rider rode in one calendar year (local time), from the rides in their log. */
 export function yearRecap(rides: RecapRide[], year: number): YearRecap {
   const mine = real(rides).filter((r) => yearOf(r) === year);
+  const months = monthsRidden(mine);
   const distanceKm = tenth(mine.reduce((n, r) => n + r.distanceKm, 0));
   const byMonth = new Array<number>(12).fill(0);
   for (const r of mine) byMonth[new Date(r.startedAt).getMonth()]! += r.distanceKm;
@@ -46,5 +52,7 @@ export function yearRecap(rides: RecapRide[], year: number): YearRecap {
     topSpeedKmh: Math.round(Math.max(0, ...mine.map((r) => r.maxKmh))),
     busiestMonth: distanceKm > 0 ? { name: MONTHS[top]!, distanceKm: tenth(byMonth[top]!) } : null,
     averageKm: mine.length ? tenth(distanceKm / mine.length) : 0,
+    monthsRidden: months,
+    title: titleFor({ rides: mine.length, monthsRidden: months }),
   };
 }

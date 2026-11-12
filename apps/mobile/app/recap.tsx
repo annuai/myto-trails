@@ -4,6 +4,7 @@ import { CalendarDays, Share2 } from 'lucide-react-native';
 import { shareCard } from '@/lib/shareCard';
 import { recapTokens } from '@/lib/recapCard.tokens';
 import { asText, distanceKm, durationParts, speedKmh } from '@/lib/units';
+import { TITLES } from '@/lib/story/titles';
 import { yearRecap, yearsWithRides } from '@/lib/yearRecap';
 import { useRides } from '@/store/rides';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -15,6 +16,7 @@ import { EmptyState } from '@/ui/EmptyState';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Measure } from '@/ui/Measure';
+import { Pillion } from '@/ui/Pillion';
 import { RecapCard } from '@/ui/RecapCard';
 import { Screen } from '@/ui/Screen';
 import { useCountUp, useOnce } from '@/ui/motionHooks';
@@ -59,6 +61,10 @@ export default function Recap() {
             <Text variant="label" style={{ color: c.accentInk }}>{year} on the road</Text>
             <Measure parts={distanceKm(play ? Math.round(shownKm) : recap.distanceKm)} size="liveCompact" color={c.accentInk} />
             <Text variant="label" style={{ color: c.accentInk }}>in {asText(durationParts(recap.durationSec))}</Text>
+          </View>
+          <View style={{ alignItems: 'center', gap: space[1], marginTop: space[4] }}>
+            <Pillion pose="campfire" size="md" />
+            {recap.title ? <Text variant="label">{`${year}: ${TITLES.find((t) => t.id === recap.title)?.name}`}</Text> : null}
           </View>
           <SectionTitle>Highlights</SectionTitle>
           <Card style={{ flexDirection: 'row' }}>
