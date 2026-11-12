@@ -43,8 +43,10 @@ export default function Recap() {
   const shownKm = useCountUp(recap?.distanceKm ?? 0, play, { run: year });
   const optIn = useStandingPref((s) => s.optIn);
   const cohort = useStandingPref((s) => s.cohort);
+  // Read once when the screen opens: the standing line is for the month the rider is in now, and time must not be read during render.
+  const [openedAt] = useState(() => Date.now());
   const invited = useStory((s) => s.seen.includes(INVITE_ID));
-  const standing = optIn && cohort && year === current && cohort.period === localPeriod(Date.now()) ? standingMoment({ metric: cohort.metric, value: cohort.value, row: cohort.row, region: cohort.region }) : undefined;
+  const standing = optIn && cohort && year === current && cohort.period === localPeriod(openedAt) ? standingMoment({ metric: cohort.metric, value: cohort.value, row: cohort.row, region: cohort.region }) : undefined;
   const fullRef = useRef<ComponentRef<typeof View>>(null);
   const [message, setMessage] = useState<string>();
   const share = async () => {
