@@ -31,6 +31,14 @@ describe('buildNudgeWorld', () => {
     expect(homeCands()).toHaveLength(1);
   });
 
+  it('says the last ride was a group ride, and then no home candidate', () => {
+    rides.setState({ rides: [justEnded({ startedAt: NOW - 5 * 60 * MIN, durationSec: 60 }), justEnded({ groupId: 'g1' })] });
+    expect(buildNudgeWorld(NOW, []).lastRideGroup).toBe(true);
+    expect(homeCands()).toEqual([]);
+    rides.setState({ rides: [justEnded()] });
+    expect(buildNudgeWorld(NOW, []).lastRideGroup).toBe(false);
+  });
+
   it('a simulated ride is not a ride: no home candidate, no distance and no last ride end', () => {
     rides.setState({ rides: [justEnded({ simulated: true })] });
     const w = buildNudgeWorld(NOW, []);

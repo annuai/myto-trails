@@ -43,6 +43,8 @@ export type NudgeWorld = {
   home?: { lat: number; lng: number };
   /** Where the last real ride ended. */
   lastRideEnd?: { lat: number; lng: number };
+  /** The last real ride was part of a group ride (the group finds its own way home). */
+  lastRideGroup?: boolean;
   nextTrail?: { slug: string; name: string };
   /** Nudges that came due before, with whether they were opened. */
   history: NudgeHistory[];

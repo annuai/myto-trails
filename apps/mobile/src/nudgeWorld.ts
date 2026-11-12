@@ -37,6 +37,7 @@ export function buildNudgeWorld(now: number, others: Reminder[]): NudgeWorld {
     clubs: n.clubs?.count ?? 0,
     home: home ? { lat: home.lat, lng: home.lng } : undefined,
     lastRideEnd: end ? { lat: end.lat, lng: end.lng } : undefined,
+    lastRideGroup: !!newest?.groupId,
     nextTrail: next ? { slug: next.slug, name: next.name } : undefined,
     history: n.history,
     others: others.map((o) => ({ id: o.id, fireAt: o.fireAt })),

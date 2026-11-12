@@ -120,6 +120,13 @@ describe('home nudge', () => {
     expect(homeCand({ home: HOME, lastRideEnd: NEAR })).toEqual([]);
     expect(AWAY_M).toBeGreaterThan(500);
   });
+  it('no candidate on a trip day, where Dash keeps its Ride home card away too', () => {
+    expect(homeCand({ home: HOME, lastRideEnd: FIVE_KM, tripDays: [isoOf(justEnded.endedAt)] })).toEqual([]);
+    expect(homeCand({ home: HOME, lastRideEnd: FIVE_KM, tripDays: [isoOf(at(FRIDAY, 1, 12))] })).toHaveLength(1);
+  });
+  it('no candidate after a group ride', () => {
+    expect(homeCand({ home: HOME, lastRideEnd: FIVE_KM, lastRideGroup: true })).toEqual([]);
+  });
   it('no candidate for a ride that ended long ago', () => {
     expect(homeCand({ home: HOME, lastRideEnd: FIVE_KM, rides: [{ ...justEnded, endedAt: FRIDAY - 3 * 3_600_000 }] })).toEqual([]);
   });

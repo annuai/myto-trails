@@ -100,6 +100,8 @@ function homeNudge(w: NudgeWorld): Candidate[] {
   if (!r || !w.home || !w.lastRideEnd) return [];
   // Like photos: only just after a ride finishes, from the plan rebuilt then.
   if (w.now - r.endedAt > 20 * MIN || w.now < r.endedAt) return [];
+  // Like the Ride home offer: not on a trip day and not after a group ride.
+  if (w.lastRideGroup || w.tripDays.includes(isoOf(r.endedAt))) return [];
   if (haversine(w.lastRideEnd, w.home) <= AWAY_M) return [];
   return [{ type: 'home', key: `home:${r.endedAt}`, fireAt: r.endedAt + 10 * MIN, score: 0.6, route: '/(tabs)', data: {} }];
 }
