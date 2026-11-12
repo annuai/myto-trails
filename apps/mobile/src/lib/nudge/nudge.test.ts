@@ -225,6 +225,12 @@ describe('standing nudge', () => {
     expect(c[0]!.score).toBe(0.5);
     expect(c[0]!.route).toBe('/ride');
   });
+  it('skips a Monday in the next calendar month, since it would say "this month" about a month just begun', () => {
+    const sat = new Date(2026, 9, 31, 10, 0).getTime(); // Saturday 31 October; the next Monday is 2 November
+    expect(std({ ...standing(80, 10), now: sat })).toEqual([]);
+    const fri = new Date(2026, 10, 27, 10, 0).getTime(); // Friday 27 November; Monday 30 November is still November
+    expect(std({ ...standing(80, 10), now: fri })[0]!.fireAt).toBe(at(fri, 3, 9, 30));
+  });
   it('is planned for a rider at the top half, but not at level off or when muted', () => {
     // The weekend and lapse nudges are worth more and sit too close, so they are muted to see this one.
     const w = { ...standing(80, 10), rides: [ride(FRIDAY, 1)], muted: ['weekend' as const, 'lapse' as const] };
@@ -237,6 +243,7 @@ describe('standing nudge', () => {
     expect(a.title).toBe('You are ahead of 72% of riders near your area');
     expect(a.body).toBe('12 km more this month moves you up a band. A short loop does it.');
     expect(write('standing', { aheadOf: 72, region: 'your area' }, 0).body).toBe('Nice riding this month.');
+    expect(write('standing', { aheadOf: 100, region: 'your area' }, 0).title).toBe('You are ahead of 99% of riders near your area');
     expect(a.lock).toBe('A ride idea');
     expect(a.title + a.body).not.toContain('!');
   });

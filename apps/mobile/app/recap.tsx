@@ -7,7 +7,7 @@ import { asText, distanceKm, durationParts, speedKmh } from '@/lib/units';
 import { TITLES } from '@/lib/story/titles';
 import { yearRecap, yearsWithRides } from '@/lib/yearRecap';
 import { chooseStanding } from '@/lib/standingSync';
-import { localPeriod, standingMoment } from '@/lib/story/standing';
+import { localPeriod, STANDING_CONSENT, STANDING_TITLE, standingMoment } from '@/lib/story/standing';
 import { useRides } from '@/store/rides';
 import { useStandingPref } from '@/store/standingPref';
 import { useStory } from '@/store/story';
@@ -92,8 +92,8 @@ export default function Recap() {
           </View>
           {!optIn && !invited ? (
             <Card style={{ marginBottom: space[4], gap: space[2] }}>
-              <Text variant="label">Compare with riders near you</Text>
-              <Text variant="caption" tone="muted">Share each ride's date, distance and a rough area (about 100 km wide). Never your route. Turn off any time and it is deleted.</Text>
+              <Text variant="label">{STANDING_TITLE}</Text>
+              <Text variant="caption" tone="muted">{STANDING_CONSENT}</Text>
               <Button label="Turn on" onPress={() => { useStory.getState().markSeen(INVITE_ID); void chooseStanding(true); }} />
               <Button variant="soft" label="Not now" onPress={() => useStory.getState().markSeen(INVITE_ID)} />
             </Card>

@@ -9,6 +9,7 @@ import { countryName } from '@/lib/countryNames';
 import { signOut, startSignIn } from '@/lib/signIn';
 import { useOsm } from '@/store/osm';
 import { chooseStanding } from '@/lib/standingSync';
+import { STANDING_CONSENT, STANDING_TITLE } from '@/lib/story/standing';
 import { useStandingPref } from '@/store/standingPref';
 import { useAuth } from '@/store/auth';
 import { asText, distanceKm } from '@/lib/units';
@@ -130,7 +131,7 @@ export default function You() {
       </ListCard>
       <SectionTitle>Privacy</SectionTitle>
       <ListCard>
-        <Row icon={Users} label="Compare with riders near you" sub="Share each ride's date, distance and a rough area (about 100 km wide). Never your route. Turn off any time and it is deleted." value={standingOn ? 'On' : 'Off'} onPress={() => void chooseStanding(!standingOn)} />
+        <Row icon={Users} label={STANDING_TITLE} sub={STANDING_CONSENT} value={standingOn ? 'On' : 'Off'} onPress={() => void chooseStanding(!standingOn)} />
       </ListCard>
       {standingError ? <Text variant="label" tone="stop" style={{ marginTop: space[2] }}>{standingError}</Text> : null}
       <SectionTitle>Backup</SectionTitle>

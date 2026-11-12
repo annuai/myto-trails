@@ -1,3 +1,4 @@
+import { shownPercent } from '../story/standing';
 import { skyWord } from './weather';
 import type { NudgeType } from './types';
 
@@ -54,7 +55,7 @@ const LINES: Record<NudgeType, ((d: CopyData) => [string, string])[]> = {
     () => ['Any good photos from the ride?', 'Your club would like to see them.'],
   ],
   standing: [
-    (d) => [`You are ahead of ${d.aheadOf ?? 50}% of riders near ${d.region ?? 'your area'}`, d.nextGap !== undefined ? `${km(d.nextGap)} more this month moves you up a band. A short loop does it.` : 'Nice riding this month.'],
+    (d) => [`You are ahead of ${shownPercent(d.aheadOf ?? 50)}% of riders near ${d.region ?? 'your area'}`, d.nextGap !== undefined ? `${km(d.nextGap)} more this month moves you up a band. A short loop does it.` : 'Nice riding this month.'],
   ],
 };
 

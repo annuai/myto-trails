@@ -27,12 +27,19 @@ export function summaryOf(r: Ride, ref: string): RideSummary | undefined {
   return { ref, day: localDay(r.startedAt), distanceKm: r.distanceKm, durationSec: Math.round(r.durationSec), cell };
 }
 
+/** The switch's title and what it shares, worded the same on the You tab and the recap invitation. Every uploaded field is named. */
+export const STANDING_TITLE = 'Compare with riders near you';
+export const STANDING_CONSENT = "Share each ride's date, distance, ride time and a rough area (about 100 km wide). Never your route. Turn off any time and it is deleted.";
+
+/** A percentile as said to the rider: never "100%" (above the top cut point it is 99). */
+export const shownPercent = (p: number): number => Math.min(p, 99);
+
 /** "You rode further than 70% of riders near your area this month." Never for a small cohort and never below the 50th percentile. */
 export function standingMoment(i: { metric: StandingMetric; value: number; row: CohortRow | undefined; region: string }): Moment | undefined {
   if (!i.row) return undefined;
   const p = percentileBelow(i.value, i.row);
   if (p === null || p < 50) return undefined;
-  return { id: `standing:${i.metric}:${bandOf(p)}`, kind: 'standing', title: `You rode further than ${p}% of riders near ${i.region} this month.`, body: '', pose: 'standing-up' };
+  return { id: `standing:${i.metric}:${bandOf(p)}`, kind: 'standing', title: `You rode further than ${shownPercent(p)}% of riders near ${i.region} this month.`, body: '', pose: 'standing-up' };
 }
 
 /** The cell of the rider's most recent ride and their distance this month in that cell only (the server cohort sums per cell too). */

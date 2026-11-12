@@ -6,7 +6,7 @@ import { standingPrefSlice } from '@/store/standingPrefCore';
 import type { RideSummary } from '@/api/standing';
 import { uid } from '../id';
 import { uploadQueued } from '../standingSyncCore';
-import { currentStanding, localDay, standingMoment, summaryOf } from './standing';
+import { currentStanding, localDay, shownPercent, STANDING_CONSENT, standingMoment, summaryOf } from './standing';
 
 const ride = (over: Partial<Ride> = {}): Ride => ({
   id: 'r1', name: 'Morning', startedAt: new Date(2026, 10, 12, 23, 50).getTime(), durationSec: 3600, distanceKm: 42.5, maxKmh: 90, points: [{ lat: 12.9, lng: 77.5 }],
@@ -32,6 +32,13 @@ describe('summaryOf', () => {
   });
 });
 
+describe('consent copy', () => {
+  it('names every uploaded field the rider can understand: date, distance, ride time and a rough area', () => {
+    expect(STANDING_CONSENT).toContain("date, distance, ride time and a rough area (about 100 km wide)");
+    expect(STANDING_CONSENT).toContain('Never your route.');
+  });
+});
+
 describe('standingMoment', () => {
   const base = { metric: 'distance_km' as const, region: 'your area' };
   it('is undefined for a cohort of 19', () => {
@@ -43,6 +50,11 @@ describe('standingMoment', () => {
     expect(m?.title).toBe('You rode further than 70% of riders near your area this month.');
     expect(m?.pose).toBe('standing-up');
     expect(m?.kind).toBe('standing');
+  });
+  it('never says 100%: above the top cut point it says 99%', () => {
+    expect(standingMoment({ ...base, value: 95, row: row() })?.title).toBe('You rode further than 99% of riders near your area this month.');
+    expect(shownPercent(100)).toBe(99);
+    expect(shownPercent(72)).toBe(72);
   });
   it('is undefined below the 50th percentile', () => {
     expect(standingMoment({ ...base, value: 30, row: row() })).toBeUndefined();

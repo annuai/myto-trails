@@ -100,6 +100,8 @@ function standing(w: NudgeWorld): Candidate[] {
   for (let i = 0; i <= 7; i++) {
     const monday = at(w.now, i, 9, 30);
     if (weekdayOf(monday) !== 1 || monday <= w.now) continue;
+    // The copy says "this month": a Monday in the next month would be about a month just begun.
+    if (new Date(monday).getMonth() !== new Date(w.now).getMonth()) return [];
     return [{ type: 'standing', key: `standing:${isoWeekOf(monday)}`, fireAt: monday, score: 0.5, route: '/ride', data: { aheadOf: s.aheadOf, region: s.region, nextGap: s.nextGap } }];
   }
   return [];

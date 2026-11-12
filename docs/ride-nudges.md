@@ -17,7 +17,7 @@ An occasional, on-phone idea to go riding. No server and no push: everything is 
 | club | 2 days (or 1) before a club ride not yet answered | "Dust Devils ride on Sunday" |
 | milestone | when within 6% (30 km at least) of a round yearly distance | "12 km to 500 km this year" |
 | photos | 30 minutes after a ride ends, for club members | "Share today's ride" |
-| standing | Monday 09:30, only if the rider chose to see standing and is ahead of half or more of riders near home | "You are ahead of 72% of riders near your area" |
+| standing | Monday 09:30 in the same month (the copy says "this month"), only if the rider chose to see standing and is ahead of half or more of riders near home; never says 100% (capped at 99) | "You are ahead of 72% of riders near your area" |
 
 The usual-time reminder ("Ready for your next ride?") and the daylight alert already exist as reminders; the engine keeps a day that has one free of nudges.
 
