@@ -72,9 +72,14 @@ describe("PUT /me/ride-summaries", () => {
     expect(st.upsertSummaries).not.toHaveBeenCalled();
   });
   it("rejects impossible, future and too-old days and out-of-range cells", async () => {
-    for (const day of ["2026-02-31", "0000-01-01", "2020-01-01", "2026-11-13", "2999-01-01"]) expect(await call("PUT", "/me/ride-summaries", { rides: [{ ...ride, day }] })).toMatchObject({ status: 400 });
-    for (const cell of ["90:77", "-91:77", "12:180", "12:-181"]) expect(await call("PUT", "/me/ride-summaries", { rides: [{ ...ride, cell }] })).toMatchObject({ status: 400 });
+    for (const day of ["2026-02-31", "0000-01-01", "2020-01-01", "2026-11-14", "2999-01-01"]) expect(await call("PUT", "/me/ride-summaries", { rides: [{ ...ride, day }] })).toMatchObject({ status: 400 });
+    for (const cell of ["90:77", "-91:77", "12:180", "12:-181", "089:77", "-0:5", "00:5"]) expect(await call("PUT", "/me/ride-summaries", { rides: [{ ...ride, cell }] })).toMatchObject({ status: 400 });
     expect(st.upsertSummaries).not.toHaveBeenCalled();
+  });
+  it("accepts tomorrow (a rider east of UTC) and canonical cells", async () => {
+    st.upsertSummaries.mockResolvedValueOnce({ ok: true });
+    const rides = ["0:0", "-1:-1", "11:76"].map((cell, i) => ({ ...ride, ref: `c${i}`, cell, day: "2026-11-13" }));
+    expect(await call("PUT", "/me/ride-summaries", { rides })).toEqual({ status: 204, body: null });
   });
   it("409s when the rider has not opted in", async () => {
     st.upsertSummaries.mockResolvedValueOnce({ ok: false, reason: "not_opted_in" });

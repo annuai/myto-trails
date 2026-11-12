@@ -14,7 +14,7 @@ create table ride_summary (
   day date not null,
   distance_km numeric not null check (distance_km >= 0 and distance_km < 5000),
   duration_s integer not null check (duration_s between 0 and 2000000),
-  cell text not null check (cell ~ '^-?[0-9]{1,3}:-?[0-9]{1,3}$' and split_part(cell, ':', 1)::int between -90 and 89 and split_part(cell, ':', 2)::int between -180 and 179),
+  cell text not null check (cell ~ '^(-?[1-9][0-9]{0,2}|0):(-?[1-9][0-9]{0,2}|0)$' and split_part(cell, ':', 1)::int between -90 and 89 and split_part(cell, ':', 2)::int between -180 and 179),
   bike_class text check (bike_class is null or char_length(bike_class) between 1 and 30),
   unique (user_id, ride_ref)
 );

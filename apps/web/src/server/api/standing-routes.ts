@@ -4,14 +4,15 @@ import { ApiError, fail, ok, type RouteDef } from "./http";
 
 const noContent = () => new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 const PERIOD = /^\d{4}-(0[1-9]|1[0-2])$/;
-const CELL = /^-?\d{1,3}:-?\d{1,3}$/;
+const CELL = /^(-?[1-9][0-9]{0,2}|0):(-?[1-9][0-9]{0,2}|0)$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const FIVE_YEARS = 5 * 366 * 86_400_000;
 /** A real calendar day, not in the future and not older than five years. */
 function validDay(d: string, now: Date): boolean {
   const t = Date.parse(d);
   if (!DAY.test(d) || Number.isNaN(t) || new Date(t).toISOString().slice(0, 10) !== d) return false;
-  return t <= now.getTime() && t >= now.getTime() - FIVE_YEARS;
+  // One day of slack: riders east of UTC (India) upload today's local date before UTC midnight.
+  return t <= now.getTime() + 86_400_000 && t >= now.getTime() - FIVE_YEARS;
 }
 /** A 1-degree cell: lat -90..89, lng -180..179. */
 function validCell(s: string): boolean {
