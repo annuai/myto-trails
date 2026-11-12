@@ -20,6 +20,9 @@ const away = (o: Partial<AutoEndState> = {}): AutoEndState => ({ ...startAutoEnd
 const step = (w: Partial<AutoEndWorld> = {}, s: AutoEndState = away()) => stepAutoEnd(s, world(w));
 
 describe('stepAutoEnd', () => {
+  it('with no Home or Work saved it never warns, asks or ends', () => {
+    expect(step({ places: {} }).action).toBeNull();
+  });
   it('disabled, not running or paused returns null', () => {
     const r = world().ride;
     expect(step({ enabled: false }).action).toBeNull();

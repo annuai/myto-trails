@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import * as Location from 'expo-location';
-import { canEnableAutoEnd, currentLocationLabel } from '@/features/home/homePlace';
+import { canEnableAutoEnd, canUseCurrentLocation, currentLocationLabel, isFreshFix, type LocationPermission } from '@/features/home/homePlace';
 import { searchPlaces, type Place } from '@/lib/placeSearch';
 import { useCompanion } from '@/store/companion';
 import { useLocation } from '@/store/location';
@@ -18,8 +18,8 @@ import { Text } from '@/ui/Text';
 
 /** One rough position, only when no screen already holds a fix. No watch, no permission prompt loop: the battery rule. */
 async function onePosition(): Promise<{ lat: number; lng: number } | undefined> {
-  const fix = useLocation.getState().fix;
-  if (fix) return { lat: fix.lat, lng: fix.lng };
+  const { fix, fixAt } = useLocation.getState();
+  if (fix && isFreshFix(fixAt, Date.now())) return { lat: fix.lat, lng: fix.lng };
   try {
     if (Platform.OS === 'web') {
       if (typeof navigator === 'undefined' || !navigator.geolocation) return undefined;
@@ -36,7 +36,19 @@ async function onePosition(): Promise<{ lat: number; lng: number } | undefined> 
 /** A search that gets no answer gives up, so the screen is never stuck waiting. */
 const SEARCH_TIMEOUT_MS = 10_000;
 
-function PlaceSection({ kind, title }: { kind: PlaceKind; title: string }) {
+/** Whether the phone allows location, read once without a prompt or a watch. Web has no way to ask without prompting, so it stays undetermined. */
+function useLocationPermission(): LocationPermission | undefined {
+  const [p, setP] = useState<LocationPermission>();
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    let live = true;
+    Location.getForegroundPermissionsAsync().then((r) => { if (live) setP(r.status as LocationPermission); }).catch(() => undefined);
+    return () => { live = false; };
+  }, []);
+  return p;
+}
+
+function PlaceSection({ kind, title, permission }: { kind: PlaceKind; title: string; permission?: LocationPermission }) {
   const saved = usePlaces((s) => s[kind]);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Place[]>();
@@ -82,7 +94,8 @@ function PlaceSection({ kind, title }: { kind: PlaceKind; title: string }) {
         ) : (
           <Text variant="label" tone="muted">{kind === 'home' ? 'Not set.' : 'Not set. Optional.'}</Text>
         )}
-        <Button variant="soft" label="Use my current location" onPress={() => void useCurrent()} disabled={busy} onCard />
+        <Button variant="soft" label="Use my current location" onPress={() => void useCurrent()} disabled={busy || !canUseCurrentLocation(permission)} onCard />
+        {canUseCurrentLocation(permission) ? null : <Text variant="label" tone="muted">Location is turned off for Myto Moto in the phone&apos;s settings. Search for the place instead.</Text>}
         <Field label="Search for a place" value={query} onChangeText={setQuery} onSubmitEditing={() => void search()} returnKeyType="search" placeholder="Street, area or town" onCard />
         <Button variant="soft" label="Search" onPress={() => void search()} disabled={busy || !query.trim()} onCard />
         {note ? <Text variant="label" tone="muted">{note}</Text> : null}
@@ -102,6 +115,7 @@ export default function HomePlaceScreen() {
   const work = usePlaces((s) => s.work);
   const autoEnd = useCompanion((s) => s.autoEnd);
   const batterySaver = useCompanion((s) => s.batterySaver);
+  const permission = useLocationPermission();
   const canAuto = canEnableAutoEnd(home, work);
   const autoOn = canAuto && autoEnd;
 
@@ -109,8 +123,8 @@ export default function HomePlaceScreen() {
     <Screen>
       <BackHeader title="You" />
       <PageTitle sub="Saved on this phone only. They are used to offer a ride home and to end a ride when you arrive.">Home and work</PageTitle>
-      <PlaceSection kind="home" title="Home" />
-      <PlaceSection kind="work" title="Work" />
+      <PlaceSection kind="home" title="Home" permission={permission} />
+      <PlaceSection kind="work" title="Work" permission={permission} />
       <SectionTitle>Recording</SectionTitle>
       <ListCard>
         <View style={{ opacity: canAuto ? 1 : opacity.disabled }}>
@@ -118,7 +132,7 @@ export default function HomePlaceScreen() {
             sub={canAuto
               ? 'It warns you first, never ends a group ride or a trip, and asks instead once you have kept recording twice.'
               : 'Set Home or Work above to turn this on. It warns you first, never ends a group ride or a trip, and asks instead once you have kept recording twice.'}
-            right={<Checkbox checked={autoOn} label="Stop recording when I get home or to work" onChange={(v) => { if (canAuto) useCompanion.getState().setAutoEnd(v); }} />} />
+            right={<Checkbox checked={autoOn} label="Stop recording when I get home or to work" disabled={!canAuto} onChange={(v) => useCompanion.getState().setAutoEnd(v)} />} />
         </View>
         <Row label="Save battery on long rides" chevron={false}
           sub="The GPS is sampled less when the battery is low or you are standing still, so distance and top speed may read slightly low."
