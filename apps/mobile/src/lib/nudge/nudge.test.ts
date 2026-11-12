@@ -8,6 +8,7 @@ import { goodRidingDay, parseForecast, forecastUrl } from './weather';
 import { at, DAY, isoOf, minuteOfDay } from './time';
 import { FRIDAY, ride, world } from './testWorld';
 import { NUDGE_TYPES, type NudgeHistory } from './types';
+import { AWAY_M } from '@/lib/homeRoute/types';
 
 const hist = (type: NudgeHistory['type'], daysAgo: number, opened = false): NudgeHistory => ({ id: `nudge:${type}:${daysAgo}`, type, fireAt: at(FRIDAY, -daysAgo, 10), ...(opened ? { opened: at(FRIDAY, -daysAgo, 11) } : {}) });
 const sunny = (iso: string) => ({ iso, code: 0, tempMax: 28, rainPct: 5 });
@@ -99,6 +100,45 @@ describe('candidates', () => {
     expect(candidates(world({ rides: [justAfter], clubs: 1 })).find((c) => c.type === 'photos')?.fireAt).toBe(justAfter.endedAt + 30 * 60_000);
     expect(candidates(world({ rides: [justAfter], clubs: 0 })).find((c) => c.type === 'photos')).toBeUndefined();
     expect(candidates(world({ rides: [{ ...r, endedAt: FRIDAY - 3 * 3_600_000 }], clubs: 1 })).find((c) => c.type === 'photos')).toBeUndefined();
+  });
+});
+
+describe('home nudge', () => {
+  const HOME = { lat: 12.97, lng: 77.59 };
+  const FIVE_KM = { lat: 12.97 + 0.045, lng: 77.59 };
+  const NEAR = { lat: 12.97 + 0.005, lng: 77.59 };
+  const justEnded = { ...ride(FRIDAY, 0, 8), endedAt: FRIDAY - 5 * 60_000 };
+  const homeCand = (o: Parameters<typeof world>[0]) => candidates(world({ rides: [justEnded], ...o })).filter((c) => c.type === 'home');
+  it('a ride ending 5 km from Home yields one home candidate 10 minutes after', () => {
+    const c = homeCand({ home: HOME, lastRideEnd: FIVE_KM });
+    expect(c).toHaveLength(1);
+    expect(c[0]).toEqual({ type: 'home', key: `home:${justEnded.endedAt}`, fireAt: justEnded.endedAt + 10 * 60_000, score: 0.6, route: '/(tabs)', data: {} });
+  });
+  it('no candidate without Home, or when the ride ended within AWAY_M of it', () => {
+    expect(homeCand({ lastRideEnd: FIVE_KM })).toEqual([]);
+    expect(homeCand({ home: HOME })).toEqual([]);
+    expect(homeCand({ home: HOME, lastRideEnd: NEAR })).toEqual([]);
+    expect(AWAY_M).toBeGreaterThan(500);
+  });
+  it('no candidate for a ride that ended long ago', () => {
+    expect(homeCand({ home: HOME, lastRideEnd: FIVE_KM, rides: [{ ...justEnded, endedAt: FRIDAY - 3 * 3_600_000 }] })).toEqual([]);
+  });
+  it('the governor keeps the 08:00 to 21:00 window and one nudge a day for home like any other', () => {
+    const c = (fireAt: number) => ({ type: 'home' as const, key: 'k', fireAt, score: 1, route: '/(tabs)', data: {} });
+    const w = world();
+    expect(admits(c(at(FRIDAY, 1, 7, 59)), [], w, false)).toBe(false);
+    expect(admits(c(at(FRIDAY, 1, 8, 0)), [], w, false)).toBe(true);
+    expect(admits(c(at(FRIDAY, 1, 21, 0)), [], w, false)).toBe(false);
+    expect(admits(c(at(FRIDAY, 1, 18)), [{ type: 'weekend', fireAt: at(FRIDAY, 1, 9) }], w, false)).toBe(false);
+    expect(admits(c(at(FRIDAY, 1, 10)), [], world({ history: [hist('photos', 2)] }), false)).toBe(false);
+  });
+  it('a home nudge ignored four times in a row rests for 21 days', () => {
+    const four = [12, 11, 10, 9].map((d) => hist('home', d));
+    const r = resolveHistory(four, [], FRIDAY);
+    expect(dormant(r, 'home', FRIDAY)).toBe(true);
+    expect(dormant(r, 'home', at(FRIDAY, 13, 12))).toBe(false);
+    const plan = planNudges(world({ rides: [justEnded], home: HOME, lastRideEnd: FIVE_KM, history: [hist('home', 12), hist('home', 11), hist('home', 10), hist('home', 9)] }));
+    expect(plan.some((n) => n.type === 'home')).toBe(false);
   });
 });
 
