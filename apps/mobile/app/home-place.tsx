@@ -88,7 +88,7 @@ function PlaceSection({ kind, title, permission }: { kind: PlaceKind; title: str
         {saved ? (
           <>
             <Text variant="labelMedium">{saved.label}</Text>
-            <Text variant="caption" tone="muted">Places stay on this phone. They are never sent anywhere.</Text>
+            <Text variant="caption" tone="muted">Places stay on this phone. Searching sends what you type and your position to the place-search service.</Text>
             <Button variant="soft" label={`Remove ${title}`} onPress={() => usePlaces.getState().clearPlace(kind)} onCard />
           </>
         ) : (
@@ -130,8 +130,8 @@ export default function HomePlaceScreen() {
         <View style={{ opacity: canAuto ? 1 : opacity.disabled }}>
           <Row label="Stop recording when I get home or to work" chevron={false}
             sub={canAuto
-              ? 'It warns you first, never ends a group ride or a trip, and asks instead once you have kept recording twice.'
-              : 'Set Home or Work above to turn this on. It warns you first, never ends a group ride or a trip, and asks instead once you have kept recording twice.'}
+              ? 'It warns you first, never ends a group ride, and not a trip unless you are guided home, and asks instead once you have kept recording twice.'
+              : 'Set Home or Work above to turn this on. It warns you first, never ends a group ride, and not a trip unless you are guided home, and asks instead once you have kept recording twice.'}
             right={<Checkbox checked={autoOn} label="Stop recording when I get home or to work" disabled={!canAuto} onChange={(v) => useCompanion.getState().setAutoEnd(v)} />} />
         </View>
         <Row label="Save battery on long rides" chevron={false}

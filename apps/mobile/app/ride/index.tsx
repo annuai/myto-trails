@@ -253,7 +253,7 @@ export default function RideReady() {
           : fix ? 'Your position is shown above. It is only saved once you start.'
           : gpsError ?? 'Finding your location. If asked, allow location access.'}
       </Text>
-      {home ? <View style={{ marginTop: space[3] }}><ListCard><Row icon={House} label="Ride home" sub="Guided there, or record it too from the start bar." onPress={() => goHome(router, home)} /></ListCard></View> : null}
+      {home ? <View style={{ marginTop: space[3] }}><ListCard><Row icon={House} label="Ride home" sub="Directions home" onPress={() => goHome(router, home)} /></ListCard></View> : null}
       <SectionTitle>Before you go</SectionTitle>
       <Columns rightStartsWithSection left={<>
       <ListCard>
