@@ -15,6 +15,8 @@ import { Button } from '@/ui/Button';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { Icon } from '@/ui/Icon';
 import { ListCard, Row } from '@/ui/ListCard';
+import { buzz } from '@/lib/haptics';
+import { syncMarks } from '@/lib/markSync';
 import { Screen } from '@/ui/Screen';
 import { TextButton } from '@/ui/TextButton';
 import { Text } from '@/ui/Text';
@@ -39,7 +41,7 @@ export default function Guide() {
   if (!content) return <Screen><BackHeader title="Fix it" /><Unavailable /></Screen>;
   if (!guide) return <Screen><BackHeader title="Fix it" /><Text>That guide was not found.</Text></Screen>;
 
-  const fixedIt = () => { useFixit.getState().markFixed(guide.id); router.back(); };
+  const fixedIt = () => { useFixit.getState().markFixed(guide.id); buzz.confirm(); syncMarks(); router.back(); };
   const last = guide.steps.length - 1;
 
   if (walking) {
@@ -50,8 +52,8 @@ export default function Guide() {
         footer={(
           <View style={{ gap: space[2] }}>
             <View style={{ flexDirection: 'row', gap: space[3] }}>
-              <Button variant="soft" icon={ArrowLeft} label="Back" disabled={i === 0} flex onPress={() => setI(i - 1)} />
-              {i < last ? <Button big icon={ArrowRight} label="Next" flex onPress={() => setI(i + 1)} /> : <Button big icon={Check} label="It works" flex onPress={fixedIt} />}
+              <Button variant="soft" icon={ArrowLeft} label="Back" disabled={i === 0} flex onPress={() => { buzz.tick(); setI(i - 1); }} />
+              {i < last ? <Button big icon={ArrowRight} label="Next" flex onPress={() => { buzz.tick(); setI(i + 1); }} /> : <Button big icon={Check} label="It works" flex onPress={fixedIt} />}
             </View>
             {i === last ? <TextButton label="Still stuck? Call a contact" onPress={() => router.push('/documents/contacts')} /> : null}
           </View>

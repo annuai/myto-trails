@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { motion } from '@/theme/tokens';
 import { useAnimatedValue } from './useAnimatedValue';
 
 /** Respect the system's "reduce motion" setting: animations collapse to nothing. */
@@ -14,7 +15,9 @@ export function useReducedMotion(): boolean {
   return reduced;
 }
 
-export const EASE = Easing.bezier(0.4, 0, 0.2, 1); // the same curve as the website
+export const EASE = Easing.bezier(...motion.ease.standard); // the same curve as the website
+export const ARRIVE = Easing.bezier(...motion.ease.arrive);
+export const EXIT = Easing.bezier(...motion.ease.exit);
 
 /** Fade and rise into place on mount. `delay` staggers a list. */
 export function Reveal({ children, delay = 0, distance = 14, style }: { children: ReactNode; delay?: number; distance?: number; style?: StyleProp<ViewStyle> }) {
@@ -22,7 +25,7 @@ export function Reveal({ children, delay = 0, distance = 14, style }: { children
   const v = useAnimatedValue(reduced ? 1 : 0);
   useEffect(() => {
     if (reduced) return v.setValue(1);
-    Animated.timing(v, { toValue: 1, duration: 320, delay, easing: EASE, useNativeDriver: true }).start();
+    Animated.timing(v, { toValue: 1, duration: motion.duration.base, delay: Math.min(delay, motion.stagger.max), easing: ARRIVE, useNativeDriver: true }).start();
   }, [v, delay, reduced]);
   return <Animated.View style={[{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [distance, 0] }) }] }, style]}>{children}</Animated.View>;
 }

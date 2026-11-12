@@ -44,3 +44,19 @@ export { addDays };
  * which every edit, tick and "done" sets) did not choose it, so it is dropped; one they changed stays.
  */
 export const withoutUntouchedExamples = (todos: Todo[]): Todo[] => todos.filter((t) => !(t.id.startsWith('seed-') && t.updatedAt === undefined));
+
+/**
+ * How much of a service interval is left, from 1 (just done) down to 0 (due now), for the ring beside it: the smaller of the share of
+ * kilometres and the share of time that remain. Undefined for a to-do that is not a service item.
+ */
+export function serviceLeft(t: Todo, appKm: number, today: string = todayISO()): number | undefined {
+  if (t.kind !== 'service') return undefined;
+  const parts: number[] = [];
+  const from = t.lastDate ?? today;
+  const limit = addMonths(from, t.everyMonths ?? 1);
+  const span = daysUntil(limit, from);
+  if (t.everyMonths && span > 0) parts.push(daysUntil(limit, today) / span);
+  if (t.everyKm) parts.push((t.everyKm - Math.max(0, appKm - (t.lastKm ?? 0))) / t.everyKm);
+  if (!parts.length) return undefined;
+  return Math.min(1, Math.max(0, Math.min(...parts)));
+}

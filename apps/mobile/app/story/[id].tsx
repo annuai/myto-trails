@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BookOpen, Download, Luggage, Megaphone, Pencil, Share2, Trash2, Upload } from 'lucide-react-native';
+import { TellHome } from '@/features/group/TellHome';
 import { ReportSheet } from '@/features/ReportSheet';
 import { RideFuelCard } from '@/features/RideFuelCard';
 import { ShareRideSheet } from '@/features/ShareRideSheet';
@@ -35,6 +36,11 @@ import { Measure } from '@/ui/Measure';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
 import { Theme, useTheme } from '@/theme/ThemeProvider';
+import { newGround } from '@/lib/newGround';
+import { Reveal } from '@/ui/motion';
+import { motion } from '@/theme/tokens';
+import { useCountUp, useOnce } from '@/ui/motionHooks';
+import { TextButton } from '@/ui/TextButton';
 import { radius, space } from '@/theme/tokens';
 
 export default function Story() {
@@ -67,6 +73,14 @@ function StoryBody() {
     return () => { cancelled = true; };
   }, [token, slug, ride?.id]);
   useEffect(() => { if (reportOpen && ride && !ride.conditionAsked) useRides.getState().markConditionAsked(ride.id); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const allRides = useRides((s) => s.rides);
+  const ground = useMemo(() => (ride ? newGround(ride, allRides) : undefined), [ride, allRides]);
+  // The first time a ride's story opens its route is inked onto the map and the figures count up with it. Later visits just show the finished ride; Replay plays it again.
+  const first = useOnce(ride && !ride.sample ? `ink:${ride.id}` : undefined);
+  const [run, setRun] = useState(0);
+  const play = first || run > 0;
+  const shownKm = useCountUp(ride?.distanceKm ?? 0, play, { ms: motion.duration.trace, delay: motion.traceDelay, run, steps: Math.round(ride?.distanceKm ?? 0) });
+  const shownSec = useCountUp(ride?.durationSec ?? 0, play, { ms: motion.duration.trace, delay: motion.traceDelay, run, steps: 0 });
   if (!ride) return <Screen><BackHeader /><Text>Ride not found.</Text></Screen>;
   const deleteRide = () => { useJournal.getState().removeForRide(ride.startedAt); useTrips.getState().forgetRide(ride.id); useRides.getState().removeRide(ride.id); router.dismissTo('/rides'); };
   const sub = ride.submission;
@@ -96,8 +110,9 @@ function StoryBody() {
         left={<>
       <View style={{ backgroundColor: c.accent, borderRadius: radius.card, padding: space[6], gap: space[1] }}>
         <Text variant="label" style={{ color: c.accentInk }}>You rode</Text>
-        <Measure parts={distanceKm(ride.distanceKm)} size="liveCompact" color={c.accentInk} />
-        <Text variant="label" style={{ color: c.accentInk }}>in {asText(durationParts(ride.durationSec))}</Text>
+        <Measure parts={distanceKm(play ? +shownKm.toFixed(1) : ride.distanceKm)} size="liveCompact" color={c.accentInk} />
+        <Text variant="label" style={{ color: c.accentInk }}>in {asText(durationParts(play ? Math.round(shownSec) : ride.durationSec))}</Text>
+        {ground && ground.km >= 1 ? <Reveal delay={play ? motion.stagger.max : 0}><Text variant="label" style={{ color: c.accentInk, marginTop: space[2] }}>{asText(distanceKm(+ground.km.toFixed(1)))} of it on ground you had not ridden before</Text></Reveal> : null}
       </View>
       <SectionTitle>Timeline</SectionTitle>
       <View style={{ marginBottom: space[3] }}><RideTimeline ride={ride} /></View>
@@ -107,10 +122,12 @@ function StoryBody() {
         <Stat value={`${ride.waypoints.length}`} label="Waypoints" />
         {gapM > 0 ? <Stat parts={distanceKm(+(gapM / 1000).toFixed(1))} label="GPS gap" /> : <Stat value={`${ride.points.length}`} label="Points" />}
       </Card>
+      {ride.groupId && !ride.sample ? <View style={{ marginBottom: space[3] }}><TellHome groupId={ride.groupId} /></View> : null}
       <View style={{ marginBottom: space[3] }}><RideFuelCard ride={ride} /></View>
         </>}
         right={<>
-      <View style={{ marginTop: 0 }}><RideMap radius={radius.card} points={ride.points} breaks={ride.breaks} waypoints={ride.waypoints} /></View>
+      <View style={{ marginTop: 0 }}><RideMap radius={radius.card} points={ride.points} breaks={ride.breaks} waypoints={ride.waypoints} ink={{ play, run }} /></View>
+      {!ride.sample && ride.points.length >= 2 ? <View style={{ alignItems: 'flex-start', marginTop: space[2] }}><TextButton label="Replay" onPress={() => setRun((r) => r + 1)} /></View> : null}
       {osmNeedsSignIn && !ride.sample ? (
         <Card style={{ gap: space[3], marginTop: space[4] }}>
           <Text variant="bodyMedium">Send this ride to OpenStreetMap</Text>

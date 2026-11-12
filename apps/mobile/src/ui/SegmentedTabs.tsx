@@ -1,3 +1,4 @@
+import { buzz } from '@/lib/haptics';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { segmentFrame } from '@/lib/segments';
@@ -39,7 +40,7 @@ export function SegmentedTabs<T extends string>({ tabs, value, onChange, label }
         const at = frame.width > 0 ? x.interpolate({ inputRange: [segmentedTabs.pad + (i - 1) * frame.width, segmentedTabs.pad + i * frame.width, segmentedTabs.pad + (i + 1) * frame.width], outputRange: [0, 1, 0], extrapolate: 'clamp' }) : on ? 1 : 0;
         const away = frame.width > 0 ? Animated.subtract(1, at as Animated.AnimatedInterpolation<number>) : on ? 0 : 1;
         return (
-          <ScalePressable key={t.key} scaleTo={0.97} accessibilityRole="tab" accessibilityLabel={t.label} accessibilityState={{ selected: on }} onPress={() => { if (!on) onChange(t.key); }}
+          <ScalePressable key={t.key} scaleTo={0.97} accessibilityRole="tab" accessibilityLabel={t.label} accessibilityState={{ selected: on }} onPress={() => { if (!on) { buzz.tick(); onChange(t.key); } }}
             style={{ flex: 1, height: size.target, alignItems: 'center', justifyContent: 'center' }}>
             <Animated.View style={{ opacity: away }}><Text variant="labelMedium" tone="ink">{t.label}</Text></Animated.View>
             <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center', opacity: at }]}><Text variant="labelMedium" tone="onInk">{t.label}</Text></Animated.View>

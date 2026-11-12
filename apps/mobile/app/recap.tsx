@@ -17,6 +17,7 @@ import { ListCard, Row } from '@/ui/ListCard';
 import { Measure } from '@/ui/Measure';
 import { RecapCard } from '@/ui/RecapCard';
 import { Screen } from '@/ui/Screen';
+import { useCountUp, useOnce } from '@/ui/motionHooks';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
 
@@ -29,6 +30,9 @@ export default function Recap() {
   const [picked, setPicked] = useState<number>();
   const year = picked && years.includes(picked) ? picked : years.includes(current) ? current : years[0];
   const recap = useMemo(() => (year === undefined ? undefined : yearRecap(rides, year)), [rides, year]);
+  // The year's distance counts up the first time it is opened, with the same soft ratchet as the other rolling figures.
+  const play = useOnce(recap && year !== undefined ? `recap:${year}` : undefined);
+  const shownKm = useCountUp(recap?.distanceKm ?? 0, play, { run: year });
   const fullRef = useRef<ComponentRef<typeof View>>(null);
   const [message, setMessage] = useState<string>();
   const share = async () => {
@@ -53,7 +57,7 @@ export default function Recap() {
           ) : null}
           <View style={{ backgroundColor: c.accent, borderRadius: radius.card, padding: space[6], gap: space[1] }}>
             <Text variant="label" style={{ color: c.accentInk }}>{year} on the road</Text>
-            <Measure parts={distanceKm(recap.distanceKm)} size="liveCompact" color={c.accentInk} />
+            <Measure parts={distanceKm(play ? Math.round(shownKm) : recap.distanceKm)} size="liveCompact" color={c.accentInk} />
             <Text variant="label" style={{ color: c.accentInk }}>in {asText(durationParts(recap.durationSec))}</Text>
           </View>
           <SectionTitle>Highlights</SectionTitle>

@@ -11,6 +11,8 @@ import { wipeArt } from '@/fixit/artCache';
 import { useFixit } from '@/store/fixit';
 import { useFuel } from '@/store/fuel';
 import { useJournal } from '@/store/journal';
+import { useMarks } from '@/store/marks';
+import { useSeen } from '@/store/seen';
 import { useMyRoutes } from '@/store/myRoutes';
 import { useNotifications } from '@/store/notifications';
 import { useProfile } from '@/store/profile';
@@ -30,6 +32,8 @@ export function eraseEverything(token: string | null) {
   if (token) for (const r of useMyRoutes.getState().routes) if (r.sharedUrl) void deleteSharedRoute(token, sharedIdOf(r.sharedUrl)).catch(() => undefined);
   eraseDocumentPhotos();
   useJournal.getState().wipe();
+  useMarks.getState().wipe();
+  useSeen.setState({ played: {}, last: {} });
   useNotifications.getState().wipe();
   useCompanion.getState().wipe();
   useCrash.getState().setEnabled(false);

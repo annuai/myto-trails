@@ -35,6 +35,31 @@ export const shadow = {
 /** The picture at the very end of the You page. `fadeHeight`: how much of its top melts into the page colour. `fadeEndAlpha`: the page colour's opacity where the fade ends. */
 export const footerPicture = { fadeHeight: '30%', fadeEndAlpha: 0 } as const;
 
+/**
+ * How things move (docs/superpowers/plans/2026-11-09-delight-and-motion.md §3.2). Durations are milliseconds; each curve is the four numbers of a cubic bezier.
+ * Routine feedback is `tap` to `base`; only the ride-end inking (`trace`) and a mark unlocking (`scene`) are authored sequences.
+ */
+export const motion = {
+  duration: { tap: 100, quick: 160, base: 240, slow: 400, scene: 700, trace: 1400 },
+  /** `standard` is the website's curve; `arrive` is a confident deceleration; `exit` leaves faster than it came. */
+  ease: { standard: [0.4, 0, 0.2, 1], arrive: [0.16, 1, 0.3, 1], exit: [0.4, 0, 1, 1] },
+  /** Lists: each row `step` ms after the one before, the whole stagger capped at `max`. */
+  stagger: { step: 40, max: 240 },
+  /** The ride-end ink waits this long after the page opens, so the map has its tiles before the line starts. */
+  traceDelay: 700,
+  /** The one spring: an odometer or a needle, a physical thing with a little overshoot (about 4 percent). */
+  settle: { damping: 14, stiffness: 180, mass: 1 },
+  /** Skeleton rows only show after a wait, so a fast load never flashes. */
+  skeletonDelay: 300,
+  /** A new mark's card waits this long before it shows (so a ride's ink finishes first), then stays for `markHold`. */
+  markDelay: 2200,
+  markHold: 3800,
+  /** A saving button shows its check for this long. */
+  doneHold: 900,
+  /** Ticks while a number rolls (a count-up, an odometer): never closer than this, so they read as a ratchet and not a buzz. */
+  rollTickGap: 60,
+} as const;
+
 export const font = {
   regular: 'Geist_400Regular', medium: 'Geist_500Medium', semibold: 'Geist_600SemiBold',
   display: 'Michroma_400Regular',

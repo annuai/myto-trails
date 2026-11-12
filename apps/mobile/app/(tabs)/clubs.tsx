@@ -23,6 +23,7 @@ import { Screen } from '@/ui/Screen';
 import { SegmentedTabs } from '@/ui/SegmentedTabs';
 import { SwipePanes } from '@/ui/SwipePanes';
 import { Text } from '@/ui/Text';
+import { Skeleton } from '@/ui/Skeleton';
 import { ScalePressable } from '@/ui/motion';
 import { media, space } from '@/theme/tokens';
 
@@ -95,7 +96,7 @@ export default function Clubs() {
           <Button variant="soft" label="Try again" onPress={clubs.reload} />
         </Card>
       ) : !mine.data ? (
-        <Text variant="body" tone="muted">Loading…</Text>
+        <Skeleton />
       ) : (
         <>
           <SectionTitle onAdd={() => setCreating(true)} addLabel="Start a club">Your clubs</SectionTitle>

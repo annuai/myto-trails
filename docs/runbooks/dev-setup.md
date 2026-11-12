@@ -10,6 +10,8 @@ npm run dev -w @moto-trails/web   # http://localhost:3000
 With no configuration the app runs with `STORAGE_PROVIDER=memory`.
 
 ## Local database (PostgreSQL 17 + PostGIS)
+Day-to-day development and manual testing use Supabase + R2 (see the environment table below), not this cluster: a dev server started with a local `DATABASE_URL` shows different data from the deployed site. Use the local cluster only for `test:db` and throwaway experiments.
+
 Install once: `brew install postgresql@17 postgis` (large: it pulls in gdal, boost and others; if `node` stops working afterwards run `brew upgrade node`).
 
 ```bash

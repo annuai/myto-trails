@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findRiders, railOrder, distanceToLeaderM, isStale, pollIntervalMs, riderSlots, riderTiles, signalChanges, signalNotice, sortRiders, type GroupRiderView } from './groupCore';
+import { everyoneHomeText, findRiders, homeCount, justEveryoneHome, railOrder, distanceToLeaderM, isStale, pollIntervalMs, riderSlots, riderTiles, signalChanges, signalNotice, sortRiders, type GroupRiderView } from './groupCore';
 
 const now = Date.parse('2026-11-01T06:00:00Z');
 const rider = (o: Partial<GroupRiderView> & { id: string }): GroupRiderView => ({ name: o.id, role: 'member', lat: 12, lng: 77, at: '2026-11-01T05:59:30Z', status: 'ok', ...o });
@@ -154,5 +154,31 @@ describe('signals in order, and who asked first', () => {
   });
   it('orders the group popup the same way', () => {
     expect(sortRiders(rs, 'me').map((r) => r.name).slice(0, 5)).toEqual(['Help', 'Wait', 'Fuel', 'Fuel2', 'Brk']);
+  });
+});
+
+describe('everyone is home', () => {
+  const away = (id: string) => rider({ id });
+  const home = (id: string) => rider({ id, home: true, lat: null, lng: null, at: null });
+  it('counts the riders who are home', () => {
+    expect(homeCount([away('a'), home('b')])).toEqual({ home: 1, total: 2, everyone: false });
+    expect(homeCount([home('a'), home('b')])).toEqual({ home: 2, total: 2, everyone: true });
+  });
+  it('is never "everyone" for a group of one, or an empty one', () => {
+    expect(homeCount([home('a')]).everyone).toBe(false);
+    expect(homeCount([]).everyone).toBe(false);
+  });
+  it('is news only at the moment the last rider gets home', () => {
+    expect(justEveryoneHome([home('a'), away('b')], [home('a'), home('b')])).toBe(true);
+    expect(justEveryoneHome([home('a'), home('b')], [home('a'), home('b')])).toBe(false);
+    expect(justEveryoneHome([away('a'), away('b')], [away('a'), home('b')])).toBe(false);
+  });
+  it('is not news when the first look already had everyone home', () => {
+    expect(justEveryoneHome([], [home('a'), home('b')])).toBe(false);
+  });
+  it('says what it is in words, and shows Home on a tile', () => {
+    expect(everyoneHomeText(4)).toBe('All 4 riders are home safe.');
+    const t = riderTiles([home('b'), away('a')], 'a', undefined, now);
+    expect(t.find((x) => x.id === 'b')).toMatchObject({ home: true, seen: 'home' });
   });
 });

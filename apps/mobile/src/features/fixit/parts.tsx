@@ -1,15 +1,18 @@
-import { Image, View } from 'react-native';
+import { useEffect } from 'react';
+import { Animated, Image, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { InkFill } from '@/ui/InkFill';
 import { AlertTriangle } from 'lucide-react-native';
 import type { FixitDifficulty as Difficulty, FixitGuide as Guide } from '@moto-trails/domain';
 import { useFixitContent } from '@/fixit/content';
 import { useArtUri } from '@/fixit/artCache';
-import { radius, space } from '@/theme/tokens';
+import { motion, radius, space } from '@/theme/tokens';
 import { Badge } from '@/ui/Badge';
 import { Card } from '@/ui/Card';
 import { StatusChip, type Status } from '@/ui/Chip';
 import { Icon } from '@/ui/Icon';
+import { ARRIVE, useReducedMotion } from '@/ui/motion';
+import { useAnimatedValue } from '@/ui/useAnimatedValue';
 import { Text } from '@/ui/Text';
 import { fixit } from './fixit.tokens';
 
@@ -51,10 +54,19 @@ export function StopCard({ items }: { items: string[] }) {
 /** How far through a repair the rider is: a thin bar that fills, with "Step 3 of 14" beside it. One bar reads better than fourteen dots. */
 export function StepProgress({ index, count }: { index: number; count: number }) {
   const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const share = useAnimatedValue((index + 1) / count);
+  useEffect(() => {
+    const to = (index + 1) / count;
+    if (reduced) { share.setValue(to); return; }
+    Animated.timing(share, { toValue: to, duration: motion.duration.base, easing: ARRIVE, useNativeDriver: false }).start();
+  }, [index, count, reduced, share]);
   return (
     <View accessible accessibilityLabel={`Step ${index + 1} of ${count}`} style={{ gap: space[2] }}>
       <View style={{ height: space[1], borderRadius: radius.chip, backgroundColor: c.line, overflow: 'hidden' }}>
-        <InkFill style={{ height: space[1], width: `${((index + 1) / count) * 100}%`, borderRadius: radius.chip }} />
+        <Animated.View style={{ height: space[1], width: share.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }}>
+          <InkFill style={{ height: space[1], width: '100%', borderRadius: radius.chip }} />
+        </Animated.View>
       </View>
       <Text variant="label" tone="muted">Step {index + 1} of {count}</Text>
     </View>

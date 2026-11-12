@@ -9,7 +9,10 @@ import { SectionCover } from '@/features/fixit/SectionParts';
 import { nextOpen } from '@/lib/accordion';
 import { nowMs } from '@/lib/clock';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space } from '@/theme/tokens';
+import { buzz } from '@/lib/haptics';
+import { motion, space } from '@/theme/tokens';
+import { DrawnCheck } from '@/ui/DrawnCheck';
+import { check as k } from './check.tokens';
 import { AccordionItem } from '@/ui/Accordion';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
@@ -46,7 +49,8 @@ export default function PreRideCheck() {
   const flagged = items.filter((i) => answers[i.id] === 'fix');
   const answered = items.filter((i) => answers[i.id]).length;
   const complete = items.length > 0 && answered === items.length;
-  const finish = () => { useFixit.getState().saveCheck(flagged.map((i) => i.id), nowMs()); setDone(true); };
+  // Finishing with nothing to fix confirms; finishing with something to fix warns, so the buzz says which before the rider reads it.
+  const finish = () => { useFixit.getState().saveCheck(flagged.map((i) => i.id), nowMs()); if (flagged.length) buzz.help(); else buzz.confirm(); setDone(true); };
   const answer = (id: string, a: Answer) => {
     const next = { ...answers, [id]: a };
     setAnswers(next);
@@ -59,6 +63,7 @@ export default function PreRideCheck() {
     return (
       <Screen footer={<Button label={flagged.length ? 'Done' : 'Ride safe'} onPress={() => router.back()} />}>
         <BackHeader title="Fix it" />
+        {!flagged.length ? <View style={{ marginBottom: space[3] }}><DrawnCheck on color={c.good} size={k.allClear} stroke={k.allClearStroke} ms={motion.duration.slow} /></View> : null}
         <PageTitle sub={flagged.length ? 'Sort these before you ride.' : 'Nothing to fix.'}>{flagged.length ? `${flagged.length} to fix` : 'All clear'}</PageTitle>
         <View style={{ gap: space[3] }}>
           {flagged.map((i) => (
@@ -87,7 +92,7 @@ export default function PreRideCheck() {
               title={i.label}
               subtitle={a === 'ok' ? 'Fine' : a === 'fix' ? 'Needs fixing' : undefined}
               leading={<SectionCover content={content} art={coverOf(content, i)} icon={ICON[i.id]} />}
-              trailing={a ? <View accessibilityElementsHidden><Icon icon={a === 'ok' ? Check : AlertTriangle} size={22} tone={a === 'ok' ? 'good' : 'caution'} /></View> : undefined}
+              trailing={a ? <View accessibilityElementsHidden>{a === 'ok' ? <DrawnCheck on color={c.good} size={k.tick} stroke={k.stroke} /> : <Icon icon={AlertTriangle} size={k.tick} tone="caution" />}</View> : undefined}
               open={openId === i.id}
               onToggle={() => setOpenId(nextOpen(openId, i.id))}
             >

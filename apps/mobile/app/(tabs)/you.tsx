@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload, Wrench } from 'lucide-react-native';
+import { Award, Bell, Gauge, Vibrate, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload, Wrench } from 'lucide-react-native';
 import Constants from 'expo-constants';
 import { CONTACT_EMAIL, DISCORD_URL, MYTO_URL, versionLabel } from '@moto-trails/domain';
 import { useMe } from '@/api/useApi';
@@ -15,6 +15,8 @@ import { useProfile } from '@/store/profile';
 import { useDistanceUnit, useHomeCountry } from '@/store/region';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
+import { MARKS } from '@/lib/marks';
+import { useMarks } from '@/store/marks';
 import { useJournal } from '@/store/journal';
 import { useTrips } from '@/store/trips';
 import { Avatar } from '@/ui/Avatar';
@@ -39,6 +41,8 @@ export default function You() {
   const router = useRouter();
   const home = useHomeCountry();
   const inverted = useAppearance((s) => s.inverted);
+  const haptics = useAppearance((s) => s.haptics);
+  const speedTicks = useAppearance((s) => s.speedTicks);
   const osmOn = useOsm((s) => s.asked && s.enabled);
   const unit = useDistanceUnit(); // re-draws this page's distances when the unit changes
   const rides = useRides((s) => s.rides);
@@ -51,6 +55,7 @@ export default function You() {
   const signedIn = !!token;
   const me = useMe();
   const [authError, setAuthError] = useState<string>();
+  const marksHeld = useMarks((s) => MARKS.filter((m) => s.held[m.id]).length);
   const real = rides.filter((r) => !r.sample).length;
   const docs = [licence && 'Licence', vehicle && 'Vehicle', contacts.length && `${contacts.length} contact${contacts.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ');
 
@@ -98,6 +103,8 @@ export default function You() {
         <Row icon={CalendarDays} label="Your year" value={asText(distanceKm(yearRecap(rides, new Date().getFullYear()).distanceKm))} mono onPress={() => router.push('/recap')} />
         <Row icon={Fuel} label="Fuel logs" sub="What your rides cost in petrol" onPress={() => router.push('/fuel')} />
         <Row icon={Stamp} label="Trails ridden" onPress={() => router.push('/passport')} />
+        <Row icon={Award} label="Marks" sub="First times and running totals" value={`${marksHeld} of ${MARKS.length}`} mono onPress={() => router.push('/marks')} />
+        <Row icon={Sparkles} label="Motion preview" sub="Replay the new animations and feel each haptic" onPress={() => router.push('/dev/motion')} />
         <Row icon={Luggage} label="Trips" value={`${tripCount}`} mono onPress={() => router.push('/trips')} />
         <Row icon={BookOpen} label="Journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />
         <Row icon={ClipboardList} label="To-do list" value={`${openTodos} open`} onPress={() => router.push('/todos')} />
@@ -109,6 +116,8 @@ export default function You() {
         <Row icon={ShieldAlert} label="Crash detection" sub="Beta. Asks if you are OK after a crash" onPress={() => router.push('/safety')} />
         <Row icon={Globe} label="Country and units" sub={`${home ? countryName(home) : 'Not set'} · ${unit === 'mi' ? 'miles' : 'kilometres'}`} onPress={() => router.push('/region')} />
         <Row icon={Contrast} label="Inverted colours" sub="Light riding screen, dark everywhere else" value={inverted ? 'On' : 'Off'} onPress={() => useAppearance.getState().setInverted(!inverted)} />
+        <Row icon={Vibrate} label="Haptics" sub="Taps and vibration for checks, finished tasks and marks" value={haptics ? 'On' : 'Off'} onPress={() => useAppearance.getState().setHaptics(!haptics)} />
+        {haptics ? <Row icon={Gauge} label="Speed ticks" sub="A soft tick each time your speed passes a multiple of 10, and as numbers roll" value={speedTicks ? 'On' : 'Off'} onPress={() => useAppearance.getState().setSpeedTicks(!speedTicks)} /> : null}
         <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
         <Row icon={MapIcon} label="Improve the map" sub="Share rides with OpenStreetMap" value={osmOn ? 'On' : 'Off'} onPress={() => router.push('/osm')} />
         <Row icon={Sparkles} label="Smart notifications" sub="Usual ride time, daylight and break reminders" onPress={() => router.push('/notifications/smart')} />

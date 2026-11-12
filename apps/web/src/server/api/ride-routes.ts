@@ -1,7 +1,7 @@
 import { isValidSlug } from "@moto-trails/domain";
 import { arriveCheckin, extendCheckin, getMyCheckin, createCheckin, parseExpectedAt, parseNewCheckin, parsePosition, pingCheckin } from "../rides/checkins";
 import { confirmConditionReport, createConditionReport, listConditionReports } from "../rides/condition-reports";
-import { activeClubGroupRide, createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, passLead, setRegroup, setRiderTitles, setSuccessor, syncGroupRide, takeBack, takeLead } from "../rides/group-rides";
+import { activeClubGroupRide, createGroupRide, endGroupRide, joinGroupRide, leaveGroupRide, markHome, passLead, setRegroup, setRiderTitles, setSuccessor, syncGroupRide, takeBack, takeLead } from "../rides/group-rides";
 import { createSharedRoute, deleteSharedRoute, getSharedRoute, parseSharedRoute } from "../rides/shared-routes";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 
@@ -179,6 +179,13 @@ export const rideRoutes: RouteDef[] = [
       const b = await c.body().catch(() => ({}));
       const successor = typeof b === "object" && b !== null && !Array.isArray(b) ? (b as Record<string, unknown>).successor : undefined;
       const r = await leaveGroupRide(c.sql, { userId: c.userId, rideId: c.params.id!, successor, now: c.now });
+      return r.ok ? noContent() : failWith(GROUP, r.reason);
+    },
+  },
+  {
+    method: "POST", path: "/group-rides/{id}/home", access: "write:submission", summary: "Tell the group you got home. Works after you have left the ride; the others then see Home against your name. No position is stored",
+    async handler(c) {
+      const r = await markHome(c.sql, { userId: c.userId, rideId: c.params.id!, now: c.now });
       return r.ok ? noContent() : failWith(GROUP, r.reason);
     },
   },

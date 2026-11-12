@@ -1,3 +1,4 @@
+import { noteServiceDone } from '@/lib/markSync';
 import { useRouter } from 'expo-router';
 import { ClipboardList, FileText, Package, PenLine, Plus, Wrench } from 'lucide-react-native';
 import { TodoRow } from '@/features/TodoRow';
@@ -6,6 +7,8 @@ import { dueInfo } from '@/lib/todos';
 import { totalKm, useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { Button } from '@/ui/Button';
+import { Card } from '@/ui/Card';
+import { Odometer } from '@/ui/Odometer';
 import { EmptyState } from '@/ui/EmptyState';
 import { space } from '@/theme/tokens';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
@@ -31,13 +34,19 @@ export default function Todos() {
   const quick = todos.length < QUICK_UNTIL ? templates.filter((t) => !have.has(t.title.toLowerCase())).slice(0, QUICK_SHOWN) : [];
   const list = (items: typeof rows) => (
     <ListCard>
-      {items.map(({ t }) => <TodoRow key={t.id} todo={t} appKm={appKm} onToggle={() => toggle(t.id)} onRemove={() => remove(t.id)} onServiceDone={() => markServiceDone(t.id, appKm)} />)}
+      {items.map(({ t }) => <TodoRow key={t.id} todo={t} appKm={appKm} onToggle={() => toggle(t.id)} onRemove={() => remove(t.id)} onServiceDone={() => { markServiceDone(t.id, appKm); noteServiceDone(); }} />)}
     </ListCard>
   );
   return (
     <Screen footer={<Button icon={Plus} label="Add a to-do" onPress={() => router.push('/todos/new')} />}>
       <BackHeader title="You" right={<IconButton icon={Plus} label="Add a to-do" onPress={() => router.push('/todos/new')} />} />
       <PageTitle>To-do list</PageTitle>
+      {appKm > 0 ? (
+        <Card style={{ gap: space[3], marginBottom: space[4] }}>
+          <Text variant="label" tone="muted">Ridden in Myto, which your service counts use</Text>
+          <Odometer id="app-km" km={appKm} label="Ridden in Myto" />
+        </Card>
+      ) : null}
       {rows.length === 0 ? <EmptyState icon={ClipboardList} title="Nothing to remember yet" body="Add your PUC, insurance or a chain lube reminder and we'll nudge you before it's due." action={{ label: 'Add a reminder', onPress: () => router.push('/todos/new') }} /> : null}
       {attention.length ? <><SectionTitle first>Needs attention</SectionTitle>{list(attention)}</> : null}
       {later.length ? <><SectionTitle first={!attention.length}>Later</SectionTitle>{list(later)}</> : null}

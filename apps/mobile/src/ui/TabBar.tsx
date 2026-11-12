@@ -3,8 +3,9 @@ import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Motorbike, Route, User, Users, type LucideIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { buzz } from '@/lib/haptics';
 import { useChrome } from '@/store/chrome';
-import { fixed, space, layout, radius, shadow, opacity } from '@/theme/tokens';
+import { fixed, space, layout, motion, radius, shadow, opacity } from '@/theme/tokens';
 import { useLayout } from './useLayout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Icon } from './Icon';
@@ -57,7 +58,7 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
         }
         const it = items[name]; const on = active === name;
         return (
-          <ScalePressable scaleTo={0.92} key={name} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={it.label} onPress={() => navigateToTab(state.routes.find((r) => r.name === name)?.key ?? name)} style={{ flex: 1, height: h - 12, alignItems: 'center', justifyContent: 'center', gap: landscape ? space.half : space[1], borderRadius: (h - 12) / 2 }}>
+          <ScalePressable scaleTo={0.92} key={name} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={it.label} onPress={() => { if (!on) buzz.tick(); navigateToTab(state.routes.find((r) => r.name === name)?.key ?? name); }} style={{ flex: 1, height: h - 12, alignItems: 'center', justifyContent: 'center', gap: landscape ? space.half : space[1], borderRadius: (h - 12) / 2 }}>
             <Highlight on={on} color={c.paper} radius={(h - 12) / 2} />
             <View style={{ position: 'relative', zIndex: 1, alignItems: 'center', gap: landscape ? space.half : space[1] }}>
               <Icon icon={it.icon} size={24} tone={on ? 'ink' : 'muted'} strokeWidth={on ? 2.25 : 1.75} />
@@ -74,6 +75,6 @@ export function TabBar({ state, navigateToTab }: BottomTabBarProps) {
 /** The soft pill behind the current tab fades in and out as the tab changes. */
 function Highlight({ on, color, radius }: { on: boolean; color: string; radius: number }) {
   const v = useAnimatedValue(on ? 1 : 0);
-  useEffect(() => { Animated.timing(v, { toValue: on ? 1 : 0, duration: 220, easing: EASE, useNativeDriver: true }).start(); }, [on, v]);
+  useEffect(() => { Animated.timing(v, { toValue: on ? 1 : 0, duration: motion.duration.base, easing: EASE, useNativeDriver: true }).start(); }, [on, v]);
   return <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: radius, backgroundColor: color, opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }] }} />;
 }

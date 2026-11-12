@@ -31,3 +31,6 @@ export const takeLead = (token: string, id: string) => api<void>(`/group-rides/$
 /** A leader the lead was taken from, because they dropped off, takes it back. */
 export const takeBackLead = (token: string, id: string) => api<void>(`/group-rides/${id}/leader/back`, { method: 'POST', token });
 export const endGroupRide = (token: string, id: string) => api<void>(`/group-rides/${id}/end`, { method: 'POST', token });
+
+/** Tells the group you got home. Works after you have left the ride (ending a ride leaves it). The others then see Home against your name. */
+export const tellGroupHome = (token: string, id: string) => api<void>(`/group-rides/${id}/home`, { method: 'POST', token });

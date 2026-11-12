@@ -1,6 +1,7 @@
 import { stopBackground } from './backgroundLocation';
 import { createFinisher } from './finishCore';
 import { journal } from './journalStore';
+import { syncMarks } from './markSync';
 import { companionLinks } from './rideLinks';
 import { useCompanion } from '@/store/companion';
 import { useRecorder } from '@/store/recorder';
@@ -31,5 +32,6 @@ export async function finishRide(): Promise<string | undefined> {
   const links = companionLinks({ group, checkin, trailSlug: useTrailStore.getState().nextTrip?.slug });
   const id = await finish();
   if (id && links) useRides.getState().linkRide(id, links);
+  if (id) syncMarks();
   return id;
 }

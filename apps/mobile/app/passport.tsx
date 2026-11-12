@@ -8,6 +8,7 @@ import { BackHeader, PageTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
+import { Skeleton } from '@/ui/Skeleton';
 import { deviceLocale } from '@/lib/locale';
 
 const month = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString(deviceLocale(), { month: 'short', year: 'numeric' });
@@ -23,7 +24,7 @@ export default function Passport() {
       <PageTitle sub={items ? `${items.length} ${items.length === 1 ? 'trail' : 'trails'} ridden` : undefined}>Trails ridden</PageTitle>
       {!token ? <EmptyState icon={Stamp} title="Sign in to keep your list" body="Mark a trail as ridden from its page and it appears here, on any phone you sign in on." />
         : error && !items ? <><Text variant="label" tone="stop">{error}</Text><Button variant="soft" label="Try again" onPress={reload} /></>
-        : !items ? <Text variant="label" tone="muted">Loading…</Text>
+        : !items ? <Skeleton />
         : items.length === 0 ? <EmptyState icon={Stamp} title="Your trail list starts here" body="Open a trail you have ridden and tap I've ridden this." />
         : (
           <ListCard>

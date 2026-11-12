@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { completeWelcome } from "../community/members";
 import { createTestDatabase } from "../testing/db";
 import { makeUser } from "../testing/submission-fixture";
-import { createGroupRide, joinGroupRide, MAX_RIDERS, leaveGroupRide, passLead, setRegroup, setRiderTitles, setSuccessor, syncGroupRide, takeBack, takeLead, type Rider } from "./group-rides";
+import { createGroupRide, joinGroupRide, MAX_RIDERS, leaveGroupRide, markHome, passLead, setRegroup, setRiderTitles, setSuccessor, syncGroupRide, takeBack, takeLead, type Rider } from "./group-rides";
 
 let db: Awaited<ReturnType<typeof createTestDatabase>>;
 const now = new Date("2026-11-01T06:00:00Z");
@@ -261,5 +261,39 @@ describe("how many riders a group holds", () => {
     // Someone leaving makes room.
     const first = (one as { riders: Rider[] }).riders.find((r) => r.name === "Rider 1")!;
     expect(first).toBeTruthy();
+  });
+});
+
+describe("a rider tells the group they got home", () => {
+  it("shows Home against the name, even after the rider has left, and keeps no position", async () => {
+    const g = await group();
+    const asha = await g.idOf("Asha");
+    expect((await g.see()).riders.find((x) => x.id === asha)!.home).toBe(false);
+    // Ending a ride leaves the group; without saying so, the rider simply disappears from the list.
+    await leaveGroupRide(db.sql, { userId: g.asha, rideId: g.rideId, now });
+    expect((await g.see()).riders.find((x) => x.id === asha)).toBeUndefined();
+    expect(await markHome(db.sql, { userId: g.asha, rideId: g.rideId, now })).toEqual({ ok: true });
+    const home = (await g.see()).riders.find((x) => x.id === asha)!;
+    expect(home.home).toBe(true);
+    expect(home.lat).toBeNull();
+    expect(home.at).toBeNull();
+  });
+
+  it("is said once and refused for someone who was never in the ride", async () => {
+    const g = await group();
+    expect(await markHome(db.sql, { userId: g.ben, rideId: g.rideId, now })).toEqual({ ok: true });
+    expect(await markHome(db.sql, { userId: g.ben, rideId: g.rideId, now })).toEqual({ ok: true });
+    const stranger = await rider("Stranger");
+    expect(await markHome(db.sql, { userId: stranger, rideId: g.rideId, now })).toEqual({ ok: false, reason: "not_found" });
+  });
+
+  it("clears when the rider joins again", async () => {
+    const g = await group();
+    const ben = await g.idOf("Ben");
+    await markHome(db.sql, { userId: g.ben, rideId: g.rideId, now });
+    await leaveGroupRide(db.sql, { userId: g.ben, rideId: g.rideId, now });
+    const code = (await db.sql`select code from group_ride where id = ${g.rideId}`)[0]!.code as string;
+    await joinGroupRide(db.sql, { userId: g.ben, code, displayName: "Ben", now });
+    expect((await g.see()).riders.find((x) => x.id === ben)!.home).toBe(false);
   });
 });

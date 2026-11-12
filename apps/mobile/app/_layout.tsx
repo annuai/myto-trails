@@ -15,6 +15,7 @@ import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
 import { NudgeHost } from '@/NudgeHost';
+import { MarkHost } from '@/MarkHost';
 import { PhotoOutboxHost } from '@/PhotoOutboxHost';
 import { SubmissionQueueHost } from '@/SubmissionQueueHost';
 import { refreshFixit } from '@/fixit/content';
@@ -84,6 +85,7 @@ export default function Root() {
       <NavigateChoiceHost />
       <OsmAskHost />
       <CrashHost />
+      <MarkHost />
     </Theme>
   );
   return (

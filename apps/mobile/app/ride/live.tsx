@@ -26,6 +26,7 @@ import { compassWord, prepareTrail, startGuide, stepGuide, type Guide } from '@/
 import { WAYPOINT_KINDS, WAYPOINT_LABEL } from '@/lib/waypointKinds';
 import { RiderSheet } from '@/features/group/RiderSheet';
 import { GroupRail, StatsStrip, TurnCard } from '@/features/ride/LiveHud';
+import { useSpeedTicks } from '@/features/ride/useSpeedTicks';
 import { useDirections } from '@/features/ride/useDirections';
 import { useStatusSince } from '@/features/ride/useStatusSince';
 import { useSmoothedRide } from '@/features/ride/useSmoothedRide';
@@ -262,6 +263,7 @@ function LiveBody() {
 
   const shown = r.paused ? 0 : r.source === 'sim' ? r.speedKmh : shownSpeedKmh(r.speedKmh, r.lastFixAt, nowMs());
   const speed = shown === null ? { value: '–', unit: speedKmh(0).unit } : speedKmh(shown);
+  useSpeedTicks(shown === null ? null : Number(speed.value), !r.paused);
   const distance = distanceKm(r.meters / 1000);
   const ageSec = r.lastFixAt ? Math.max(0, Math.round((nowMs() - r.lastFixAt) / 1000)) : 0;
   // A silent GPS is asked for a position (RecorderHost), and a rider standing still is not warned for a short silence: a phone at rest may send nothing.

@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 import { AlertTriangle, Check, CircleHelp, X, type LucideIcon } from 'lucide-react-native';
+import { buzz } from '@/lib/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -28,7 +29,7 @@ export function ChoiceChip({ label, selected, onPress, icon, raised }: { label: 
     <ScalePressable scaleTo={0.95}
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
-      onPress={onPress}
+      onPress={onPress ? () => { if (!selected) buzz.tick(); onPress(); } : undefined}
       style={{ minHeight: size.compact, paddingHorizontal: space[5], borderRadius: radius.chip, flexDirection: 'row', alignItems: 'center', gap: space[2], backgroundColor: selected ? undefined : raised ? c.raised : c.card }}
     >
       {selected ? <InkFill layer style={{ borderRadius: radius.chip }} /> : null}

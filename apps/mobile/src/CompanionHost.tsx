@@ -12,7 +12,8 @@ import type { LatLng } from '@/lib/geo';
 import { shouldPing, type LastPing } from '@/lib/checkinCore';
 import { markFailed, markSent, nextBatch } from '@/lib/conditions';
 import { DEFAULT_STRETCH_KM, stretchAlert, stretchMessage, STRETCH_REPEAT_MS } from '@/lib/eventCore';
-import { pollIntervalMs, signalChanges, signalNotice } from '@/lib/groupCore';
+import { everyoneHomeText, justEveryoneHome, pollIntervalMs, signalChanges, signalNotice } from '@/lib/groupCore';
+import { buzz } from '@/lib/haptics';
 import { SIM_GROUP_ID } from '@/lib/groupSim';
 import { watchBattery } from '@/lib/battery';
 import { BATTERY_WORDS, batteryStep, leadNotice, type BatteryStage } from '@/lib/leadCore';
@@ -176,6 +177,7 @@ export function CompanionHost() {
         const before = useCompanion.getState().live.riders;
         useCompanion.getState().setLive({ riders: r.riders, me: r.me, regroup: r.regroup, successor: r.successor ?? null, canTakeLead: !!r.canTakeLead, canTakeBack: !!r.canTakeBack, error: undefined });
         tellAboutSignals(signalChanges(before, r.riders, r.me));
+        if (justEveryoneHome(before, r.riders)) { announce('group-home', "Everyone's home", everyoneHomeText(r.riders.length), "Everyone's home", '/'); buzz.confirm(); }
         const lead = leadNotice(before, r.riders, r.me, Date.now());
         if (lead) tellAboutLead(lead);
         const now = Date.now();
@@ -211,7 +213,7 @@ export function CompanionHost() {
     };
     const unsubBattery = useBattery.subscribe(checkBattery);
     // The simulated group's riders change their signals on a script: say so the way the real ones would.
-    const unsubSim = useCompanion.subscribe((s, prev) => { if (s.group?.id === SIM_GROUP_ID && s.live.riders !== prev.live.riders) tellAboutSignals(signalChanges(prev.live.riders, s.live.riders, s.live.me)); });
+    const unsubSim = useCompanion.subscribe((s, prev) => { if (s.group?.id === SIM_GROUP_ID && s.live.riders !== prev.live.riders) { tellAboutSignals(signalChanges(prev.live.riders, s.live.riders, s.live.me)); if (justEveryoneHome(prev.live.riders, s.live.riders)) { announce('group-home', "Everyone's home", everyoneHomeText(s.live.riders.length), "Everyone's home", '/'); buzz.confirm(); } } });
     const loop = () => {
       void pollGroup().finally(() => {
         const { group, live } = useCompanion.getState();

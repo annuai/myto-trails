@@ -26,6 +26,7 @@ A screen should need almost no numbers of its own: it picks components and passe
 | `scrim` | `sheet`, `hold`, `track`, `clear` | Translucent colours over other things |
 | `shadow` | `bar`, `ride`, `record`, `header` | Floating things. Spread one into a style |
 | `type` | `hero`, `title`, `section`, `body`, `label`, `caption`, `data`, `live`, `liveCompact`, `liveSecondary`, `liveSecondaryCompact`, … | Text. Use `<Text variant="…">`, not font sizes |
+| `motion` | `duration` (tap 100, quick 160, base 240, slow 400, scene 700, trace 1400), `ease` (standard, arrive, exit), `stagger`, `settle`, and a few waits and holds | How things move. Never write a duration or a curve in a screen: `Easing.bezier(...motion.ease.arrive)`, `motion.duration.base`. Plan: `docs/superpowers/plans/2026-11-09-delight-and-motion.md` |
 | `font` | families | Only inside `type` and `Text` |
 
 Colours come from the palette (`useTheme().c`, `fixed`, `dark`, `light`); `check:colors` rejects hex literals.

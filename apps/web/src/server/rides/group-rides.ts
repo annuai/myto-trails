@@ -136,14 +136,14 @@ export async function joinGroupRide(
     const [u] = await tx`select display_name from app_user where id = ${i.userId}`;
     const shown = String(i.displayName ?? "").trim() ? name(i.displayName, 40) : (u!.display_name as string);
     if (!shown) return { ok: false, reason: "invalid" } as const;
-    if (mine) await tx`update group_ride_member set left_at = null, display_name = ${shown}, status = 'ok' where ride_id = ${g.id} and user_id = ${i.userId}`;
+    if (mine) await tx`update group_ride_member set left_at = null, home_at = null, display_name = ${shown}, status = 'ok' where ride_id = ${g.id} and user_id = ${i.userId}`;
     else await tx`insert into group_ride_member (ride_id, user_id, display_name) values (${g.id}, ${i.userId}, ${shown})`;
     await tx`update group_ride set last_activity_at = ${i.now} where id = ${g.id}`;
     return { ok: true, id: g.id as string, name: g.name as string, role: (mine?.role ?? "member") as "leader" | "member" } as const;
   });
 }
 
-export type Rider = { id: string; name: string; role: "leader" | "member"; eventRole: "captain" | "marshal" | "medic" | "sweep" | null; /** The titles the rider holds, the leader's list or else the one an event gave them. */ titles: RiderTitle[]; lat: number | null; lng: number | null; at: string | null; status: RiderStatus };
+export type Rider = { id: string; name: string; role: "leader" | "member"; eventRole: "captain" | "marshal" | "medic" | "sweep" | null; /** The titles the rider holds, the leader's list or else the one an event gave them. */ titles: RiderTitle[]; lat: number | null; lng: number | null; at: string | null; status: RiderStatus; /** The rider told the group they got home. Such a rider stays on the list, with no position. */ home: boolean };
 export type SyncResult = {
   me: string; riders: Rider[]; regroup: { lat: number; lng: number; note: string | null } | null; ended: boolean; stretchKm: number;
   /** The leader's backup, shown to the leader only. */
@@ -189,9 +189,9 @@ export async function syncGroupRide(
   // A leader whose phone has gone quiet with a low battery loses the lead to the next in line, whoever's sync finds it.
   await promoteIfDroppedOff(sql, g.id, i.now);
   const rows = await sql`
-    select u.public_id, m.user_id, m.joined_at, m.display_name, m.role, m.event_role, m.titles, m.lat, m.lng, m.seen_at, m.status
+    select u.public_id, m.user_id, m.joined_at, m.display_name, m.role, m.event_role, m.titles, m.lat, m.lng, m.seen_at, m.status, m.home_at
     from group_ride_member m join app_user u on u.id = m.user_id
-    where m.ride_id = ${g.id} and m.left_at is null order by m.role desc, m.joined_at`;
+    where m.ride_id = ${g.id} and (m.left_at is null or m.home_at is not null) order by m.role desc, m.joined_at`;
   const [r] = await sql`select regroup_lat, regroup_lng, regroup_note, stretch_km, leader_id, successor_id, previous_leader_id from group_ride where id = ${g.id}`;
   const mine = rows.find((m) => m.user_id === i.userId);
   const leaderRow = rows.find((m) => m.user_id === r?.leader_id);
@@ -201,7 +201,7 @@ export async function syncGroupRide(
     me: me.public_id,
     riders: rows.map((m) => {
       const fresh = isFresh(m.seen_at, i.now);
-      return { id: m.public_id, name: m.display_name, role: m.role, eventRole: m.event_role, titles: m.titles.length ? m.titles : m.event_role ? [m.event_role] : [], lat: fresh ? m.lat : null, lng: fresh ? m.lng : null, at: fresh ? (m.seen_at as Date).toISOString() : null, status: m.status };
+      return { id: m.public_id, name: m.display_name, role: m.role, eventRole: m.event_role, titles: m.titles.length ? m.titles : m.event_role ? [m.event_role] : [], lat: fresh ? m.lat : null, lng: fresh ? m.lng : null, at: fresh ? (m.seen_at as Date).toISOString() : null, status: m.status, home: m.home_at !== null };
     }),
     regroup: r?.regroup_lat !== null && r?.regroup_lat !== undefined ? { lat: r.regroup_lat, lng: r.regroup_lng, note: r.regroup_note } : null,
     ended: false,
@@ -377,6 +377,17 @@ export async function leaveGroupRide(sql: Sql, i: { userId: string; rideId: stri
     const rows = await tx`update group_ride_member set left_at = coalesce(left_at, now()), lat = null, lng = null, seen_at = null, battery = null, charging = false where ride_id = ${g.id} and user_id = ${i.userId} returning user_id`;
     return rows.length ? ({ ok: true } as const) : ({ ok: false, reason: "not_found" } as const);
   });
+}
+
+/**
+ * A rider tells the group they got home. It works whether they are still in the group or have already left it (a rider who ends their
+ * ride leaves), so the others see "Home" and not a rider who went quiet. Only the moment is kept. Said again, it keeps the first time.
+ */
+export async function markHome(sql: Sql, i: { userId: string; rideId: string; now: Date }): Promise<{ ok: true } | Fail<"not_found">> {
+  const g = await findRide(sql, i.rideId);
+  if (!g || isExpired(g, i.now)) return { ok: false, reason: "not_found" };
+  const rows = await sql`update group_ride_member set home_at = coalesce(home_at, ${i.now}) where ride_id = ${g.id} and user_id = ${i.userId} returning user_id`;
+  return rows.length ? { ok: true } : { ok: false, reason: "not_found" };
 }
 
 export async function endGroupRide(sql: Sql, i: { userId: string; rideId: string; now: Date }): Promise<{ ok: true } | Fail<"not_found" | "not_leader">> {

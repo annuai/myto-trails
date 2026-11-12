@@ -38,6 +38,7 @@ import { BackHeader, SectionTitle } from '@/ui/Header';
 import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import { Skeleton } from '@/ui/Skeleton';
 import { media, radius, space } from '@/theme/tokens';
 
 type Open = { kind: 'join' | 'post' | 'leave' | 'event' } | { kind: 'reply' | 'removePost'; post: ClubPost } | { kind: 'manage' | 'removeMember'; member: ClubMember };
@@ -197,7 +198,7 @@ export default function ClubScreen() {
         <>
           <SectionTitle>{pending.length ? `Join requests (${pending.length})` : 'Join requests'}</SectionTitle>
           {requests.error && !requests.data ? <Text variant="label" tone="stop">{requests.error}</Text>
-            : !requests.data ? <Text variant="label" tone="muted">Loading…</Text>
+            : !requests.data ? <Skeleton rows={2} />
             : requests.data.length === 0 ? <Text variant="label" tone="muted">No requests.</Text>
             : <View style={{ gap: space[3] }}>{requests.data.map((r) => <JoinRequestCard key={r.id} request={r} busy={act.busy} onDecide={(d) => void submit(() => decideRequest(ref, r.id, d))} />)}</View>}
           {requests.data?.length ? <Text variant="caption" tone="muted" style={{ marginTop: space[3] }}>Phone numbers are for deciding who joins. Please do not share them. They are deleted 7 days after you decide.</Text> : null}
@@ -212,7 +213,7 @@ export default function ClubScreen() {
           <PendingPosts clubId={clubId} />
           {posts.error && !posts.data ? (
             <Card style={{ gap: space[3] }}><Text variant="label" tone="stop">{posts.error}</Text><Button variant="soft" label="Try again" onPress={posts.reload} /></Card>
-          ) : !posts.data ? <Text variant="label" tone="muted">Loading…</Text>
+          ) : !posts.data ? <Skeleton />
           : posts.data.posts.length === 0 && waiting === 0 ? <EmptyState icon={MessageSquare} title="Quiet in here" body="Be the first to post, or plan the club’s next ride." />
           : (
             <View style={{ gap: space[3] }}>

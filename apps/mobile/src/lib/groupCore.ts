@@ -4,7 +4,7 @@ import { shortDistanceM, withUnit } from './units';
 export type GroupStatus = 'ok' | 'wait_up' | 'fuel' | 'break' | 'help';
 export type RiderTitle = 'captain' | 'marshal' | 'medic' | 'sweep';
 /** `titles` are the jobs the leader gave this rider, any number together. An older server sends only `eventRole`, the one job an event gave them. */
-export type GroupRiderView = { id: string; name: string; role: string; eventRole?: RiderTitle | null; titles?: RiderTitle[]; lat: number | null; lng: number | null; /** ISO instant of the last position, null when none. */ at: string | null; status: GroupStatus };
+export type GroupRiderView = { id: string; name: string; role: string; eventRole?: RiderTitle | null; titles?: RiderTitle[]; lat: number | null; lng: number | null; /** ISO instant of the last position, null when none. */ at: string | null; status: GroupStatus; /** The rider told the group they got home. They stay on the list, with no position. */ home?: boolean };
 
 /** A rider whose last position is older than this is shown as "not seen". */
 export const STALE_MS = 2 * 60_000;
@@ -92,10 +92,11 @@ export function signalNotice(c: SignalChange): { title: string; body: string } |
   return { title: c.to === 'help' ? 'Group ride: help needed' : 'Group ride', body };
 }
 
-export type RiderTile = { id: string; name: string; /** Which of the group's colours this rider is. */ slot: number; isMe: boolean; role: string; /** The jobs this rider holds, any number. */ titles: RiderTitle[]; status: GroupStatus; /** The same in metres, for ordering; null without both positions. */ distanceM: number | null; /** "350 m" or "1.2 km" (miles and feet in miles mode) from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
+export type RiderTile = { /** Told the group they got home. */ home?: boolean; id: string; name: string; /** Which of the group's colours this rider is. */ slot: number; isMe: boolean; role: string; /** The jobs this rider holds, any number. */ titles: RiderTitle[]; status: GroupStatus; /** The same in metres, for ordering; null without both positions. */ distanceM: number | null; /** "350 m" or "1.2 km" (miles and feet in miles mode) from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
 
 const distanceText = (m: number) => withUnit(shortDistanceM(m));
 const seenText = (r: GroupRiderView, now: number) => {
+  if (r.home) return 'home';
   if (r.lat == null || r.lng == null || !r.at) return 'not seen yet';
   const s = Math.max(0, Math.round((now - Date.parse(r.at)) / 1000));
   return s < 30 ? 'just now' : s < 60 ? `${s} s ago` : `${Math.round(s / 60)} min ago`;
@@ -106,7 +107,7 @@ export function riderTiles(riders: GroupRiderView[], meId: string | undefined, h
   const slots = riderSlots(riders);
   return sortRiders(riders, meId ?? '').map((r) => {
     const position = r.lat != null && r.lng != null ? { lat: r.lat, lng: r.lng } : null;
-    return { id: r.id, name: r.name, slot: slots.get(r.id) ?? 0, isMe: r.id === meId, role: r.role, titles: titlesOf(r), status: r.status, distanceM: position && here && r.id !== meId ? haversine(here, position) : null, distance: position && here && r.id !== meId ? distanceText(haversine(here, position)) : null, seen: seenText(r, now), stale: isStale(r, now), position };
+    return { id: r.id, name: r.name, slot: slots.get(r.id) ?? 0, isMe: r.id === meId, role: r.role, titles: titlesOf(r), status: r.status, home: !!r.home, distanceM: position && here && r.id !== meId ? haversine(here, position) : null, distance: position && here && r.id !== meId ? distanceText(haversine(here, position)) : null, seen: seenText(r, now), stale: isStale(r, now), position };
   }).sort((a, b) => Number(a.isMe) - Number(b.isMe));
 }
 
@@ -133,3 +134,15 @@ export function findRiders(tiles: RiderTile[], query: string, titleWords: Record
 
 /** A group this big gets a search box above its riders. */
 export const SEARCH_FROM = 6;
+
+/** How many of the group have told it they are home, and whether that is all of them (two riders or more: a group of one is not "everyone"). */
+export function homeCount(riders: GroupRiderView[]): { home: number; total: number; everyone: boolean } {
+  const home = riders.filter((r) => r.home).length;
+  return { home, total: riders.length, everyone: riders.length >= 2 && home === riders.length };
+}
+
+/** True at the moment the last rider gets home: everyone is home now, and the earlier look had riders but not everyone. Joining a group that is already home is not news. */
+export const justEveryoneHome = (before: GroupRiderView[], after: GroupRiderView[]): boolean => before.length > 0 && !homeCount(before).everyone && homeCount(after).everyone;
+
+/** "Everyone's home" for the notification: how many riders, in words. */
+export const everyoneHomeText = (riders: number): string => `All ${riders} riders are home safe.`;

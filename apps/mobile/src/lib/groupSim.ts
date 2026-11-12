@@ -60,8 +60,13 @@ export function simRiders(s: number, now: number, me: { name: string; status: Gr
   const at = new Date(now).toISOString();
   const mine = simMePoint(s, trail, speed);
   return [
-    { id: SIM_ME, name: me.name, role: leaderId === SIM_ME ? 'leader' : 'member', titles: titles[SIM_ME] ?? [], lat: mine.lat, lng: mine.lng, at, status: me.status },
-    ...RIDERS.map((r): GroupRiderView => { const p = pointAt(trail, alongAt(r, s, trail, speed)); return { id: r.id, name: r.name, role: leaderId === r.id ? 'leader' : 'member', titles: titles[r.id] ?? r.titles ?? [], lat: p.lat, lng: p.lng, at, status: statusAt(r, s) }; }),
+    { id: SIM_ME, name: me.name, role: leaderId === SIM_ME ? 'leader' : 'member', titles: titles[SIM_ME] ?? [], lat: mine.lat, lng: mine.lng, at, status: me.status, ...(simMeAlong(s, trail, speed) >= trail.totalM ? { home: true } : {}) },
+    // A scripted rider who reaches the end of the route is home: no position, and "Home" against the name, as the server shows a rider who has told the group.
+    ...RIDERS.map((r): GroupRiderView => {
+      const along = alongAt(r, s, trail, speed), p = pointAt(trail, along);
+      const home = along >= trail.totalM;
+      return { id: r.id, name: r.name, role: leaderId === r.id ? 'leader' : 'member', titles: titles[r.id] ?? r.titles ?? [], lat: home ? null : p.lat, lng: home ? null : p.lng, at: home ? null : at, status: statusAt(r, s), ...(home ? { home: true } : {}) };
+    }),
   ];
 }
 
