@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
+import { AppState } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { create } from 'zustand';
 import { endRide } from '@/features/ride/endRide';
@@ -29,7 +29,7 @@ type Prompt = { kind: PlaceKind; action: 'warn' | 'ask'; text: string };
 export const useAutoEndPrompt = create<{ prompt: Prompt | null; ending: boolean; keep: () => void; end: () => void }>(() => ({ prompt: null, ending: false, keep: () => {}, end: () => {} }));
 
 /** The live screen is what the rider sees: its route is on top and the app is in front (a locked phone shows nothing). */
-export function liveShowingNow(path: string, app: AppStateStatus = AppState.currentState): boolean {
+export function liveShowingNow(path: string, app: string | null | undefined = AppState.currentState): boolean {
   return path === LIVE && app === 'active';
 }
 

@@ -1,5 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 type Ride = { startedAt: number; durationSec: number; pausedSec?: number; distanceKm: number; points: { lat: number; lng: number }[]; sample?: boolean; simulated?: true; groupId?: string };
 const mk = vi.hoisted(() => async <T extends object>(init: T) => (await import('zustand')).create<T>(() => init));
@@ -27,20 +26,20 @@ describe('buildNudgeWorld', () => {
   });
 
   it('a real ride just ended away from Home is a home candidate', () => {
-    rides.setState({ rides: [justEnded()] });
+    rides.setState({ rides: [justEnded()] as never });
     expect(homeCands()).toHaveLength(1);
   });
 
   it('says the last ride was a group ride, and then no home candidate', () => {
-    rides.setState({ rides: [justEnded({ startedAt: NOW - 5 * 60 * MIN, durationSec: 60 }), justEnded({ groupId: 'g1' })] });
+    rides.setState({ rides: [justEnded({ startedAt: NOW - 5 * 60 * MIN, durationSec: 60 }), justEnded({ groupId: 'g1' })] as never });
     expect(buildNudgeWorld(NOW, []).lastRideGroup).toBe(true);
     expect(homeCands()).toEqual([]);
-    rides.setState({ rides: [justEnded()] });
+    rides.setState({ rides: [justEnded()] as never });
     expect(buildNudgeWorld(NOW, []).lastRideGroup).toBe(false);
   });
 
   it('a simulated ride is not a ride: no home candidate, no distance and no last ride end', () => {
-    rides.setState({ rides: [justEnded({ simulated: true })] });
+    rides.setState({ rides: [justEnded({ simulated: true })] as never });
     const w = buildNudgeWorld(NOW, []);
     expect(w.rides).toEqual([]);
     expect(w.yearKm).toBe(0);

@@ -53,7 +53,7 @@ describe('buildHomeWorld', () => {
     rides.setState({ rides: [
       ...[1, 2, 3].map((d) => ({ startedAt: at(d), durationSec: 1800, distanceKm: 10, simulated: true as const })),
       { startedAt: NOW - 20 * 60_000, durationSec: 600, distanceKm: 3, simulated: true as const },
-    ] });
+    ] as never });
     places.setState({ home: { lat: 0, lng: 0, label: 'H', setAt: 1 } });
     loc.setState({ fix: { lat: 0.05, lng: 0, t: NOW }, fixAt: NOW - 1000 });
     const w = buildHomeWorld(NOW);
