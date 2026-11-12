@@ -26,6 +26,8 @@ import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { RideTimeline } from '@/features/RideTimeline';
 import { fetchOutcome } from '@/api/submissionOutcome';
 import { nowMs } from '@/lib/clock';
+import { HomeOfferCard } from '@/features/home/HomeOfferCard';
+import { justFinishedRide } from '@/lib/justFinished';
 import { shouldAskCondition } from '@/lib/conditions';
 import { outcomeText } from '@/lib/submissionOutcome';
 import { useAuth } from '@/store/auth';
@@ -85,6 +87,8 @@ function StoryBody() {
   const deleteRide = () => { useJournal.getState().removeForRide(ride.startedAt); useTrips.getState().forgetRide(ride.id); useRides.getState().removeRide(ride.id); router.dismissTo('/rides'); };
   const sub = ride.submission;
   const inTrips = trips.filter((t) => t.rideIds.includes(ride.id));
+  // The "Ride home" offer shows only on the story of the ride that just finished (the Dash's just-finished window).
+  const justEnded = !ride.sample && justFinishedRide(allRides, nowMs())?.id === ride.id;
   const gapM = trackStats(segmentsOf(ride.points, ride.breaks)).gapM;
   return (
     <Screen overlay={<>
@@ -108,6 +112,7 @@ function StoryBody() {
       <PageTitle sub={formatDate(new Date(ride.startedAt).toISOString().slice(0, 10)) + (ride.sample ? ' · sample' : '')}>{ride.name}</PageTitle>
       <Columns
         left={<>
+      {justEnded ? <HomeOfferCard /> : null}
       <View style={{ backgroundColor: c.accent, borderRadius: radius.card, padding: space[6], gap: space[1] }}>
         <Text variant="label" style={{ color: c.accentInk }}>You rode</Text>
         <Measure parts={distanceKm(play ? +shownKm.toFixed(1) : ride.distanceKm)} size="liveCompact" color={c.accentInk} />
