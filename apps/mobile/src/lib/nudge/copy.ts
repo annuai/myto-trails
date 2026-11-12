@@ -15,6 +15,8 @@ export type CopyData = {
   club?: string; rideTitle?: string; going?: number; when?: string;
   /** Milestone: the kilometres to go and the target. */
   toGo?: number; target?: number;
+  /** Standing: whole percent of riders near home the rider is ahead of, the place, and the kilometres to the next band. */
+  aheadOf?: number; region?: string; nextGap?: number;
 };
 
 const km = (n: number) => `${Math.max(1, Math.round(n))} km`;
@@ -50,6 +52,9 @@ const LINES: Record<NudgeType, ((d: CopyData) => [string, string])[]> = {
   photos: [
     () => ['Share today\'s ride', 'Add a few photos for your club.'],
     () => ['Any good photos from the ride?', 'Your club would like to see them.'],
+  ],
+  standing: [
+    (d) => [`You are ahead of ${d.aheadOf ?? 50}% of riders near ${d.region ?? 'your area'}`, d.nextGap !== undefined ? `${km(d.nextGap)} more this month moves you up a band. A short loop does it.` : 'Nice riding this month.'],
   ],
 };
 

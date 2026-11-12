@@ -1,5 +1,5 @@
 import type { CopyData } from './copy';
-import { at, dayStart, DAY, HOUR, isoOf, MIN, weekdayOf } from './time';
+import { at, dayStart, DAY, HOUR, isoOf, isoWeekOf, MIN, weekdayOf } from './time';
 import type { NudgeType, NudgeWorld } from './types';
 import { badRidingDay, goodRidingDay } from './weather';
 
@@ -93,5 +93,17 @@ function photos(w: NudgeWorld): Candidate[] {
   return [{ type: 'photos', key: `photos:${r.startedAt}`, fireAt: r.endedAt + 30 * MIN, score: 0.5, route: '/clubs', data: {} }];
 }
 
+/** A Monday note on where the rider stands, only when it is good news: a rider is never nudged about a poor standing. */
+function standing(w: NudgeWorld): Candidate[] {
+  const s = w.standing;
+  if (!s || s.aheadOf < 50) return [];
+  for (let i = 0; i <= 7; i++) {
+    const monday = at(w.now, i, 9, 30);
+    if (weekdayOf(monday) !== 1 || monday <= w.now) continue;
+    return [{ type: 'standing', key: `standing:${isoWeekOf(monday)}`, fireAt: monday, score: 0.5, route: '/ride', data: { aheadOf: s.aheadOf, region: s.region, nextGap: s.nextGap } }];
+  }
+  return [];
+}
+
 /** Every nudge the rider's situation suggests, in no particular order. */
-export const candidates = (w: NudgeWorld): Candidate[] => [...first(w), ...lapse(w), ...weekend(w), ...weather(w), ...club(w), ...milestone(w), ...photos(w)];
+export const candidates = (w: NudgeWorld): Candidate[] => [...first(w), ...lapse(w), ...weekend(w), ...weather(w), ...club(w), ...milestone(w), ...photos(w), ...standing(w)];

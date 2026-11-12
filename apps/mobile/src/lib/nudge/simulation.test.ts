@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { planNudges } from './planner';
 import { SEND_FROM_MIN, SEND_TO_MIN } from './governor';
 import { at, DAY, isoOf, minuteOfDay, sameDay } from './time';
-import { NUDGE_META, type DayForecast, type Nudge, type NudgeHistory, type NudgeLevel, type NudgeWorld } from './types';
+import { NUDGE_META, type DayForecast, type Nudge, type NudgeHistory, type NudgeLevel, type NudgeType, type NudgeWorld } from './types';
 
 const START = new Date(2026, 8, 1, 9, 0).getTime();
 const DAYS = 180;
@@ -17,6 +17,8 @@ type Rider = {
   taps: (n: Nudge) => boolean;
   weather?: boolean;
   clubRideEvery?: number;
+  standing?: boolean;
+  muted?: NudgeType[];
 };
 
 /** Pretends to be a rider for DAYS days: plans on the days the app is opened, lets the phone show what was scheduled, and records what the rider did. */
@@ -31,7 +33,7 @@ function simulate(r: Rider) {
     if (r.opens(day)) {
       const forecast: DayForecast[] = r.weather ? Array.from({ length: 7 }, (_, i) => ({ iso: isoOf(at(now, i, 12)), code: 0, tempMax: 28, rainPct: 5 })) : [];
       const clubRides = r.clubRideEvery ? Array.from({ length: 5 }, (_, i) => at(now, i, 6, 30)).filter((_, i) => (day + i) % r.clubRideEvery! === 0).map((startsAt, i) => ({ id: `e${day}:${i}`, title: 'Ride', clubName: 'Club', startsAt, going: 5 })) : [];
-      const w: NudgeWorld = { now, level: r.level, muted: [], firstSeenAt: START, rides: [...rides], yearKm: rides.length * 40, usualWeekdays: [6], forecast, clubRides, clubs: 1, history: [...history], others: [], tripDays: [] };
+      const w: NudgeWorld = { now, level: r.level, muted: r.muted ?? [], firstSeenAt: START, rides: [...rides], yearKm: rides.length * 40, usualWeekdays: [6], forecast, clubRides, clubs: 1, ...(r.standing ? { standing: { aheadOf: 70, nextGap: 8, region: 'your area' } } : {}), history: [...history], others: [], tripDays: [] };
       scheduled = planNudges(w);
     }
     const until = at(START, day + 1, 9);
@@ -64,6 +66,16 @@ describe('simulated riders over six months', () => {
     checkInvariants(fired, 'occasional');
     expect(fired.length).toBeLessThanOrEqual(Math.ceil(DAYS / 7));
     expect(fired.length).toBeGreaterThan(3);
+  });
+
+  it('with the standing nudge on, a rider still gets at most one a day, the gaps and the window', () => {
+    for (const level of ['occasional', 'regular'] as const) {
+      const fired = simulate({ level, rides: (d) => d % 6 === 0, opens: () => true, taps: () => true, weather: true, clubRideEvery: 14, standing: true });
+      checkInvariants(fired, level);
+      const quiet = simulate({ level, rides: (d) => d % 6 === 0, opens: () => true, taps: () => true, standing: true, muted: ['weekend', 'lapse'] });
+      checkInvariants(quiet, level);
+      expect(quiet.some((n) => n.type === 'standing')).toBe(true);
+    }
   });
 
   it('Regular allows twice as many, with the same hard rules', () => {
