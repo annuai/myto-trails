@@ -30,3 +30,7 @@ npm run web -w @moto-trails/mobile
 **iPhone build:** the native project is `ios/MytoMoto` (renamed from `ios/Myto`). After pulling, run `npx pod-install` or `pod install` in `ios/`; `Podfile.properties.json` sets `EXPO_USE_PRECOMPILED_MODULES` to `false`. Background location, motion and notification buttons only work in a development build on a real phone, not in Expo Go or the simulator.
 
 **What is built, by feature:** see [docs/16 §13](../../docs/16-myto-app-ui.md) and [docs/superpowers/specs/](../../docs/superpowers/specs/). Route planning uses two free public services (Photon for places, Valhalla for roads) and needs no key.
+
+## Home and recording power use
+
+Home and Work are saved on the phone only (store `myto-places`, `src/store/places.ts`). They are never sent to the server.
