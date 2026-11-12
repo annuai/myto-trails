@@ -46,7 +46,7 @@ A rider's day has five phases. The app has one tab for each, so nothing needs a 
 
 **Later, once there is demand:** group ride live map, fuel and expense log, weather on the route, fuel stops and repair shops near a trail, trip photo album, ride-share cards for WhatsApp and Instagram, Myto Navi pairing (§11), a link to the Myto shop (gear, accessories).
 
-**Deliberately not in the first release:** chat, public social feed, public leaderboards (they reward speed and risk), selling or advertising to riders, anything that shares exact location of a sensitive trail.
+**Deliberately not in the first release:** chat, public social feed, public speed or distance rankings (they reward speed and risk), selling or advertising to riders, anything that shares exact location of a sensitive trail.
 
 ## 3. System overview
 

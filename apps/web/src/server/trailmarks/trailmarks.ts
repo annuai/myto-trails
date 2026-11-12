@@ -1,4 +1,4 @@
-import { CHALLENGES, challengeProgress, decideAward, parseLeaderboardMetric, rankRiders, TRAILMARK_ACTIONS, TRAILMARK_RULES, TRAILMARKS_NOTE, trailmarkTotal } from "@moto-trails/domain";
+import { CHALLENGES, challengeProgress, rideChallengeEvents, decideAward, parseLeaderboardMetric, rankRiders, TRAILMARK_ACTIONS, TRAILMARK_RULES, TRAILMARKS_NOTE, trailmarkTotal } from "@moto-trails/domain";
 import type { AwardDecision, ChallengeEvent, ChallengeProgress, ContributionState, LeaderboardEntry, LeaderboardMetric, LeaderboardScope, ProgressSnapshot, TrailmarkAction } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
 
@@ -69,12 +69,16 @@ export type MyTrailmarks = {
 /** A rider's own Trailmarks, achievement metrics and challenge progress. `districtId` is the district a district challenge counts in. */
 export async function getMyTrailmarks(sql: Sql, i: { userId: string; districtId?: string | null; now: Date }): Promise<MyTrailmarks> {
   const district = i.districtId && UUID.test(i.districtId) ? i.districtId : null;
-  const [events, ridden, enrolled, pref] = await Promise.all([
+  const [events, ridden, enrolled, pref, standing, summaries] = await Promise.all([
     sql`select action, points, awarded_at from trailmark_event where user_id = ${i.userId} order by awarded_at desc`,
     sql`select r.created_at, t.region_id from trail_ridden r join trail t on t.id = r.trail_id and t.lifecycle = 'published' where r.user_id = ${i.userId}`,
     sql`select challenge_id, joined_at from challenge_enrolment where user_id = ${i.userId}`,
     sql`select leaderboard_opt_in from rider_game_pref where user_id = ${i.userId}`,
+    sql`select opt_in from rider_standing_pref where user_id = ${i.userId}`,
+    // Only the rider's own summaries, and only while they are opted in (opting out deletes them anyway).
+    sql`select s.ride_ref, s.day, s.distance_km from ride_summary s join rider_standing_pref p on p.user_id = s.user_id and p.opt_in where s.user_id = ${i.userId}`,
   ]);
+  const rideOptIn = standing[0]?.opt_in === true;
   const count = (actions: string[]) => events.filter((e) => actions.includes(e.action)).length;
   const snapshot: ProgressSnapshot = {
     trailsRiddenDistinct: ridden.length,
@@ -87,6 +91,7 @@ export async function getMyTrailmarks(sql: Sql, i: { userId: string; districtId?
   const challengeEvents: ChallengeEvent[] = [
     ...ridden.map((r) => ({ kind: "new_trails" as const, at: r.created_at as Date, districtId: r.region_id as string })),
     ...events.filter((e) => VERIFIED.includes(e.action)).map((e) => ({ kind: "verifications" as const, at: e.awarded_at as Date })),
+    ...(rideOptIn ? rideChallengeEvents(summaries.map((r) => ({ rideRef: r.ride_ref as string, day: r.day as Date, distanceKm: Number(r.distance_km) }))) : []),
   ];
   const joined = new Map(enrolled.map((r) => [r.challenge_id as string, r.joined_at as Date]));
   return {
@@ -94,7 +99,7 @@ export async function getMyTrailmarks(sql: Sql, i: { userId: string; districtId?
     note: TRAILMARKS_NOTE,
     recent: events.slice(0, 10).map((e) => ({ action: e.action, label: TRAILMARK_RULES[e.action as TrailmarkAction].label, points: e.points, at: (e.awarded_at as Date).toISOString() })),
     snapshot,
-    challenges: CHALLENGES.map((def) => challengeProgress(def, { joinedAt: joined.get(def.id) ?? null, events: challengeEvents, districtId: district, now: i.now })),
+    challenges: CHALLENGES.map((def) => challengeProgress(def, { joinedAt: joined.get(def.id) ?? null, events: challengeEvents, districtId: district, now: i.now, rideOptIn })),
     leaderboardOptIn: Boolean(pref[0]?.leaderboard_opt_in),
   };
 }

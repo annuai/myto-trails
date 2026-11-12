@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { CATEGORY_TITLES } from '@moto-trails/domain';
+import type { AchievementCategory } from '@moto-trails/domain';
 import { ApiFailure } from '@/api/client';
 import { setChallengeJoined, setLeaderboardOptIn, useTrailmarks } from '@/api/trailmarks';
-import { badgeGroups, badgeStamp } from '@/lib/badges';
-import { MARKS } from '@/lib/marks';
+import { markViews } from '@/lib/story/registry';
+import { totalFixed, useFixit } from '@/store/fixit';
 import { useMarks } from '@/store/marks';
 import { useRides } from '@/store/rides';
 import { formatDate } from '@/lib/dates';
@@ -18,18 +19,26 @@ import { Screen } from '@/ui/Screen';
 import { Stamp } from '@/ui/Stamp';
 import { Text } from '@/ui/Text';
 
+const ORDER: AchievementCategory[] = ['personal', 'exploration', 'community', 'contribution'];
+const byCategory = <T extends { category: AchievementCategory }>(items: T[]) => ORDER.map((category) => ({ category, items: items.filter((m) => m.category === category) })).filter((g) => g.items.length);
+
 /**
- * Every mark, earned or not, then badges, Trailmarks and challenges. Marks come from facts the phone holds. Badges, Trailmarks and
+ * Every mark and badge in one list, earned or not, grouped by category, then Trailmarks and challenges. Marks come from facts the phone holds. Badges, Trailmarks and
  * challenge progress come from the server (contributions are checked by moderators first), so they wait, with a plain hint, until
  * the rider is signed in and online. None of it is about speed.
  */
 export default function Marks() {
   const held = useMarks((s) => s.held);
+  const services = useMarks((s) => s.services);
   const rides = useRides((s) => s.rides);
-  const earned = MARKS.filter((m) => held[m.id]).length;
+  const fixed = useFixit((s) => s.fixed);
   const tm = useTrailmarks();
   const [notice, setNotice] = useState<string | null>(null);
-  const groups = badgeGroups(rides, tm.data?.snapshot);
+  // A mark is never taken back: one already held stays earned even if the rides behind it are gone.
+  const views = markViews({ rides, servicesDone: services, fixesDone: totalFixed(fixed) }, tm.data?.snapshot)
+    .map((m) => (held[m.id] && m.state !== 'earned' ? { ...m, state: 'earned' as const, fraction: 1 } : m));
+  const earned = views.filter((m) => m.state === 'earned').length;
+  const groups = byCategory(views);
 
   const run = async (job: (token: string) => Promise<void>) => {
     if (!tm.token) return;
@@ -41,43 +50,31 @@ export default function Marks() {
     <Screen>
       <BackHeader title="You" />
       <PageTitle sub="First times, badges and thank-yous. Nothing here is about speed.">Marks</PageTitle>
-      <Text variant="label" tone="muted" style={{ marginBottom: space[4] }}>{earned} of {MARKS.length} earned</Text>
-      <View style={{ gap: space[3] }}>
-        {MARKS.map((m, i) => {
-          const at = held[m.id];
-          return (
-            <Reveal key={m.id} delay={i * 40}>
-              <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
-                <Stamp def={m} earned={!!at} />
-                <View style={{ flex: 1 }}>
-                  <Text variant="bodyMedium" tone={at ? 'ink' : 'muted'}>{m.title}</Text>
-                  <Text variant="label" tone="muted">{at ? formatDate(new Date(at).toISOString().slice(0, 10)) : m.hint}</Text>
-                </View>
-              </Card>
-            </Reveal>
-          );
-        })}
-      </View>
-
-      <SectionTitle>Badges</SectionTitle>
+      <Text variant="label" tone="muted" style={{ marginBottom: space[4] }}>{earned} of {views.length} earned</Text>
       {groups.map((g) => (
         <View key={g.category} style={{ gap: space[3], marginBottom: space[5] }}>
           <Text variant="labelMedium" tone="muted">{CATEGORY_TITLES[g.category]}</Text>
-          {g.items.map((s) => (
-            <Card key={s.def.id} style={{ flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
-              <Stamp def={badgeStamp(s)} earned={s.state === 'earned'} />
-              <View style={{ flex: 1, gap: space[1] }}>
-                <Text variant="bodyMedium" tone={s.state === 'earned' ? 'ink' : 'muted'}>{s.def.title}</Text>
-                <Text variant="label" tone="muted">{s.state === 'earned' ? 'Earned.' : s.state === 'needs_data' ? s.hint : s.def.hint}</Text>
-                {s.state === 'in_progress' || s.state === 'locked' ? (
-                  <>
-                    <ProgressBar value={s.current} max={s.target} label={`${s.def.title}: ${s.current} of ${s.target}`} />
-                    <Text variant="label" tone="muted">{s.current} of {s.target}</Text>
-                  </>
-                ) : null}
-              </View>
-            </Card>
-          ))}
+          {g.items.map((m, i) => {
+            const at = held[m.id];
+            const earnedNow = m.state === 'earned';
+            return (
+              <Reveal key={m.id} delay={i * 40}>
+                <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
+                  <Stamp def={m} earned={earnedNow} />
+                  <View style={{ flex: 1, gap: space[1] }}>
+                    <Text variant="bodyMedium" tone={earnedNow ? 'ink' : 'muted'}>{m.title}</Text>
+                    <Text variant="label" tone="muted">{earnedNow ? (at ? formatDate(new Date(at).toISOString().slice(0, 10)) : 'Earned.') : m.hint}</Text>
+                    {m.target && (m.state === 'in_progress' || m.state === 'locked') ? (
+                      <>
+                        <ProgressBar value={m.current ?? 0} max={m.target} label={`${m.title}: ${m.current ?? 0} of ${m.target}`} />
+                        <Text variant="label" tone="muted">{m.current ?? 0} of {m.target}</Text>
+                      </>
+                    ) : null}
+                  </View>
+                </Card>
+              </Reveal>
+            );
+          })}
         </View>
       ))}
 

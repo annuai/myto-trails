@@ -17,7 +17,7 @@ export const MADE_IN_INDIA = "Proudly made in India";
 export const DELETE_CONFIRMATION = "delete";
 export const LEGAL_SLUGS: readonly LegalSlug[] = ["about", "terms", "privacy"];
 
-const UPDATED = "28 October 2026";
+const UPDATED = "13 November 2026";
 const email: Part = { text: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` };
 const myto: Part = { text: "myto-moto", href: MYTO_URL };
 const p = (...parts: Part[]): Block => ({ p: parts });
@@ -120,19 +120,19 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
     draft: true,
     sections: [
       {
-        blocks: [p("Your rides stay on your phone. We keep only what the website and the community features need, and this page says exactly what that is.")],
+        blocks: [p("Your rides stay on your phone, unless you turn on ride comparison (below). We keep only what the website and the community features need, and this page says exactly what that is.")],
       },
       {
         heading: "What stays on your device",
         blocks: [
           ul(
-            ["Your ride log and recorded tracks."],
+            ["Your ride log and recorded tracks (unless you turn on ride comparison, below, which uploads a small summary of each ride, never the track)."],
             ["Your ride journal: notes, photos and voice notes."],
             ["Your to-dos and reminders."],
             ["Your documents, document photos and emergency contacts."],
             ["Backups you export, which are one encrypted file only you hold."],
           ),
-          p('None of this is sent to us. You can erase it in the app under You, "Erase all my data". If you choose to submit a ride as a trail, that submission is sent to us, including the route and the times you rode it (see below).'),
+          p('Apart from ride comparison (below), none of this is sent to us. You can erase it in the app under You, "Erase all my data". If you choose to submit a ride as a trail, that submission is sent to us, including the route and the times you rode it (see below).'),
         ],
       },
       {
@@ -160,6 +160,12 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
         heading: "Your location",
         blocks: [
           p('"Near me" uses your approximate position, rounded to about 1 km, only to find trails close to you. On the website it sits in a short-lived cookie that expires after 30 minutes. We do not save it to your account or our logs. The clock in the website footer shows the time where you are; its place name comes from the approximate location your hosting provider reports for that request, or from your browser\'s time zone, and we do not store it.'),
+        ],
+      },
+      {
+        heading: "Ride comparison (optional, off by default)",
+        blocks: [
+          p("If you turn this on in the app under You, Privacy, we store one small summary per ride: the day, the distance, the duration, a grid square about 100 km wide, an optional bike type and a random reference. Never the route, a coordinate or the time of day. We use it to show you how your month compares with other riders in your square, and only when at least 20 riders are in it. Turn it off and your summaries are deleted; deleting your account deletes them too."),
         ],
       },
       {

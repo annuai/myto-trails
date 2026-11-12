@@ -40,7 +40,7 @@ describe("grantEntitlement", () => {
 });
 
 describe("applyBillingEvent", () => {
-  const ev = (userId: string, type: "paid" | "failed" | "cancelled" | "refunded", ref = "ref1") => ({ provider: "test", providerRef: ref, userId, kind: "organiser" as const, type, endsAt: later });
+  const ev = (userId: string, type: "paid" | "failed" | "cancelled" | "refunded", ref = `ref-${userId}`) => ({ provider: "test", providerRef: ref, userId, kind: "organiser" as const, type, endsAt: later });
   it("is idempotent: the same ref twice is one row", async () => {
     const a = await leaderWithRide();
     expect(await applyBillingEvent(db.sql, ev(a.userId, "paid"), now)).toEqual({ ok: true, outcome: "inserted" });

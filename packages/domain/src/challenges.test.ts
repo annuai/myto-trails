@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CHALLENGES, challengeProgress, type ChallengeEvent } from "./challenges";
+import { CHALLENGES, challengeProgress, rideChallengeEvents, type ChallengeEvent } from "./challenges";
 
 const def = (id: string) => CHALLENGES.find((c) => c.id === id)!;
 const now = new Date("2026-11-12T10:00:00Z");
@@ -27,7 +27,42 @@ describe("challengeProgress", () => {
   it("keeps challenges that cannot be computed yet locked, even when joined", () => {
     expect(challengeProgress(def("viewpoints-5"), { joinedAt, events: [ev({ kind: "viewpoints" })], now }).state).toBe("locked");
   });
-  it("has no challenge about speed, distance or streaks", () => {
-    expect(JSON.stringify(CHALLENGES)).not.toMatch(/speed|\bkm\b|streak/i);
+  it("has no challenge about speed or streaks, and distance only against your own best", () => {
+    expect(JSON.stringify(CHALLENGES)).not.toMatch(/speed|\bkm\b|streak|leaderboard/i);
+  });
+});
+
+describe("ride challenges", () => {
+  const rides = (n: number) => Array.from({ length: n }, (_, i) => ev({ kind: "rides", at: new Date(`2026-11-0${i + 2}T00:00:00Z`) }));
+  it("completes 'Ride 4 times this month' with four rides in the month", () => {
+    expect(challengeProgress(def("rides-in-region"), { joinedAt, events: rides(4), now, rideOptIn: true })).toMatchObject({ state: "complete", current: 4, target: 4 });
+    expect(challengeProgress(def("rides-in-region"), { joinedAt, events: rides(3), now, rideOptIn: true })).toMatchObject({ state: "in_progress", current: 3 });
+  });
+  it("shows not_joined when opted in but not enrolled", () => {
+    expect(challengeProgress(def("rides-in-region"), { joinedAt: null, events: rides(4), now, rideOptIn: true })).toMatchObject({ state: "not_joined", current: 0 });
+  });
+  it("stays locked, with a hint and no progress, when ride comparison is off", () => {
+    const p = challengeProgress(def("longest-ride-region"), { joinedAt, events: rides(4), now, rideOptIn: false });
+    expect(p).toMatchObject({ state: "locked", current: 0, fraction: 0, hint: "Turn on ride comparison to count rides" });
+    expect(challengeProgress(def("rides-in-region"), { joinedAt, events: [], now }).state).toBe("locked");
+  });
+  it("counts a longest_ride only when it beats the previous best", () => {
+    const day = (d: number) => new Date(`2026-10-${String(d).padStart(2, "0")}T00:00:00Z`);
+    const r = (ref: string, d: number, km: number) => ({ rideRef: ref, day: day(d), distanceKm: km });
+    const events = rideChallengeEvents([r("a", 5, 40), r("b", 20, 30), r("c", 28, 55), r("d", 29, 55), r("e", 30, 20)]);
+    expect(events.filter((e) => e.kind === "rides")).toHaveLength(5);
+    expect(events.filter((e) => e.kind === "longest_ride").map((e) => e.at)).toEqual([day(28)]);
+  });
+  it("counts the first ride as no record (nothing to beat yet)", () => {
+    expect(rideChallengeEvents([{ rideRef: "a", day: new Date("2026-11-02T00:00:00Z"), distanceKm: 10 }]).filter((e) => e.kind === "longest_ride")).toEqual([]);
+  });
+  it("counts a ride on the day of joining, not the day before", () => {
+    const joined = new Date("2026-11-05T10:00:00Z");
+    const same = ev({ kind: "rides", at: new Date("2026-11-05T00:00:00Z") });
+    const before = ev({ kind: "rides", at: new Date("2026-11-04T00:00:00Z") });
+    expect(challengeProgress(def("rides-in-region"), { joinedAt: joined, events: [same, before], now, rideOptIn: true }).current).toBe(1);
+  });
+  it("never names speed or a streak in an id", () => {
+    for (const c of CHALLENGES) expect(c.id).not.toMatch(/speed|streak/);
   });
 });

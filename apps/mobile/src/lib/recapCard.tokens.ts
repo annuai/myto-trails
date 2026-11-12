@@ -7,7 +7,7 @@ export const recapTokens = {
   previewWidth: 220,
   /** How much of full white the quieter text keeps. */
   faint: 0.64,
-  font: { kicker: 40, year: 240, heroValue: 220, heroUnit: 84, label: 30, value: 88, unit: 38, month: 76, badge: 34 },
+  font: { kicker: 40, year: 240, heroValue: 220, heroUnit: 84, label: 30, value: 88, unit: 38, month: 76, badge: 34, title: 56 },
   /** Baselines, from the top of the card. */
-  y: { kicker: 150, year: 400, heroLabel: 610, hero: 810, gridLabel: 1010, grid: 1110, bestLabel: 1290, best: 1390, bestSub: 1450 },
+  y: { kicker: 150, year: 400, title: 490, heroLabel: 610, hero: 810, gridLabel: 1010, grid: 1110, bestLabel: 1290, best: 1390, bestSub: 1450 },
 } as const;

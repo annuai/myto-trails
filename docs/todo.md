@@ -17,6 +17,7 @@ Until then the club feed refreshes when the screen opens and while it stays open
 
 ## Other open items
 
+- **Rider story:** Pillion artwork is pending (poses are placeholders). Before using standing in production, apply migration 0048 and set `CRON_SECRET` on Vercel (the rollup cron needs it). Move cells to districts for a district once it has 20 opted-in riders (`ride_summary` stores a 1-degree cell, so district challenges cannot be counted yet).
 - **R2 lifecycle rule:** expire objects in the `quarantine` bucket after one day. Photos that were sent but never posted leave nothing in the database for the purge to find.
 - **Custom domain for the public bucket** behind Cloudflare, so photos are cached at the edge (the `r2.dev` address is rate limited and not for production). Set `R2_PUBLIC_BASE_URL` to it.
 - **GitHub `CRON_SECRET`** must equal the Vercel one (the check-in sweep got a 401 on 6 Nov 2026). Reveal the Vercel value, then `pbpaste | gh secret set CRON_SECRET --repo annuai/myto-trails`, and run the Check-in sweep workflow to confirm.

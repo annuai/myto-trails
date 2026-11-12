@@ -11,6 +11,7 @@ import { useRideLocationAccess } from '@/lib/useRideLocationAccess';
 import { syncReminders } from '@/NotificationHost';
 import { useJournal } from '@/store/journal';
 import { useNotifications } from '@/store/notifications';
+import { MomentCard } from '@/features/story/MomentCard';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { actionCards } from '@/lib/actionCards';
 import { NudgeConsentSheet } from '@/features/NudgeConsentSheet';
@@ -167,6 +168,7 @@ export default function Home() {
       <Columns
         rightStartsWithSection
         left={<>
+      <MomentCard />
       {recoverable ? (
         <View style={{ marginBottom: space[3] }}>
           <Banner eyebrow="Unsaved ride" title={`Recovered a ride from ${new Date(recoverable.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Save it or discard it.`} onPress={() => setRecoverOpen(true)} />
