@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/server/db/client", () => ({ getSql: () => ({}) }));
+const rollup = vi.hoisted(() => vi.fn(async (..._a: unknown[]) => []));
+vi.mock("@/server/db/client", () => ({ getSql: () => rollup }));
 vi.mock("@/server/storage", () => ({ getStorage: () => ({}) }));
 const purge = vi.hoisted(() => vi.fn(async () => ({ purged: { sessions: 4 }, filesRemoved: 2, failed: [] as string[] })));
 vi.mock("@/server/retention/purge", () => ({ purgeRetention: purge }));
@@ -25,6 +26,15 @@ describe("purge retention cron", () => {
     const res = await GET(new Request(url, { headers: { authorization: `Bearer ${SECRET}` } }));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ purged: { sessions: 4 }, filesRemoved: 2, failed: [] });
+    expect(String((rollup.mock.calls[0]![0] as string[])[0])).toContain("rollup_cohort_stats");
+  });
+
+  it("names a failed cohort rollup without failing the purge", async () => {
+    process.env.CRON_SECRET = SECRET;
+    rollup.mockRejectedValueOnce(new Error("boom"));
+    const res = await GET(new Request(url, { headers: { authorization: `Bearer ${SECRET}` } }));
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { failed: string[] }).failed).toContain("cohort_rollup");
   });
 
   it("is closed when no secret is configured", async () => {

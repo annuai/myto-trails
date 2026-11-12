@@ -34,6 +34,12 @@ describe("GET /cohort", () => {
     expect(await call("GET", "/cohort?cell=12:77&period=Nov&metric=rides")).toMatchObject({ status: 400 });
     expect(await call("GET", "/cohort?cell=bogus&period=2026-11&metric=rides")).toMatchObject({ status: 400 });
   });
+  it("never publishes a cohort smaller than MIN_COHORT", async () => {
+    const d = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    st.getCohort.mockResolvedValueOnce({ n: 19, deciles: d }).mockResolvedValueOnce({ n: 20, deciles: d, userId: "leak" });
+    expect(await call("GET", "/cohort?cell=12:77&period=2026-11&metric=rides")).toMatchObject({ status: 404 });
+    expect(await call("GET", "/cohort?cell=12:77&period=2026-11&metric=rides")).toEqual({ status: 200, body: { n: 20, deciles: d } });
+  });
   it("answers only n and deciles, and 404s a cell with no row", async () => {
     st.getCohort.mockResolvedValueOnce({ n: 31, deciles: [1, 2, 3, 4, 5, 6, 7, 8, 9], userId: "leak" }).mockResolvedValueOnce(null);
     expect(await call("GET", "/cohort?cell=12:77&period=2026-11&metric=rides")).toEqual({ status: 200, body: { n: 31, deciles: [1, 2, 3, 4, 5, 6, 7, 8, 9] } });
@@ -63,6 +69,11 @@ describe("PUT /me/ride-summaries", () => {
     for (const body of [null, {}, { rides: "x" }, { rides: [{ ...ride, day: "10/11/2026" }] }, { rides: [{ ...ride, distanceKm: -1 }] }, { rides: [{ ...ride, durationSec: 1.5 }] }, { rides: [{ ...ride, cell: "x" }] }, { rides: [{ ...ride, ref: "" }] }, { rides: Array(201).fill(ride) }, { rides: [ride], extra: 1 }]) {
       expect(await call("PUT", "/me/ride-summaries", body)).toMatchObject({ status: 400 });
     }
+    expect(st.upsertSummaries).not.toHaveBeenCalled();
+  });
+  it("rejects impossible, future and too-old days and out-of-range cells", async () => {
+    for (const day of ["2026-02-31", "0000-01-01", "2020-01-01", "2026-11-13", "2999-01-01"]) expect(await call("PUT", "/me/ride-summaries", { rides: [{ ...ride, day }] })).toMatchObject({ status: 400 });
+    for (const cell of ["90:77", "-91:77", "12:180", "12:-181"]) expect(await call("PUT", "/me/ride-summaries", { rides: [{ ...ride, cell }] })).toMatchObject({ status: 400 });
     expect(st.upsertSummaries).not.toHaveBeenCalled();
   });
   it("409s when the rider has not opted in", async () => {

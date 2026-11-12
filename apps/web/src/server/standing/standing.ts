@@ -1,4 +1,4 @@
-import type { CohortRow, StandingMetric } from "@moto-trails/domain";
+import { MIN_COHORT, type CohortRow, type StandingMetric } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
 
 type Db = Sql | TransactionSql;
@@ -33,6 +33,6 @@ export async function upsertSummaries(sql: Sql, i: { userId: string; rides: Ride
 /** Only the cohort's size and cut points: never a rider's row or name. */
 export async function getCohort(sql: Db, i: { cell: string; period: string; metric: StandingMetric }): Promise<CohortRow | null> {
   const [row] = await sql`select n, deciles from cohort_stat where cell = ${i.cell} and period = ${i.period} and metric = ${i.metric}`;
-  if (!row) return null;
+  if (!row || Number(row.n) < MIN_COHORT) return null;
   return { n: Number(row.n), deciles: (row.deciles as unknown[]).map(Number) };
 }
