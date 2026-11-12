@@ -30,7 +30,7 @@ import { useRecorder as rec } from '@/store/recorder';
 import { useMotion as motion } from '@/store/motion';
 import { useCompanion as companion } from '@/store/companion';
 import { useBattery as battery } from '@/store/battery';
-import { useAutoEndPrompt, watchAutoEnd } from './AutoEndHost';
+import { liveShowingNow, useAutoEndPrompt, watchAutoEnd } from './AutoEndHost';
 
 const S = 1000;
 const FAR = 0.02; // about 2.2 km north of home
@@ -40,7 +40,8 @@ let liveShowing = true;
 const replace = vi.fn();
 let stop: () => void = () => {};
 
-const fix = (lat: number, t: number) => { now = t; rec.setState((s) => ({ points: [...s.points, { lat, lng: 0 }], lastFixAt: t })); };
+/** A fix at `lat`, riding at 40 km/h when far from home and standing still near it, unless `kmh` says otherwise. */
+const fix = (lat: number, t: number, kmh = lat === FAR ? 40 : 0) => { now = t; rec.setState((s) => ({ points: [...s.points, { lat, lng: 0 }], lastFixAt: t, speedKmh: kmh }) as never); };
 const still = (on: boolean, t: number) => { now = t; motion.setState({ stopped: on }); };
 const flush = () => new Promise((r) => setTimeout(r, 0));
 const warns = () => n.notifyNow.mock.calls.filter(([x]) => x.id === 'auto-end-warn').length;
@@ -126,6 +127,48 @@ describe('AutoEndHost', () => {
     fix(FAR, T + 130 * S);
     expect(n.dismiss).toHaveBeenCalledWith('auto-end-warn');
     expect(useAutoEndPrompt.getState().prompt).toBeNull();
+  });
+
+  it('ends with the screen locked: the motion signal goes quiet, so the slow fixes say the bike has stopped', async () => {
+    const T = 10 * 60 * S;
+    fix(FAR, T);
+    for (let x = T + 60 * S; x <= T + 110 * S; x += 10 * S) fix(AT_HOME, x);
+    expect(motion.getState().stopped).toBe(false);
+    expect(warns()).toBe(0);
+    fix(AT_HOME, T + 120 * S);
+    expect(warns()).toBe(1);
+    for (let x = T + 130 * S; x <= T + 160 * S; x += 10 * S) fix(AT_HOME, x);
+    await flush();
+    expect(n.endRide).toHaveBeenCalledTimes(1);
+  });
+
+  it('a fix at riding pace near home is not a stop, even with the motion signal quiet', () => {
+    const T = 10 * 60 * S;
+    fix(FAR, T);
+    for (let x = T + 60 * S; x <= T + 200 * S; x += 10 * S) fix(AT_HOME, x, 20);
+    expect(warns()).toBe(0);
+  });
+
+  it('auto-end is no longer ending once the ride is saved, by story or by notification', async () => {
+    arriveAndStand(10 * 60 * S, 160 * S);
+    await flush();
+    expect(replace).toHaveBeenCalledWith('/story/r1');
+    expect(useAutoEndPrompt.getState().ending).toBe(false);
+    stop();
+    rec.setState({ startedAt: 1, points: [], lastFixAt: 0 });
+    liveShowing = false;
+    stop = watchAutoEnd({ now: () => now, liveShowing: () => liveShowing, replace });
+    arriveAndStand(30 * 60 * S, 160 * S);
+    await flush();
+    expect(n.notifyNow).toHaveBeenLastCalledWith(expect.objectContaining({ body: 'Ride saved. Tap to see it' }));
+    expect(useAutoEndPrompt.getState().ending).toBe(false);
+  });
+
+  it('the live screen counts as showing only while the app is in front', () => {
+    expect(liveShowingNow('/ride/live', 'active')).toBe(true);
+    expect(liveShowingNow('/ride/live', 'background')).toBe(false);
+    expect(liveShowingNow('/ride/live', 'inactive')).toBe(false);
+    expect(liveShowingNow('/', 'active')).toBe(false);
   });
 
   it('a completed end clears strikes', async () => {

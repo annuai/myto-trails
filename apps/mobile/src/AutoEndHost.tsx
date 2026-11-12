@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { create } from 'zustand';
 import { endRide } from '@/features/ride/endRide';
@@ -27,6 +28,11 @@ type Prompt = { kind: PlaceKind; action: 'warn' | 'ask'; text: string };
 /** What the live screen shows while auto-end is warning or asking. `ending`: auto-end is saving the ride, so the screen leaves it to the host. */
 export const useAutoEndPrompt = create<{ prompt: Prompt | null; ending: boolean; keep: () => void; end: () => void }>(() => ({ prompt: null, ending: false, keep: () => {}, end: () => {} }));
 
+/** The live screen is what the rider sees: its route is on top and the app is in front (a locked phone shows nothing). */
+export function liveShowingNow(path: string, app: AppStateStatus = AppState.currentState): boolean {
+  return path === LIVE && app === 'active';
+}
+
 /** "Arrived home", "Arrived at work", or the rider's own name for the place. */
 function arrivedWords(kind: PlaceKind): string {
   const label = usePlaces.getState()[kind]?.label?.trim();
@@ -54,21 +60,29 @@ export function watchAutoEnd(d: Deps): () => void {
   let switchedAt = -Infinity;
   let slowSince: number | null = null;
   const resetProfile = () => { profile = 'full'; switchedAt = -Infinity; slowSince = null; };
+  type Rec = ReturnType<typeof useRecorder.getState>;
   /**
-   * `resumed`: the rider (or auto-pause) took the ride up again, which counts as moving off. A fix too poor to judge also leaves idle:
-   * idle's low accuracy can give only such fixes away from wifi, and then it could never see the rider ride off.
+   * How long the bike has stood still: by the motion detector or by the recorded fixes, whichever has known longer (the motion signal
+   * goes quiet with the screen locked, when only the background task's fixes arrive). One answer for both auto-end and the profile.
+   * `resumed`: the rider (or auto-pause) took the ride up again, which counts as moving off. Moves `slowSince` on only when `track`.
    */
-  const driveProfile = (s: ReturnType<typeof useRecorder.getState>, now: number, resumed: boolean) => {
+  const stopLength = (s: Rec, now: number, resumed: boolean, track: boolean): number => {
     const moving = resumed || (!s.fixPoor && s.speedKmh >= WAKE_KMH);
+    if (track) { if (moving) slowSince = null; else if (!s.fixPoor) slowSince ??= now; }
+    return moving ? 0 : Math.max(stoppedSince === null ? 0 : now - stoppedSince, slowSince === null ? 0 : now - slowSince);
+  };
+  /**
+   * A fix too poor to judge also leaves idle: idle's low accuracy can give only such fixes away from wifi, and then it could never see
+   * the rider ride off.
+   */
+  const driveProfile = (s: Rec, now: number, resumed: boolean, stoppedForMs: number) => {
     const wake = resumed || (s.fixPoor && profile === 'idle');
-    if (moving) slowSince = null; else if (!s.fixPoor) slowSince ??= now;
     const g = useGuideTarget.getState();
     const bat = useBattery.getState();
     const next = chooseProfile({
       current: profile, lastSwitchAt: switchedAt, now, batteryPct: bat.level, charging: bat.charging,
       navigating: !!g.to || !!g.rescue || !!followedRouteEnd(),
-      // Stopped by the motion detector or by the recorded fixes, whichever has known longer (the motion signal goes quiet with the screen locked).
-      stoppedForMs: moving ? 0 : Math.max(stoppedSince === null ? 0 : now - stoppedSince, now - (slowSince ?? now)),
+      stoppedForMs,
       speedKmh: wake ? Math.max(s.speedKmh, WAKE_KMH) : s.speedKmh,
       enabled: useCompanion.getState().batterySaver,
     });
@@ -95,7 +109,9 @@ export function watchAutoEnd(d: Deps): () => void {
     useAutoEndPrompt.setState({ ending: true });
     const id = await endRide();
     if (id) usePlaces.getState().clearStrikes(kind);
-    if (d.liveShowing()) { d.replace(id ? `/story/${id}` : '/'); return; }
+    // Saved: a live screen left behind in the stack (or opened later from the warning) goes Home by itself again.
+    if (d.liveShowing()) { d.replace(id ? `/story/${id}` : '/'); useAutoEndPrompt.setState({ ending: false }); return; }
+    useAutoEndPrompt.setState({ ending: false });
     // If the ride could not be written, Home offers it back for saving: nothing to tap here.
     if (id) void notifier.notifyNow({ id: `auto-end-saved:${id}`, fireAt: d.now(), title: arrivedWords(kind), body: 'Ride saved. Tap to see it', route: `/story/${id}` }).catch(() => undefined);
   };
@@ -109,11 +125,13 @@ export function watchAutoEnd(d: Deps): () => void {
   const unsubRide = useRecorder.subscribe((s, prev) => {
     if (s.status !== 'running') { if (prev.status === 'running') { clearPrompt(); resetProfile(); } return; }
     if (s.startedAt !== rideKey) { rideKey = s.startedAt; state = startAutoEnd; cancelled = []; ended = false; clearPrompt(); useAutoEndPrompt.setState({ ending: false }); resetProfile(); }
+    const now = d.now();
     const resumed = prev.paused && !s.paused;
-    if (resumed || (s.lastFixAt !== prev.lastFixAt && !s.paused)) driveProfile(s, d.now(), resumed);
+    const fresh = resumed || (s.lastFixAt !== prev.lastFixAt && !s.paused);
+    const stoppedForMs = stopLength(s, now, resumed, fresh);
+    if (fresh) driveProfile(s, now, resumed, stoppedForMs);
     // Only a new fix moves the watch on: the engine needs fresh positions, and stepping without one would reset its countdown.
     if (s.lastFixAt === prev.lastFixAt || ended || !useCompanion.getState().autoEnd) return;
-    const now = d.now();
     const pos = s.points[s.points.length - 1];
     const { home, work, endStrikes } = usePlaces.getState();
     const routeEnd = followedRouteEnd();
@@ -124,7 +142,7 @@ export function watchAutoEnd(d: Deps): () => void {
       inGroupRide: !!useCompanion.getState().group,
       tripActive: useTrips.getState().trips.some((t) => tripStatus(t) === 'active'),
       guideTo: useGuideTarget.getState().to,
-      stoppedForMs: stoppedSince === null ? 0 : now - stoppedSince,
+      stoppedForMs,
       enabled: true,
       strikes: endStrikes,
       cancelled,
@@ -153,7 +171,7 @@ export function AutoEndHost() {
   const at = useRef(path);
   const go = useRef(router);
   useEffect(() => { at.current = path; go.current = router; }, [path, router]);
-  useEffect(() => watchAutoEnd({ now: Date.now, liveShowing: () => at.current === LIVE, replace: (p) => go.current.replace(p as never), setProfile: (p) => void setRecordingProfile(p) }), []);
+  useEffect(() => watchAutoEnd({ now: Date.now, liveShowing: () => liveShowingNow(at.current), replace: (p) => go.current.replace(p as never), setProfile: (p) => void setRecordingProfile(p) }), []);
   const tap = useTappedRoute();
   useEffect(() => { if (tap?.id === WARN_ID) useAutoEndPrompt.getState().keep(); }, [tap?.key]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
