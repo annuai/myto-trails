@@ -40,6 +40,8 @@ It stays quiet at home, during a ride, group ride or trip, after a sample or sim
 Dismissals are kept on the phone only (store `myto-home-offer`, `src/store/homeOffer.ts`), the last 10.
 The offer never starts a GPS watch. It uses the recorder's latest point during a ride, else a fresh fix another screen already holds, else one low-accuracy reading (`Accuracy.Balanced`) on screen focus or returning to the app, at most once every 5 minutes (`src/features/home/quickPosition.ts`).
 There is no repeating timer; sunset is looked up once a day per area and cached.
+Set Home and Work in You, Settings, Home and work (`app/home-place.tsx`): by search or one reading of your current location; Work is optional.
+That screen holds the two switches: "Stop recording when I get home or to work" (needs Home or Work set) and "Save battery on long rides".
 Auto-end (`src/lib/homeRoute/autoEnd.ts`) acts only on a real ride of at least 1 km and 5 minutes that has been 1 km or more from Home or Work and returned: standing still inside 200 m for 60 s (20 s when guided there) warns, and 30 s later ends it, so a stop at a junction near home or a ride that merely starts there never closes it.
 It only asks, never ends, for Work unless guided there and for a place the rider has declined twice, because those are the likeliest mistaken stops.
 Auto-end is off by default (`useCompanion.autoEnd`); `src/AutoEndHost.tsx` runs it only when the recorder hears a fix, with no timer and no reading of its own, and saves through the same `endRide` as Stop.
