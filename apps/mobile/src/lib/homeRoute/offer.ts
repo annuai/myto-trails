@@ -11,15 +11,17 @@ export function minuteDistance(a: number, b: number): number {
   return Math.min(d, 1440 - d);
 }
 
-/** Dismissals count from the moment they were made; one stamped in the future (clock moved back) counts as just now. */
-const ageOf = (now: number, t: number): number => Math.max(0, now - t);
-
-/** Whether the rider's own dismissals keep the offer quiet right now. */
+/** Whether the rider's own dismissals keep the offer quiet right now. A dismissal stamped in the future (clock moved back) counts as just now. */
 function quiet(now: number, dismissals: number[]): boolean {
   if (dismissals.length === 0) return false;
-  const ages = dismissals.map((t) => ageOf(now, t));
-  if (Math.min(...ages) < QUIET_AFTER_DISMISS_MS) return true;
-  return ages.filter((a) => a <= QUIET_WINDOW_MS).length >= QUIET_DISMISSALS && Math.min(...ages) < QUIET_LONG_MS;
+  const ds = dismissals.map((t) => Math.min(t, now)).sort((x, y) => x - y);
+  if (now - ds[ds.length - 1] < QUIET_AFTER_DISMISS_MS) return true;
+  // Three dismissals within QUIET_WINDOW_MS silence the offer until QUIET_LONG_MS after the latest of them.
+  for (let i = 0; i + QUIET_DISMISSALS - 1 < ds.length; i++) {
+    const last = ds[i + QUIET_DISMISSALS - 1];
+    if (last - ds[i] <= QUIET_WINDOW_MS && now < last + QUIET_LONG_MS) return true;
+  }
+  return false;
 }
 
 /**

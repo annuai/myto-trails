@@ -65,6 +65,13 @@ describe('decideHomeOffer', () => {
     const later = NOW + QUIET_LONG_MS - 4 * HOUR + 1;
     expect(decideHomeOffer(world({ now: later, posAt: later, lastRide: { endedAt: later - MIN }, dismissals: d }))?.reason).toBe('ride-ended');
   });
+  it('spread dismissals (13 d, 7 d, 1 h ago) keep it quiet until 14 days after the latest', () => {
+    const d = [NOW - 13 * 86_400_000, NOW - 7 * 86_400_000, NOW - HOUR];
+    const at10 = NOW + 10 * 86_400_000;
+    expect(decideHomeOffer(world({ now: at10, posAt: at10, lastRide: { endedAt: at10 - MIN }, dismissals: d }))).toBeNull();
+    const at14 = NOW + 14 * 86_400_000;
+    expect(decideHomeOffer(world({ now: at14, posAt: at14, lastRide: { endedAt: at14 - MIN }, dismissals: d }))?.reason).toBe('ride-ended');
+  });
   it('a dismissal timestamp in the future (clock moved back) counts as just now', () =>
     expect(decideHomeOffer(world({ lastRide: ended(MIN), dismissals: [NOW + 5 * HOUR] }))).toBeNull());
 });
