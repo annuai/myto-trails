@@ -1,5 +1,5 @@
 /** The kinds of ride nudge. `cls` groups them for the spacing rules: a "ride" nudge asks the rider to go riding, an "after" nudge follows a ride. */
-export type NudgeType = 'first' | 'lapse' | 'weekend' | 'weather' | 'club' | 'milestone' | 'photos' | 'home';
+export type NudgeType = 'first' | 'lapse' | 'weekend' | 'weather' | 'club' | 'milestone' | 'photos' | 'home' | 'standing';
 export type NudgeLevel = 'off' | 'occasional' | 'regular';
 
 export const NUDGE_META: Record<NudgeType, { label: string; hint: string; cls: 'ride' | 'after' }> = {
@@ -11,6 +11,7 @@ export const NUDGE_META: Record<NudgeType, { label: string; hint: string; cls: '
   milestone: { label: 'Milestones', hint: 'When you are close to a round number of kilometres this year', cls: 'ride' },
   photos: { label: 'Photos after a ride', hint: 'A reminder to share your ride photos with your club', cls: 'after' },
   home: { label: 'Ride home', hint: 'A reminder to head home after a ride', cls: 'after' },
+  standing: { label: 'Standing', hint: 'How you compare near home, if you chose that', cls: 'ride' },
 };
 export const NUDGE_TYPES = Object.keys(NUDGE_META) as NudgeType[];
 
@@ -52,6 +53,8 @@ export type NudgeWorld = {
   others: { id: string; fireAt: number }[];
   /** Days (YYYY-MM-DD) with a trip planned. */
   tripDays: string[];
+  /** Where the rider stands against riders near home this month. Only for a rider who chose to see it. */
+  standing?: { aheadOf: number; nextGap?: number; region: string };
 };
 
 /** What the engine plans: ready to become a scheduled notification. */

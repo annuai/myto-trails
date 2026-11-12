@@ -99,6 +99,11 @@ describe("privacy claims match the code", () => {
     expect(text).toContain("the times you rode it");
     expect(text).toContain("record of moderator actions");
   });
+
+  it("the on-device list does not claim nothing is sent, since ride comparison uploads summaries", () => {
+    expect(text).not.toContain("None of this is sent to us.");
+    expect(text).toContain("Apart from ride comparison (below), none of this is sent to us.");
+  });
 });
 
 describe("footer copy", () => {

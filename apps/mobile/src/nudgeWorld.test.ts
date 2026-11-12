@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 type Ride = { startedAt: number; durationSec: number; pausedSec?: number; distanceKm: number; points: { lat: number; lng: number }[]; sample?: boolean; simulated?: true; groupId?: string };
 const mk = vi.hoisted(() => async <T extends object>(init: T) => (await import('zustand')).create<T>(() => init));
+// Standing is off in these tests: the world only needs to know the rider has not opted in.
+vi.mock('@/store/standingPref', () => ({ useStandingPref: { getState: () => ({ optIn: false, cohort: undefined }) } }));
 vi.mock('@/store/nudges', async () => ({ useNudges: await mk({ level: 'occasional', muted: [], firstSeenAt: 0, history: [] }) }));
 vi.mock('@/store/places', async () => ({ usePlaces: await mk<{ home?: { lat: number; lng: number; label: string; setAt: number } }>({}) }));
 vi.mock('@/store/rides', async () => ({ useRides: await mk<{ rides: Ride[] }>({ rides: [] }) }));

@@ -4,6 +4,7 @@ import Svg, { G, Path, Text as SvgText, TSpan } from 'react-native-svg';
 import { recapTokens as T } from '@/lib/recapCard.tokens';
 import { asText, distanceKm, durationParts, type Quantity } from '@/lib/units';
 import type { YearRecap } from '@/lib/yearRecap';
+import { TITLES } from '@/lib/story/titles';
 import { fixed, inkSolid } from '@/theme/tokens';
 import { InkFill } from './InkFill';
 import { LOGO_PATHS, LOGO_RATIO } from './logoPaths';
@@ -41,6 +42,7 @@ export const RecapCard = forwardRef<ComponentRef<typeof View>, { recap: YearReca
       <Svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} style={{ position: 'absolute', left: 0, top: 0 }}>
         <SvgText x={T.pad} y={T.y.kicker} fill={fixed.white} fillOpacity={T.faint} fontFamily="Geist_500Medium" fontSize={T.font.kicker}>YOUR YEAR ON THE ROAD</SvgText>
         <SvgText x={T.pad} y={T.y.year} fill={fixed.track} fontFamily="Geist_600SemiBold" fontSize={T.font.year}>{String(recap.year)}</SvgText>
+        {recap.title ? <SvgText x={T.pad} y={T.y.title} fill={fixed.white} fontFamily="Geist_600SemiBold" fontSize={T.font.title}>{TITLES.find((t) => t.id === recap.title)?.name}</SvgText> : null}
         {label(T.pad, T.y.heroLabel, 'DISTANCE')}
         <SvgText x={T.pad} y={T.y.hero} fill={fixed.white}><Value parts={[distanceKm(recap.distanceKm)]} size={T.font.heroValue} unitSize={T.font.heroUnit} /></SvgText>
         {[['RIDES', [{ value: String(recap.rides), unit: '' }]], ['DAYS RIDDEN', [{ value: String(recap.daysRidden), unit: '' }]], ['IN THE SADDLE', hoursOf(recap.durationSec)]].map(([text, parts], i) => (

@@ -9,6 +9,8 @@ import { forgetProfile } from '@/api/useApi';
 import { wipeImageCache } from '@/lib/imageCache';
 import { useSubmissionQueue } from '@/store/submissionQueue';
 import { useAuth } from '@/store/auth';
+import { flushStandingBeforeLeave } from '@/lib/standingSync';
+import { useStandingPref } from '@/store/standingPref';
 import { safeReturnPath } from '@/lib/returnPath';
 
 const b64url = (bytes: Uint8Array) => {
@@ -71,9 +73,12 @@ export async function finishSignIn(code: string, state: string): Promise<string>
 
 export async function signOut(): Promise<void> {
   const token = useAuth.getState().token;
+  await flushStandingBeforeLeave(token); // while the old token still works
   useAuth.getState().clear();
   // A queued trail submission belongs to the account that wrote it: it must not go out under the next one.
   useSubmissionQueue.getState().setItems([]);
+  // So is the standing choice and its queued ride refs.
+  useStandingPref.getState().reset();
   await wipeImageCache();
   if (token) await api('/auth/token', { method: 'DELETE', token }).catch(() => undefined); // revokes it on the server; offline just forgets it here
 }
@@ -84,6 +89,7 @@ export async function deleteAccount(): Promise<void> {
   if (!token) return;
   await api('/me', { method: 'DELETE', token, body: { confirm: DELETE_CONFIRMATION } });
   useAuth.getState().clear();
+  useStandingPref.getState().reset();
   forgetProfile();
   await wipeImageCache();
 }

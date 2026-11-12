@@ -14,6 +14,7 @@ import { useFuel } from '@/store/fuel';
 import { useJournal } from '@/store/journal';
 import { useMarks } from '@/store/marks';
 import { useSeen } from '@/store/seen';
+import { useStory } from '@/store/story';
 import { useMyRoutes } from '@/store/myRoutes';
 import { useHomeOffer } from '@/store/homeOffer';
 import { useNotifications } from '@/store/notifications';
@@ -36,6 +37,7 @@ export function eraseEverything(token: string | null) {
   eraseDocumentPhotos();
   useJournal.getState().wipe();
   useMarks.getState().wipe();
+  useStory.getState().wipe();
   useSeen.setState({ played: {}, last: {} });
   useNotifications.getState().wipe();
   useCompanion.getState().wipe();
@@ -52,6 +54,7 @@ export function eraseEverything(token: string | null) {
   useTodos.setState({ todos: [] });
   useRides.setState({ rides: [] });
   useTrailStore.getState().clear();
+  // signOut sends the standing opt-out with the old token first, then revokes it and forgets the choice.
   usePlaces.setState({ home: undefined, work: undefined, endStrikes: { home: 0, work: 0 } });
   useHomeOffer.getState().clear();
   resetQuickPosition();
