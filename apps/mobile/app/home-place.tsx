@@ -57,7 +57,7 @@ function PlaceSection({ kind, title, permission }: { kind: PlaceKind; title: str
   const seq = useRef(0);
 
   const save = (lat: number, lng: number, label: string) => { usePlaces.getState().setPlace(kind, { lat, lng, label }); setQuery(''); setResults(undefined); setNote(undefined); };
-  const useCurrent = async () => {
+  const locateHere = async () => {
     setBusy(true); setNote(undefined);
     const pos = await onePosition();
     setBusy(false);
@@ -94,7 +94,7 @@ function PlaceSection({ kind, title, permission }: { kind: PlaceKind; title: str
         ) : (
           <Text variant="label" tone="muted">{kind === 'home' ? 'Not set.' : 'Not set. Optional.'}</Text>
         )}
-        <Button variant="soft" label="Use my current location" onPress={() => void useCurrent()} disabled={busy || !canUseCurrentLocation(permission)} onCard />
+        <Button variant="soft" label="Use my current location" onPress={() => void locateHere()} disabled={busy || !canUseCurrentLocation(permission)} onCard />
         {canUseCurrentLocation(permission) ? null : <Text variant="label" tone="muted">Location is turned off for Myto Moto in the phone&apos;s settings. Search for the place instead.</Text>}
         <Field label="Search for a place" value={query} onChangeText={setQuery} onSubmitEditing={() => void search()} returnKeyType="search" placeholder="Street, area or town" onCard />
         <Button variant="soft" label="Search" onPress={() => void search()} disabled={busy || !query.trim()} onCard />

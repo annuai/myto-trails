@@ -36,7 +36,7 @@ export function useHomeOfferNow(): { offer: HomeOffer | null; copy?: { title: st
     return () => sub.remove();
   }, [refresh]);
 
-  const world = useMemo(() => buildHomeWorld(Date.now()), [tick, home, dismissals, fixAt, quickAt, recStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+  const world = useMemo(() => buildHomeWorld(Date.now()), [tick, home, dismissals, fixAt, quickAt, recStatus]); // eslint-disable-line react-hooks/exhaustive-deps, react-hooks/purity -- the clock is an input on purpose; tick and the stores re-run it
   const { pos, now } = world;
   useEffect(() => {
     if (home && pos) void loadSunset(pos.lat, pos.lng, now).then((fresh) => { if (fresh) bump(); });
