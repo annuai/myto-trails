@@ -132,7 +132,7 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
             ["Your documents, document photos and emergency contacts."],
             ["Backups you export, which are one encrypted file only you hold."],
           ),
-          p('None of this is sent to us. You can erase it in the app under You, "Erase all my data". If you choose to submit a ride as a trail, that submission is sent to us, including the route and the times you rode it (see below).'),
+          p('Apart from ride comparison (below), none of this is sent to us. You can erase it in the app under You, "Erase all my data". If you choose to submit a ride as a trail, that submission is sent to us, including the route and the times you rode it (see below).'),
         ],
       },
       {
