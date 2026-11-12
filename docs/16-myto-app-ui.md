@@ -9,7 +9,7 @@ Sources: three design reviews run on 25 October 2026 (navigation and UX, tech st
 One app for the whole of a ride: find a trail, get ready, ride and record, look back, ride with a club. Fast, simple, not cramped. The owner likes Ather's app: lots of white space, one large hero number per screen, soft rounded cards, a light home and dark stats screens.
 
 **Goals:** glanceable; one-handed and glove-friendly; works with no signal; looks like the same family as Moto Trails and the Myto shop.
-**Non-goals (v1):** chat, public feed, leaderboards, turn-by-turn road navigation, anything that shows the exact location of a sensitive trail.
+**Non-goals (v1):** chat, public feed, public speed or distance rankings, turn-by-turn road navigation, anything that shows the exact location of a sensitive trail.
 **Anti-goals:** a "super app" where no module is good; a screen that needs two hands or reading while the bike moves; colour as the only signal.
 
 ## 2. Navigation
@@ -187,5 +187,7 @@ The app is now named **Myto Moto** (store name; the iOS project is `apps/mobile/
 - **Crash detection (beta, off by default)** ([design](superpowers/specs/2026-10-29-crash-detection-design.md)): a hard impact at speed, then a dead stop, starts a 60-second "Are you OK?" countdown. No answer tells a group ride you need help and offers calls to your main contact and 112. It never messages anyone by itself.
 - **Fuel costs:** a page with mileage and petrol price settings and a date range picker.
 - **Ride events** ([design](superpowers/specs/2026-11-01-ride-events-design.md)): a rider or a club announces a dated ride; riders reply going, maybe or can't make it (with a reason only the host sees), check in by being at the meeting point, and the host starts it as a group ride with optional Captain, Marshal, Medic and Sweep jobs and a stretch warning. Events appear in the Clubs tab and on the club page. Crash detection also gained Road, Mixed and Off-road presets. Built; the server tables need migration 0029 and nothing has run on a device yet.
+
+- **Moments** (Marks, titles, standing, year; design in [rider-story](superpowers/specs/2026-11-12-rider-story-design.md)) appear in four places only: the ride story after a ride, the Dash card, Year in Rides, and at most one nudge a week. Never on ride, navigation, tracking or error screens.
 
 **Still true from §12:** the phone map and sign-in redirect have not all been run on a device. Treat anything above that touches background behaviour (notification buttons, recording while locked, motion sensors) as untested until it has been ridden with.

@@ -14,7 +14,7 @@ describe("LegalDocument", () => {
 
   it("shows when the text was last updated", () => {
     render(<LegalDocument slug="terms" />);
-    expect(screen.getByText("Last updated 28 October 2026")).toBeInTheDocument();
+    expect(screen.getByText("Last updated 13 November 2026")).toBeInTheDocument();
   });
 
   it("terms and privacy show the draft banner, about does not", () => {
