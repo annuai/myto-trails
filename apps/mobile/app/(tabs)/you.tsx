@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Award, Bell, Gauge, Vibrate, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload, Wrench } from 'lucide-react-native';
+import { Award, Users, Bell, Gauge, Vibrate, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload, Wrench } from 'lucide-react-native';
 import Constants from 'expo-constants';
 import { CONTACT_EMAIL, DISCORD_URL, MYTO_URL, versionLabel } from '@moto-trails/domain';
 import { useMe } from '@/api/useApi';
 import { countryName } from '@/lib/countryNames';
 import { signOut, startSignIn } from '@/lib/signIn';
 import { useOsm } from '@/store/osm';
+import { chooseStanding } from '@/lib/standingSync';
+import { useStandingPref } from '@/store/standingPref';
 import { useAuth } from '@/store/auth';
 import { asText, distanceKm } from '@/lib/units';
 import { yearRecap } from '@/lib/yearRecap';
@@ -43,6 +45,7 @@ export default function You() {
   const inverted = useAppearance((s) => s.inverted);
   const haptics = useAppearance((s) => s.haptics);
   const speedTicks = useAppearance((s) => s.speedTicks);
+  const standingOn = useStandingPref((s) => s.optIn);
   const osmOn = useOsm((s) => s.asked && s.enabled);
   const unit = useDistanceUnit(); // re-draws this page's distances when the unit changes
   const rides = useRides((s) => s.rides);
@@ -123,6 +126,10 @@ export default function You() {
         <Row icon={Sparkles} label="Smart notifications" sub="Usual ride time, daylight and break reminders" onPress={() => router.push('/notifications/smart')} />
         <Row icon={MessagesSquare} label="Join our Discord" sub="Suggest improvements and chat with other riders" onPress={() => void Linking.openURL(DISCORD_URL)} />
         <Row icon={LifeBuoy} label="Report a problem" sub="Opens an email with your app version" onPress={reportProblem} />
+      </ListCard>
+      <SectionTitle>Privacy</SectionTitle>
+      <ListCard>
+        <Row icon={Users} label="Compare with riders near you" sub="Share each ride's date, distance and a rough area (about 100 km wide). Never your route. Turn off any time and it is deleted." value={standingOn ? 'On' : 'Off'} onPress={() => void chooseStanding(!standingOn)} />
       </ListCard>
       <SectionTitle>Backup</SectionTitle>
       <ListCard>

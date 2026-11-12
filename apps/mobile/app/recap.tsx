@@ -6,7 +6,11 @@ import { recapTokens } from '@/lib/recapCard.tokens';
 import { asText, distanceKm, durationParts, speedKmh } from '@/lib/units';
 import { TITLES } from '@/lib/story/titles';
 import { yearRecap, yearsWithRides } from '@/lib/yearRecap';
+import { chooseStanding } from '@/lib/standingSync';
+import { standingMoment } from '@/lib/story/standing';
 import { useRides } from '@/store/rides';
+import { useStandingPref } from '@/store/standingPref';
+import { useStory } from '@/store/story';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
@@ -23,6 +27,8 @@ import { useCountUp, useOnce } from '@/ui/motionHooks';
 import { Stat } from '@/ui/Stat';
 import { Text } from '@/ui/Text';
 
+const INVITE_ID = 'invite:standing';
+
 /** Your year: what you rode in a calendar year, with a picture to share. Only your own rides count, not the sample ride. */
 export default function Recap() {
   const { c } = useTheme();
@@ -35,6 +41,10 @@ export default function Recap() {
   // The year's distance counts up the first time it is opened, with the same soft ratchet as the other rolling figures.
   const play = useOnce(recap && year !== undefined ? `recap:${year}` : undefined);
   const shownKm = useCountUp(recap?.distanceKm ?? 0, play, { run: year });
+  const optIn = useStandingPref((s) => s.optIn);
+  const cohort = useStandingPref((s) => s.cohort);
+  const invited = useStory((s) => s.seen.includes(INVITE_ID));
+  const standing = optIn && cohort ? standingMoment({ metric: cohort.metric, value: cohort.value, row: cohort.row, region: cohort.region }) : undefined;
   const fullRef = useRef<ComponentRef<typeof View>>(null);
   const [message, setMessage] = useState<string>();
   const share = async () => {
@@ -66,6 +76,7 @@ export default function Recap() {
             <Pillion pose="campfire" size="md" />
             {recap.title ? <Text variant="label">{`${year}: ${TITLES.find((t) => t.id === recap.title)?.name}`}</Text> : null}
           </View>
+          {standing ? <Text variant="label" style={{ marginTop: space[3], textAlign: 'center' }}>{standing.title}</Text> : null}
           <SectionTitle>Highlights</SectionTitle>
           <Card style={{ flexDirection: 'row' }}>
             <Stat value={`${recap.rides}`} label={recap.rides === 1 ? 'Ride' : 'Rides'} />
@@ -79,6 +90,14 @@ export default function Recap() {
               <Row label="Top speed" value={asText(speedKmh(recap.topSpeedKmh))} mono chevron={false} />
             </ListCard>
           </View>
+          {!optIn && !invited ? (
+            <Card style={{ marginBottom: space[4], gap: space[2] }}>
+              <Text variant="label">Compare with riders near you</Text>
+              <Text variant="caption" tone="muted">Share each ride's date, distance and a rough area (about 100 km wide). Never your route. Turn off any time and it is deleted.</Text>
+              <Button label="Turn on" onPress={() => { useStory.getState().markSeen(INVITE_ID); void chooseStanding(true); }} />
+              <Button variant="soft" label="Not now" onPress={() => useStory.getState().markSeen(INVITE_ID)} />
+            </Card>
+          ) : null}
           <SectionTitle>Share it</SectionTitle>
           <View style={{ alignItems: 'center', marginBottom: space[4] }}><RecapCard recap={recap} width={recapTokens.previewWidth} /></View>
           <Button icon={Share2} label="Share my year" onPress={() => void share()} />
