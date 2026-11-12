@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ALWAYS_CHOICE } from '@/lib/locationWords';
-import { BookOpen, CalendarClock, Camera, ClipboardCheck, ClipboardList, ListChecks, Luggage, MoreHorizontal, Play, Route as RouteIcon, Trash2 } from 'lucide-react-native';
+import { BookOpen, CalendarClock, Camera, ClipboardCheck, ClipboardList, ListChecks, Luggage, MoreHorizontal, Play, Route as RouteIcon, ShoppingBag, Trash2 } from 'lucide-react-native';
 import { groupByRide, summarise } from '@/lib/journalEntries';
 import { journalDate, journalTitle } from '@/lib/journalTitle';
 import { notifier } from '@/lib/notifier';
@@ -293,6 +293,8 @@ export default function Home() {
         </ListCard>
       ) : <EmptyState icon={ClipboardList} title="You're all caught up" body="Add a reminder for your PUC, insurance or a chain lube and we'll nudge you in time." action={{ label: 'Add a reminder', onPress: () => router.push('/todos') }} />}
       <View style={{ marginTop: space[3] }}><Button variant="soft" label="See all" arrow onPress={() => router.push('/todos')} /></View>
+
+      {focused ? null : <View style={{ marginTop: space[6] }}><ListCard><Row icon={ShoppingBag} label="Shop" sub="Gear picked for the road. You buy on the myto-moto website." onPress={() => router.push('/shop')} /></ListCard></View>}
 
         </>}
         right={<>

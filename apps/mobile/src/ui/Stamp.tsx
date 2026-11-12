@@ -10,7 +10,7 @@ const kmLabel = (n: number) => (n >= 1000 ? `${n / 1000}K` : String(n));
  * A mark as a flat stamp: two rings and one glyph in ink on a soft wash. Locked marks are a dashed outline and nothing else.
  * Flat on purpose: no tiers, no colours, no shine. It reads the same earned in a year as on the day.
  */
-export function Stamp({ def, earned, size = k.size }: { def: MarkDef; earned: boolean; size?: number }) {
+export function Stamp({ def, earned, size = k.size }: { def: Pick<MarkDef, 'title' | 'glyph'>; earned: boolean; size?: number }) {
   const { c } = useTheme();
   const C = k.view / 2;
   const g = def.glyph;

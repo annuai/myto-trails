@@ -1,6 +1,7 @@
 import type { Sql } from "postgres";
 import { FORBIDDEN, getActor } from "./actor";
 import { audit, record } from "./audit";
+import { awardInTransaction } from "../trailmarks/trailmarks";
 import { auditCondition, insertCondition, type ConditionInput } from "./access";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -45,6 +46,13 @@ export async function resolveReport(
       if (!(await insertCondition(tx, r.trail_id, i.condition, "report", i.now))) throw new InvalidCondition();
       await auditCondition(tx, actor, r.trail_id, i.condition.status);
     }
+    // An accepted report earns the reporter Trailmarks. Wrong place, route or access is a correction; anything else is a verified report.
+    if (i.outcome === "accepted" && r.reporter_id) {
+      await awardInTransaction(tx, {
+        userId: r.reporter_id as string, action: CORRECTION_TYPES.includes(r.type as string) ? "correction" : "trail_report", refType: "trail_report", refId: r.id as string,
+        trailId: r.trail_id as string, state: "approved", confirmedBy: [actor.id], now: i.now,
+      });
+    }
     await record(tx, { subjectType: "report", subjectId: r.id, moderatorId: actor.id, action: "resolve_report", comment: `${i.outcome}: ${note}`.slice(0, 4000) });
     await audit(tx, actor, { action: "resolve_report", entityType: "report", entityId: r.id, before: { status: r.status }, after: { status: OUTCOMES[i.outcome] } });
     return { ok: true, trailSlug: r.slug as string, notify: { reporterId: r.reporter_id as string | null, outcome: i.outcome, trailName: r.name as string, note } } as const;
@@ -53,5 +61,7 @@ export async function resolveReport(
     throw e;
   });
 }
+
+const CORRECTION_TYPES = ["wrong_access", "wrong_location", "inaccurate_gpx"];
 
 class InvalidCondition extends Error {}

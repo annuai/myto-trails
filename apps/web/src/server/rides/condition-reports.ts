@@ -3,6 +3,8 @@ import type { Sql } from "postgres";
 import { cleanBody, LINK } from "../community/comments";
 import { isMember } from "../community/members";
 import { ownsMedia } from "../community/profile";
+import { awardTrailmarks } from "../trailmarks/trailmarks";
+import { CONFIRMATIONS_TO_VERIFY, stateOfConditionReport } from "@moto-trails/domain";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY = 86_400_000;
@@ -60,13 +62,26 @@ export async function createConditionReport(
 export async function confirmConditionReport(sql: Sql, i: { userId: string; reportId: string; still: boolean }): Promise<{ ok: true } | Fail<"not_member" | "not_found" | "own_report">> {
   if (!UUID.test(i.reportId)) return { ok: false, reason: "not_found" };
   if (!(await isMember(sql, i.userId))) return { ok: false, reason: "not_member" };
-  const [r] = await sql`select user_id from condition_report where id = ${i.reportId} and status = 'visible'`;
+  const [r] = await sql`select user_id, trail_id, reported_at from condition_report where id = ${i.reportId} and status = 'visible'`;
   if (!r) return { ok: false, reason: "not_found" };
   if (r.user_id === i.userId) return { ok: false, reason: "own_report" };
   await sql`
     insert into condition_report_vote (report_id, user_id, still) values (${i.reportId}, ${i.userId}, ${i.still})
     on conflict (report_id, user_id) do update set still = excluded.still, created_at = now()`;
+  await awardIfVerified(sql, { reportId: i.reportId, reporterId: r.user_id as string, trailId: r.trail_id as string, reportedAt: r.reported_at as Date, now: new Date() });
   return { ok: true };
+}
+
+/**
+ * A road-condition report earns its reporter Trailmarks once other riders have confirmed it (never the reporter, who cannot vote on their
+ * own report) and it is fresh and not disputed. The ledger's unique key means later votes cannot award it again.
+ */
+async function awardIfVerified(sql: Sql, r: { reportId: string; reporterId: string; trailId: string; reportedAt: Date; now: Date }) {
+  const votes = await sql`select user_id, still from condition_report_vote where report_id = ${r.reportId}`;
+  const confirmedBy = votes.filter((v) => v.still).map((v) => v.user_id as string);
+  const state = stateOfConditionReport({ hidden: false, confirmations: confirmedBy.length, disputes: votes.length - confirmedBy.length, reportedAt: r.reportedAt }, r.now);
+  if (state !== "approved" || confirmedBy.length < CONFIRMATIONS_TO_VERIFY) return;
+  await awardTrailmarks(sql, { userId: r.reporterId, action: "condition_confirmed", refType: "condition_report", refId: r.reportId, trailId: r.trailId, state, confirmedBy, now: r.now }).catch(() => undefined);
 }
 
 export type PublicConditionReport = { id: string; kind: ConditionKind; at: string; confirmations: number; disputes: number; fresh: boolean };

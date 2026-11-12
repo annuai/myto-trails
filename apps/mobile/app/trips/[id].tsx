@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { goBack } from '@/lib/goBack';
-import { Copy, ListPlus, Users, Pencil, Play, Route as RouteIcon, Square, Trash2 } from 'lucide-react-native';
+import { Copy, ListPlus, Users, Pencil, Play, Route as RouteIcon, ShoppingBag, Square, Trash2 } from 'lucide-react-native';
 import { GroupSheet } from '@/features/GroupSheet';
 import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
 import { startTodaysRide, startTrip } from '@/features/trip/startTrip';
 import { TripDaySheet } from '@/features/trip/TripDaySheet';
 import { dayIndexOn, dayDate, expiringBefore, lastDate, rangeText, startTimeText, tripStatus, whenText } from '@/lib/tripPlan';
 import { addDays, formatDate, formatShort, todayISO } from '@/lib/dates';
+import { suggestProducts } from '@/lib/shop';
 import { tripDays, tripTotals } from '@/lib/trips';
 import { asText, distanceKm, durationParts } from '@/lib/units';
 import { useProfile } from '@/store/profile';
@@ -52,6 +53,7 @@ export default function TripDetail() {
   const expiring = trip.startDate ? expiringBefore([{ label: 'Driving licence', validTill: licence?.validTill }, { label: 'Insurance', validTill: vehicle?.insuranceValidTill }, { label: 'PUC', validTill: vehicle?.pucValidTill }], lastDate({ ...trip, startDate: trip.startDate })) : [];
   const addDraft = () => { useTrips.getState().addTodos(trip.id, [draft]); setDraft(''); };
   const left = todos.filter((t) => !t.done).length;
+  const gear = trip.startDate && status !== 'done' ? suggestProducts({ days: trip.days?.length ?? 1 }) : undefined;
 
   return (
     <Screen overlay={<>
@@ -118,6 +120,16 @@ export default function TripDetail() {
         <Button variant="soft" label="Add" disabled={!draft.trim()} onPress={addDraft} />
         <Button variant="soft" icon={ListPlus} label="Add the usual things" onPress={() => useTrips.getState().addStarterTodos(trip.id)} />
       </View>
+
+      {gear ? (
+        <>
+          <SectionTitle>{gear.heading}</SectionTitle>
+          <ListCard>
+            {gear.products.map((p) => <Row key={p.slug} icon={ShoppingBag} label={p.name} sub={p.tagline} onPress={() => router.push(`/shop/${p.slug}?from=trip`)} />)}
+          </ListCard>
+          <Text variant="caption" tone="muted" style={{ marginTop: space[2] }}>From the myto-moto shop. You buy on their website, not in the app.</Text>
+        </>
+      ) : null}
 
       {rides.length ? (
         <>

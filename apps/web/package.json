@@ -25,6 +25,7 @@
     "db:stop": "bash scripts/dev-db.sh stop",
     "db:reset": "bash scripts/dev-db.sh reset",
     "db:purge:dry": "tsx --env-file-if-exists=.env.local scripts/db-purge.mts",
+    "entitlement:grant": "tsx --env-file-if-exists=.env.local scripts/entitlement-grant.mts",
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/db-migrate.mts",
     "test:db": "vitest run --config vitest.db.config.ts",
     "db:seed:boundaries": "tsx --env-file-if-exists=.env.local scripts/db-seed-boundaries.mts",

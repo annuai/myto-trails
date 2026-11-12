@@ -2,6 +2,7 @@ import type { Sql, TransactionSql } from "postgres";
 import { ensureDistrict } from "../db/regions";
 import { STEP_KEYS, type SubmissionData } from "../submissions/schema";
 import { FORBIDDEN, canActIn, getActor, type Actor } from "./actor";
+import { awardInTransaction } from "../trailmarks/trailmarks";
 import { audit, record } from "./audit";
 
 export const REASON_CODES = ["duplicate", "insufficient_information", "unverifiable_access", "private_property", "protected_area_risk", "unsafe_content", "inaccurate_gpx", "copyright", "spam"] as const;
@@ -13,14 +14,14 @@ export const needsSecondApproval = (accessClass: string, restrictions: string[])
 export type Notify = { contributorId: string; outcome: "approved" | "changes_requested" | "rejected"; title: string; comment?: string; slug?: string };
 type Fail = { ok: false; reason: "forbidden" | "not_found" | "invalid" | "own_submission" | "wrong_state" | "cannot_publish" | "same_approver" };
 
-type Locked = { actor: Actor; sub: { id: string; user_id: string; status: string; trail_id: string; revision_id: string; data: Partial<SubmissionData>; first_approver: string | null }; title: string };
+type Locked = { actor: Actor; sub: { id: string; user_id: string; kind: string; status: string; trail_id: string; revision_id: string; data: Partial<SubmissionData>; first_approver: string | null }; title: string };
 
 /** Role check, then the submission row locked and checked: the common start of every decision. */
 async function lockForDecision(tx: TransactionSql, actorId: string, submissionId: string): Promise<Locked | Fail> {
   const actor = await getActor(tx, actorId);
   if (!actor) return FORBIDDEN;
   if (!UUID.test(submissionId)) return { ok: false, reason: "not_found" };
-  const [sub] = await tx`select id, user_id, status, trail_id, revision_id, data, first_approver from submission where id = ${submissionId} for update`;
+  const [sub] = await tx`select id, user_id, kind, status, trail_id, revision_id, data, first_approver from submission where id = ${submissionId} for update`;
   if (!sub || !sub.revision_id) return { ok: false, reason: "not_found" };
   const [where] = await tx`select country_id from trail where id = ${sub.trail_id}`;
   if (!canActIn(actor, where?.country_id)) return FORBIDDEN;
@@ -186,6 +187,11 @@ export async function approve(sql: Sql, i: ApproveInput): Promise<DecisionResult
     const withoutGpx = i.publishGpx === false;
     if (withoutGpx) await tx`update gpx_file set status = 'retired' where route_id in (select id from route where revision_id = ${l.sub.revision_id})`;
     await tx`update submission set status = 'approved', decided_by = ${l.actor.id}, decided_at = now(), updated_at = now() where id = ${l.sub.id}`;
+    // Trailmarks are awarded here and only here for a trail: after the last approval has published it. A second approver is a second confirmer.
+    await awardInTransaction(tx, {
+      userId: l.sub.user_id, action: l.sub.kind === "edit" ? "correction" : "new_trail", refType: "submission", refId: l.sub.id, trailId: l.sub.trail_id,
+      state: "approved", confirmedBy: [l.actor.id, ...(l.sub.first_approver ? [l.sub.first_approver] : [])], now: new Date(),
+    });
     await record(tx, { subjectType: "revision", subjectId: l.sub.revision_id, moderatorId: l.actor.id, action: withoutGpx ? "publish_limited" : "approve", comment: "Published", visibleToAuthor: true });
     await audit(tx, l.actor, { action: "approve", entityType: "revision", entityId: l.sub.revision_id, before: { status: "submitted" }, after: { status: "approved", sensitivity: i.sensitivity, gpx: !withoutGpx } });
     return { ok: true, published: true, slug: t!.slug as string, notify: { contributorId: l.sub.user_id, outcome: "approved", title: l.title, slug: t!.slug as string } };
