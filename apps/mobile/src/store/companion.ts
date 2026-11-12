@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { SIM_GROUP_ID } from '@/lib/groupSim';
 import { persist } from 'zustand/middleware';
-import type { GroupRegroup } from '@/api/groups';
+import type { GroupCapacity, GroupRegroup } from '@/api/groups';
 import type { GroupRiderView, GroupStatus } from '@/lib/groupCore';
 import type { Outbox } from '@/lib/conditions';
 import type { CardFormat, CardStat } from '@/lib/rideCard';
@@ -13,7 +13,7 @@ export type Checkin = { id: string; expectedAt: number; contactName: string; url
 /** The group ride this phone is in. `role` is "leader" for whoever started it. */
 export type GroupSession = { id: string; code: string; name: string; role: string };
 
-type Live = { riders: GroupRiderView[]; /** Which of `riders` is this phone. */ me?: string; regroup: GroupRegroup | null; myStatus: GroupStatus; error?: string; /** The leader's backup, a rider's id (the leader sees it). */ successor?: string | null; /** The leader is out of contact and this rider may take the lead. */ canTakeLead?: boolean; /** The lead was taken from this rider, and they may take it back. */ canTakeBack?: boolean };
+type Live = { /** The leader's view of the ride's size. */ capacity?: GroupCapacity; riders: GroupRiderView[]; /** Which of `riders` is this phone. */ me?: string; regroup: GroupRegroup | null; myStatus: GroupStatus; error?: string; /** The leader's backup, a rider's id (the leader sees it). */ successor?: string | null; /** The leader is out of contact and this rider may take the lead. */ canTakeLead?: boolean; /** The lead was taken from this rider, and they may take it back. */ canTakeBack?: boolean };
 
 type State = {
   checkin: Checkin | null;

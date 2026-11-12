@@ -175,7 +175,7 @@ export function CompanionHost() {
         const bat = useBattery.getState();
         const r = await syncGroupRide(token, group.id, { ...(p ? { lat: p.lat, lng: p.lng, at: iso(Date.now()) } : {}), status: live.myStatus, ...(bat.level !== null ? { battery: bat.level, charging: bat.charging } : {}) });
         const before = useCompanion.getState().live.riders;
-        useCompanion.getState().setLive({ riders: r.riders, me: r.me, regroup: r.regroup, successor: r.successor ?? null, canTakeLead: !!r.canTakeLead, canTakeBack: !!r.canTakeBack, error: undefined });
+        useCompanion.getState().setLive({ riders: r.riders, me: r.me, regroup: r.regroup, successor: r.successor ?? null, capacity: r.capacity, canTakeLead: !!r.canTakeLead, canTakeBack: !!r.canTakeBack, error: undefined });
         tellAboutSignals(signalChanges(before, r.riders, r.me));
         if (justEveryoneHome(before, r.riders)) { announce('group-home', "Everyone's home", everyoneHomeText(r.riders.length), "Everyone's home", '/'); buzz.confirm(); }
         const lead = leadNotice(before, r.riders, r.me, Date.now());

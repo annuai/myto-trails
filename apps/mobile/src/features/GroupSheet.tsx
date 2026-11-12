@@ -20,6 +20,7 @@ import { ChoiceChip } from '@/ui/Chip';
 import { Field } from '@/ui/Field';
 import { shortDistanceM, withUnit } from '@/lib/units';
 import { Sheet } from '@/ui/Sheet';
+import { RideFullNotice } from '@/features/group/UpgradeSheet';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/tokens';
 import { nowMs } from '@/lib/clock';
@@ -87,6 +88,7 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
             <Text variant="dataLarge">{group.code}</Text>
             <Button variant="soft" icon={Share2} label="Invite" onPress={() => void invite()} />
           </View>
+          {leader && live.capacity && live.capacity.used >= live.capacity.limit ? <RideFullNotice capacity={live.capacity} /> : null}
           {toLeader !== null ? <Text variant="label" tone="muted">{km(toLeader)} from the leader</Text> : null}
           <Text variant="labelMedium">Tell the group</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
