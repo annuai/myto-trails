@@ -134,9 +134,9 @@ sub: Trailmarks and challenges are in build, not verified.
 items:
 - Trailmarks | The unit of reward is a place reached, not a time.
 - Challenges | Time-boxed, exploration-based, no speed or risk element.
-- No leaderboards | No public rankings between riders: they reward speed and risk (docs/15).
+- No speed rankings | An optional, opt-in board ranks verified contributions and discoveries only. Never speed, time or distance.
 - Credit for contributors | Recognition and Marks, not cash per item.
-caption: Marks on the device are built. Trailmarks, challenges and achievements are in build by other agents and are not verified.
+caption: Marks on the device are built. Trailmarks, challenges and achievements are in build: the code is written and unit-tested but not yet run end to end in the app.
 sources: docs/15 §deliberately not in the first release; docs/todo.md
 pending: IMG-E02
 pending: SHOT-02

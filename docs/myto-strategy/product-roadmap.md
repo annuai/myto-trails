@@ -49,12 +49,12 @@ Theme: reasons to return that celebrate exploration. Exit gate: riders retained 
 |---|---|---|---|---|---|---|---|---|---|
 | E1 | Trailmarks and achievements | In build | Reward reaching places | Rides vanish into a log | Marks for places and rides ridden; no speed-based or ranked achievements | F2 | M | P1 | Share of riders with 1+ Trailmark; two-month retention |
 | E2 | Challenges (exploration, not speed) | In build | Reasons to ride a new place | The same few trails get ridden | Time-boxed trail challenges; none rewards speed or risk | E1 | M | P1 | Challenge participation |
-| E3 | Contributor loop | In build | More verified data | Trails go stale | Contribution mapping to moderation; credit and Marks only, no leaderboards | F4 | M | P0 | Verified items per month; freshness |
+| E3 | Contributor loop | In build | More verified data | Trails go stale | Contribution mapping to moderation; credit, Marks and Trailmarks; an opt-in leaderboard of verified contributions only (built, not yet run), never ranked by speed or distance | F4 | M | P0 | Verified items per month; freshness |
 | E4 | Ride events (RSVP, check-in, QR) | Partly built: club events with start time, meeting point, rider limit, going count and check-in an hour before are visible in the test build; QR check-in and a no-install event page are not verified | Finish the main competitor gap | Club rides run on chat and payment screenshots | Verify the existing club event flow, add QR check-in into the group ride and a web event page | M1, clubs | M | P1 | Events created; check-ins |
 | E5 | Sponsored challenge pilot | Hypothesis | Test partner revenue | Brands want a fitting audience | One labelled sponsored challenge, partner pays Myto directly, no effect on trail data | E2, labelling rules | S | P2 | Partner renewal intent |
 | E6 | Year-in-rides 2027 | Built (2026 version) | Annual share moment | Riders want to share the journey | Carry over recap and share card | None | S | P2 | Shares |
 
-Not now: leaderboards, public rider rankings, ads.
+Not now: public rider rankings by anything but verified contribution, ads.
 
 ## Phase 4: Consolidation (Aug to Oct 2027)
 
