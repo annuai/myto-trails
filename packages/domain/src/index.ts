@@ -19,3 +19,4 @@ export * from "./trailmarks";
 export * from "./achievements";
 export * from "./challenges";
 export * from "./leaderboard";
+export * from "./standing";
