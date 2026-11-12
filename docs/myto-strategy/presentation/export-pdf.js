@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Exports index.html to exports/myto-strategy-deck-preview.pdf: one 1920x1080 (16:9) page per slide, no margins.
+// Exports index.html to exports/myto-strategy-deck.pdf: one 1920x1080 (16:9) page per slide, no margins.
 // Needs Playwright. Looks for it as a normal import, then in the npx cache. Uses system Google Chrome if present,
 // otherwise Playwright's Chromium (install once with: npx playwright install chromium).
 // Usage: node export-pdf.js [outfile]      (or `npm run deck:pdf` from the repo root)
@@ -23,7 +23,7 @@ function loadPlaywright() {
 (async () => {
   const { chromium } = loadPlaywright();
   const here = __dirname;
-  const out = process.argv[2] || path.join(here, "exports", "myto-strategy-deck-preview.pdf");
+  const out = process.argv[2] || path.join(here, "exports", "myto-strategy-deck.pdf");
   fs.mkdirSync(path.dirname(out), { recursive: true });
   let browser;
   try { browser = await chromium.launch({ channel: "chrome" }); }

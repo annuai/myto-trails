@@ -1,6 +1,6 @@
 # Image requests (one batch)
 
-Written 2026-11-12 for the strategy deck ([presentation/](presentation/README.md)). Every slide that wants an image either reuses an existing asset (section 1) or shows a visible **IMAGE PENDING <asset id>** placeholder until a file from this list lands in `presentation/assets/pending/`. No unrelated stand-in imagery is ever used.
+Written 2026-11-12 for the strategy deck ([presentation/](presentation/README.md)). All requested images have now been generated and placed in `presentation/assets/pending/`; **nothing is pending**. The requests below are kept as the record of the briefs (and as a template if a picture is regenerated).
 
 ## 0. Visual direction to match (from `docs/08`, `apps/mobile/assets/fixit/README.md`, and looking at the existing art)
 
@@ -13,6 +13,19 @@ The existing Myto illustrations are **flat vector shapes with a fine, even halft
 Palette to quote in prompts: paper `#f2ede8`, ink `#1a1a1a`, slate `#6b7a86` (approximate, sampled by eye), sand `#d9c7a3` (approximate), accent `#b0442e`. Touring and adventure motorcycles only. Indian settings (Western Ghats, Karnataka plains, Himalaya) where a setting is needed.
 
 Common negative prompt for every request: **no text, no letters, no numbers, no logos, no brand marks, no watermarks, no faces visible, no real brand or model markings, no fabricated products, no fake app screenshots or phone UI, no sport bikes or racing, no speed blur, no people other than described, no photorealism, no gradients, no neon, no 3D render look.**
+
+## Status (2026-11-12): all delivered
+
+| Id | File in `assets/pending/` | Used on |
+|---|---|---|
+| IMG-E01 | `e01-contribution-evidence.webp` | Slide 8, Contribution engine |
+| IMG-E02 | `e02-trailmark-viewpoint.webp` | Slide 9, Engagement |
+| IMG-E03 | `e03-touring-kit-flatlay.webp` | Slide 10, Shop |
+| IMG-O01 | `o01-roadside-stop.webp` | Slide 13, Partnerships |
+| IMG-O02 | `o02-large-group-road.webp` | Slide 11, Group rides |
+| IMG-O03 | `o03-evening-camp.webp` | Slide 18, Long-term vision |
+| IMG-O04 | `o04-rider-bike-cutout.webp` | Available, not placed (a rider and bike cut-out; use it only on a white or card-coloured region, never on a tinted card) |
+| SHOT-01, SHOT-02 | not needed | Replaced by two labelled concept mockups drawn by the deck from the app code (`apps/mobile/app/shop/index.tsx`, `app/marks.tsx`); they say "Concept, not a screenshot". Capture real screens when the build is verified. |
 
 ## 1. Inventory: existing assets reused (nothing to request)
 
@@ -34,7 +47,7 @@ Common negative prompt for every request: **no text, no letters, no numbers, no 
 
 Also exist and were deliberately **not** used: trail photographs under `apps/web/public/photos/*` (contributor photos credited to a named rider; reusing them in a pitch needs their credit and consent), the 14 bike catalogue images under `apps/web/data/bikes/images` (third-party model imagery, rights unverified), the Moto Trails web hero photo-art (a near twin of the onboarding set), and `.reference/myto` (reference copy of another site). The Fix-it illustration set (18 of which 15 are uploaded to R2, 3 pending) is its own pipeline and is not requested here.
 
-**Screenshots, not generated.** Two screens cannot be shown until they are verified in the build: the Shop discovery layer and the achievements/Trailmarks/challenges screens. Capture them from a real device or simulator, not an image model:
+**Screenshots, not generated (superseded by concept mockups, see Status).** Two screens cannot be shown until they are verified in the build: the Shop discovery layer and the achievements/Trailmarks/challenges screens. Capture them from a real device or simulator, not an image model:
 
 | Id | File | Slide | What |
 |---|---|---|---|
@@ -43,7 +56,7 @@ Also exist and were deliberately **not** used: trail photographs under `apps/web
 
 Phone aspect is 720x1454 (about 1:2.02), as the existing frames.
 
-## 2. Essential (needed before the deck leaves preview)
+## 2. Essential (delivered)
 
 ### E01: contribution evidence
 
