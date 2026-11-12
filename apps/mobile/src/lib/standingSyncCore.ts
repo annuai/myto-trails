@@ -4,7 +4,7 @@ import { summaryOf } from './story/standing';
 import type { StandingPrefState } from '@/store/standingPrefCore';
 
 const BATCH = 200;
-type Pref = Pick<StandingPrefState, 'optIn' | 'queue' | 'dequeue'>;
+type Pref = Pick<StandingPrefState, 'optIn' | 'queue' | 'dequeue' | 'refOf' | 'forgetRefs'>;
 
 /**
  * Uploads the queued ride summaries. Nothing is sent without a token or while opted out; opt-out is re-checked before each batch,
@@ -15,9 +15,11 @@ export async function uploadQueued(d: { token: string | null | undefined; pref: 
   for (;;) {
     const p = d.pref();
     if (!p.optIn || p.queue.length === 0) return true;
-    const refs = p.queue.slice(0, BATCH);
+    const refs = p.queue.slice(0, BATCH); // ride ids
     const all = d.rides();
-    const summaries = refs.flatMap((ref) => { const r = all.find((x) => x.id === ref); const s = r && summaryOf(r); return s ? [s] : []; });
+    const gone = refs.filter((id) => !all.some((x) => x.id === id));
+    if (gone.length > 0) p.forgetRefs(gone);
+    const summaries = refs.flatMap((id) => { const r = all.find((x) => x.id === id); const s = r && summaryOf(r, p.refOf(id)); return s ? [s] : []; });
     try {
       if (summaries.length > 0) await d.upload(d.token, summaries);
     } catch { return false; } // stays queued for the next try

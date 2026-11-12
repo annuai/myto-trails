@@ -4,7 +4,7 @@ import { useAuth } from '@/store/auth';
 import { useRides } from '@/store/rides';
 import { useStandingPref } from '@/store/standingPref';
 import { uploadQueued } from './standingSyncCore';
-import { summaryOf } from './story/standing';
+import { summarisable } from './story/standing';
 
 const OFFLINE = 'Could not reach Moto Trails. Your choice is saved and will be sent when you are back online.';
 const OTHER = 'Could not update this just now. Try again later.';
@@ -28,12 +28,12 @@ async function uploadWithRetry(token: string, rides: Parameters<typeof uploadSum
   }
 }
 
-async function run(newRef?: string): Promise<void> {
+async function run(newRideId?: string): Promise<void> {
   const token = useAuth.getState().token;
   if (!token) return;
   if (useStandingPref.getState().pendingOptOut) { await flushOptOut(token); return; }
   if (!useStandingPref.getState().optIn) return;
-  if (newRef) useStandingPref.getState().enqueue([newRef]);
+  if (newRideId) useStandingPref.getState().enqueue([newRideId]);
   try { await setStandingOptIn(token, true); } catch (e) { useStandingPref.getState().setError(errorText(e)); return; }
   let last: unknown;
   const ok = await uploadQueued({ token, pref: () => useStandingPref.getState(), rides: () => useRides.getState().rides, upload: (t, r) => uploadWithRetry(t, r).catch((e: unknown) => { last = e; throw e; }) });
@@ -44,9 +44,9 @@ async function run(newRef?: string): Promise<void> {
 }
 
 /** Sends a pending opt-out, or (when on) the opt-in, queued rides and a cohort refresh. One at a time; does nothing signed out. Safe to call often. */
-export function syncStanding(newRef?: string): Promise<void> {
+export function syncStanding(newRideId?: string): Promise<void> {
   const prev = inflight;
-  const p = (async () => { await prev?.catch(() => undefined); await run(newRef); })();
+  const p = (async () => { await prev?.catch(() => undefined); await run(newRideId); })();
   inflight = p;
   return p.finally(() => { if (inflight === p) inflight = undefined; });
 }
@@ -56,7 +56,7 @@ export async function chooseStanding(optIn: boolean): Promise<void> {
   const pref = useStandingPref.getState();
   pref.set(optIn);
   if (optIn) {
-    pref.enqueue(useRides.getState().rides.filter((r) => summaryOf(r)).map((r) => r.id));
+    pref.enqueue(useRides.getState().rides.filter(summarisable).map((r) => r.id));
     await syncStanding();
     return;
   }
