@@ -120,13 +120,13 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
     draft: true,
     sections: [
       {
-        blocks: [p("Your rides stay on your phone. We keep only what the website and the community features need, and this page says exactly what that is.")],
+        blocks: [p("Your rides stay on your phone, unless you turn on ride comparison (below). We keep only what the website and the community features need, and this page says exactly what that is.")],
       },
       {
         heading: "What stays on your device",
         blocks: [
           ul(
-            ["Your ride log and recorded tracks."],
+            ["Your ride log and recorded tracks (unless you turn on ride comparison, below, which uploads a small summary of each ride, never the track)."],
             ["Your ride journal: notes, photos and voice notes."],
             ["Your to-dos and reminders."],
             ["Your documents, document photos and emergency contacts."],
@@ -165,7 +165,7 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
       {
         heading: "Ride comparison (optional, off by default)",
         blocks: [
-          p("If you turn this on in the app under You, Privacy, we store one small summary per ride: the day, the distance, the duration and a grid square about 100 km wide. Never the route, a coordinate or the time of day. We use it to show you how your month compares with other riders in your square, and only when at least 20 riders are in it. Turn it off and your summaries are deleted; deleting your account deletes them too."),
+          p("If you turn this on in the app under You, Privacy, we store one small summary per ride: the day, the distance, the duration, a grid square about 100 km wide, an optional bike type and a random reference. Never the route, a coordinate or the time of day. We use it to show you how your month compares with other riders in your square, and only when at least 20 riders are in it. Turn it off and your summaries are deleted; deleting your account deletes them too."),
         ],
       },
       {

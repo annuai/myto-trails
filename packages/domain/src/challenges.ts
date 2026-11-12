@@ -54,8 +54,11 @@ export function challengeProgress(
   if ((def.kind === "rides" || def.kind === "longest_ride") && !i.rideOptIn) return { ...base, state: "locked", current: 0, fraction: 0, hint: "Turn on ride comparison to count rides" };
   if (!i.joinedAt) return { ...base, state: "not_joined", current: 0, fraction: 0, hint: "Join to start counting. It is optional." };
   const joinedAt = i.joinedAt;
+  // Ride days are dates (UTC midnight), so a ride on the day of joining counts: compare against the start of that UTC day.
+  const rideKind = def.kind === "rides" || def.kind === "longest_ride";
+  const from = rideKind ? Date.UTC(joinedAt.getUTCFullYear(), joinedAt.getUTCMonth(), joinedAt.getUTCDate()) : joinedAt.getTime();
   const current = i.events.filter((e) =>
-    e.kind === def.kind && e.at.getTime() >= joinedAt.getTime() && (!def.monthly || sameMonth(e.at, i.now)) && (def.scope === "any" || (i.districtId && e.districtId === i.districtId))).length;
+    e.kind === def.kind && e.at.getTime() >= from && (!def.monthly || sameMonth(e.at, i.now)) && (def.scope === "any" || (i.districtId && e.districtId === i.districtId))).length;
   const done = current >= def.target;
   return { ...base, state: done ? "complete" : "in_progress", current: Math.min(current, def.target), fraction: Math.min(1, current / def.target), hint: done ? "Done. Well explored." : def.blurb };
 }

@@ -56,6 +56,12 @@ describe("ride challenges", () => {
   it("counts the first ride as no record (nothing to beat yet)", () => {
     expect(rideChallengeEvents([{ rideRef: "a", day: new Date("2026-11-02T00:00:00Z"), distanceKm: 10 }]).filter((e) => e.kind === "longest_ride")).toEqual([]);
   });
+  it("counts a ride on the day of joining, not the day before", () => {
+    const joined = new Date("2026-11-05T10:00:00Z");
+    const same = ev({ kind: "rides", at: new Date("2026-11-05T00:00:00Z") });
+    const before = ev({ kind: "rides", at: new Date("2026-11-04T00:00:00Z") });
+    expect(challengeProgress(def("rides-in-region"), { joinedAt: joined, events: [same, before], now, rideOptIn: true }).current).toBe(1);
+  });
   it("never names speed or a streak in an id", () => {
     for (const c of CHALLENGES) expect(c.id).not.toMatch(/speed|streak/);
   });
