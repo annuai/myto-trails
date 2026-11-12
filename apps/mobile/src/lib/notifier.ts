@@ -35,6 +35,10 @@ export const notifier: Notifier = {
     await ensureChannel();
     await Notifications.scheduleNotificationAsync({ identifier: n.id, content: content(n), trigger: null });
   },
+  async dismiss(id) {
+    await Notifications.cancelScheduledNotificationAsync(id).catch(() => undefined);
+    await Notifications.dismissNotificationAsync(id);
+  },
   openSettings: () => { void Linking.openSettings(); },
 };
 

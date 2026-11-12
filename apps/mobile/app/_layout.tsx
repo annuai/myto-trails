@@ -15,6 +15,7 @@ import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
 import { NudgeHost } from '@/NudgeHost';
+import { AutoEndHost } from '@/AutoEndHost';
 import { MarkHost } from '@/MarkHost';
 import { PhotoOutboxHost } from '@/PhotoOutboxHost';
 import { SubmissionQueueHost } from '@/SubmissionQueueHost';
@@ -75,6 +76,7 @@ export default function Root() {
       <SubmissionQueueHost />
       <PhotoOutboxHost />
       <NudgeHost />
+      <AutoEndHost />
       <ResumeHost />
       <RideNotificationHost />
           <VoiceHost />
