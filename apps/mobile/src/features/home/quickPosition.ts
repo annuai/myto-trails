@@ -15,7 +15,7 @@ export const quickPos = (): QuickPos => useQuickPos.getState();
 let lastTryAt: number | undefined;
 let busy = false;
 
-/** For tests. */
+/** Forgets the last reading and the 5-minute throttle (Erase all, and tests). */
 export function resetQuickPosition(): void { lastTryAt = undefined; busy = false; useQuickPos.setState({ lat: undefined, lng: undefined, at: undefined }); }
 
 /** One rough position from the phone, without starting a watch and without asking for permission (no prompt on Home). Undefined when not allowed or not found. */

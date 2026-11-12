@@ -8,13 +8,16 @@ import { useCompanion } from '@/store/companion';
 import { useCrash } from '@/store/crash';
 import { useFixitCopy } from '@/fixit/content';
 import { wipeArt } from '@/fixit/artCache';
+import { resetQuickPosition } from '@/features/home/quickPosition';
 import { useFixit } from '@/store/fixit';
 import { useFuel } from '@/store/fuel';
 import { useJournal } from '@/store/journal';
 import { useMarks } from '@/store/marks';
 import { useSeen } from '@/store/seen';
 import { useMyRoutes } from '@/store/myRoutes';
+import { useHomeOffer } from '@/store/homeOffer';
 import { useNotifications } from '@/store/notifications';
+import { usePlaces } from '@/store/places';
 import { useProfile } from '@/store/profile';
 import { useRegion } from '@/store/region';
 import { useRides } from '@/store/rides';
@@ -49,5 +52,8 @@ export function eraseEverything(token: string | null) {
   useTodos.setState({ todos: [] });
   useRides.setState({ rides: [] });
   useTrailStore.getState().clear();
+  usePlaces.setState({ home: undefined, work: undefined, endStrikes: { home: 0, work: 0 } });
+  useHomeOffer.getState().clear();
+  resetQuickPosition();
   void signOut();
 }
