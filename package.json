@@ -18,7 +18,9 @@
     "build": "npm run build --workspaces --if-present",
     "check:colors": "node tooling/check-colors.mjs",
     "check:tokens": "node tooling/check-tokens.mjs",
-    "check:versions": "node tooling/check-versions.mjs"
+    "check:versions": "node tooling/check-versions.mjs",
+    "deck:build": "node docs/myto-strategy/presentation/build.mjs",
+    "deck:pdf": "node docs/myto-strategy/presentation/export-pdf.js"
   },
   "devDependencies": {
     "patch-package": "^8.0.1"

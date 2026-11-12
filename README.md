@@ -24,5 +24,6 @@ Read the row for your task, then only the section you need. Do not read `docs/su
 | Add a trail, operate the site, map tiles | [add-a-trail](docs/runbooks/add-a-trail.md), [operations](docs/runbooks/operations.md), [self-hosted-map-tiles](docs/runbooks/self-hosted-map-tiles.md) |
 | Versions and releases | [docs/versioning.md](docs/versioning.md) |
 | Competitor notes | [docs/competitive/](docs/competitive/) |
+| Strategy, roadmap, monetisation, financial scenarios, image requests, the deck | [docs/myto-strategy/](docs/myto-strategy/strategy.md) (deck: `npm run deck:build`, `npm run deck:pdf`) |
 
 Database tests (`npm run test:db -w @moto-trails/web`) create throwaway local databases and need local PostGIS; day-to-day development runs against Supabase (see [dev-setup](docs/runbooks/dev-setup.md)).
