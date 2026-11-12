@@ -2,6 +2,7 @@ import { randomInt } from "node:crypto";
 import type { Sql, TransactionSql } from "postgres";
 import { cleanBody, LINK } from "../community/comments";
 import { isMember } from "../community/members";
+import { capacityConfig, limitFor, planFor, upgradeOptions, type EntitlementRow, type Plan } from "./capacity";
 import { leaderDroppedOff, leaderQuietFor15, mayTakeLead, pickSuccessor, type Candidate } from "./lead";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -9,6 +10,18 @@ const HOUR = 3_600_000;
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 /** How many riders one group ride holds. A sync carries everyone's position, so a full group costs about 22 KB a poll to each rider. */
 export const MAX_RIDERS = 100;
+
+async function capacityOf(sql: Sql | TransactionSql, rideId: string, leaderId: string, used: number, now: Date) {
+  const plan = await ridePlan(sql, rideId, leaderId, now);
+  return { plan, limit: limitFor(plan), used, upgrades: upgradeOptions(plan, capacityConfig()) };
+}
+
+/** What this ride's leader has paid for or been given, read on the server inside the same transaction that counts the riders. */
+async function ridePlan(sql: Sql | TransactionSql, rideId: string, leaderId: string, now: Date): Promise<Plan> {
+  const rows = await sql`select kind, ride_id, status, starts_at, ends_at from entitlement where user_id = ${leaderId} and status = 'active' and (ride_id is null or ride_id = ${rideId})`;
+  const ents: EntitlementRow[] = rows.map((e) => ({ kind: e.kind, rideId: e.ride_id, status: e.status, startsAt: e.starts_at, endsAt: e.ends_at }));
+  return planFor(rideId, ents, now);
+}
 const CREATES_PER_DAY = 5;
 /** A code is six characters, so the number of tries is what keeps it from being guessed. */
 const JOIN_TRIES_PER_HOUR = 20;
@@ -123,7 +136,7 @@ export async function joinGroupRide(
   return sql.begin(async (tx) => {
     const [hit] = await tx`select rate_limit_hit(${`group-join:${i.userId}`}, ${JOIN_TRIES_PER_HOUR}, 3600) as ok`;
     if (!hit!.ok) return { ok: false, reason: "too_many_tries" } as const;
-    const [g] = await tx`select id, name, created_at, last_activity_at, ended_at from group_ride where code = ${code} and ended_at is null for update`;
+    const [g] = await tx`select id, name, leader_id, created_at, last_activity_at, ended_at from group_ride where code = ${code} and ended_at is null for update`;
     if (!g) return { ok: false, reason: "not_found" } as const;
     if (isExpired({ createdAt: g.created_at, lastActivityAt: g.last_activity_at, endedAt: g.ended_at }, i.now)) {
       await wipe(tx, g.id, i.now);
@@ -132,7 +145,7 @@ export async function joinGroupRide(
     const [mine] = await tx`select role, left_at from group_ride_member where ride_id = ${g.id} and user_id = ${i.userId}`;
     if (mine && mine.left_at === null) return { ok: true, id: g.id as string, name: g.name as string, role: mine.role as "leader" | "member" } as const;
     const [n] = await tx`select count(*)::int as n from group_ride_member where ride_id = ${g.id} and left_at is null`;
-    if (n!.n >= MAX_RIDERS) return { ok: false, reason: "full" } as const;
+    if (n!.n >= limitFor(await ridePlan(tx, g.id, g.leader_id, i.now))) return { ok: false, reason: "full" } as const;
     const [u] = await tx`select display_name from app_user where id = ${i.userId}`;
     const shown = String(i.displayName ?? "").trim() ? name(i.displayName, 40) : (u!.display_name as string);
     if (!shown) return { ok: false, reason: "invalid" } as const;
@@ -152,6 +165,8 @@ export type SyncResult = {
   canTakeLead?: boolean;
   /** The lead was taken from this rider because they dropped off, and they may take it back. */
   canTakeBack?: boolean;
+  /** The leader's own view of the ride's size, and what would raise it. Absent for everyone else. */
+  capacity?: { plan: Plan; limit: number; used: number; upgrades: ReturnType<typeof upgradeOptions> };
 };
 
 /**
@@ -189,7 +204,7 @@ export async function syncGroupRide(
   // A leader whose phone has gone quiet with a low battery loses the lead to the next in line, whoever's sync finds it.
   await promoteIfDroppedOff(sql, g.id, i.now);
   const rows = await sql`
-    select u.public_id, m.user_id, m.joined_at, m.display_name, m.role, m.event_role, m.titles, m.lat, m.lng, m.seen_at, m.status, m.home_at
+    select u.public_id, m.user_id, m.joined_at, m.left_at, m.display_name, m.role, m.event_role, m.titles, m.lat, m.lng, m.seen_at, m.status, m.home_at
     from group_ride_member m join app_user u on u.id = m.user_id
     where m.ride_id = ${g.id} and (m.left_at is null or m.home_at is not null) order by m.role desc, m.joined_at`;
   const [r] = await sql`select regroup_lat, regroup_lng, regroup_note, stretch_km, leader_id, successor_id, previous_leader_id from group_ride where id = ${g.id}`;
@@ -209,6 +224,8 @@ export async function syncGroupRide(
     successor: iLead ? (rows.find((m) => m.user_id === r?.successor_id)?.public_id ?? null) : null,
     canTakeLead: !iLead && !!leaderRow && leaderQuietFor15(leaderRow.seen_at, leaderRow.joined_at, i.now) && mayTakeLead({ userId: i.userId, titles: myTitles }, r?.successor_id ?? null),
     canTakeBack: r?.previous_leader_id === i.userId && !iLead,
+    // Only the organiser sees this: it is what the "ride is full" prompt is built from. Riders never see a price.
+    capacity: iLead ? await capacityOf(sql, g.id, i.userId, rows.filter((m) => m.left_at === null).length, i.now) : undefined,
   };
 }
 

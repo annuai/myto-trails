@@ -31,7 +31,7 @@ const CHECKIN: Reasons = {
 };
 const GROUP: Reasons = {
   not_member: NOT_MEMBER, not_found: [404, "That group ride isn't available. Check the code."], invalid: [422, "Use 1 to 60 characters, and leave web addresses out."],
-  rate_limited: [429, "You can start five group rides a day."], too_many_tries: [429, "Too many tries. Wait a little while, then enter the code again."], full: [409, "This group ride is full (100 riders)."],
+  rate_limited: [429, "You can start five group rides a day."], too_many_tries: [429, "Too many tries. Wait a little while, then enter the code again."], full: [409, "This group ride is full. Ask the organiser to raise its size."],
   not_leader: [403, "Only the leader can do that."], leader: [409, "Pass the lead to a rider first, or end the ride for everyone."], not_allowed: [403, "You can't do that right now."],
 };
 const REPORT: Reasons = {
