@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkSpace, filterInstalled, resolveManifest, runDownload, type DownloadFs, type IndexEntry } from './download';
+import { checkSpace, createInflight, createSerial, filterInstalled, rangePlan, resolveManifest, runDelete, runDownload, type DownloadFs, type IndexEntry } from './download';
 import type { Region } from './manifest';
 
 const MB = 1024 * 1024;
@@ -44,6 +44,7 @@ function fakeFs(opts: { free?: number; hashes?: Record<string, string>; dieOn?: 
       onBytes(total);
       files.set(path, { size: total });
     },
+    list: async (dir) => [...files.keys()].filter((k) => k.startsWith(dir)).map((k) => k.slice(dir.length)),
     sha256: async (p) => opts.hashes?.[p] ?? (p.includes('map') ? 'aa' : 'bb'),
   };
   return { fs, files, log };
@@ -143,5 +144,96 @@ describe('filterInstalled', () => {
     expect(out.map((i) => i.id)).toEqual(['goa']);
     expect(out[0].mapPath).toBe(`${DIR}goa.v2.map`);
     expect(out[0].searchPath).toBe(`${DIR}goa.v2.search`);
+  });
+});
+
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
+describe('createInflight', () => {
+  it('runs one download for a double call and shares progress', async () => {
+    const inflight = createInflight();
+    let starts = 0;
+    let emit: (p: number) => void = () => {};
+    let finish: () => void = () => {};
+    const start = (e: (p: number) => void) => { starts++; emit = e; return new Promise<void>((r) => { finish = r; }); };
+    const a: number[] = [];
+    const b: number[] = [];
+    const p1 = inflight.run('goa', start, (p) => a.push(p));
+    const p2 = inflight.run('goa', start, (p) => b.push(p));
+    emit(40);
+    finish();
+    await Promise.all([p1, p2]);
+    expect(starts).toBe(1);
+    expect([a, b]).toEqual([[40], [40]]);
+  });
+  it('frees the slot after a failure so a retry runs', async () => {
+    const inflight = createInflight();
+    let starts = 0;
+    await expect(inflight.run('goa', async () => { starts++; throw new Error('x'); })).rejects.toThrow();
+    await inflight.run('goa', async () => { starts++; });
+    expect(starts).toBe(2);
+  });
+});
+
+describe('index writes are serialized', () => {
+  it('two regions finishing together both end up in the index', async () => {
+    const { fs, files } = fakeFs();
+    const slow: DownloadFs = { ...fs, readText: async (p) => { const t = await fs.readText(p); await tick(); return t; } };
+    const ker = region({ id: 'ker', name: 'Kerala', bbox: [74, 8, 77, 12] });
+    await Promise.all([runDownload(slow, DIR, region(), () => {}), runDownload(slow, DIR, ker, () => {})]);
+    const ids = JSON.parse(files.get(`${DIR}index.json`)!.text!).map((e: IndexEntry) => e.id).sort();
+    expect(ids).toEqual(['goa', 'ker']);
+  });
+  it('runs jobs in order and survives a failing one', async () => {
+    const serial = createSerial();
+    const order: number[] = [];
+    const a = serial(async () => { await tick(); order.push(1); throw new Error('x'); });
+    const b = serial(async () => { order.push(2); });
+    await expect(a).rejects.toThrow();
+    await b;
+    expect(order).toEqual([1, 2]);
+  });
+});
+
+describe('rangePlan', () => {
+  it('appends on 206 with an offset', () => expect(rangePlan(206, 40)).toBe('append'));
+  it('restarts when the server ignored the range (200 with an offset)', () => expect(rangePlan(200, 40)).toBe('restart'));
+  it('treats 416 on a resume as already complete', () => expect(rangePlan(416, 40)).toBe('done'));
+  it('writes fresh on 200 with no offset', () => expect(rangePlan(200, 0)).toBe('fresh'));
+  it('fails in plain words on 404 and 500', () => {
+    expect(() => rangePlan(404, 0)).toThrow(/could not finish/i);
+    expect(() => rangePlan(500, 40)).toThrow(/could not finish/i);
+  });
+  it('416 with nothing on disk is a failure, not completion', () => expect(() => rangePlan(416, 0)).toThrow());
+});
+
+describe('runDelete', () => {
+  it('removes leftover part files and does nothing else when no entry matches, even with no folder yet', async () => {
+    const { fs, files, log } = fakeFs();
+    await runDelete(fs, DIR, 'goa');
+    expect(log).toEqual([]);
+    files.set(`${DIR}goa.v2.map.part`, { size: 5 });
+    files.set(`${DIR}ker.v1.map.part`, { size: 5 });
+    await runDelete(fs, DIR, 'goa');
+    expect(files.has(`${DIR}goa.v2.map.part`)).toBe(false);
+    expect(files.has(`${DIR}ker.v1.map.part`)).toBe(true);
+    expect(files.has(`${DIR}index.json`)).toBe(false);
+  });
+  it('removes files and the entry for an installed region', async () => {
+    const { fs, files } = fakeFs();
+    await runDownload(fs, DIR, region(), () => {});
+    await runDelete(fs, DIR, 'goa');
+    expect(files.has(`${DIR}goa.v2.map`)).toBe(false);
+    expect(JSON.parse(files.get(`${DIR}index.json`)!.text!)).toEqual([]);
+  });
+});
+
+describe('plain-words errors', () => {
+  it('wraps a raw file error and keeps it as the cause', async () => {
+    const { fs } = fakeFs();
+    const boom = new Error('ENOENT native thing');
+    const err = await runDownload({ ...fs, sha256: async () => { throw boom; } }, DIR, region(), () => {}).catch((e) => e);
+    expect(err.message).not.toMatch(/ENOENT/);
+    expect(err.cause).toBe(boom);
   });
 });

@@ -1,8 +1,8 @@
 import { FileMode, File as ExpoFile } from 'expo-file-system';
-import { createDownloadResumable, deleteAsync, documentDirectory, getFreeDiskStorageAsync, getInfoAsync, makeDirectoryAsync, moveAsync, readAsStringAsync, writeAsStringAsync } from 'expo-file-system/legacy';
+import { createDownloadResumable, deleteAsync, documentDirectory, getFreeDiskStorageAsync, getInfoAsync, makeDirectoryAsync, moveAsync, readAsStringAsync, readDirectoryAsync, writeAsStringAsync } from 'expo-file-system/legacy';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
-import { MANIFEST_CACHE_FILE, readInstalled, resolveManifest, runDelete, runDownload, type DownloadFs } from './download';
+import { createInflight, MANIFEST_CACHE_FILE, rangePlan, readInstalled, resolveManifest, runDelete, runDownload, type DownloadFs } from './download';
 import { parseManifest, type Installed, type Region } from './manifest';
 
 /** The phone side of offline regions: real files, real network. The logic worth testing lives in `download.ts`. */
@@ -11,6 +11,8 @@ const BASE = process.env.EXPO_PUBLIC_REGIONS_BASE_URL;
 export const MANIFEST_URL = `${BASE ?? ''}/regions/manifest.json`;
 const DIR = `${documentDirectory ?? ''}regions/`;
 const CHUNK = 1024 * 1024;
+const MANIFEST_TIMEOUT_MS = 10_000;
+const inflight = createInflight();
 
 const nativeFs: DownloadFs = {
   freeBytes: () => getFreeDiskStorageAsync(),
@@ -30,16 +32,22 @@ const nativeFs: DownloadFs = {
     await deleteAsync(target, { idempotent: true }).catch(() => undefined);
     const task = createDownloadResumable(url, target, resuming ? { headers: { Range: `bytes=${resumeFrom}-` } } : {}, (p) => onBytes((resuming ? resumeFrom : 0) + p.totalBytesWritten));
     const res = await task.downloadAsync();
-    if (!res || res.status < 200 || res.status >= 300) {
+    let plan;
+    try {
+      plan = rangePlan(res?.status ?? 0, resumeFrom);
+    } catch (e) {
       await deleteAsync(target, { idempotent: true }).catch(() => undefined);
-      throw new Error('The download could not finish. Check your connection and try again.');
+      throw e;
     }
-    if (!resuming) return;
-    if (res.status === 206) await append(path, target);
-    else await moveAsync({ from: target, to: path }).catch(async () => { await deleteAsync(path, { idempotent: true }); await moveAsync({ from: target, to: path }); });
-    await deleteAsync(target, { idempotent: true }).catch(() => undefined);
+    if (plan === 'append') await append(path, target);
+    else if (plan === 'restart') {
+      await deleteAsync(path, { idempotent: true });
+      await moveAsync({ from: target, to: path });
+    }
+    if (resuming) await deleteAsync(target, { idempotent: true }).catch(() => undefined);
   },
   sha256: hashFile,
+  list: (dir) => readDirectoryAsync(dir).catch(() => []),
 };
 
 /** Appends `from` to the end of `to` a megabyte at a time. */
@@ -76,9 +84,16 @@ async function hashFile(path: string): Promise<string> {
 
 async function fetchManifestJson(): Promise<unknown> {
   if (!BASE) throw new Error('no regions address set');
-  const res = await fetch(MANIFEST_URL);
-  if (!res.ok) throw new Error(`manifest ${res.status}`);
-  return res.json();
+  // A captive portal can leave a request hanging for minutes; give up after 10 s and let the cached list stand.
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), MANIFEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(MANIFEST_URL, { signal: abort.signal });
+    if (!res.ok) throw new Error(`manifest ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** The published regions, refreshed from the network when it works; otherwise the last good copy on the phone, or an empty list. */
@@ -100,7 +115,7 @@ export function loadManifest(): Promise<Region[]> {
 export const listInstalled = (): Promise<Installed[]> => readInstalled(nativeFs, DIR);
 
 /** Downloads and installs a region; `onProgress` gets 0 to 100. Throws a plain-words message when it cannot. */
-export const downloadRegion = (region: Region, onProgress: (pct: number) => void): Promise<void> => runDownload(nativeFs, DIR, region, onProgress);
+export const downloadRegion = (region: Region, onProgress: (pct: number) => void): Promise<void> => inflight.run(region.id, (emit) => runDownload(nativeFs, DIR, region, emit), onProgress);
 
 export const deleteRegion = (id: string): Promise<void> => runDelete(nativeFs, DIR, id);
 
