@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Share, View } from 'react-native';
-import { Camera, Image as ImageIcon, ImagePlus, Layers, Link2 } from 'lucide-react-native';
+import { Camera, Image as ImageIcon, ImagePlus, Layers, Link2, Send } from 'lucide-react-native';
 import { createSharedRoute } from '@/api/sharedRoutes';
 import { layoutAreaMap, layoutCardMap, mapBoxOf } from '@/lib/cardMap';
 import { currentPlacement, overlayBox, placementAfterFormatChange, type PhotoLayout, type Placement } from '@/lib/photoCard';
@@ -10,7 +10,8 @@ import { trimNearPlaces } from '@/lib/geo';
 import { useSavedPlaces } from '@/lib/savedPlaces';
 import { buildRideCard, CARD_SIZE, MAX_CARD_STATS, type CardFormat, type CardStat } from '@/lib/rideCard';
 import { buildSharedRoute } from '@/lib/shareRoute';
-import { shareCard } from '@/lib/shareCard';
+import { captureCard, shareCard } from '@/lib/shareCard';
+import { shareToStories, storiesAvailable } from '@/lib/shareToStories';
 import { elevationProfile } from '@/lib/elevation';
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '@/store/auth';
@@ -139,6 +140,15 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
     setCapturing(true);
     try { await shareCard(view); } catch (e) { setMessage(e instanceof Error ? e.message : 'The picture could not be shared.'); } finally { setCapturing(false); }
   };
+  /** Instagram Stories: a photo goes in as the background with the overlay as a sticker the rider can still move; a card goes in as the background. */
+  const toStories = async () => {
+    setMessage(undefined);
+    setCapturing(true);
+    try {
+      if (mode === 'photo' && photo) await shareToStories({ backgroundUri: photo.picked.uri, stickerUri: await captureCard(overlayRef.current) });
+      else await shareToStories({ backgroundUri: await captureCard(fullRef.current) });
+    } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not open Instagram.'); } finally { setCapturing(false); }
+  };
   const choosePhoto = async (source: 'library' | 'camera') => {
     setMessage(undefined);
     const format = card.format;
@@ -177,6 +187,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
       {formatChips}
       {statChips}
       <Button icon={ImageIcon} label={mapReady ? 'Share picture' : 'Preparing the map…'} disabled={busy || !mapReady} onPress={() => void sharePicture()} />
+      {storiesAvailable() ? <Button variant="soft" icon={Send} label="Share to Instagram Stories" disabled={busy || capturing || !mapReady} onPress={() => void toStories()} /> : null}
       <Button variant="soft" icon={Link2} label="Share route as a link" disabled={busy} onPress={() => void shareLink()} />
     </>
   );
@@ -195,6 +206,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
       {photo.format !== card.format ? <Text variant="caption" tone="muted">Pick the photo again for an exact crop.</Text> : null}
       {statChips}
       {photoFailed ? null : <Button icon={ImageIcon} label={photoReady ? 'Share picture' : 'Preparing the picture…'} disabled={capturing || !photoReady} onPress={() => void capture(photoRef.current)} />}
+      {storiesAvailable() && !photoFailed ? <Button variant="soft" icon={Send} label="Share to Instagram Stories" disabled={capturing || !photoReady} onPress={() => void toStories()} /> : null}
       <Button variant="soft" icon={Layers} label="Save overlay only" disabled={capturing} onPress={() => void capture(overlayRef.current)} />
       <Button variant="soft" icon={ImagePlus} label="Change photo" disabled={capturing} onPress={() => void choosePhoto('library')} />
     </>
