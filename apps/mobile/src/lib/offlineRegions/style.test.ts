@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Installed } from './manifest';
-import { chooseStyle, composeLocalStyle, isPmtilesHeader, nextScope, regionAt, SWITCH_GAP_MS, type StyleJson } from './style';
+import { bboxesOverlap, chooseStyle, composeLocalStyle, isPmtilesHeader, nextScope, regionAt, SWITCH_GAP_MS, viewportInRegions, type StyleJson } from './style';
 
 const goa: Installed = { id: 'goa', version: 'v1', bbox: [73.6, 14.9, 74.4, 15.8], mapPath: 'file:///docs/regions/goa.pmtiles', searchPath: 'x' };
 const overlap: Installed = { id: 'konkan', version: 'v1', bbox: [73.0, 14.0, 74.0, 16.5], mapPath: '/docs/regions/konkan.pmtiles', searchPath: 'x' };
@@ -83,4 +83,34 @@ describe('nextScope', () => {
   it('goes from outside to inside after the gap', () => expect(nextScope({ inside: false, at: 0 }, true, 5000).scope).toEqual({ inside: true, at: 5000 }));
   it('holds a change back within the gap and says how long', () => expect(nextScope(inside, false, 11_000)).toEqual({ scope: inside, waitMs: 2000 }));
   it('applies the first reading at once', () => expect(nextScope({ inside: false, at: -Infinity }, true, 50).scope.inside).toBe(true));
+});
+
+describe('bboxesOverlap', () => {
+  it('overlaps when one holds the other or they cross', () => {
+    expect(bboxesOverlap([73.7, 15, 74, 15.5], goa.bbox)).toBe(true);
+    expect(bboxesOverlap([73, 14, 75, 16.5], goa.bbox)).toBe(true);
+    expect(bboxesOverlap([74.2, 15.5, 75, 17], goa.bbox)).toBe(true);
+  });
+  it('overlaps when boxes only touch', () => {
+    expect(bboxesOverlap([74.4, 15, 75, 16], goa.bbox)).toBe(true);
+    expect(bboxesOverlap([74.4, 15.8, 75, 16.5], goa.bbox)).toBe(true);
+  });
+  it('does not overlap when apart', () => {
+    expect(bboxesOverlap([74.5, 15, 75, 16], goa.bbox)).toBe(false);
+    expect(bboxesOverlap([73.7, 15.9, 74, 16.5], goa.bbox)).toBe(false);
+  });
+});
+
+describe('viewportInRegions', () => {
+  const c = { lat: 15.3, lng: 74 };
+  it('is true when the view is fully inside', () => expect(viewportInRegions({ center: c, bounds: [73.9, 15.2, 74.1, 15.4] }, [goa])).toBe(true));
+  it('is true when the view straddles the edge, even with the centre outside', () => expect(viewportInRegions({ center: { lat: 15.3, lng: 74.6 }, bounds: [74.3, 15.2, 74.9, 15.4] }, [goa])).toBe(true));
+  it('is false when the view is fully outside', () => expect(viewportInRegions({ center: { lat: 28.6, lng: 77.2 }, bounds: [77, 28.4, 77.4, 28.8] }, [goa])).toBe(false));
+  it('is true when the view only touches the region', () => expect(viewportInRegions({ center: { lat: 15.3, lng: 74.6 }, bounds: [74.4, 15.2, 74.9, 15.4] }, [goa])).toBe(true));
+  it('is false with no regions', () => expect(viewportInRegions({ center: c, bounds: [73.9, 15.2, 74.1, 15.4] }, [])).toBe(false));
+  it('falls back to the centre point without bounds', () => {
+    expect(viewportInRegions({ center: c }, [goa])).toBe(true);
+    expect(viewportInRegions({ center: { lat: 28.6, lng: 77.2 } }, [goa])).toBe(false);
+  });
+  it('uses the bounds over the centre when both are given', () => expect(viewportInRegions({ center: c, bounds: [77, 28.4, 77.4, 28.8] }, [goa])).toBe(false));
 });

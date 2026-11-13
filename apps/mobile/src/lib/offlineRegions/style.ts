@@ -24,6 +24,21 @@ export function regionAt(point: LatLng, installed: Installed[]): Installed | und
   return installed.find(({ bbox: [w, s, e, n] }) => point.lng >= w && point.lng <= e && point.lat >= s && point.lat <= n);
 }
 
+/** [west, south, east, north]; boxes that only touch at an edge or corner overlap. */
+export function bboxesOverlap(a: Installed['bbox'], b: Installed['bbox']): boolean {
+  return a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3];
+}
+
+/** What the map shows: its centre, and the visible box when the map reports one. */
+export type Viewport = { center: LatLng; bounds?: Installed['bbox'] };
+
+/** True while any part of the visible map overlaps an installed region (the centre point when no bounds are known). */
+export function viewportInRegions(viewport: Viewport, installed: Installed[]): boolean {
+  const { bounds, center } = viewport;
+  if (!bounds) return !!regionAt(center, installed);
+  return installed.some((r) => bboxesOverlap(bounds, r.bbox));
+}
+
 const stripFile = (p: string) => p.replace(/^file:\/\//, '');
 
 /**
