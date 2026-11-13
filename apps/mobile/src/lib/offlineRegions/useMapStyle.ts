@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '@/lib/geo';
 import { mapStyleUrl } from '@/ui/map/style';
+import darkStyle from '../../../assets/offline-map/dark.json';
 import liberty from '../../../assets/offline-map/liberty.json';
 import { ensureOfflineAssets } from './offlineAssets';
 import { FileMode, File as ExpoFile } from 'expo-file-system';
-import { chooseStyle, composeLocalStyle, isPmtilesHeader, regionAt, type StyleJson } from './style';
+import { chooseStyle, composeLocalStyle, isPmtilesHeader, nextScope, regionAt, type LocalPaths, type Scope, type StyleJson } from './style';
 import type { Installed } from './manifest';
 import { listInstalled } from './store';
 
@@ -16,30 +17,57 @@ async function hasPmtilesHeader(r: Installed): Promise<boolean> {
   } catch { return false; }
 }
 
+type Ready = { installed: Installed[]; paths: LocalPaths };
+
 /**
- * The map style string for MapLibre's `mapStyle` (plus a failure callback): the online style, or the local one when the map first opens
- * inside a downloaded region. Decided once, after the installed list loads; until then (and outside a region) it is online.
- * Starting inside a region therefore reloads the style once, shortly after mount. It never switches again.
+ * The map style string for MapLibre's `mapStyle` (plus a failure callback): the local style while the map's centre is inside a downloaded region,
+ * the online one otherwise. `onViewChange` takes the centre on every region change; the style only switches when the centre crosses a region's
+ * edge, and at most once per 3 seconds. A local style that fails to load is dropped for the rest of the mount. The first view is read once the installed list loads,
+ * so a map that opens inside a region reloads its style once, shortly after mount.
  */
-export function useMapStyle(dark: boolean, center?: LatLng): { style: string; isLocal: boolean; onLoadFailed: () => void } {
-  const [local, setLocal] = useState<string>();
+export function useMapStyle(dark: boolean, center?: LatLng): { style: string; isLocal: boolean; onLoadFailed: () => void; onViewChange: (c: LatLng) => void } {
+  const [ready, setReady] = useState<Ready>();
+  const [inside, setInside] = useState(false);
   const [localFailed, setLocalFailed] = useState(false);
+  const installedRef = useRef<Installed[] | undefined>(undefined);
+  const latest = useRef<LatLng | undefined>(center);
+  const scope = useRef<Scope>({ inside: false, at: -Infinity });
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const live = useRef(true);
+  const again = useRef<() => void>(() => undefined);
+
+  const evaluate = useCallback(() => {
+    const installed = installedRef.current;
+    if (!installed || !latest.current || !live.current) return;
+    clearTimeout(timer.current);
+    const now = Date.now();
+    const { scope: next, waitMs } = nextScope(scope.current, !!regionAt(latest.current, installed), now);
+    if (waitMs > 0) { timer.current = setTimeout(() => again.current(), waitMs); return; }
+    scope.current = next;
+    setInside(next.inside);
+    if (next.inside) {
+      void ensureOfflineAssets().then((paths) => { if (live.current) setReady((r) => r ?? { installed, paths }); }).catch(() => undefined);
+    }
+  }, []);
+
+  useEffect(() => { again.current = evaluate; }, [evaluate]);
+
   useEffect(() => {
-    if (!center) return;
-    let live = true;
+    live.current = true;
     (async () => {
       const all = await listInstalled();
-      const installed: Installed[] = [];
-      for (const r of all) if (await hasPmtilesHeader(r)) installed.push(r);
-      if (!regionAt(center, installed)) return;
-      const paths = await ensureOfflineAssets();
-      if (live) setLocal(JSON.stringify(composeLocalStyle(liberty as unknown as StyleJson, installed, paths)));
+      const good: Installed[] = [];
+      for (const r of all) if (await hasPmtilesHeader(r)) good.push(r);
+      installedRef.current = good;
+      evaluate();
     })().catch(() => undefined);
-    return () => { live = false; };
-    // Once per mount, from the initial centre only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => { live.current = false; clearTimeout(timer.current); };
+  }, [evaluate]);
+
+  const onViewChange = useCallback((c: LatLng) => { latest.current = c; evaluate(); }, [evaluate]);
+
+  const local = useMemo(() => (ready ? JSON.stringify(composeLocalStyle((dark ? darkStyle : liberty) as unknown as StyleJson, ready.installed, ready.paths)) : undefined), [ready, dark]);
   // Only a failure of the local style is remembered; the online URL failing (e.g. no signal) must not block the local style arriving later.
-  const chosen = chooseStyle(mapStyleUrl(dark), local, localFailed);
-  return { ...chosen, onLoadFailed: () => { if (chosen.isLocal) setLocalFailed(true); } };
+  const chosen = chooseStyle(mapStyleUrl(dark), local, localFailed, inside);
+  return { ...chosen, onLoadFailed: () => { if (chosen.isLocal) setLocalFailed(true); }, onViewChange };
 }

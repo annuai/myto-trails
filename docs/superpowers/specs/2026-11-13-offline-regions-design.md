@@ -1,6 +1,6 @@
 # Offline regions: map and place search, by state
 
-Date: 2026-11-13 · Status: draft, awaiting approval · Size: project
+Date: 2026-11-13 · Status: approved, built; device checks and first publish pending · Size: project
 
 ## Intent
 A rider downloads a state (Karnataka, Kerala, Goa, …) once, on wifi, and then has the map and place search with no signal. Today only a single trail's map can be saved (`apps/mobile/src/lib/offlineTiles.ts`, capped at about 2,800 tiles by OpenFreeMap's download limit), and place search (`placeSearch.ts`, Photon) needs the network. Riding in the Western Ghats or Ladakh means no signal exactly where the map matters.
@@ -41,14 +41,14 @@ Chosen by the user on 2026-11-13: A, with a device test first.
 
 **Build pipeline (laptop, run per region and about monthly; script in `tooling/`)**
 1. Map: cut the region's bounding box (with a small margin) from the Geofabrik India extract with `osmium extract`, then build tiles with Planetiler's OpenMapTiles profile to a chosen max zoom (not Protomaps; the OpenMapTiles schema matches the existing OpenFreeMap style).
-2. Search: from the Geofabrik India extract, keep `place=city|town|village|hamlet|suburb`, district boundaries' names, `natural=peak|saddle` (passes) and major `tourism=attraction|viewpoint` and `natural=water|beach` features that have a name. Write one SQLite file per region with an FTS5 table (`name`, `alt_names`, `kind`, `detail` such as "Mysuru, Karnataka", lat, lng, a rank so cities beat hamlets).
+2. Search: from the Geofabrik India extract, keep named `place=city|town|village|hamlet` (and `suburb|neighbourhood`, rank 35), `place=county|district|region|state_district` as `district` (rank 70; boundary relations are not used, only the place nodes), `place=locality|island` as landmarks, `natural=peak|saddle` (passes), `tourism=attraction|viewpoint`, and `natural=water|beach` only when tagged `wikidata` or `wikipedia`. Alternative names come from `name:en`, `alt_name` and the `name:` tags of the main Indian scripts. Write one SQLite file per region with an FTS5 table (`name`, `alt_names`, `kind`, `detail` such as "Mysuru, Karnataka", lat, lng, a rank so cities beat hamlets).
 3. Upload both files to R2 under a `regions/` prefix, then update `regions/manifest.json`: per region `id`, name, bbox, map and search file URLs, sizes in bytes, a version string (build date), and a SHA-256 for each file.
 
 **Phone**
 - `regions` screen (folds into an existing tab, per ADR 0009; no new tab): list from the manifest, size shown, Download / Update / Delete. Manifest is cached on the phone so the list shows offline.
 - Download with `expo-file-system` resumable download to a `.part` file, verify size and hash, then rename. A region is usable only after the rename. Check free space before starting and refuse with plain words.
 - Fonts and icon sprite: bundled in the app (small) and referenced by the offline style, so labels never need the network.
-- Map style: a local style JSON with `pmtiles://` sources for each downloaded region, composed at app start. Outside any downloaded region, or online, the style falls back to OpenFreeMap so behaviour online does not change.
+- Map style: a local style JSON (liberty or dark, bundled) with `pmtiles://` sources for each downloaded region. The map uses it while its centre is inside an installed region's box and the online OpenFreeMap style otherwise, re-checked on each region change and switched only when the centre crosses a box edge, at most once per 3 seconds. A local style that fails to load stays off for that mount. The online-only relief raster is left out of the local style.
 - Search: `searchPlaces` queries the SQLite FTS files of downloaded regions first (prefix match, ranked), then Photon when online. Offline it returns local results only. Same `Place` result type, so `PlaceSearch.tsx`, `RouteBuilder`, `DestinationSheet`, `CreateEventSheet`, `home-place` need no change.
 - State kept in the existing local store; no server table and no sync (regions are device-local).
 

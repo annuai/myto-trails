@@ -16,6 +16,8 @@ export type LocalPaths = { glyphs: string; sprite: string };
 
 /** The source id of the online tiles in the bundled liberty style. */
 const ONLINE_SOURCE = 'openmaptiles';
+/** The online-only shaded relief raster of the liberty style; offline it would fail tile by tile, so the local style leaves it out. */
+const NETWORK_ONLY_SOURCE = 'ne2_shaded';
 
 /** The first installed region whose box holds the point. */
 export function regionAt(point: LatLng, installed: Installed[]): Installed | undefined {
@@ -26,16 +28,17 @@ const stripFile = (p: string) => p.replace(/^file:\/\//, '');
 
 /**
  * The base style with its online tiles swapped for the downloaded files: one vector source per region and every layer
- * on the online source cloned per region as `<id>@<regionId>`. Background and layers on other sources stay once.
+ * on the online source cloned per region as `<id>@<regionId>`. Background and layers on other sources stay once, except the network-only relief raster, which is dropped with its layer.
  */
 export function composeLocalStyle(base: StyleJson, installed: Installed[], paths: LocalPaths): StyleJson {
   const local = { ...base, glyphs: paths.glyphs, sprite: paths.sprite };
-  if (installed.length === 0) return local;
   const sources: StyleJson['sources'] = {};
-  for (const [id, src] of Object.entries(base.sources)) if (id !== ONLINE_SOURCE) sources[id] = src;
+  for (const [id, src] of Object.entries(base.sources)) if (id !== ONLINE_SOURCE && id !== NETWORK_ONLY_SOURCE) sources[id] = src;
+  if (installed.length === 0) return { ...local, sources, layers: base.layers.filter((l) => l.source !== NETWORK_ONLY_SOURCE) };
   for (const r of installed) sources[r.id] = { type: 'vector', url: `pmtiles://file://${stripFile(r.mapPath)}` };
   const layers: StyleJson['layers'] = [];
   for (const layer of base.layers) {
+    if (layer.source === NETWORK_ONLY_SOURCE) continue;
     if (layer.source !== ONLINE_SOURCE) layers.push(layer);
     else for (const r of installed) layers.push({ ...layer, id: `${layer.id}@${r.id}`, source: r.id });
   }
@@ -48,7 +51,27 @@ export function isPmtilesHeader(bytes: Uint8Array): boolean {
   return bytes.length >= 8 && magic.every((b, i) => bytes[i] === b) && bytes[7] === 3;
 }
 
-/** Which style the map uses: the local one until it fails to load, otherwise the online URL (a failure of the online URL is never retried as itself). */
-export function chooseStyle(online: string, local: string | undefined, localFailed: boolean): { style: string; isLocal: boolean } {
-  return local && !localFailed ? { style: local, isLocal: true } : { style: online, isLocal: false };
+/**
+ * Which style the map uses: the local one while the view is inside a downloaded region and the local style has not failed, otherwise the online URL
+ * (a failure of the online URL is never retried as itself, and a failed local style stays off for good).
+ */
+export function chooseStyle(online: string, local: string | undefined, localFailed: boolean, inside: boolean): { style: string; isLocal: boolean } {
+  return local && inside && !localFailed ? { style: local, isLocal: true } : { style: online, isLocal: false };
+}
+
+/** Whether the view is inside a downloaded region, and when that last changed (ms). */
+export type Scope = { inside: boolean; at: number };
+
+/** The least time between two style switches, so a ride along a region's edge does not reload the map back and forth. */
+export const SWITCH_GAP_MS = 3000;
+
+/**
+ * Applies a fresh inside/outside reading. Nothing changes while the reading agrees with `prev`; a change within `gapMs` of the last one is held
+ * back and `waitMs` says how long until it may be applied (0 when nothing is waiting).
+ */
+export function nextScope(prev: Scope, inside: boolean, now: number, gapMs = SWITCH_GAP_MS): { scope: Scope; waitMs: number } {
+  if (inside === prev.inside) return { scope: prev, waitMs: 0 };
+  const wait = prev.at + gapMs - now;
+  if (wait > 0) return { scope: prev, waitMs: wait };
+  return { scope: { inside, at: now }, waitMs: 0 };
 }
