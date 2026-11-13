@@ -1,8 +1,9 @@
 import { Image, View } from 'react-native';
-import { Pause, Play, Trash2 } from 'lucide-react-native';
+import { Pause, Play, Share2, SlidersHorizontal, Trash2 } from 'lucide-react-native';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import type { JournalEntry } from '@/lib/journalEntries';
-import { mediaUri } from '@/lib/journalMedia';
+import { hasOriginal, mediaUri } from '@/lib/journalMedia';
+import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { IconButton } from '@/ui/IconButton';
 import { Text } from '@/ui/Text';
@@ -31,7 +32,9 @@ function VoiceRow({ entry }: { entry: JournalEntry }) {
 /** The shape given to a photo whose size is not known. */
 const FALLBACK_RATIO = 4 / 3;
 
-export function JournalEntryCard({ entry, onDelete }: { entry: JournalEntry; onDelete: () => void }) {
+export function JournalEntryCard({ entry, onDelete, onFilm, onShare }: { entry: JournalEntry; onDelete: () => void; onFilm?: () => void; onShare?: () => void }) {
+  // A photo whose look was applied but whose original is gone (a restored backup) cannot be re-filmed.
+  const canFilm = !!onFilm && (!entry.look || hasOriginal(entry.id));
   const ratio = entry.width && entry.height ? entry.width / entry.height : FALLBACK_RATIO;
   return (
     <Card style={{ gap: space[3] }}>
@@ -40,6 +43,12 @@ export function JournalEntryCard({ entry, onDelete }: { entry: JournalEntry; onD
         <IconButton icon={Trash2} label="Delete this entry" onPress={onDelete} plain tone="muted" />
       </View>
       {entry.kind === 'photo' ? <Image source={{ uri: mediaUri(entry.id, 'photo') }} accessibilityLabel={entry.text || 'Ride photo'} style={{ width: '100%', aspectRatio: ratio, borderRadius: radius.control }} resizeMode="cover" /> : null}
+      {entry.kind === 'photo' && (canFilm || onShare) ? (
+        <View style={{ flexDirection: 'row', gap: space[3] }}>
+          {canFilm ? <Button variant="soft" onCard icon={SlidersHorizontal} label={entry.look ? 'Change film' : 'Film'} flex onPress={onFilm} /> : null}
+          {onShare ? <Button variant="soft" onCard icon={Share2} label="Share" flex onPress={onShare} /> : null}
+        </View>
+      ) : null}
       {entry.kind === 'voice' ? <VoiceRow entry={entry} /> : null}
       {entry.text ? <Text variant="body">{entry.text}</Text> : null}
     </Card>

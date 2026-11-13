@@ -11,6 +11,8 @@ export type JournalState = {
   add: (e: JournalEntry) => void;
   /** Gives older entries the id of the ride they belong to (matched by the ride's start time). Returns how many it changed; entries that already have one are left alone. */
   backfillRideIds: (rides: { id: string; startedAt: number }[]) => number;
+  /** Changes fields of one entry (a photo's film look). */
+  patch: (id: string, fields: Partial<Omit<JournalEntry, 'id'>>) => void;
   /** Removes the entry and its file. */
   remove: (id: string) => void;
   /** Removes every entry of a ride, and their files (a deleted ride takes its journal with it). */
@@ -43,6 +45,7 @@ export const journalSlice = (media: JournalMediaOps, rideIdFor: (rideKey: number
       if (changed) set({ entries });
       return changed;
     },
+    patch: (id, fields) => set((s) => ({ entries: s.entries.map((e) => (e.id === id ? { ...e, ...fields } : e)) })),
     remove: (id) => { get().entries.filter((e) => e.id === id).forEach(drop); set((s) => ({ entries: s.entries.filter((e) => e.id !== id) })); },
     removeForRide: (rideKey) => { get().entries.filter((e) => e.rideKey === rideKey).forEach(drop); set((s) => ({ entries: s.entries.filter((e) => e.rideKey !== rideKey), titles: without(s.titles, rideKey) })); },
     rename: (rideKey, title) => set((s) => ({ titles: title.trim() ? { ...s.titles, [rideKey]: title.trim() } : without(s.titles, rideKey) })),
