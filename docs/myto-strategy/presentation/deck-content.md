@@ -262,7 +262,22 @@ caption: No scenario is profitable in year one. Base revenue includes {{base.yea
 assumptions: L = lakh (₹1,00,000). Store fee {{shared.STORE_FEE|pct}}, GST {{shared.GST_RATE|pct}} (verify), pass {{shared.LARGE_PASS_PRICE|inr}}, organiser {{shared.ORGANISER_PRICE|inr}} a month.
 sources: financial-assumptions.md; store fee pages, 2026-11-12
 
-## 17 | competitive
+## 17 | landscape
+status: Hypothesis
+kicker: Competitive landscape
+headline: The field covers rides and community. Trail trust is where we differ.
+sub: Six apps read from public listings and press, 13 Nov 2026. None was opened.
+items:
+- Riding Verse | India community app | Live group map, clubs, events with RSVP, crash SOS. 10K+ Android downloads. | We differ: trail access with evidence and moderation, offline first. They lead on events.
+- The Good Biker | India social app | Ride tracking, clubs, garage, feed, marketplace, AI assistant in beta. About 500+ Android installs. | We differ: curated trails, no feed or marketplace. They lead on breadth and ticketed events.
+- WingManX | India group-ride app | Groups, live tracking, rider ratings, tow assist. 25 App Store ratings. | We differ: trust sits in the trail, not rider ratings. They lead on rescue and rider verification.
+- Rev Your Soul | Global rider community | Offline maps, documents, group chat, gear shop. Listing only. | We differ: moderated trail access, no chat while riding. Thin evidence either way.
+- REVER | Global ride tracking | Tracking, route sharing, turn-by-turn. Pro is about $40 a year. | We differ: India trails with access status. They lead on navigation and maturity.
+- Calimoto, Kurviger | Curvy-route navigators | Twisty routing, turn-by-turn. Offline use needs a paid plan. | We differ: not a navigator, and turn-by-turn is a non-goal. They lead on navigation.
+caption: Based on store listings and press only; claims are theirs, not tested. "We differ" is our stated design, much of it in build. No claim of superiority beyond this evidence.
+sources: docs/competitive §8
+
+## 18 | competitive
 status: Built+Planned
 kicker: Competitive positioning
 headline: Trust in the trail is where we start. Events are where we catch up.
@@ -277,7 +292,7 @@ items:
 caption: Based only on the 2026-11-01 note (public pages and store listings; their app not opened). No claim of superiority beyond it. Other competitors not analysed.
 sources: docs/competitive
 
-## 18 | vision-long
+## 19 | vision-long
 status: Hypothesis
 kicker: Long-term vision
 headline: Enjoy the ride. Explore more. Share the journey.

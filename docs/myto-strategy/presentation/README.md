@@ -1,6 +1,6 @@
 # Myto strategy deck
 
-18 slides, 16:9, plain HTML, SVG and CSS, drawn in the Myto app's own design system. No remote assets, no framework, no runtime dependencies. Final export: `exports/myto-strategy-deck.pdf`.
+19 slides, 16:9, plain HTML, SVG and CSS, drawn in the Myto app's own design system. No remote assets, no framework, no runtime dependencies. Final exports: `exports/myto-strategy-deck.pdf` and the editable `exports/myto-strategy-deck.pptx`.
 
 ## Where things are
 
@@ -13,8 +13,10 @@
 | `styles.css` | Token layer plus components, see below |
 | `presentation.js` | Navigation, 16:9 scaling, overview, presentation mode |
 | `export-pdf.js` | Playwright to PDF |
+| `deck-data.mjs` | Parses `deck-content.md` and resolves the model placeholders; shared by `build.mjs` and `build-pptx.mjs` |
+| `build-pptx.mjs` | The same content and model to an editable PowerPoint file (see below) |
 | `assets/` | `fonts/`, `img/` and `pending/` (illustrations, all delivered), `opt/` (generated, web-sized), `shots/` (frames from the app screen recordings) |
-| `exports/` | `myto-strategy-deck.pdf` |
+| `exports/` | `myto-strategy-deck.pdf`, `myto-strategy-deck.pptx` |
 
 `index.html` and `assets/opt/` are generated. Do not edit them.
 
@@ -34,13 +36,18 @@ Components are the app's, redrawn: Card and tinted cards, Badge pills with a gly
 # from the repo root
 node docs/myto-strategy/model.mjs      # change inputs in model.mjs, see the tables
 npm run deck:build                      # deck-content.md + model.mjs -> index.html (also refreshes assets/opt)
-npm run deck:pdf                        # index.html -> exports/myto-strategy-deck.pdf (18 pages, 1920x1080 px each, no margins)
+npm run deck:pdf                        # index.html -> exports/myto-strategy-deck.pdf (19 pages, 1920x1080 px each, no margins)
+npm run deck:pptx                       # deck-content.md + model.mjs -> exports/myto-strategy-deck.pptx (19 slides, 16:9)
 open docs/myto-strategy/presentation/index.html
 ```
 
 Changing a number: edit `model.mjs`, then `deck:build`. Changing words: edit `deck-content.md`, then `deck:build`. The build fails on an unknown model path, an unknown status word or a missing image, and warns when a footer note is too long (keep caption + assumptions + sources under about 300 characters).
 
 `deck:pdf` needs Playwright. It uses a normal `playwright` install if present, else the copy in the npx cache (`npx -y playwright --version` populates it), and launches the system Google Chrome, falling back to Playwright's Chromium. `prepare-assets.mjs` needs `sharp` (a repo dependency); without it the build falls back to the original images and the PDF is much larger.
+
+## Investor pitch (10 slides)
+
+`deck-pitch.md` is the short investor version: same layouts, model and assets, selected with `DECK=pitch`. `npm run pitch:build` writes `index-pitch.html`, `pitch:pdf` and `pitch:pptx` write `exports/myto-pitch-deck.*`. Two layouts exist only for it, `demo` (product slide with a video slot: set `video: file.mp4` in `assets/video/`, else a poster with a play button) and `ask`. The PPTX was not checked visually (no PowerPoint or Keynote render).
 
 ## Viewing
 
@@ -53,9 +60,11 @@ Keys: Right, Down, Space, PageDown next; Left, Up, PageUp previous; Home, End; t
 - Product screens on the Product and Group rides slides are real frames from `video/public/capture` (test build, test data). The Shop and Marks screens are concept mockups, labelled as such, until real screens are verified.
 - Every picture is a real asset. The rider and bike cut-out `o04-rider-bike-cutout.webp` is available but not placed; use it only on a white or card-coloured region.
 
-## PPTX: evaluated, not built
+## PowerPoint export
 
-Not recommended as a primary format. The deck is code-driven: the flywheel, capacity ladder, roadmap and financial charts are native SVG and CSS generated from the model, and the type is Michroma and Geist. A PowerPoint file would either flatten those into pictures (not editable, defeats the point), or need every diagram rebuilt as PowerPoint shapes and the fonts embedded, which creates a second copy of the content that drifts from `deck-content.md` and `model.mjs`. If a stakeholder insists on an editable PPTX, the least bad route is a separate script (for example `pptxgenjs`) that reads the same `deck-content.md` and `model.mjs`, with charts as native PowerPoint charts, accepting layout differences. For sharing, the PDF is the faithful format and the HTML is the live one.
+`npm run deck:pptx` builds `exports/myto-strategy-deck.pptx` from the same `deck-content.md` and `model.mjs` as the HTML, so words and numbers cannot drift. Text, cards, status pills, the flywheel, the roadmap, the tables and the two financial charts are native PowerPoint objects (the charts are real charts with their data). The illustrations and the app screenshots are pictures (rounded and cropped to match); the two Shop and Marks concept phones are redrawn as shapes. The theme carries the app palette, the slides sit in five sections, and every layout in the deck is hand-placed in `build-pptx.mjs` (one function per layout name, same names as `build.mjs`). A new layout in `build.mjs` needs a matching builder there, or the script stops with an error.
+
+Install the fonts from `assets/fonts/` (Michroma, Geist, Geist Mono) before opening the file, or PowerPoint substitutes its own and the headlines reflow. Differences from the HTML: the slide number is PowerPoint's own field ("2", not "02 / 19"), and chart labels are in lakh with two decimals. PowerPoint itself was not available when this was built; layout was checked in Keynote and the file passes the OOXML validator. Charts could not be previewed outside PowerPoint.
 
 ## Known limits
 

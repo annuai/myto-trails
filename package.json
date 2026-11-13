@@ -20,9 +20,14 @@
     "check:tokens": "node tooling/check-tokens.mjs",
     "check:versions": "node tooling/check-versions.mjs",
     "deck:build": "node docs/myto-strategy/presentation/build.mjs",
-    "deck:pdf": "node docs/myto-strategy/presentation/export-pdf.js"
+    "deck:pdf": "node docs/myto-strategy/presentation/export-pdf.js",
+    "deck:pptx": "node docs/myto-strategy/presentation/build-pptx.mjs",
+    "pitch:build": "DECK=pitch node docs/myto-strategy/presentation/build.mjs",
+    "pitch:pdf": "DECK=pitch node docs/myto-strategy/presentation/export-pdf.js",
+    "pitch:pptx": "DECK=pitch node docs/myto-strategy/presentation/build-pptx.mjs"
   },
   "devDependencies": {
-    "patch-package": "^8.0.1"
+    "patch-package": "^8.0.1",
+    "pptxgenjs": "^4.0.1"
   }
 }

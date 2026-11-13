@@ -130,3 +130,17 @@ Principles carried over from our rules: free tier only, local-first, private by 
 3. Are paid rides in scope at all? My default is no: manual paid tick only.
 4. Is a social layer (follow, likes, badges, leaderboard) wanted, or do we stay trust-and-ride focused?
 5. Should we spend time on stays and mechanics directories? They need data we would have to collect.
+
+## 8. Wider landscape (2026-11-13)
+
+Public listings and press only; no app opened, no usage data. Feeds deck slide 17.
+
+| App | What the listing shows | Source |
+|---|---|---|
+| The Good Biker (TGB Technologies) | Ride tracking, live group rides, clubs, events with ticketing, garage and documents, feed, marketplace, AI assistant beta, SOS. Free; about 500+ Android installs; too few iOS ratings to show | [App Store](https://apps.apple.com/us/app/the-good-biker/id6448780305), [Play](https://apkcombo.com/the-good-biker/com.thegoodbiker.userapp) |
+| WingManX | Groups, live tracking, rider ratings and verification, tow assist (two a year), insurance and PUC reminders. 4.2 from 25 ratings | [App Store](https://apps.apple.com/in/app/wingmanx/id6479581088) |
+| Rev Your Soul (Kiara Motorsports) | Offline maps, documents, group chat, gear shop; one review says payment is not disclosed until after sign-up | [App Store](https://apps.apple.com/in/app/rev-your-soul/id1484967500) |
+| REVER | Tracking, route sharing, turn-by-turn; Pro about $40 a year (one source says maintenance-only, unverified) | [App Store](https://apps.apple.com/app/id975571447) |
+| Calimoto, Kurviger | Twisty routing and turn-by-turn; offline use is a paid tier (Calimoto about $80 a year, Kurviger price not found) | [Calimoto](https://calimoto.com/en/pricing), [Kurviger](https://docs.kurviger.com/app/manual/pro) |
+
+Not found or not checked: Asteride, Motobit, RideSense, Recky, Trails of India (named in search results, listings not read). Where we lead is our own stated design (trail evidence and moderation, offline first); where they lead is what their listing shows and ours does not.
