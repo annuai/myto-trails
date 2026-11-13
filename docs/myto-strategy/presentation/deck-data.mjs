@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { runAll, SCENARIOS, SHARED, inr, inrShort, MONTHS } from "../model.mjs";
+import { runAll, SCENARIOS, SHARED, RAISE, inr, inrShort, MONTHS } from "../model.mjs";
 
 export const here = dirname(fileURLToPath(import.meta.url));
 // DECK=pitch builds the 10-slide investor version (deck-pitch.md) from the same layouts, model and assets.
@@ -15,12 +15,13 @@ for (const r of Object.values(model.scenarios)) { let a = 0, lo = 0; for (const 
 // ---------- formatting and placeholders ----------
 const FMT = {
   inr: (v) => inr(v), short: (v) => inrShort(v),
-  num: (v) => Number(v).toLocaleString("en-IN"), pct: (v) => Math.round(v * 100) + "%", raw: (v) => String(v),
+  num: (v) => Number(v).toLocaleString("en-IN"), cr: (v) => `₹${(v / 1e7).toFixed(1)} Cr`, lakh: (v) => `₹${(v / 1e5).toFixed(1)} L`, pct: (v) => Math.round(v * 100) + "%", raw: (v) => String(v),
 };
 function resolvePath(path) {
   const p = path.split(".");
   if (p[0] === "in") return p.slice(2).reduce((o, k) => o?.[k], SCENARIOS[p[1]]);
   if (p[0] === "shared") return SHARED[p[1]];
+  if (p[0] === "raise") { if (!(p[1] in RAISE)) throw new Error(`Unknown model path: ${path}`); return RAISE[p[1]]; }
   const r = model.scenarios[p[0]];
   if (!r) throw new Error(`Unknown model path: ${path}`);
   const v = p.slice(1).reduce((o, k) => o?.[k], r);

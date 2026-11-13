@@ -27,6 +27,7 @@ import { eventRoutes } from "./event-routes";
 import { rideRoutes } from "./ride-routes";
 import { trailmarkRoutes } from "./trailmark-routes";
 import { standingRoutes } from "./standing-routes";
+import { syncRoutes } from "./sync-routes";
 import { shopRoutes } from "./shop-routes";
 import { listCountries, registerInterest } from "../countries/countries";
 import { revokeToken } from "./tokens";
@@ -165,7 +166,7 @@ export const routes: RouteDef[] = [
     async handler(c) {
       const b = await asObject(c);
       const r = await exchangeAppCode(c.sql, { code: String(b.code ?? ""), verifier: String(b.verifier ?? ""), kind: String(b.kind ?? "") });
-      if (r.ok) return ok({ token: r.token, scopes: ["saved", "write:submission"] }, 201);
+      if (r.ok) return ok({ token: r.token, scopes: ["saved", "write:submission", "sync"] }, 201);
       if (r.reason === "too_many_tokens") return fail(409, "too_many_tokens", "This account has too many connected devices. Remove one under Account, Connected devices.");
       return r.reason === "invalid_request" ? fail(400, "invalid_request", "Send code, verifier and kind.") : fail(400, "invalid_grant", "The code is invalid, expired or already used.");
     },
@@ -435,6 +436,7 @@ export const routes: RouteDef[] = [
   ...rideRoutes,
   ...trailmarkRoutes,
   ...standingRoutes,
+  ...syncRoutes,
   ...eventRoutes,
   ...shopRoutes,
 ];

@@ -2,6 +2,10 @@ import { useMemo, useRef, useState, type ComponentRef } from 'react';
 import { Share, View } from 'react-native';
 import { Camera, Image as ImageIcon, ImagePlus, Layers, Link2, Send } from 'lucide-react-native';
 import { createSharedRoute } from '@/api/sharedRoutes';
+import { CameraCapture } from '@/features/camera/CameraCapture';
+import { bakeFilm, uprightPhoto } from '@/lib/film/skiaFilm';
+import type { FilmLook } from '@/lib/filmLook';
+import { filmImage } from '@/ui/FilmImage.tokens';
 import { layoutAreaMap, layoutCardMap, mapBoxOf } from '@/lib/cardMap';
 import { currentPlacement, overlayBox, placementAfterFormatChange, type PhotoLayout, type Placement } from '@/lib/photoCard';
 import { pickCardPhoto, type PickedPhoto } from '@/lib/pickPhoto';
@@ -44,6 +48,7 @@ type Mode = 'card' | 'photo';
 export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: boolean; onClose: () => void }) {
   const token = useAuth((s) => s.token);
   const card = useCompanion((s) => s.card);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [mode, setMode] = useState<Mode>('card');
   const [hideRoute, setHideRoute] = useState(false);
   /** A short ride has nothing left once its start and end are cut off: the rider may choose to show it whole. */
@@ -149,7 +154,20 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
       else await shareToStories({ backgroundUri: await captureCard(fullRef.current) });
     } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not open Instagram.'); } finally { setCapturing(false); }
   };
+  /** A photo from the film camera: the look is drawn into it, then it goes on the card like any picked photo (the card crops it to fit). */
+  const cameraPhoto = async (uri: string, look: FilmLook) => {
+    setCameraOpen(false);
+    setMessage(undefined);
+    const format = card.format;
+    try {
+      const upright = await uprightPhoto(uri, filmImage.bakeLongSide);
+      const picked = look.id === 'none' ? upright : await bakeFilm(uri, look, filmImage.bakeLongSide, filmImage.bakeJpegQuality).then(async (baked) => ({ ...(await uprightPhoto(baked, filmImage.bakeLongSide)) }));
+      setDragging(false);
+      setPhoto({ picked, format });
+    } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not use that photo. Try another one.'); }
+  };
   const choosePhoto = async (source: 'library' | 'camera') => {
+    if (source === 'camera') return setCameraOpen(true);
     setMessage(undefined);
     const format = card.format;
     const r = await pickCardPhoto(source, format);
@@ -220,6 +238,8 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   );
 
   return (
+    <>
+    <CameraCapture open={cameraOpen} onPhoto={(uri, look) => void cameraPhoto(uri, look)} onClose={() => setCameraOpen(false)} />
     <Sheet open={open} title="Share this ride" onClose={onClose} scrollEnabled={!dragging}>
       <View style={{ flexDirection: 'row', gap: space[2], justifyContent: 'center' }}>
         <ChoiceChip label="Card" selected={mode === 'card'} onPress={() => switchMode('card')} />
@@ -254,5 +274,6 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
         </View>
       ) : null}
     </Sheet>
+    </>
   );
 }

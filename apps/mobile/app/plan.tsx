@@ -10,6 +10,7 @@ import { RouteCheck } from '@/features/RouteCheck';
 import { elevationProfile } from '@/lib/elevation';
 import { exportGpx } from '@/lib/exportGpx';
 import { pathLength } from '@/lib/geo';
+import { SHOW_SAVED_ROUTES } from '@/lib/savedRoutes';
 import { parseGpx } from '@/lib/gpxImport';
 import { gpxForExport } from '@/lib/privacy';
 import { useSavedPlaces } from '@/lib/savedPlaces';
@@ -89,7 +90,7 @@ export default function Plan() {
       <ListCard>
         <Row label="Following" value={followed?.name ?? trip?.name ?? 'Nothing'} chevron={false} />
         {followed ? <Row label="Stop following my route" onPress={() => follow(undefined)} chevron={false} /> : null}
-        <Row label="Choose a published trail" onPress={() => router.push('/trails')} />
+        <Row label="Choose a trail" onPress={() => router.push('/trails')} />
       </ListCard>
 
       <SectionTitle>Build a route</SectionTitle>
@@ -99,7 +100,7 @@ export default function Plan() {
       <Button variant="soft" icon={FileUp} label="Import a GPX file" onPress={() => void importGpx()} />
       {problem ? <Text variant="label" tone="stop" style={{ marginTop: space[2] }}>{problem}</Text> : null}
 
-      {routes.length ? (
+      {SHOW_SAVED_ROUTES && routes.length ? (
         <>
           <SectionTitle>Your routes</SectionTitle>
           <ListCard>

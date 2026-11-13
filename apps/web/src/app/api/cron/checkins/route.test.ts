@@ -6,6 +6,8 @@ vi.mock("@/server/auth/session", () => ({ getEmailSender: () => ({}) }));
 const sweep = vi.hoisted(() => vi.fn(async () => ({ notified: 2, wiped: 1 })));
 vi.mock("@/server/rides/checkins", () => ({ sweepCheckins: sweep }));
 vi.mock("@/server/rides/group-rides", () => ({ sweepGroupRides: async () => 4 }));
+const beat = vi.hoisted(() => vi.fn(async () => {}));
+vi.mock("@/server/api/heartbeat", () => ({ recordHeartbeat: beat }));
 vi.mock("next/server", () => ({ connection: async () => {} }));
 
 import { GET } from "./route";
@@ -26,6 +28,7 @@ describe("check-ins cron", () => {
     const res = await GET(new Request(url, { headers: { authorization: `Bearer ${SECRET}` } }));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ notified: 2, wiped: 1, groupRidesEnded: 4 });
+    expect(beat).toHaveBeenCalledWith(expect.anything(), "checkins");
   });
 
   it("is closed when no secret is configured", async () => {

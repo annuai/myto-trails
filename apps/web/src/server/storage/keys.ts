@@ -1,8 +1,8 @@
 import { InvalidExpiryError, InvalidKeyError } from "./types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const KINDS = ["gpx", "image", "evidence"] as const;
-const EXTENSIONS = ["gpx", "jpg", "png", "webp", "avif", "heic", "pdf"] as const;
+const KINDS = ["gpx", "image", "evidence", "track"] as const;
+const EXTENSIONS = ["gpx", "jpg", "png", "webp", "avif", "heic", "pdf", "bin"] as const;
 const MAX_KEY_LENGTH = 200;
 const SAFE_SEGMENT = /^[A-Za-z0-9._-]+$/;
 

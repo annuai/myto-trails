@@ -45,9 +45,9 @@ Changing a number: edit `model.mjs`, then `deck:build`. Changing words: edit `de
 
 `deck:pdf` needs Playwright. It uses a normal `playwright` install if present, else the copy in the npx cache (`npx -y playwright --version` populates it), and launches the system Google Chrome, falling back to Playwright's Chromium. `prepare-assets.mjs` needs `sharp` (a repo dependency); without it the build falls back to the original images and the PDF is much larger.
 
-## Investor pitch (10 slides)
+## Investor pitch (15 slides)
 
-`deck-pitch.md` is the short investor version: same layouts, model and assets, selected with `DECK=pitch`. `npm run pitch:build` writes `index-pitch.html`, `pitch:pdf` and `pitch:pptx` write `exports/myto-pitch-deck.*`. Two layouts exist only for it, `demo` (product slide with a video slot: set `video: file.mp4` in `assets/video/`, else a poster with a play button) and `ask`. The PPTX was not checked visually (no PowerPoint or Keynote render).
+`deck-pitch.md` is the founder's pre-seed pitch: same layouts, model and assets, selected with `DECK=pitch`. `npm run pitch:build` writes `index-pitch.html`, `pitch:pdf` and `pitch:pptx` write `exports/myto-pitch-deck.*`. Arc: a three-chapter origin story (Ladakh, Bengaluru weekends, the group ride), then problem, Rider OS, product, market, why now, model, metrics, built so far, competition, app-to-brand vision, ask. Unlike the strategy deck it states cited market figures (Royal Enfield FY25, Crisil, CareEdge, Lok Sabha Ladakh data) and the raise, built bottom-up in `model.mjs` (`RAISE_INPUTS`; ₹1.2 Cr for 18 months, placeholders `{{raise.ask|cr}}`, `raise.teamPct`, `raise.burn`). Pitch-only layouts: `story` (keys `chapter:`, `imgpos:`), `demo` (video slot: `video: file.mp4` in `assets/video/`) and `ask`. Michroma draws `~` like a minus, so no tilde in display-font values. The PPTX was checked through a Keynote export (charts render only in PowerPoint).
 
 ## Viewing
 

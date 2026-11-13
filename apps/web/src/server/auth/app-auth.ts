@@ -44,6 +44,6 @@ export async function exchangeAppCode(sql: Sql, i: { code: string; verifier: str
   const actual = Buffer.from(pkceChallenge(i.verifier));
   if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return { ok: false, reason: "invalid_grant" };
   const label = i.kind === "app_ios" ? "Myto app (iPhone)" : "Myto app (Android or web)";
-  const t = await createToken(sql, { userId: row.user_id as string, kind: i.kind as TokenKind, label, scopes: ["saved", "write:submission"] });
+  const t = await createToken(sql, { userId: row.user_id as string, kind: i.kind as TokenKind, label, scopes: ["saved", "write:submission", "sync"] });
   return t.ok ? { ok: true, token: t.token } : { ok: false, reason: "too_many_tokens" };
 }

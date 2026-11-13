@@ -20,7 +20,7 @@ export type Notifier = {
 };
 
 /** What the plan is built from, read fresh on every sync. */
-export type World = Pick<PlanInput, 'todos' | 'appKm' | 'trip' | 'paused' | 'rides' | 'lastCheckAt'>;
+export type World = Pick<PlanInput, 'todos' | 'appKm' | 'trip' | 'paused' | 'rides' | 'lastCheckAt'> & { /** When Pillion was first met. */ pillionSince?: number };
 
 /** iOS keeps at most 64 pending local notifications; the soonest 60 are scheduled and the rest are picked up at the next sync. */
 export const MAX_SCHEDULED = 60;
@@ -43,7 +43,11 @@ export function createSyncer(deps: { now: () => number; world: () => World; stor
     const allowed = (await notifier.permission()) === 'granted';
     // The reminders that already came due are in the inbox: the last check one holds back the next for a week.
     const lastCheckReminderAt = inbox.filter((n) => n.id.startsWith('check:')).reduce((m, n) => Math.max(m, n.at), 0) || undefined;
-    const base = planReminders({ ...world, now, prefs, lastCheckReminderAt });
+    // Pillion's notifications are in the inbox once they came due: the last holds the next back a week, and "waiting" ones since the last ride are counted.
+    const lastRideAt = (world.rides ?? []).filter((r) => !r.sample && !r.simulated).reduce((m, r) => Math.max(m, r.startedAt), 0);
+    const pillionSeen = inbox.filter((n) => n.id.startsWith('pillion:'));
+    const pillion = { since: world.pillionSince, lastAt: pillionSeen.reduce((m, n) => Math.max(m, n.at), 0) || undefined, waited: pillionSeen.filter((n) => n.id.startsWith('pillion:waiting') && n.at > lastRideAt).length };
+    const base = planReminders({ ...world, now, prefs, lastCheckReminderAt, pillion });
     const planned = deps.nudges ? [...base, ...deps.nudges(now, base)].sort((a, b) => a.fireAt - b.fireAt) : base;
 
     for (const r of serviceKmReminders(world.todos, world.appKm, kmNotified, now, prefs)) {

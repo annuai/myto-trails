@@ -13,6 +13,7 @@ import { useTrips } from '@/store/trips';
 import { dayDate, soonestTrip } from '@/lib/tripPlan';
 import { planForSync } from '@/nudgeWorld';
 import { useNudges } from '@/store/nudges';
+import { usePillion } from '@/store/pillion';
 
 const syncer = createSyncer({
   now: Date.now,
@@ -32,6 +33,7 @@ const syncer = createSyncer({
       appKm: totalKm(useRides.getState().rides),
       rides: useRides.getState().rides,
       lastCheckAt: useFixit.getState().last?.at,
+      pillionSince: usePillion.getState().firstOpenAt,
       trip,
       paused: rec.status !== 'idle' && rec.paused ? { since: rec.pausedAt } : undefined,
     };
@@ -59,6 +61,7 @@ export function NotificationHost() {
       useTodos.subscribe(soon), useFixit.subscribe(soon), useRides.subscribe(soon), useTrailStore.subscribe(soon), useTrips.subscribe(soon),
       useNotifications.subscribe((s) => { if (s.prefs !== prefs) { prefs = s.prefs; soon(); } }),
       useNudges.subscribe((s, prev) => { if (s.level !== prev.level || s.muted !== prev.muted || s.forecast !== prev.forecast || s.clubs !== prev.clubs) soon(); }),
+      usePillion.subscribe((s, prev) => { if (s.firstOpenAt !== prev.firstOpenAt) soon(); }),
       useRecorder.subscribe((s) => { const k = `${s.status}:${s.paused}:${s.pausedAt}`; if (k !== pause) { pause = k; soon(); } }),
     ];
     return () => { app.remove(); off.forEach((f) => f()); clearTimeout(timer); };

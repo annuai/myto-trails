@@ -2,7 +2,7 @@ import type { Sql } from "postgres";
 import { generateToken, hashToken } from "../auth/tokens";
 
 export const TOKEN_KINDS = ["app_ios", "app_android", "navi"] as const;
-export const TOKEN_SCOPES = ["saved", "write:submission"] as const;
+export const TOKEN_SCOPES = ["saved", "write:submission", "sync"] as const;
 export type TokenKind = (typeof TOKEN_KINDS)[number];
 export type TokenScope = (typeof TOKEN_SCOPES)[number];
 const MAX_TOKENS = 10;

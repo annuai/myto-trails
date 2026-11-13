@@ -15,9 +15,11 @@ import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
 import { NudgeHost } from '@/NudgeHost';
+import { PillionHost } from '@/PillionHost';
 import { AutoEndHost } from '@/AutoEndHost';
 import { MarkHost } from '@/MarkHost';
 import { PhotoOutboxHost } from '@/PhotoOutboxHost';
+import { SyncHost } from '@/SyncHost';
 import { SubmissionQueueHost } from '@/SubmissionQueueHost';
 import { refreshFixit } from '@/fixit/content';
 import { refreshQuotes } from '@/store/quotes';
@@ -30,7 +32,9 @@ import { RideNotificationHost } from '@/RideNotificationHost';
 import { VoiceHost } from '@/VoiceHost';
 import { runRideIdMigration } from '@/lib/rideIdMigration.run';
 import { startCachePersistence } from '@/api/cachePersist.run';
+import { startCrashReporting, withCrashReporting } from '@/lib/crashReporting';
 
+startCrashReporting();
 void SplashScreen.preventAutoHideAsync();
 
 // Web build only. A phone app does not select text when you press and hold a button, so the browser build should not either.
@@ -42,7 +46,7 @@ const WEB_BASE_CSS = `
   [role=button], [role=tab], [role=checkbox], [role=link] { touch-action: manipulation; }
 `;
 
-export default function Root() {
+function Root() {
   const { width, height } = useWindowDimensions();
   useEffect(() => {
     if (Platform.OS !== 'web' || document.getElementById('myto-web-base')) return;
@@ -76,6 +80,7 @@ export default function Root() {
       <CompanionHost />
       <SubmissionQueueHost />
       <PhotoOutboxHost />
+      <SyncHost />
       <NudgeHost />
       <AutoEndHost />
       <ResumeHost />
@@ -90,6 +95,7 @@ export default function Root() {
       <OsmAskHost />
       <CrashHost />
       <MarkHost />
+      <PillionHost />
     </Theme>
   );
   return (
@@ -105,3 +111,5 @@ export default function Root() {
     </GestureHandlerRootView>
   );
 }
+
+export default withCrashReporting(Root);

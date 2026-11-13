@@ -9,5 +9,5 @@ export const filmImage = {
   /** Where the vignette starts to darken, as a share of the distance from the centre to the corner. */
   vignetteStart: 0.55,
   /** Long side, in pixels, of a baked picture (the same as a plain journal photo), and how long to let the hidden picture settle before it is captured. */
-  bakeLongSide: 1600, bakeJpegQuality: 0.85, bakeSettleMs: 600,
+  bakeLongSide: 1600, previewLongSide: 1080, bakeJpegQuality: 0.85, bakeSettleMs: 600,
 } as const;

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { Bell, CalendarClock, ClipboardList, Navigation2, Pause, Settings, Trash2 } from 'lucide-react-native';
+import { Bell, CalendarClock, ClipboardList, Dog, Navigation2, Pause, Settings, Trash2 } from 'lucide-react-native';
 import { formatShort, toISO } from '@/lib/dates';
 import { useNotifications } from '@/store/notifications';
 import { EmptyState } from '@/ui/EmptyState';
@@ -9,7 +9,7 @@ import { IconButton } from '@/ui/IconButton';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
 
-const iconFor = { todo: ClipboardList, trip: CalendarClock, ride: Pause, nudge: Navigation2 } as const;
+const iconFor = { todo: ClipboardList, trip: CalendarClock, ride: Pause, nudge: Navigation2, pillion: Dog } as const;
 const when = (at: number) => `${formatShort(toISO(new Date(at)))}, ${new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
 /** Reminders that have come due, newest first. Each can be cleared on its own. */

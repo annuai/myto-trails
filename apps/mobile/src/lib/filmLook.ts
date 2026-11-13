@@ -10,8 +10,15 @@ export type Rgb = readonly [number, number, number];
 
 export const IDENTITY: Matrix = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
 
-export type LookId = 'none' | 'colour-negative' | 'faded-slide' | 'mono' | 'sepia' | 'cross-process' | 'halftone';
-export type Look = { id: LookId; label: string; matrix: Matrix; /** Grain and vignette at full intensity. */ grain: number; vignette: number; /** Halftone dot screen opacity at full intensity (0 for the film looks). */ dots?: number };
+export type LookId = 'none' | 'vivid' | 'colour-negative' | 'faded-slide' | 'mist' | 'mono' | 'noir' | 'sepia' | 'cross-process' | 'disposable' | 'halftone' | 'newsprint';
+/** How a look's dot screen is printed: `cmyk` is four rotated colour screens, `mono` a single black screen at 45 degrees. */
+export type Screen = 'cmyk' | 'mono';
+/**
+ * One film look. `matrix` is the colour grade; `curve` an S-curve on contrast (0..1); `shadow` and `highlight` are colour
+ * offsets added to the dark and bright parts (split toning) by `split`; `grain` and `vignette` as before; `screen` and `dots`
+ * a real halftone screen; `leak` a light leak from the left edge. The GPU shader (lib/film/filmShader) reads all of them.
+ */
+export type Look = { id: LookId; label: string; matrix: Matrix; grain: number; vignette: number; dots?: number; curve?: number; shadow?: Rgb; highlight?: Rgb; split?: number; screen?: Screen; leak?: number };
 export type FilmLook = { id: LookId; intensity: number };
 
 export const DEFAULT_INTENSITY = 0.7;
@@ -49,14 +56,34 @@ const channels = (gain: Rgb, contrast: number, lift: Rgb): Matrix => [
 ];
 const stock = (sat: number, gain: Rgb, contrast: number, lift: Rgb) => multiply(saturation(sat), channels(gain, contrast, lift));
 
+/** Black and white from a weighting of the three channels (they should add to 1), then contrast around mid grey. */
+const monoMix = (w: Rgb, contrast: number): Matrix => {
+  const row = (o: number) => [w[0] * contrast, w[1] * contrast, w[2] * contrast, 0, o];
+  const off = 0.5 * (1 - contrast);
+  return [...row(off), ...row(off), ...row(off), 0, 0, 0, 1, 0];
+};
+
 export const LOOKS: readonly Look[] = [
   { id: 'none', label: 'None', matrix: IDENTITY, grain: 0, vignette: 0 },
-  { id: 'colour-negative', label: 'Colour negative', matrix: stock(1.08, [1.06, 1, 0.92], 1.05, [0.01, 0.01, 0.0]), grain: 0.32, vignette: 0.26 },
-  { id: 'faded-slide', label: 'Faded slide', matrix: stock(0.78, [1.02, 1, 0.97], 0.9, [0.06, 0.06, 0.07]), grain: 0.24, vignette: 0.2 },
-  { id: 'mono', label: 'Black and white', matrix: stock(0, [1, 1, 1], 1.3, [0, 0, 0]), grain: 0.45, vignette: 0.34 },
-  { id: 'sepia', label: 'Sepia', matrix: stock(0, [1.1, 0.96, 0.76], 1.05, [0.02, 0.015, 0.0]), grain: 0.28, vignette: 0.3 },
-  { id: 'cross-process', label: 'Cross process', matrix: stock(1.15, [1.1, 1.02, 0.9], 1.12, [-0.03, 0.0, 0.06]), grain: 0.34, vignette: 0.28 },
-  { id: 'halftone', label: 'Halftone', matrix: stock(0, [1.02, 1, 0.96], 1.4, [0.02, 0.02, 0.02]), grain: 0.12, vignette: 0.12, dots: 0.55 },
+  // Clean and punchy for sunlit trails: contrast, colour and a touch of clarity, no stylisation.
+  { id: 'vivid', label: 'Vivid', matrix: stock(1.28, [1.02, 1.0, 1.0], 1.08, [0, 0, 0]), grain: 0, vignette: 0.1, curve: 0.5 },
+  // A warm colour-negative stock: lifted shadows, golden highlights, teal in the darks.
+  { id: 'colour-negative', label: 'Warm film', matrix: stock(1.06, [1.07, 1.0, 0.9], 1.04, [0.012, 0.01, 0.0]), grain: 0.3, vignette: 0.24, curve: 0.3, shadow: [-0.02, 0.012, 0.02], highlight: [0.03, 0.012, -0.03], split: 1 },
+  { id: 'faded-slide', label: 'Faded', matrix: stock(0.8, [1.02, 1, 0.97], 0.88, [0.07, 0.07, 0.08]), grain: 0.22, vignette: 0.18, curve: 0.2, shadow: [0.0, 0.01, 0.03], highlight: [0.02, 0.0, -0.01], split: 1 },
+  // Cool, soft and blue-green for early mist and mountain mornings.
+  { id: 'mist', label: 'Mist', matrix: stock(0.82, [0.94, 1.0, 1.08], 0.92, [0.03, 0.04, 0.05]), grain: 0.14, vignette: 0.16, curve: 0.15, shadow: [-0.01, 0.015, 0.03], highlight: [-0.01, 0.01, 0.02], split: 1 },
+  // Panchromatic black and white: the channels are mixed like a film's response, with a gentle curve.
+  { id: 'mono', label: 'Mono', matrix: monoMix([0.34, 0.5, 0.16], 1.12), grain: 0.4, vignette: 0.3, curve: 0.45 },
+  // High-contrast black and white shot through a red filter: dark skies, bright roads, heavy grain.
+  { id: 'noir', label: 'Noir', matrix: monoMix([0.72, 0.28, 0.0], 1.32), grain: 0.6, vignette: 0.45, curve: 0.85 },
+  { id: 'sepia', label: 'Sepia', matrix: stock(0, [1.1, 0.96, 0.76], 1.05, [0.02, 0.015, 0.0]), grain: 0.26, vignette: 0.3, curve: 0.25 },
+  { id: 'cross-process', label: 'Cross process', matrix: stock(1.18, [1.1, 1.02, 0.9], 1.12, [-0.03, 0.0, 0.06]), grain: 0.3, vignette: 0.26, curve: 0.4, shadow: [-0.03, 0.03, 0.05], highlight: [0.05, 0.03, -0.06], split: 1 },
+  // A flash-lit disposable camera: hard contrast, warm cast, strong corners, a light leak.
+  { id: 'disposable', label: 'Disposable', matrix: stock(1.12, [1.08, 1.0, 0.92], 1.18, [0.02, 0.01, 0.0]), grain: 0.42, vignette: 0.5, curve: 0.55, leak: 0.55 },
+  // A real offset-print screen: cyan, magenta, yellow and black dots at their print angles, on warm paper.
+  { id: 'halftone', label: 'Halftone', matrix: stock(1.2, [1, 1, 1], 1.1, [0, 0, 0]), grain: 0.1, vignette: 0.1, dots: 1, screen: 'cmyk' },
+  // A newspaper photo: one black dot screen at 45 degrees on newsprint.
+  { id: 'newsprint', label: 'Newsprint', matrix: monoMix([0.3, 0.55, 0.15], 1.25), grain: 0.18, vignette: 0.14, dots: 1, screen: 'mono' },
 ];
 
 /** The look a swipe lands on: `step` 1 is the next look, -1 the previous. It stops at either end rather than wrapping. */
@@ -75,14 +102,14 @@ export const lookById = (id: string): Look => LOOKS.find((l) => l.id === id) ?? 
 
 const lerp = (a: Matrix, b: Matrix, t: number): Matrix => a.map((v, i) => v + (b[i] - v) * t);
 
-export type LookParams = { matrix: Matrix; /** Grain opacity, 0 to 0.5. */ grain: number; /** Vignette opacity at the corners, 0 to 0.4. */ vignette: number; /** Dot screen opacity, 0 to 0.6. */ dots: number; /** True when the picture is left exactly as it was. */ neutral: boolean };
+export type LookParams = { /** The rest of the look scaled by strength: curve, split toning, screen, leak. */ curve: number; shadow: Rgb; highlight: Rgb; split: number; screen?: Screen; leak: number; matrix: Matrix; /** Grain opacity, 0 to 0.5. */ grain: number; /** Vignette opacity at the corners, 0 to 0.4. */ vignette: number; /** Dot screen opacity, 0 to 0.6. */ dots: number; /** True when the picture is left exactly as it was. */ neutral: boolean };
 
 /** What to draw for a look at an intensity (0 to 1): the matrix blended with "no change", and grain and vignette scaled the same way. */
 export function lookParams(id: LookId, intensity: number): LookParams {
   const look = lookById(id);
   const t = look.id === 'none' ? 0 : clampIntensity(intensity);
   const neutral = t === 0;
-  return { matrix: neutral ? IDENTITY : lerp(IDENTITY, look.matrix, t), grain: look.grain * t, vignette: look.vignette * t, dots: (look.dots ?? 0) * t, neutral };
+  return { curve: (look.curve ?? 0) * t, shadow: look.shadow ?? [0, 0, 0], highlight: look.highlight ?? [0, 0, 0], split: (look.split ?? 0) * t, screen: look.screen, leak: (look.leak ?? 0) * t, matrix: neutral ? IDENTITY : lerp(IDENTITY, look.matrix, t), grain: look.grain * t, vignette: look.vignette * t, dots: (look.dots ?? 0) * t, neutral };
 }
 
 /** Applies a matrix to one colour (values 0..1). For tests and any code that needs the real result of a look. */

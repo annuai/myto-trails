@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Image, PanResponder, Platform, ScrollView, View } from 'react-native';
+import { PanResponder, Platform, ScrollView, View } from 'react-native';
 import { Check } from 'lucide-react-native';
+import { uprightPhoto } from '@/lib/film/skiaFilm';
 import { buzz } from '@/lib/haptics';
 import { DEFAULT_INTENSITY, LOOKS, lookById, stepLook, swipeStep, type FilmLook } from '@/lib/filmLook';
 import { useLatest } from '@/lib/useLatest';
@@ -9,6 +10,7 @@ import { radius, space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
 import { ChoiceChip } from '@/ui/Chip';
 import { FilmImage } from '@/ui/FilmImage';
+import { filmImage } from '@/ui/FilmImage.tokens';
 import { Sheet } from '@/ui/Sheet';
 import { Slider } from '@/ui/Slider';
 import { Text } from '@/ui/Text';
@@ -26,17 +28,20 @@ export function FilmSheet({ open, source, initial, onSave, onClose }: {
   const { c } = useTheme();
   const [problem, setProblem] = useState<string>();
   const [look, setLook] = useState<FilmLook>(initial ?? { id: 'none', intensity: DEFAULT_INTENSITY });
-  const [measured, setMeasured] = useState<{ source: string; width: number; height: number }>();
+  const [measured, setMeasured] = useState<{ source: string; /** An upright JPEG copy the preview is drawn from (see uprightPhoto). */ uri: string; width: number; height: number }>();
   const dims = measured && measured.source === source ? measured : undefined;
   // A sheet opened again starts from the photo's own look, not the one left from last time.
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) { setWasOpen(open); if (open) { setLook(initial ?? { id: 'none', intensity: DEFAULT_INTENSITY }); setProblem(undefined); } }
   const [wide, setWide] = useState(0);
   const [busy, setBusy] = useState(false);
-  const { ref, bake, ratio } = useBake(source);
+  const { bake } = useBake(source);
 
   useEffect(() => {
-    if (source) Image.getSize(source, (width, height) => setMeasured({ source, width, height }), () => setProblem('Could not open the photo.'));
+    if (!source) return;
+    let live = true;
+    uprightPhoto(source, filmImage.previewLongSide).then((p) => { if (live) setMeasured({ source, ...p }); }, () => { if (live) setProblem('Could not open the photo.'); });
+    return () => { live = false; };
   }, [source]);
 
   const target = dims ? bakeSize(dims.width, dims.height) : undefined;
@@ -62,7 +67,7 @@ export function FilmSheet({ open, source, initial, onSave, onClose }: {
     setBusy(true); setProblem(undefined);
     try {
       const plain = look.id === 'none';
-      await onSave(look, plain || Platform.OS === 'web' ? null : await bake(target));
+      await onSave(look, plain || Platform.OS === 'web' ? null : await bake(look));
     } catch {
       setProblem('Could not apply the look. Try again, or save the photo as it is.');
     } finally { setBusy(false); }
@@ -73,7 +78,7 @@ export function FilmSheet({ open, source, initial, onSave, onClose }: {
       <View onLayout={(e) => setWide(e.nativeEvent.layout.width)} style={{ alignItems: 'center', gap: space[4] }}>
         {source && dims && target && fit ? (
           <View {...pan.panHandlers} accessibilityHint="Swipe sideways to change the look" style={{ width: previewW, height: previewH, borderRadius: radius.control, overflow: 'hidden', backgroundColor: c.raised }}>
-            <FilmImage uri={source} pixelWidth={target.width} pixelHeight={target.height} width={previewW} height={previewH} look={look} />
+            <FilmImage uri={dims.uri} pixelWidth={target.width} pixelHeight={target.height} width={previewW} height={previewH} look={look} />
           </View>
         ) : null}
       </View>
@@ -93,11 +98,6 @@ export function FilmSheet({ open, source, initial, onSave, onClose }: {
       {problem ? <Text variant="label" tone="stop">{problem}</Text> : null}
       <Button icon={Check} label={busy ? 'Saving' : 'Save photo'} disabled={busy || !target} onPress={() => void save()} />
       <Text variant="caption" tone="muted">Your original is kept on this phone, so you can change or remove the look later.</Text>
-      {Platform.OS !== 'web' && source && dims && target && look.id !== 'none' ? (
-        <View ref={ref} collapsable={false} pointerEvents="none" style={{ position: 'absolute', left: -target.width, top: 0, width: target.width / ratio, height: target.height / ratio }}>
-          <FilmImage uri={source} pixelWidth={target.width} pixelHeight={target.height} width={target.width / ratio} height={target.height / ratio} look={look} />
-        </View>
-      ) : null}
     </Sheet>
   );
 }

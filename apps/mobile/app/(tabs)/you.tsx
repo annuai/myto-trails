@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Award, Bell, House, Gauge, Vibrate, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload, Wrench, Users } from 'lucide-react-native';
+import { Award, Bell, Cloud, House, BookOpen, Globe, Map as MapIcon, CalendarDays, ClipboardList, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, ShieldAlert, Stamp, Route as RouteIcon, Share2, TriangleAlert, Wrench, Users, Ellipsis } from 'lucide-react-native';
 import Constants from 'expo-constants';
-import { CONTACT_EMAIL, DISCORD_URL, MYTO_URL, versionLabel } from '@moto-trails/domain';
+import { CONTACT_EMAIL, MYTO_URL, versionLabel } from '@moto-trails/domain';
 import { useMe } from '@/api/useApi';
-import { usePlaces } from '@/store/places';
 import { countryName } from '@/lib/countryNames';
 import { signOut, startSignIn } from '@/lib/signIn';
 import { useOsm } from '@/store/osm';
@@ -30,7 +29,7 @@ import { BikeCard } from '@/ui/BikeCard';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Measure } from '@/ui/Measure';
-import { useAppearance } from '@/store/appearance';
+import { useSync, waitingCount } from '@/store/sync';
 import { PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Columns } from '@/ui/Columns';
@@ -44,10 +43,7 @@ import { ScalePressable } from '@/ui/motion';
 export default function You() {
   const router = useRouter();
   const home = useHomeCountry();
-  const homePlace = usePlaces((s) => s.home);
-  const inverted = useAppearance((s) => s.inverted);
-  const haptics = useAppearance((s) => s.haptics);
-  const speedTicks = useAppearance((s) => s.speedTicks);
+  const sync = useSync();
   const standingOn = useStandingPref((s) => s.optIn);
   const standingError = useStandingPref((s) => s.error);
   const osmOn = useOsm((s) => s.asked && s.enabled);
@@ -111,7 +107,6 @@ export default function You() {
         <Row icon={Fuel} label="Fuel logs" sub="What your rides cost in petrol" onPress={() => router.push('/fuel')} />
         <Row icon={Stamp} label="Trails ridden" onPress={() => router.push('/passport')} />
         <Row icon={Award} label="Marks" sub="First times and running totals" value={`${marksHeld} of ${MARKS.length}`} mono onPress={() => router.push('/marks')} />
-        <Row icon={Sparkles} label="Motion preview" sub="Replay the new animations and feel each haptic" onPress={() => router.push('/dev/motion')} />
         <Row icon={Luggage} label="Trips" value={`${tripCount}`} mono onPress={() => router.push('/trips')} />
         <Row icon={BookOpen} label="Journal" value={`${journalCount}`} mono onPress={() => router.push('/journal')} />
         <Row icon={ClipboardList} label="To-do list" value={`${openTodos} open`} onPress={() => router.push('/todos')} />
@@ -122,14 +117,10 @@ export default function You() {
       <ListCard>
         <Row icon={ShieldAlert} label="Crash detection" sub="Beta. Asks if you are OK after a crash" onPress={() => router.push('/safety')} />
         <Row icon={Globe} label="Country and units" sub={`${home ? countryName(home) : 'Not set'} · ${unit === 'mi' ? 'miles' : 'kilometres'}`} onPress={() => router.push('/region')} />
-        <Row icon={Contrast} label="Inverted colours" sub="Light riding screen, dark everywhere else" value={inverted ? 'On' : 'Off'} onPress={() => useAppearance.getState().setInverted(!inverted)} />
-        <Row icon={Vibrate} label="Haptics" sub="Taps and vibration for checks, finished tasks and marks" value={haptics ? 'On' : 'Off'} onPress={() => useAppearance.getState().setHaptics(!haptics)} />
-        {haptics ? <Row icon={Gauge} label="Speed ticks" sub="A soft tick each time your speed passes a multiple of 10, and as numbers roll" value={speedTicks ? 'On' : 'Off'} onPress={() => useAppearance.getState().setSpeedTicks(!speedTicks)} /> : null}
-        <Row icon={House} label="Home and work" sub="Used for the ride home offer and to end a ride when you arrive" value={homePlace?.label ?? 'Not set'} onPress={() => router.push('/home-place')} />
+        <Row icon={House} label="Home and work" sub="Used for the ride home offer and to end a ride when you arrive" onPress={() => router.push('/home-place')} />
         <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
         <Row icon={MapIcon} label="Improve the map" sub="Share rides with OpenStreetMap" value={osmOn ? 'On' : 'Off'} onPress={() => router.push('/osm')} />
-        <Row icon={Sparkles} label="Smart notifications" sub="Usual ride time, daylight and break reminders" onPress={() => router.push('/notifications/smart')} />
-        <Row icon={MessagesSquare} label="Join our Discord" sub="Suggest improvements and chat with other riders" onPress={() => void Linking.openURL(DISCORD_URL)} />
+        <Row icon={Ellipsis} label="Others" sub="Haptics, colours, motion, crash reports and Discord" onPress={() => router.push('/others')} />
         <Row icon={LifeBuoy} label="Report a problem" sub="Opens an email with your app version" onPress={reportProblem} />
       </ListCard>
       <SectionTitle>Privacy</SectionTitle>
@@ -139,8 +130,7 @@ export default function You() {
       {standingError ? <Text variant="label" tone="stop" style={{ marginTop: space[2] }}>{standingError}</Text> : null}
       <SectionTitle>Backup</SectionTitle>
       <ListCard>
-        <Row icon={Upload} label="Export my data" sub="One encrypted file you keep" onPress={() => router.push('/backup/export')} />
-        <Row icon={Download} label="Import data" sub="From a Myto Moto backup file" onPress={() => router.push('/backup/import')} />
+        <Row icon={Cloud} label="Backup & Sync" sub={sync.enabled ? `Sync is on · ${sync.lastError ?? (waitingCount(sync) > 0 ? `Waiting to sync: ${waitingCount(sync)}` : 'Up to date')}` : 'Export, import, and sync across phones'} onPress={() => router.push('/backup')} />
       </ListCard>
       <View style={{ marginTop: space[8] }} />
       <ListCard>

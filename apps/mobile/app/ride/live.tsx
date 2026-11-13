@@ -17,6 +17,8 @@ import { headingDegrees, headingWord } from '@/lib/compass';
 import { useSensorHeading } from '@/lib/useSensorHeading';
 import { SosActions } from '@/features/emergency/SosActions';
 import { useEmergency } from '@/features/emergency/useEmergency';
+import { CameraCapture } from '@/features/camera/CameraCapture';
+import { FilmSheet } from '@/features/film/FilmSheet';
 import { GroupSheet } from '@/features/GroupSheet';
 import { NoteSheet } from '@/features/NoteSheet';
 import { ReportSheet } from '@/features/ReportSheet';
@@ -374,10 +376,12 @@ function LiveBody() {
       <CheckinSheet open={checkinOpen} onClose={() => setCheckinOpen(false)} />
       <DocumentsSheet open={docsOpen} onClose={() => setDocsOpen(false)} />
       <CompassOverlay open={compassOpen} heading={compassHeading} onClose={() => setCompassOpen(false)} />
+      <CameraCapture open={j.cameraOpen} onPhoto={j.cameraPhoto} onClose={j.closeCamera} />
+      <FilmSheet open={!!j.film} source={j.film?.source ?? null} initial={j.film?.entry?.look ?? j.film?.look} onSave={j.saveFilm} onClose={j.closeFilm} />
       <NoteSheet open={noteOpen} canType={j.canType} onSave={j.addNote} onClose={() => setNoteOpen(false)} />
       <Sheet open={journalOpen} title="Ride journal" onClose={() => setJournalOpen(false)}>
         <Button icon={j.recording ? Square : Mic} label={j.recording ? `Stop recording ${Math.floor(j.seconds / 60)}:${String(j.seconds % 60).padStart(2, '0')}` : 'Record a voice note'} onPress={() => void j.toggleVoice()} />
-        <Button variant="soft" icon={Camera} label="Take photo" onPress={() => void j.addPhoto('camera')} />
+        <Button variant="soft" icon={Camera} label="Take photo" onPress={() => { setJournalOpen(false); void j.addPhoto('camera'); }} />
         <Button variant="soft" icon={PenLine} label={j.canType ? 'Write a note' : 'Write a note (when stopped)'} onPress={() => { setJournalOpen(false); setNoteOpen(true); }} />
         {j.problem ? <Text variant="label" tone="stop">{j.problem}</Text> : null}
       </Sheet>

@@ -22,7 +22,9 @@ export async function connectOsm(): Promise<{ ok: true } | { ok: false; error: s
     const got = codeFromRedirect(res.url, state);
     if ('error' in got) return { ok: false, error: got.error };
     const r = await fetch(`${OSM_SITE}/oauth2/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: tokenBody(got.code, verifier) });
-    const body = (await r.json().catch(() => ({}))) as { access_token?: string };
+    const body = (await r.json().catch(() => ({}))) as { access_token?: string; error?: string };
+    // invalid_client: the registration on openstreetmap.org is marked confidential, which needs a secret an app cannot keep. It must be a public client (PKCE only).
+    if (body.error === 'invalid_client') return { ok: false, error: 'OpenStreetMap does not accept this app registration (it must be a public client). The app needs a new OpenStreetMap client id.' };
     if (!r.ok || !body.access_token) return { ok: false, error: 'OpenStreetMap did not accept the sign-in.' };
     await vault.set(body.access_token);
     return { ok: true };
