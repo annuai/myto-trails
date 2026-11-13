@@ -6,7 +6,7 @@ import type { GroupRiderView, GroupStatus } from '@/lib/groupCore';
 import type { Outbox } from '@/lib/conditions';
 import type { CardFormat, CardStat } from '@/lib/rideCard';
 import type { OverlayInk, PhotoLayout } from '@/lib/photoCard';
-import { DEFAULT_STATS } from '@/lib/rideCard';
+import { CARD_SIZE, DEFAULT_STATS } from '@/lib/rideCard';
 import { storage } from './persist';
 
 /** The timer the server watches. The link is kept so it can be shared again; the server holds only its hash. */
@@ -45,10 +45,27 @@ type State = {
 
 const defaultCard = (): State['card'] => ({ format: 'story', stats: DEFAULT_STATS, layout: 'bar', ink: 'light' });
 
-/** Rebuild the stored state on load: a card saved by an older build has no layout or ink, so it gets the defaults here, once. */
+const CARD_STATS: CardStat[] = ['distance', 'time', 'topSpeed', 'waypoints', 'elevation'];
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** Check a saved card field by field; each bad or missing field falls back to its default on its own. */
+function cleanCard(saved: unknown): State['card'] {
+  const d = defaultCard();
+  if (!isObject(saved)) return d;
+  const stats = Array.isArray(saved.stats) ? saved.stats.filter((x): x is CardStat => CARD_STATS.includes(x as CardStat)) : [];
+  return {
+    format: typeof saved.format === 'string' && Object.hasOwn(CARD_SIZE, saved.format) ? (saved.format as CardFormat) : d.format,
+    stats: stats.length ? stats : d.stats,
+    layout: saved.layout === 'bar' || saved.layout === 'corner' ? saved.layout : d.layout,
+    ink: saved.ink === 'light' || saved.ink === 'dark' ? saved.ink : d.ink,
+  };
+}
+
+/** Rebuild the stored state on load: a card saved by an older build (or a damaged one) is checked and completed with defaults here, once. */
 export function mergeCompanion(saved: unknown, current: State): State {
-  const p = saved as Partial<State> | undefined;
-  return { ...current, ...p, card: { ...current.card, ...p?.card }, group: p?.group?.id === SIM_GROUP_ID ? null : p?.group ?? current.group };
+  if (!isObject(saved)) return current;
+  const p = saved as Partial<State>;
+  return { ...current, ...p, card: cleanCard(p.card), group: p.group?.id === SIM_GROUP_ID ? null : p.group ?? current.group };
 }
 
 const noLive: Live = { riders: [], regroup: null, myStatus: 'ok' };
