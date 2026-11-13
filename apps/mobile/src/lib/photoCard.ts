@@ -23,12 +23,14 @@ const finite = (n: number, fallback: number) => (Number.isFinite(n) ? n : fallba
 
 /**
  * Clamping rules (no rounding anywhere; values stay exact fractions):
- * - scale is limited to PLACEMENT_LIMITS (a non-finite scale becomes 1);
+ * - scale is limited to PLACEMENT_LIMITS (a non-finite scale becomes 1), and then to the largest scale at which the whole box
+ *   fits the picture, so a pinch never pushes the overlay past an edge (a box too big even at minScale gets that fitting scale);
  * - the whole scaled box then stays inside the picture, with no margin (the margin CARD_PAD only applies to defaultPlacement);
- * - on an axis where the scaled box is as large as or larger than the picture, the centre is 0.5.
+ * - on an axis where the scaled box fills the picture exactly, the centre is 0.5.
  */
 export function clampPlacement(p: Placement, box: Size, card: Size): Placement {
-  const scale = Math.min(PLACEMENT_LIMITS.maxScale, Math.max(PLACEMENT_LIMITS.minScale, finite(p.scale, 1)));
+  const fit = Math.min(box.width > 0 ? card.width / box.width : Infinity, box.height > 0 ? card.height / box.height : Infinity);
+  const scale = Math.min(fit, PLACEMENT_LIMITS.maxScale, Math.max(PLACEMENT_LIMITS.minScale, finite(p.scale, 1)));
   const axis = (centre: number, extent: number) => {
     const half = extent / 2;
     if (!(extent > 0) || half * 2 >= 1) return 0.5;

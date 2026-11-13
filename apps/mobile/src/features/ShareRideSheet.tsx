@@ -160,7 +160,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
       {FORMATS.map((f) => <ChoiceChip key={f.key} label={f.label} selected={card.format === f.key} onPress={() => pickFormat(f.key)} />)}
     </View>
   );
-  const shortCaption = tooShort && !fullRoute && !hideRoute ? <Text variant="caption" tone="muted">This ride is short, so its route is left off the map to keep your start private. Turn on Show whole route to draw it.</Text> : null;
+  const shortCaption = tooShort && !fullRoute && !hideRoute ? <Text variant="caption" tone="muted">This ride is short, so its route is left off to keep your start private. Turn on Show whole route to draw it.</Text> : null;
   const statChips = (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
       {STATS.map((s) => <ChoiceChip key={s.key} label={s.label} selected={card.stats.includes(s.key)} onPress={() => toggle(s.key)} />)}

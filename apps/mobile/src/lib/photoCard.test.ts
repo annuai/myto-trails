@@ -25,11 +25,27 @@ describe('overlayBox', () => {
 });
 
 describe('clampPlacement', () => {
-  it('limits scale; a wider-than-card overlay is centred on x and clamped exactly on y', () => {
+  it('limits scale to what fits: the 904-wide bar on the 1080-wide card caps at 1080/904, centred on x', () => {
+    const s = 1080 / 904;
     const lo = clampPlacement({ x: 2, y: 0, scale: 9 }, bar, card);
-    expect(lo).toEqual({ x: 0.5, y: 330 / 1920, scale: 2.2 });
+    expect(lo.scale).toBe(s);
+    expect(lo.x).toBe(0.5);
+    expect(lo.y).toBeCloseTo((300 * s) / 2 / 1920);
     const hi = clampPlacement({ x: 2, y: 5, scale: 9 }, bar, card);
-    expect(hi).toEqual({ x: 0.5, y: 1 - 330 / 1920, scale: 2.2 });
+    expect(hi.scale).toBe(s);
+    expect(hi.y).toBeCloseTo(1 - (300 * s) / 2 / 1920);
+    expect(inside(hi, bar, card)).toBe(true);
+  });
+  it('caps a corner box with a route and 4 stats (960 tall) on Square at 1080/960', () => {
+    const corner = overlayBox('corner', { stats: [stat, stat, stat, stat] as never, route: [{ x: 0, y: 0 }] });
+    expect(corner.height).toBe(960);
+    const p = clampPlacement({ x: 0.5, y: 0.5, scale: 2 }, corner, CARD_SIZE.square);
+    expect(p.scale).toBe(1080 / 960);
+    expect(inside(p, corner, CARD_SIZE.square)).toBe(true);
+  });
+  it('leaves a box that fits at maxScale unchanged', () => {
+    const small = { width: 300, height: 200 };
+    expect(clampPlacement({ x: 0.5, y: 0.5, scale: 2.2 }, small, card)).toEqual({ x: 0.5, y: 0.5, scale: 2.2 });
   });
   it('raises a too-small scale to the minimum', () => {
     expect(clampPlacement({ x: 0.5, y: 0.5, scale: 0.1 }, bar, card).scale).toBe(0.6);
@@ -39,10 +55,13 @@ describe('clampPlacement', () => {
     expect(inside(p, bar, card)).toBe(true);
     expect(p.x).toBeCloseTo(1 - (bar.width * 0.6) / 2 / card.width);
   });
-  it('centres on an axis the overlay overflows, never NaN', () => {
+  it('shrinks a box too big even at minScale to the fitting scale, never NaN', () => {
     const big = { width: 5000, height: 5000 };
     const p = clampPlacement({ x: 0.1, y: 0.9, scale: 1 }, big, card);
-    expect(p).toEqual({ x: 0.5, y: 0.5, scale: 1 });
+    expect(p.scale).toBe(1080 / 5000);
+    expect(p.x).toBe(0.5);
+    expect(p.y).toBeCloseTo(1 - (5000 * (1080 / 5000)) / 2 / 1920);
+    expect(inside(p, big, card)).toBe(true);
     expect(clampPlacement({ x: NaN, y: Infinity, scale: NaN }, bar, card)).toEqual({ x: 0.5, y: 0.5, scale: 1 });
   });
 });
@@ -112,9 +131,12 @@ describe('defaultPlacement', () => {
       expect(bp.x * c.width - bb.width / 2).toBeCloseTo(CARD_PAD);
     });
   }
-  it('centres a box larger than the card', () => {
-    const p = defaultPlacement('corner', card, { width: 2000, height: 3000 });
-    expect(p).toEqual({ x: 0.5, y: 0.5, scale: 1 });
+  it('shrinks a box larger than the card until it fits, centred on the axis it fills', () => {
+    const box = { width: 2000, height: 3000 };
+    const p = defaultPlacement('corner', card, box);
+    expect(p.scale).toBe(1080 / 2000);
+    expect(p.x).toBe(0.5);
+    expect(inside(p, box, card)).toBe(true);
   });
 });
 
@@ -170,7 +192,7 @@ describe('currentPlacement', () => {
   });
   it('keeps a moved bar where it is when Hide route makes the box shorter', () => {
     const plain = overlayBox('bar', { stats: [], route: null });
-    const p = { x: 0.5, y: 0.6, scale: 1.4 };
+    const p = { x: 0.5, y: 0.6, scale: 1.1 };
     expect(currentPlacement(p, 'bar', plain, card)).toEqual(p);
   });
 });

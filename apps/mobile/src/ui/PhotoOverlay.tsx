@@ -22,8 +22,11 @@ function Value({ parts, size }: { parts: Stat['parts']; size: number }) {
   );
 }
 
-/** Everything the overlay draws, in one colour: drawn twice, first as the offset shadow (without the logo), then in the ink. */
-function Drawing({ model, layout, color, w, h, shadow }: { model: CardModel; layout: PhotoLayout; color: string; w: number; h: number; shadow: boolean }) {
+/** The logo sits this much above the bottom edge, so its shadow (offset down) is not cut off by the overlay's box. */
+const LOGO_LIFT = Math.max(t.shadow.light.dy, t.shadow.dark.dy);
+
+/** Everything the overlay draws, logo included, in one colour: drawn twice, first as the offset shadow, then in the ink. */
+function Drawing({ model, layout, color, w, h }: { model: CardModel; layout: PhotoLayout; color: string; w: number; h: number }) {
   const n = Math.max(1, model.stats.length);
   const bar = layout === 'bar';
   const logoH = t.logoHeight;
@@ -52,11 +55,9 @@ function Drawing({ model, layout, color, w, h, shadow }: { model: CardModel; lay
           </G>
         );
       })}
-      {shadow ? null : (
-        <G transform={`translate(0, ${h - logoH}) scale(${logoH / L.logoViewHeight})`}>
-          {LOGO_PATHS.map((d, i) => <Path key={i} d={d} fill={color} />)}
-        </G>
-      )}
+      <G transform={`translate(0, ${h - logoH - LOGO_LIFT}) scale(${logoH / L.logoViewHeight})`}>
+        {LOGO_PATHS.map((d, i) => <Path key={i} d={d} fill={color} />)}
+      </G>
     </>
   );
 }
@@ -74,9 +75,9 @@ export const PhotoOverlay = forwardRef<ComponentRef<typeof View>, { model: CardM
     <View ref={ref} collapsable={false} style={{ width, height: box.height * k }}>
       <Svg width="100%" height="100%" viewBox={`0 0 ${box.width} ${box.height}`} style={{ position: 'absolute', left: 0, top: 0 }}>
         <G transform={`translate(${sh.dx}, ${sh.dy})`}>
-          <Drawing model={model} layout={layout} color={sh.color} w={box.width} h={box.height} shadow />
+          <Drawing model={model} layout={layout} color={sh.color} w={box.width} h={box.height} />
         </G>
-        <Drawing model={model} layout={layout} color={t.ink[ink]} w={box.width} h={box.height} shadow={false} />
+        <Drawing model={model} layout={layout} color={t.ink[ink]} w={box.width} h={box.height} />
       </Svg>
     </View>
   );
