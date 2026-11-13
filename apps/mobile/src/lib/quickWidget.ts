@@ -26,9 +26,9 @@ export const QUICK_LINKS = {
   start: 'myto://ride?autostart=1',
   group: 'myto://ride?mode=group',
   checkin: 'myto://ride?checkin=1',
-  /** While recording, SOS opens the ride's SOS sheet; the sheet only exists there, so otherwise the rider's emergency contacts. */
+  /** While recording, SOS opens the ride's SOS sheet; otherwise the SOS screen, which has the same immediate actions (call, share position, contacts). */
   sosRecording: 'myto://ride/live?sos=1',
-  sosIdle: 'myto://documents/contacts',
+  sosIdle: 'myto://sos',
 } as const;
 
 /** True when `url` is a link the app really routes to: the `myto://` scheme and a screen under apps/mobile/app. */
