@@ -1,4 +1,4 @@
-import { dark, light } from '@/theme/tokens';
+import { dark, fixed, light } from '@/theme/tokens';
 
 /** The photo share card's overlay colours and sizes (pixels of the 1080-wide picture). Values live here so the checkers accept them. */
 export const photoCardTokens = {
@@ -11,6 +11,8 @@ export const photoCardTokens = {
   },
   /** How much lighter the stat labels and units are than the values. */
   faint: 0.8,
+  /** The route line when the rider picks the signature red: the brand red of the heat map. */
+  routeRed: fixed.heat[2],
   routeStroke: 12,
-  logoHeight: 36,
+  logoHeight: 72,
 } as const;

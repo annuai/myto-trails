@@ -14,6 +14,7 @@ import { useFuel } from '@/store/fuel';
 import { useJournal } from '@/store/journal';
 import { useMarks } from '@/store/marks';
 import { useSeen } from '@/store/seen';
+import { usePillion } from '@/store/pillion';
 import { useStory } from '@/store/story';
 import { useMyRoutes } from '@/store/myRoutes';
 import { useHomeOffer } from '@/store/homeOffer';
@@ -43,6 +44,7 @@ export function eraseEverything(token: string | null) {
   useJournal.getState().wipe();
   useMarks.getState().wipe();
   useStory.getState().wipe();
+  usePillion.getState().wipe();
   useSeen.setState({ played: {}, last: {} });
   useNotifications.getState().wipe();
   useCompanion.getState().wipe();

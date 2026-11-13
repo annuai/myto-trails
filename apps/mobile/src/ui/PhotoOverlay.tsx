@@ -26,7 +26,7 @@ function Value({ parts, size }: { parts: Stat['parts']; size: number }) {
 const LOGO_LIFT = Math.max(t.shadow.light.dy, t.shadow.dark.dy);
 
 /** Everything the overlay draws, logo included, in one colour: drawn twice, first as the offset shadow, then in the ink. */
-function Drawing({ model, layout, color, w, h }: { model: CardModel; layout: PhotoLayout; color: string; w: number; h: number }) {
+function Drawing({ model, layout, color, routeColor, w, h }: { model: CardModel; layout: PhotoLayout; color: string; /** The route line's colour when it differs from the text (the signature red); the shadow pass leaves it out. */ routeColor?: string; w: number; h: number }) {
   const n = Math.max(1, model.stats.length);
   const bar = layout === 'bar';
   const logoH = t.logoHeight;
@@ -44,7 +44,7 @@ function Drawing({ model, layout, color, w, h }: { model: CardModel; layout: Pho
   const colW = w / n;
   return (
     <>
-      {pts ? <Polyline points={pts} fill="none" stroke={color} strokeWidth={t.routeStroke} strokeLinecap="round" strokeLinejoin="round" /> : null}
+      {pts ? <Polyline points={pts} fill="none" stroke={routeColor ?? color} strokeWidth={t.routeStroke} strokeLinecap="round" strokeLinejoin="round" /> : null}
       {model.stats.map((s, i) => {
         const x = bar ? i * colW : 0;
         const y = statTop + (bar ? 0 : i * L.corner.perStat);
@@ -67,7 +67,7 @@ function Drawing({ model, layout, color, w, h }: { model: CardModel; layout: Pho
  * transparent background (no fill, so the saved picture keeps its alpha). Drawn on its own canvas from `overlayBox`
  * and scaled to `width`. The soft shadow is the same drawing once more underneath, offset and translucent.
  */
-export const PhotoOverlay = forwardRef<ComponentRef<typeof View>, { model: CardModel; layout: PhotoLayout; ink: OverlayInk; width: number }>(function PhotoOverlay({ model, layout, ink, width }, ref) {
+export const PhotoOverlay = forwardRef<ComponentRef<typeof View>, { model: CardModel; layout: PhotoLayout; ink: OverlayInk; /** Draw the route line in the signature red instead of the text colour. */ redRoute?: boolean; width: number }>(function PhotoOverlay({ model, layout, ink, redRoute, width }, ref) {
   const box = overlayBox(layout, model);
   const k = width / box.width;
   const sh = t.shadow[ink];
@@ -77,7 +77,7 @@ export const PhotoOverlay = forwardRef<ComponentRef<typeof View>, { model: CardM
         <G transform={`translate(${sh.dx}, ${sh.dy})`}>
           <Drawing model={model} layout={layout} color={sh.color} w={box.width} h={box.height} />
         </G>
-        <Drawing model={model} layout={layout} color={t.ink[ink]} w={box.width} h={box.height} />
+        <Drawing model={model} layout={layout} color={t.ink[ink]} routeColor={redRoute ? t.routeRed : undefined} w={box.width} h={box.height} />
       </Svg>
     </View>
   );

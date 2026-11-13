@@ -28,6 +28,15 @@ describe('top speed', () => {
     const t = [...ride(10, 15), ...ride(30, 12, 150).slice(1).map((p, i) => ({ ...p, t: 1_700_000_000_000 + (16 + i) * 1000 }))];
     expect(topSpeedKmh([t])).toBeGreaterThan(100);
   });
+  it('keeps the top speed of the ride when the fixes then stop for a long time (a ride left recording)', () => {
+    const t = [...ride(11.1, 60), { ...ride(0, 0)[0]!, lat: 13 + 666 * M, t: 1_700_000_000_000 + 3_600_000 }];
+    expect(topSpeedKmh([t])).toBeCloseTo(40, 0);
+  });
+  it('keeps the fastest stretch when a gap splits two runs, however short the last one is', () => {
+    const fast = ride(11.1, 60);
+    const slow = ride(2, 4, 700).map((p, i) => ({ ...p, t: 1_700_000_000_000 + 600_000 + i * 1000 }));
+    expect(topSpeedKmh([[...fast, ...slow]])).toBeCloseTo(40, 0);
+  });
   it('is zero for a track too short to judge', () => expect(topSpeedKmh([ride(10, 2)])).toBe(0));
   it('median of the middle', () => expect(medianOf([5, 1, 100, 3, 4])).toBe(4));
 });

@@ -26,6 +26,6 @@ export function FilmImage({ uri, pixelWidth, pixelHeight, width, height, look }:
         h('stop', { offset: 1, stopColor: fixed.shadow, stopOpacity: p.vignette }))),
     h('image', { ...full, href: uri, preserveAspectRatio: 'xMidYMid slice', filter: p.neutral ? undefined : `url(#c${key})` }),
     p.grain > 0 ? h('rect', { ...full, fill: fixed.shadow, filter: `url(#g${key})`, opacity: p.grain * t.grainOpacityScale }) : null,
-    p.dots > 0 ? h('rect', { ...full, fill: `url(#d${key})`, opacity: p.dots }) : null,
+    p.dots > 0 ? h('rect', { ...full, fill: `url(#d${key})`, opacity: Math.min(0.55, p.dots) }) : null,
     p.vignette > 0 ? h('rect', { ...full, fill: `url(#v${key})` }) : null);
 }

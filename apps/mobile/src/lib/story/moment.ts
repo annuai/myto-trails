@@ -1,9 +1,9 @@
 import { TITLES, type TitleId } from './titles';
 
 /** Which Pillion pose a Moment is drawn with. The art comes later; a Moment only names the pose. */
-export type PillionPose = 'hello' | 'waiting' | 'map' | 'paw-up' | 'standing-up' | 'tired-happy' | 'campfire' | 'asleep';
+export type PillionPose = 'hello' | 'waiting' | 'map' | 'paw-up' | 'standing-up' | 'tired-happy' | 'campfire' | 'asleep' | 'waiting-for-a-ride' | 'time-to-rest' | 'map-reading';
 
-export type Moment = { id: string; kind: 'mark' | 'title' | 'standing' | 'year'; title: string; body: string; pose: PillionPose };
+export type Moment = { id: string; kind: 'mark' | 'title' | 'standing' | 'year' | 'visit'; title: string; body: string; pose: PillionPose };
 
 export type Surface = 'ride-end' | 'dash' | 'year' | 'ride' | 'navigate' | 'error';
 

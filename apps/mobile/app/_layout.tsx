@@ -15,6 +15,7 @@ import { NotificationHost } from '@/NotificationHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
 import { NudgeHost } from '@/NudgeHost';
+import { PillionHost } from '@/PillionHost';
 import { AutoEndHost } from '@/AutoEndHost';
 import { MarkHost } from '@/MarkHost';
 import { PhotoOutboxHost } from '@/PhotoOutboxHost';
@@ -94,6 +95,7 @@ function Root() {
       <OsmAskHost />
       <CrashHost />
       <MarkHost />
+      <PillionHost />
     </Theme>
   );
   return (

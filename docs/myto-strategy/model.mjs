@@ -149,6 +149,34 @@ export function runScenario(key) {
   return { key, label: s.label, rows, year, last, breakEvenMar, peakCumulativeLoss: cumNetMin, contribPerRider: round(contribPerRider * 100) / 100 };
 }
 
+// ---- the raise: 18-month pre-seed budget (Bengaluru, INR a month unless noted) ------------------
+// ASSUMPTION: salaries are 2026 estimates, not quotes; verify the developer CTC against real offers.
+// Team pay is here and NOT in scenario opex above, so the two never double-count.
+export const RAISE_INPUTS = {
+  months: 18,
+  team:   { founder: 75000, developer: 150000, marketing: 90000 }, // CTC; marketing hire starts month 3
+  marketingStartMonth: 3,
+  growth: { content: 30000, paidAndCreators: 100000, ridesAndEvents: 50000 },
+  ops:    { tools: 15000, legalAccounts: 20000 },
+  oneTime: 450000,      // trademark, test phones, laptops
+  buffer: 0.15,         // on everything except the Originals batch
+  originalsBatch: 900000, // optional first small batch of Myto Originals gear
+};
+export function runRaise(r = RAISE_INPUTS) {
+  const sum = (o) => Object.values(o).reduce((a, b) => a + b, 0);
+  const team = (r.team.founder + r.team.developer) * r.months + r.team.marketing * (r.months - r.marketingStartMonth + 1);
+  const growth = sum(r.growth) * r.months;
+  const opsRun = sum(r.ops) * r.months + r.oneTime;
+  const buffer = (team + growth + opsRun) * r.buffer;
+  const ops = opsRun + buffer; const originals = r.originalsBatch;
+  const total = team + growth + ops + originals;
+  const ask = Math.round(total / 1e6) * 1e6; // rounded to ₹10 L
+  const pct = (v) => v / total;
+  return { team, growth, ops, originals, total, ask, burn: sum(r.team) + sum(r.growth) + sum(r.ops),
+    teamPct: pct(team), growthPct: pct(growth), opsPct: pct(ops), originalsPct: pct(originals) };
+}
+export const RAISE = runRaise();
+
 export function runAll() {
   return { shared: SHARED, scenarios: Object.fromEntries(Object.keys(SCENARIOS).map((k) => [k, runScenario(k)])) };
 }
@@ -177,6 +205,7 @@ function print() {
     console.log(`Year 1 (Nov 26 - Oct 27): GMV ${inr(r.year.gmv)} | revenue ${inr(r.year.revenue)} | gross profit ${inr(r.year.grossProfit)} | contribution ${inr(r.year.contribution)} | opex ${inr(r.year.opex)} | net ${inr(r.year.net)}`);
     console.log(`Oct 27 run-rate per month: revenue ${inr(r.last.revenue)}, net ${inr(r.last.net)}; product-only break-even active riders at that mix ~ ${r.breakEvenMar.toLocaleString("en-IN")}; peak cumulative loss ${inr(r.peakCumulativeLoss)}`);
   }
+  console.log(`\nRaise (${RAISE_INPUTS.months} months): team ${inr(RAISE.team)} | growth ${inr(RAISE.growth)} | ops+buffer ${inr(RAISE.ops)} | Originals ${inr(RAISE.originals)} | total ${inr(RAISE.total)} | ask ${inr(RAISE.ask)} | full-team burn ${inr(RAISE.burn)}/month`);
   console.log("\nFormulas: see header of this file and docs/myto-strategy/financial-assumptions.md");
 }
 

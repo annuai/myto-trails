@@ -31,6 +31,8 @@ export const shadow = {
   ride: { shadowColor: fixed.shadow, shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: space[1] } },
   header: { shadowColor: fixed.shadow, shadowRadius: 24, shadowOffset: { width: 0, height: space[1] } },
   record: { shadowColor: fixed.shadow, shadowOpacity: 0.18, shadowRadius: 10, shadowOffset: { width: 0, height: space[1] - 1 } },
+  /** A card that sits above the list it belongs to, such as the Add a stop card. */
+  lift: { shadowColor: fixed.shadow, shadowOpacity: 0.14, shadowRadius: 12, shadowOffset: { width: 0, height: space[1] }, elevation: 4 },
 } as const;
 /** The picture at the very end of the You page. `fadeHeight`: how much of its top melts into the page colour. `fadeEndAlpha`: the page colour's opacity where the fade ends. */
 export const footerPicture = { fadeHeight: '30%', fadeEndAlpha: 0 } as const;

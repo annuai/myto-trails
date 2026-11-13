@@ -241,8 +241,12 @@ L.landscape = (d) => `${hd(d, "wide")}
   <div class="cp ls"><div class="card"><div class="r h"><span>App</span><span>What the listing shows</span><span>Where we stand</span></div>
   ${d.items.map((it) => { const [a, k, o, w] = cells(it); return `<div class="r"><span class="c">${esc(a)}<small>${esc(k)}</small></span><span class="e">${esc(o)}</span><span class="o">${esc(w)}</span></div>`; }).join("")}</div></div>`;
 
-L["vision-long"] = (d) => `<!--ART--><div class="vl-art"><img src="${picture(one(d, "img"))}" alt=""></div><!--/ART-->
+L["vision-long"] = (d) => `<!--ART--><div class="vl-art"><img src="${picture(one(d, "img"))}" alt=""${one(d, "imgpos") ? ` style="object-position:${esc(one(d, "imgpos"))}"` : ""}></div><!--/ART-->
   <div class="vl">${hd(d, "wide", "t-display")}<ul class="list">${d.items.map((it) => { const [t, x] = cells(it); return `<li><h3>${esc(t)}</h3><p>${esc(x)}</p></li>`; }).join("")}</ul></div>`;
+
+// pitch deck only: a founder-story chapter, full-height art on the left, narrative and three pains on the right
+L.story = (d) => `<!--ART--><div class="st-art"><img src="${picture(one(d, "img"))}" alt=""${one(d, "imgpos") ? ` style="object-position:${esc(one(d, "imgpos"))}"` : ""}></div><!--/ART-->
+  <div class="st"><span class="st-ch">${esc(one(d, "chapter"))}</span>${hd(d, "wide", "t-display")}<div class="st-pains">${d.items.map((it, k) => { const [t, x] = cells(it); return `<div class="tint-${["sand", "clay", "sky"][k]}"><span class="num">${k + 1}</span><h3>${esc(t)}</h3><p>${esc(x)}</p></div>`; }).join("")}</div></div>`;
 
 // pitch deck only: product slide with a demo video slot (poster + play until a video file is given)
 L.demo = (d) => {
@@ -267,8 +271,8 @@ const total = slides.length;
 const sec = slides.map((d) => {
   if (!L[d.layout]) throw new Error(`No layout "${d.layout}" (slide ${d.n})`);
   const status = one(d, "status");
-  const isDraft = /^Draft/.test(status);
-  const stBadges = isDraft ? `<span class="badge plain">${G.dash}${esc(status.replace(", ", " · "))}</span>` : badges(status);
+  const isDraft = /^(Draft|Confidential)/.test(status);
+  const stBadges = !status ? "" : isDraft ? `<span class="badge plain">${G.dash}${esc(status.replace(", ", " · "))}</span>` : badges(status);
   const noteParts = [one(d, "caption"), one(d, "assumptions"), one(d, "sources") && `Sources: ${one(d, "sources")}.`].filter(Boolean);
   const note = noteParts.join(" ");
   if (note.length > 300) console.warn(`slide ${d.n}: footer note is ${note.length} chars (keep under ~300)`);

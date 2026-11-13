@@ -27,7 +27,9 @@ export function useJournalActions(rideKey: number) {
   const stopped = useMotion((s) => s.stopped);
   const [problem, setProblem] = useState<string>();
   /** A photo just taken or picked, waiting in the Film step, or a saved photo being re-filmed. */
-  const [film, setFilm] = useState<{ source: string; entry?: JournalEntry } | null>(null);
+  const [film, setFilm] = useState<{ source: string; entry?: JournalEntry; look?: FilmLook } | null>(null);
+  /** The in-app camera is open. */
+  const [cameraOpen, setCameraOpen] = useState(false);
   const canType = canTypeNow({ riding, unfinished, stopped });
 
   const addNote = (text: string) => {
@@ -35,21 +37,20 @@ export function useJournalActions(rideKey: number) {
     if (t) add({ id: uid(), rideKey, at: Date.now(), kind: 'note', text: t });
   };
   const toggleVoice = async () => { setProblem(undefined); await useVoice.getState().toggle(rideKey); };
+  /** Take opens the in-app camera (looks live on the viewfinder); Add picks from the library. Either way the photo goes on to the Film step. */
   const addPhoto = async (from: 'camera' | 'library') => {
     setProblem(undefined);
+    if (from === 'camera') return setCameraOpen(true);
     try {
-      if (from === 'camera') {
-        const perm = await ImagePicker.requestCameraPermissionsAsync();
-        if (!perm.granted) return setProblem('The camera is turned off for Myto Moto. Allow it in your phone settings.');
-      }
-      const options = { mediaTypes: ['images' as const], quality: 1, exif: false };
-      const r = from === 'camera' ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
+      const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1, exif: false });
       if (r.canceled) return;
       setFilm({ source: r.assets[0].uri });
     } catch {
       setProblem('Could not save the photo.');
     }
   };
+  /** A photo from the camera comes with the look it was framed in. */
+  const cameraPhoto = (source: string, look: FilmLook) => { setCameraOpen(false); setFilm({ source, look }); };
   /** Saves what the Film step made: a new photo (with its original kept when a look was applied), or a new look on a saved one. */
   const saveFilm = async (look: FilmLook, rendered: string | null) => {
     if (!film) return;
@@ -67,5 +68,5 @@ export function useJournalActions(rideKey: number) {
   };
   /** Opens the Film step on a saved photo, from its original when there is one. Not offered when the original is gone (a restored backup). */
   const editFilm = (e: JournalEntry) => setFilm({ source: hasOriginal(e.id) ? originalUri(e.id) : mediaUri(e.id, 'photo'), entry: e });
-  return { film, saveFilm, editFilm, closeFilm: () => setFilm(null), canType, addNote, toggleVoice, addPhoto, recording, seconds: recording ? Math.round((nowMs() - startedAt) / 1000) : 0, problem: problem ?? voiceError };
+  return { cameraOpen, cameraPhoto, closeCamera: () => setCameraOpen(false), film, saveFilm, editFilm, closeFilm: () => setFilm(null), canType, addNote, toggleVoice, addPhoto, recording, seconds: recording ? Math.round((nowMs() - startedAt) / 1000) : 0, problem: problem ?? voiceError };
 }

@@ -6,6 +6,8 @@ import { Copy, ListPlus, Users, Pencil, Play, Route as RouteIcon, ShoppingBag, S
 import { GroupSheet } from '@/features/GroupSheet';
 import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
 import { startTodaysRide, startTrip } from '@/features/trip/startTrip';
+import { TrailPickerSheet } from '@/features/trip/TrailPickerSheet';
+import { TripDayFields, trailRoute } from '@/features/trip/TripDayFields';
 import { TripDaySheet } from '@/features/trip/TripDaySheet';
 import { dayIndexOn, dayDate, expiringBefore, lastDate, rangeText, startTimeText, tripStatus, whenText } from '@/lib/tripPlan';
 import { addDays, formatDate, formatShort, todayISO } from '@/lib/dates';
@@ -42,8 +44,11 @@ export default function TripDetail() {
   const [editing, setEditing] = useState(false);
   const [dayOpen, setDayOpen] = useState<number | null>(null);
   const [groupOpen, setGroupOpen] = useState(false);
+  const [picking, setPicking] = useState(false);
   if (!trip) return <Screen><BackHeader title="Trips" /><Text>Trip not found.</Text></Screen>;
 
+  /** A trip of one day has no "Day 1": what a day holds is shown on this page, and its places are destinations. */
+  const single = (trip.days?.length ?? 1) === 1;
   const today = todayISO();
   const status = tripStatus(trip, today);
   const rides = allRides.filter((r) => trip.rideIds.includes(r.id));
@@ -59,10 +64,11 @@ export default function TripDetail() {
     <Screen overlay={<>
       <PlanTripSheet key={trip.id + (editing ? 'e' : '')} open={editing} trip={trip} onClose={() => setEditing(false)} />
       <TripDaySheet trip={trip} index={dayOpen} onClose={() => setDayOpen(null)} />
+      <TrailPickerSheet open={picking} onClose={() => setPicking(false)} onPick={(t) => { const d = trip.days?.[0]; if (d) useTrips.getState().setDay(trip.id, d.id, { route: trailRoute(t) }); }} />
       <GroupSheet open={groupOpen} onClose={() => setGroupOpen(false)} defaultName={trip.name} />
     </>}>
       <BackHeader title="Trips" right={trip.startDate ? <IconButton icon={Pencil} label="Change the trip" onPress={() => setEditing(true)} plain /> : undefined} />
-      <PageTitle sub={trip.startDate ? [rangeText(trip), trip.startTime !== undefined ? startTimeText(trip.startTime) : '', `${trip.days?.length ?? 1} ${(trip.days?.length ?? 1) === 1 ? 'day' : 'days'}`, whenText(trip, today)].filter(Boolean).join(' · ') : rides.length ? undefined : "Open a ride's story and choose Add to a trip."}>{trip.name}</PageTitle>
+      <PageTitle sub={trip.startDate ? [rangeText(trip), trip.startTime !== undefined ? startTimeText(trip.startTime) : '', single ? '' : `${trip.days?.length ?? 1} days`, whenText(trip, today)].filter(Boolean).join(' · ') : rides.length ? undefined : "Open a ride's story and choose Add to a trip."}>{trip.name}</PageTitle>
 
       {status === 'ready' ? (
         <View style={{ gap: space[3] }}>
@@ -71,7 +77,7 @@ export default function TripDetail() {
         </View>
       ) : status === 'active' ? (
         <View style={{ gap: space[3] }}>
-          <Button big variant="accent" icon={Play} label={`Record day ${(todayIndex ?? 0) + 1}`} onPress={() => startTodaysRide(trip.id, router)} />
+          <Button big variant="accent" icon={Play} label={single ? 'Record this ride' : `Record day ${(todayIndex ?? 0) + 1}`} onPress={() => startTodaysRide(trip.id, router)} />
           <Button variant="soft" icon={Square} label="End trip" onPress={() => useTrips.getState().end(trip.id)} />
         </View>
       ) : status === 'upcoming' ? (
@@ -90,7 +96,14 @@ export default function TripDetail() {
         </View>
       ) : null}
 
-      {trip.startDate ? (
+      {trip.startDate && single ? (
+        <>
+          <SectionTitle>{formatDate(trip.startDate)}</SectionTitle>
+          <View style={{ gap: space[3] }}>
+            <TripDayFields trip={trip} index={0} single onChooseTrail={() => setPicking(true)} />
+          </View>
+        </>
+      ) : trip.startDate ? (
         <>
           <SectionTitle>Days</SectionTitle>
           <ListCard>

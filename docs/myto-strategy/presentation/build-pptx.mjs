@@ -153,10 +153,10 @@ function frame(d, master, o = {}) {
   const s = pres.addSlide({ masterName: master, sectionTitle: SECTION_OF(d.n) });
   const right = o.right ?? 945;
   s.addImage({ data: LOGO, x: u(o.logoX ?? 43), y: u(30), w: u(62), h: u(28.6), altText: "Myto", objectName: "Logo" });
-  const status = one(d, "status"), draft = /^Draft/.test(status);
+  const status = one(d, "status"), draft = /^(Draft|Confidential)/.test(status);
   let cx = right;
   if (draft) { const txt = status.replace(", ", " · "); const w = 34 + 6.4 * txt.length; icon(s, "dash", "6B6560", cx - w + 4, 36, 15, "Draft"); T(s, txt, cx - w + 26, 33, w - 26, 20, { role: "label", color: COL.muted, wrap: false, valign: "middle", name: "Status" }); cx -= w + 10; }
-  else { const sw = pillsWidth(status); pills(s, cx - sw, 29, status, STATUS, { t: 100 }); cx -= sw + 14; }
+  else if (status) { const sw = pillsWidth(status); pills(s, cx - sw, 29, status, STATUS, { t: 100 }); cx -= sw + 14; }
   T(s, one(d, "kicker"), cx - 320, 33, 320, 20, { role: "label", color: COL.muted, align: "right", valign: "middle", wrap: false, bold: false, name: "Section label" });
   // footer note
   const parts = [one(d, "caption"), one(d, "assumptions"), one(d, "sources") && `Sources: ${one(d, "sources")}.`].filter(Boolean);
@@ -173,7 +173,7 @@ function heading(s, d, x, y, w, o = {}) { // headline + sub; returns bottom y
 }
 const bodyZoneTitle = (s, d, x = 43, w = 700) => heading(s, d, x, 87, w);
 
-const SECTIONS = PITCH ? [["Story", 1, 4], ["Business", 5, 8], ["Why now and the raise", 9, 10]] : [["Opening", 1, 2], ["Problem and audience", 3, 5], ["Product", 6, 11], ["Business model", 12, 16], ["Positioning and vision", 17, 19]];
+const SECTIONS = PITCH ? [["Story", 1, 5], ["Product", 6, 7], ["Market and business", 8, 11], ["Proof, vision and the raise", 12, 15]] : [["Opening", 1, 2], ["Problem and audience", 3, 5], ["Product", 6, 11], ["Business model", 12, 16], ["Positioning and vision", 17, 19]];
 const SECTION_OF = (n) => SECTIONS.find(([, a, b]) => n >= a && n <= b)[0];
 
 // definition list (title + text, hairlines between), used on slides 9 and 10
@@ -298,9 +298,9 @@ B.opportunity = async (d) => {
     pill(s, x + 263 - 21 - pillW(st), 229, st);
     let y = 273;
     items.forEach((it, k) => {
-      const tx = cells(it)[2]; const n = wrapCount(tx, 222, R.body[0]);
+      const tx = cells(it)[2]; const n = wrapCount(tx, 222, R.label[0]);
       if (k) { hair(s, x + 21, y - 8, 222); }
-      T(s, tx, x + 21, y, 222, hOf(n, R.body[1]), { name: "Item" }); y += hOf(n, R.body[1]) + 18;
+      T(s, tx, x + 21, y, 222, hOf(n, R.label[1]), { role: "label", name: "Item" }); y += hOf(n, R.label[1]) + 18;
     });
   });
   return s;
@@ -556,7 +556,7 @@ B.financials = async (d) => {
   })];
   const rule = [{ type: "none" }, { type: "none" }, { pt: 0.5, color: "DEDAD5" }, { type: "none" }];
   s.addTable(rows.map((r) => r.map((c) => ({ ...c, options: { ...c.options, border: rule, margin: [0, 4, 0, 4] } }))), {
-    x: u(583), y: u(190), w: u(355), colW: [u(145), u(70), u(70), u(70)], rowH: [u(24), ...Array(8).fill(u(31.5))], autoPage: false, objectName: "Scenario table",
+    x: u(583), y: u(190), w: u(355), colW: [u(145), u(70), u(70), u(70)], rowH: [u(24), ...Array(d.stats.length).fill(u(Math.min(31.5, 252 / d.stats.length)))], autoPage: false, objectName: "Scenario table",
   });
   return s;
 };
@@ -587,18 +587,40 @@ B.landscape = async (d) => {
   ["App", "What the listing shows", "Where we stand"].forEach((h, i) => T(s, h, cx[i], 221, cw[i], 16, { role: "caption", pt: 10.5, color: COL.muted, name: "Column head" }));
   hair(s, 66, 241, 868);
   d.items.forEach((it, k) => {
-    const [a, kind, o, w] = cells(it); const y = 242 + k * 39.2;
-    T(s, [{ text: a, options: { bold: true, breakLine: true, fontSize: 12.2, color: COL.ink } }, { text: kind, options: { fontSize: 10, color: COL.muted } }], cx[0], y, cw[0], 38, { role: "label", pt: 12.2, lh: 14.5, valign: "middle", name: "App" });
-    T(s, o, cx[1], y, cw[1], 38, { role: "caption", pt: 10, lh: 12.4, color: COL.muted, valign: "middle", name: "Listing" });
-    T(s, w, cx[2], y, cw[2], 38, { role: "label", pt: 10.8, lh: 13.6, valign: "middle", name: "Where we stand" });
-    if (k < 5) hair(s, 66, y + 39.2, 868);
+    const step = 235 / d.items.length; const [a, kind, o, w] = cells(it); const y = 242 + k * step;
+    T(s, [{ text: a, options: { bold: true, breakLine: true, fontSize: 12.2, color: COL.ink } }, { text: kind, options: { fontSize: 10, color: COL.muted } }], cx[0], y, cw[0], step - 1, { role: "label", pt: 12.2, lh: 14.5, valign: "middle", name: "App" });
+    T(s, o, cx[1], y, cw[1], step - 1, { role: "caption", pt: 10, lh: 12.4, color: COL.muted, valign: "middle", name: "Listing" });
+    T(s, w, cx[2], y, cw[2], step - 1, { role: "label", pt: 10.8, lh: 13.6, valign: "middle", name: "Where we stand" });
+    if (k < d.items.length - 1) hair(s, 66, y + step, 868);
   });
   return s;
 };
 
+// pitch only: founder-story chapter (see build.mjs L.story). Art left 680/1920 of the width.
+B.story = async (d) => {
+  const s = frame(d, "Myto content, art on the left", { logoX: 398, right: 956, noteX: 474, noteW: 482 });
+  const pos = (one(d, "imgpos") || "30% 50%").split(" ").map((v) => parseFloat(v));
+  await addPic(s, one(d, "img"), 0, 0, 354, 563, { pos, alt: "Story illustration", name: "Side art" });
+  const ch = one(d, "chapter"); const cw = 30 + 6.6 * ch.length;
+  rr(s, 398, 92, cw, 26, "E3EBF1", { r: 13, name: "Chapter" });
+  T(s, ch, 398, 92, cw, 26, { role: "label", color: COL.accent, align: "center", valign: "middle", wrap: false, name: "Chapter text" });
+  const n = wrapCount(one(d, "headline"), 520, R.display[0], 0.62);
+  T(s, one(d, "headline"), 398, 132, 540, hOf(n, R.display[1]), { font: F.disp, pt: R.display[0], lh: R.display[1], name: "Title" });
+  const sy = 132 + hOf(n, R.display[1]) + 6;
+  T(s, one(d, "sub"), 398, sy, 550, 44, { color: COL.muted, name: "Subtitle" });
+  const fills = [COL.sand, COL.clay, COL.sky]; const cy = sy + 62, ch2 = 470 - cy;
+  d.items.forEach((it, k) => {
+    const [t, tx] = cells(it); const x = 398 + k * 189, w = 179;
+    card(s, x, cy, w, ch2, fills[k], { name: `Card: ${t}` });
+    T(s, String(k + 1), x + 16, cy + 12, 40, 26, { font: F.disp, pt: 17, lh: 22, color: COL.accent, name: "Number" });
+    T(s, t, x + 16, cy + 44, w - 28, 40, { role: "body", bold: true, name: "Card title" });
+    T(s, tx, x + 16, cy + 92, w - 28, ch2 - 100, { role: "label", color: COL.muted, valign: "top", name: "Card text" });
+  });
+  return s;
+};
 B["vision-long"] = async (d) => {
   const s = frame(d, "Myto content", { right: 518, noteX: 120, noteW: 410 });
-  await addPic(s, one(d, "img"), 573, 0, 427, 563, { pos: [86, 50], alt: "A rider with a map beside a tent at dusk", name: "Side art" });
+  await addPic(s, one(d, "img"), 573, 0, 427, 563, { pos: one(d, "imgpos") ? one(d, "imgpos").split(" ").map(parseFloat) : [86, 50], alt: "Vision illustration", name: "Side art" });
   const head = one(d, "headline").split(". ").map((x, i, a) => (i < a.length - 1 ? x + "." : x));
   T(s, head.join("\n"), 43, 105, 500, 150, { font: F.disp, pt: R.display[0], lh: 44.6, name: "Title" });
   T(s, one(d, "sub"), 43, 253, 480, 22, { color: COL.muted, name: "Subtitle" });

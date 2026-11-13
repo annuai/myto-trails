@@ -6,10 +6,11 @@ import type { CardModel } from '@/lib/rideCard';
 import { cardTokens } from '@/lib/rideCard.tokens';
 import { fixed, inkSolid } from '@/theme/tokens';
 import { InkFill } from './InkFill';
+import { photoCardTokens } from './PhotoCard.tokens';
 import { LOGO_PATHS, LOGO_RATIO, LOGO_VIEWBOX } from './logoPaths';
 
 const PAD = CARD_PAD;
-const LOGO_H = 64;
+const LOGO_H = 84;
 const FAINT = 0.64;
 
 /** The numbers of one stat, for example "2 h" and "15 min", as one run of text. */
@@ -30,8 +31,9 @@ function Value({ parts, size }: { parts: CardModel['stats'][number]['parts']; si
  * The shareable picture of a ride. Drawn as one SVG on the card's own 1080 wide canvas and scaled to `width`, so the
  * preview and the picture that is saved are the same drawing. The route is the privacy-trimmed one from the model.
  */
-export const RideCard = forwardRef<ComponentRef<typeof View>, { model: CardModel; width: number; /** The map under the route. Without it the route is drawn alone on the dark card. */ map?: CardMapLayout | null; /** Called once every map tile has loaded (or failed), or at once when there is no map. */ onMapReady?: () => void }>(function RideCard({ model, width, map, onMapReady }, ref) {
+export const RideCard = forwardRef<ComponentRef<typeof View>, { model: CardModel; width: number; /** The map under the route. Without it the route is drawn alone on the dark card. */ map?: CardMapLayout | null; /** Called once every map tile has loaded (or failed), or at once when there is no map. */ onMapReady?: () => void; /** Draw the route in the signature red instead of the track orange. */ redRoute?: boolean }>(function RideCard({ model, width, map, onMapReady, redRoute }, ref) {
   const { width: W, height: H } = model;
+  const routeColor = redRoute ? photoCardTokens.routeRed : fixed.track;
   const k = width / W;
   const box = mapBoxOf(model);
   const [loaded, setLoaded] = useState(0);
@@ -62,10 +64,10 @@ export const RideCard = forwardRef<ComponentRef<typeof View>, { model: CardModel
         {map ? (
           <>
             <Polyline points={map.points.map((p) => `${(box.x + p.x).toFixed(1)},${(box.y + p.y).toFixed(1)}`).join(' ')} fill="none" stroke={fixed.ink} strokeWidth={20} strokeLinecap="round" strokeLinejoin="round" />
-            <Polyline points={map.points.map((p) => `${(box.x + p.x).toFixed(1)},${(box.y + p.y).toFixed(1)}`).join(' ')} fill="none" stroke={fixed.track} strokeWidth={12} strokeLinecap="round" strokeLinejoin="round" />
+            <Polyline points={map.points.map((p) => `${(box.x + p.x).toFixed(1)},${(box.y + p.y).toFixed(1)}`).join(' ')} fill="none" stroke={routeColor} strokeWidth={12} strokeLinecap="round" strokeLinejoin="round" />
             <SvgText x={box.x + box.width - 16} y={box.y + box.height - 14} textAnchor="end" fill={fixed.ink} fillOpacity={0.7} fontFamily="Geist_500Medium" fontSize={22}>{ATTRIBUTION}</SvgText>
           </>
-        ) : route ? <Polyline points={route} fill="none" stroke={fixed.track} strokeWidth={14} strokeLinecap="round" strokeLinejoin="round" /> : null}
+        ) : route ? <Polyline points={route} fill="none" stroke={routeColor} strokeWidth={14} strokeLinecap="round" strokeLinejoin="round" /> : null}
         {model.stats.map((s, i) => (
           <G key={s.key}>
             <SvgText x={PAD + i * colW} y={statY} fill={fixed.white} fillOpacity={FAINT} fontFamily="Geist_500Medium" fontSize={30}>{s.label.toUpperCase()}</SvgText>
@@ -75,7 +77,7 @@ export const RideCard = forwardRef<ComponentRef<typeof View>, { model: CardModel
         <G transform={`translate(${PAD}, ${H - PAD - LOGO_H}) scale(${LOGO_H / 42})`}>
           {LOGO_PATHS.map((d, i) => <Path key={i} d={d} fill={fixed.white} />)}
         </G>
-        <SvgText x={PAD + logoW + 24} y={H - PAD - 16} fill={fixed.white} fillOpacity={FAINT} fontFamily="Geist_500Medium" fontSize={34}>Myto Moto</SvgText>
+        <SvgText x={PAD + logoW + 24} y={H - PAD - 16} fill={fixed.white} fillOpacity={FAINT} fontFamily="Geist_500Medium" fontSize={40}>Myto Moto</SvgText>
       </Svg>
     </View>
   );

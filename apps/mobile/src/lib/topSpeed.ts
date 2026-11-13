@@ -16,8 +16,14 @@ export const medianOf = (xs: number[]): number => { const s = [...xs].sort((a, b
  */
 export function topSpeedKmh(segments: LatLng[][]): number {
   let top = 0;
+  /** The fastest window of one run of steps. A short run (three or four steps) is judged by all of them. */
+  const judge = (speeds: number[]) => {
+    const w = Math.min(TOP_SPEED_WINDOW, speeds.length);
+    if (w < MIN_STEPS) return;
+    for (let i = 0; i + w <= speeds.length; i++) top = Math.max(top, medianOf(speeds.slice(i, i + w)));
+  };
   for (const seg of segments) {
-    const speeds: number[] = [];
+    let speeds: number[] = [];
     let prev: LatLng | undefined;
     for (const p of seg) {
       if (p.acc != null && p.acc > BEST_ACCURACY_M) continue;
@@ -25,14 +31,11 @@ export function topSpeedKmh(segments: LatLng[][]): number {
         const dt = (p.t - prev.t) / 1000;
         if (dt < MIN_STEP_S) continue; // keep `prev`: the next fix is measured against the earlier one
         if (dt <= MAX_STEP_S) speeds.push((haversine(prev, p) / dt) * 3.6);
-        else speeds.length = 0; // a gap breaks the run
+        else { judge(speeds); speeds = []; } // a gap ends the run: it is judged on its own, never thrown away
       }
       prev = p;
     }
-    // A short run (three or four steps) is judged by all of them.
-    const w = Math.min(TOP_SPEED_WINDOW, speeds.length);
-    if (w < MIN_STEPS) continue;
-    for (let i = 0; i + w <= speeds.length; i++) top = Math.max(top, medianOf(speeds.slice(i, i + w)));
+    judge(speeds);
   }
   return top;
 }

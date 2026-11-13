@@ -12,15 +12,15 @@ const inside = (p: { x: number; y: number; scale: number }, box: { width: number
 };
 
 describe('overlayBox', () => {
-  it('bar height is 190 without a route and 300 with one', () => {
-    expect(overlayBox('bar', { stats: [], route: null }).height).toBe(190);
-    expect(bar.height).toBe(300);
+  it('bar height is 226 without a route and 336 with one', () => {
+    expect(overlayBox('bar', { stats: [], route: null }).height).toBe(226);
+    expect(bar.height).toBe(336);
     expect(bar.width).toBe(1080 - 2 * CARD_PAD);
   });
   it('corner is 540 wide and grows 130 per stat', () => {
     const b = overlayBox('corner', { stats: [stat, stat, stat] as never, route: null });
-    expect(b).toEqual({ width: 540, height: 3 * 130 + 40 });
-    expect(overlayBox('corner', { stats: [], route: [{ x: 0, y: 0 }] }).height).toBe(440);
+    expect(b).toEqual({ width: 540, height: 3 * 130 + 76 });
+    expect(overlayBox('corner', { stats: [], route: [{ x: 0, y: 0 }] }).height).toBe(476);
   });
 });
 
@@ -30,17 +30,17 @@ describe('clampPlacement', () => {
     const lo = clampPlacement({ x: 2, y: 0, scale: 9 }, bar, card);
     expect(lo.scale).toBe(s);
     expect(lo.x).toBe(0.5);
-    expect(lo.y).toBeCloseTo((300 * s) / 2 / 1920);
+    expect(lo.y).toBeCloseTo((336 * s) / 2 / 1920);
     const hi = clampPlacement({ x: 2, y: 5, scale: 9 }, bar, card);
     expect(hi.scale).toBe(s);
-    expect(hi.y).toBeCloseTo(1 - (300 * s) / 2 / 1920);
+    expect(hi.y).toBeCloseTo(1 - (336 * s) / 2 / 1920);
     expect(inside(hi, bar, card)).toBe(true);
   });
-  it('caps a corner box with a route and 4 stats (960 tall) on Square at 1080/960', () => {
+  it('caps a corner box with a route and 4 stats (996 tall) on Square at 1080/996', () => {
     const corner = overlayBox('corner', { stats: [stat, stat, stat, stat] as never, route: [{ x: 0, y: 0 }] });
-    expect(corner.height).toBe(960);
+    expect(corner.height).toBe(996);
     const p = clampPlacement({ x: 0.5, y: 0.5, scale: 2 }, corner, CARD_SIZE.square);
-    expect(p.scale).toBe(1080 / 960);
+    expect(p.scale).toBe(1080 / 996);
     expect(inside(p, corner, CARD_SIZE.square)).toBe(true);
   });
   it('leaves a box that fits at maxScale unchanged', () => {
@@ -119,12 +119,12 @@ describe('defaultPlacement', () => {
     it(`corner with a route and bar without a route keep exact margins (${f})`, () => {
       const route = [{ x: 0, y: 0 }];
       const cb = overlayBox('corner', { stats: [stat, stat] as never, route });
-      expect(cb.height).toBe(400 + 2 * 130 + 40);
+      expect(cb.height).toBe(400 + 2 * 130 + 76);
       const cp = defaultPlacement('corner', c, cb);
       expect(cp.x * c.width - cb.width / 2).toBeCloseTo(CARD_PAD);
       expect(cp.y * c.height - cb.height / 2).toBeCloseTo(CARD_PAD);
       const bb = overlayBox('bar', { stats: [], route: null });
-      expect(bb.height).toBe(190);
+      expect(bb.height).toBe(226);
       const bp = defaultPlacement('bar', c, bb);
       expect(bp.x).toBe(0.5);
       expect(c.height - (bp.y * c.height + bb.height / 2)).toBeCloseTo(CARD_PAD);
@@ -173,7 +173,7 @@ describe('placementAfterFormatChange', () => {
   });
   it('clamps a low bar placement from story into the shorter square', () => {
     const next = placementAfterFormatChange({ x: 0.5, y: 0.95, scale: 1 }, bar, square);
-    expect(next).toEqual({ x: 0.5, y: 1 - 150 / 1080, scale: 1 });
+    expect(next).toEqual({ x: 0.5, y: 1 - 168 / 1080, scale: 1 });
     expect(inside(next, bar, square)).toBe(true);
   });
 });

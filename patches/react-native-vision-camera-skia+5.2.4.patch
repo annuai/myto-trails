@@ -1,0 +1,75 @@
+diff --git a/node_modules/react-native-vision-camera-skia/src/views/SkiaCamera.tsx b/node_modules/react-native-vision-camera-skia/src/views/SkiaCamera.tsx
+index 10b6101..ad1e26d 100644
+--- a/node_modules/react-native-vision-camera-skia/src/views/SkiaCamera.tsx
++++ b/node_modules/react-native-vision-camera-skia/src/views/SkiaCamera.tsx
+@@ -7,14 +7,13 @@ import {
+   type SkImage,
+ } from '@shopify/react-native-skia'
+ import React, {
+-  useCallback,
+   useEffect,
+   useImperativeHandle,
+   useMemo,
+   useRef,
+ } from 'react'
+ import { Platform } from 'react-native'
+-import { useDerivedValue, useSharedValue } from 'react-native-reanimated'
++import { useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated'
+ import {
+   type CameraController,
+   type CameraFrameOutput,
+@@ -38,7 +37,7 @@ import {
+   type VideoPixelFormat,
+   VisionCamera,
+ } from 'react-native-vision-camera'
+-import { createSynchronizable, scheduleOnRN } from 'react-native-worklets'
++import { createSynchronizable } from 'react-native-worklets'
+ import { renderToTexture, type SkiaOnFrameState } from '../render'
+ import { clearSurfacesCache } from '../SurfacesCache'
+ import { transformPoint } from '../transformPoint'
+@@ -275,16 +274,21 @@ function SkiaCameraImpl({
+     }
+   })
+ 
+-  const updatePreviewTexture = useCallback(
+-    (newTexture: SkImage) => {
+-      const oldTexture = texture.get()
+-      texture.set(newTexture)
+-      if (oldTexture != null) {
+-        oldTexture.dispose()
+-      }
+-    },
+-    [texture],
+-  )
++  // The newest rendered frame, handed from the camera thread to the UI thread through a Synchronizable. The upstream way (a
++  // scheduleOnRN, then texture.set from there) queues two new worklets per frame, and the UI runtime keeps every one it is
++  // sent: after some minutes its heap is full and the app aborts (Hermes OOM, SerializableWorklet::toJSValue).
++  const latest = useMemo(() => createSynchronizable<SkImage | null>(null), [])
++  useFrameCallback(() => {
++    'worklet'
++    latest.lock()
++    const next = latest.getBlocking()
++    if (next != null) latest.setBlocking(null)
++    latest.unlock()
++    if (next == null) return
++    const old = texture.value
++    texture.value = next
++    if (old != null) old.dispose()
++  })
+ 
+   const frameOutput = useFrameOutput({
+     pixelFormat: pixelFormat,
+@@ -315,7 +319,12 @@ function SkiaCameraImpl({
+             )
+           }
+           // 3. Update our Preview with the currently rendered result (and info)
+-          scheduleOnRN(updatePreviewTexture, snapshotCpuCopy)
++          latest.lock()
++          const unseen = latest.getBlocking()
++          latest.setBlocking(snapshotCpuCopy)
++          latest.unlock()
++          // A frame the UI never got to draw is dropped, not leaked.
++          if (unseen != null) unseen.dispose()
+           lastFrameOrientation.setBlocking(frame.orientation)
+           lastFrameIsMirrored.setBlocking(frame.isMirrored)
+         } catch (e) {

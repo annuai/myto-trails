@@ -1,13 +1,14 @@
 import { addDays, addMonths } from './dates';
 import { habitReminders } from './habit';
+import { pillionReminders } from './pillionReminders';
 import type { Todo } from './todos';
 import { REMIND_BEFORE_MIN } from './tripPlan';
 
 /** What the rider has switched on. */
-export type ReminderPrefs = { todos: boolean; trips: boolean; paused: boolean; /** "Ready for your next ride?" before the time of day the rider usually sets off. Off when not set. */ habit?: boolean; /** Minutes before the usual time to send that reminder. Ten when not set. */ habitLeadMin?: number; /** Minutes before a trip starts to be reminded to start it; 0 is off. Ten when not set. */ tripLeadMin?: number; /** A "quick check before you ride" reminder, at most once a week, around a planned trip or a usual ride. Off here when not set; the settings turn it on by default. */ check?: boolean };
+export type ReminderPrefs = { todos: boolean; trips: boolean; paused: boolean; /** "Ready for your next ride?" before the time of day the rider usually sets off. Off when not set. */ habit?: boolean; /** Minutes before the usual time to send that reminder. Ten when not set. */ habitLeadMin?: number; /** Minutes before a trip starts to be reminded to start it; 0 is off. Ten when not set. */ tripLeadMin?: number; /** A "quick check before you ride" reminder, at most once a week, around a planned trip or a usual ride. Off here when not set; the settings turn it on by default. */ check?: boolean; /** Pillion's "resting" and "waiting" notifications, at most one a week. Off here when not set; the settings turn it on by default. */ pillion?: boolean };
 
 /** One notification the app wants to show. `title` and `body` are the full text; `lock` is what shows when details are hidden. */
-export type Reminder = { id: string; fireAt: number; title: string; body: string; lock: string; route: string; kind: 'todo' | 'trip' | 'ride' | 'nudge' };
+export type Reminder = { id: string; fireAt: number; title: string; body: string; lock: string; route: string; kind: 'todo' | 'trip' | 'ride' | 'nudge' | 'pillion' };
 
 export type PlanInput = {
   now: number; todos: Todo[]; appKm: number; prefs: ReminderPrefs;
@@ -16,11 +17,13 @@ export type PlanInput = {
   /** Set while a ride recording is paused. */
   paused?: { since: number };
   /** The rider's past rides, which the "ready for your next ride?" reminder learns their usual time from. */
-  rides?: { startedAt: number; sample?: boolean }[];
+  rides?: { startedAt: number; sample?: boolean; simulated?: true; durationSec?: number }[];
   /** When the rider last finished a pre-ride check. */
   lastCheckAt?: number;
   /** When a check reminder last came due, so there is never more than one a week. */
   lastCheckReminderAt?: number;
+  /** What Pillion needs to plan his notifications: when he was first met, when his last notification came due, and how many "waiting" ones came since the last ride. */
+  pillion?: { since?: number; lastAt?: number; waited: number };
 };
 
 const PAUSE_REMINDER_MS = 30 * 60_000;
@@ -117,6 +120,7 @@ export function planReminders(i: PlanInput): Reminder[] {
   const check = i.prefs.check ? checkReminder(i, habit) : undefined;
   if (i.prefs.habit) all.push(...habit.filter((r) => r.id !== check?.replaces));
   if (check) all.push(check.reminder);
+  if (i.prefs.pillion && i.rides && i.pillion) all.push(...pillionReminders({ now: i.now, rides: i.rides, ...i.pillion }));
   return all.filter((r) => r.fireAt > i.now).sort((a, b) => a.fireAt - b.fireAt);
 }
 

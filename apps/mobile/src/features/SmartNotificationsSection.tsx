@@ -7,9 +7,8 @@ import { space } from '@/theme/tokens';
 import { Card } from '@/ui/Card';
 import { ChoiceChip } from '@/ui/Chip';
 import { Checkbox } from '@/ui/Checkbox';
-import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
+import { SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
-import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { RideNudgeSettings } from '@/features/RideNudgeSettings';
 import { useNotifications } from '@/store/notifications';
@@ -17,24 +16,26 @@ import { useRides } from '@/store/rides';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-/** The reminders that work out when to speak up: from the times the rider usually rides, the light left, and how long they have been riding. */
-export default function SmartNotifications() {
+/** The reminders that work out when to speak up: from the times the rider usually rides, the light left, and how long they have been riding. A section of the Reminders page. */
+export function SmartNotificationsSection() {
   const prefs = useNotifications((s) => s.prefs);
   const rides = useRides((s) => s.rides);
-  // Read the clock once when the screen opens: the times it shows do not change while it is on screen.
+  // Read the clock once when the section opens: the times it shows do not change while it is on screen.
   const [now] = useState(Date.now);
   const habits = useMemo(() => findHabits(rides, now), [rides, now]);
   const set = useNotifications.getState();
 
   return (
-    <Screen>
-      <BackHeader title="You" />
-      <PageTitle sub="Worked out on this phone from your own rides. Nothing about them is sent anywhere.">Smart reminders</PageTitle>
+    <>
+      <SectionTitle>Smart reminders</SectionTitle>
+      <Text variant="label" tone="muted">Worked out on this phone from your own rides. Nothing about them is sent anywhere.</Text>
       <ListCard>
         <Row label="Ready for your next ride?" sub="Before the time of day you usually set off, once you have ridden then on three days" chevron={false}
           right={<Checkbox checked={prefs.habit} label="Ready for your next ride?" onChange={(v) => set.setPref('habit', v)} />} />
         <Row label="Quick bike check" sub="Before a planned trip or a usual ride, at most once a week, and not if you have checked lately" chevron={false}
           right={<Checkbox checked={prefs.check ?? true} label="Quick bike check" onChange={(v) => set.setPref('check', v)} />} />
+        <Row label="Pillion" sub="Pillion curls up after a long ride, and waits for you after about a week. At most one a week" chevron={false}
+          right={<Checkbox checked={prefs.pillion ?? true} label="Pillion" onChange={(v) => set.setPref('pillion', v)} />} />
         <Row label="Daylight alert" sub="About 45 minutes before sunset while you ride" chevron={false}
           right={<Checkbox checked={prefs.daylightAlert} label="Daylight alert" onChange={(v) => set.setPref('daylightAlert', v)} />} />
       </ListCard>
@@ -59,6 +60,6 @@ export default function SmartNotifications() {
           {BREAK_CHOICES.map((m) => <ChoiceChip key={m} label={breakLabel(m)} selected={(prefs.breakEveryMin ?? DEFAULT_BREAK_MIN) === m} onPress={() => set.setBreakEvery(m)} />)}
         </View>
       </Card>
-    </Screen>
+    </>
   );
 }

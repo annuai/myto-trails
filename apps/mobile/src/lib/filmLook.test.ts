@@ -5,8 +5,8 @@ const gray = [0.5, 0.5, 0.5] as const;
 const ids = LOOKS.map((l) => l.id);
 
 describe('filmLook maths', () => {
-  it('offers none and six looks, with none first', () => {
-    expect(ids).toEqual(['none', 'colour-negative', 'faded-slide', 'mono', 'sepia', 'cross-process', 'halftone']);
+  it('offers none and eleven looks, with none first', () => {
+    expect(ids).toEqual(['none', 'vivid', 'colour-negative', 'faded-slide', 'mist', 'mono', 'noir', 'sepia', 'cross-process', 'disposable', 'halftone', 'newsprint']);
   });
   it('multiplying by the identity changes nothing', () => {
     const m = saturation(0.5);
@@ -40,14 +40,14 @@ describe('filmLook maths', () => {
     full.forEach((v, i) => expect(half[i]).toBeCloseTo((IDENTITY[i] + v) / 2, 9));
     expect(lookParams('sepia', 1).neutral).toBe(false);
   });
-  it('grain and vignette grow with intensity and stay gentle', () => {
+  it('grain and vignette never shrink with intensity and stay within range', () => {
     for (const l of LOOKS.filter((x) => x.id !== 'none')) {
       const lo = lookParams(l.id, 0.3);
       const hi = lookParams(l.id, 1);
-      expect(hi.grain).toBeGreaterThan(lo.grain);
+      expect(hi.grain).toBeGreaterThanOrEqual(lo.grain);
       expect(hi.vignette).toBeGreaterThan(lo.vignette);
-      expect(hi.grain).toBeLessThanOrEqual(0.5);
-      expect(hi.vignette).toBeLessThanOrEqual(0.4);
+      expect(hi.grain).toBeLessThanOrEqual(0.6);
+      expect(hi.vignette).toBeLessThanOrEqual(0.5);
     }
   });
   it('black and white has no colour left and more contrast than the original', () => {
@@ -77,20 +77,24 @@ describe('filmLook maths', () => {
   it('writes the matrix as the 20 numbers SVG wants', () => {
     expect(matrixValues(IDENTITY).split(' ')).toHaveLength(20);
   });
-  it('only halftone has a dot screen, and it grows with intensity', () => {
+  it('only the halftone looks have a dot screen, and it grows with intensity', () => {
     expect(lookParams('sepia', 1).dots).toBe(0);
+    expect(lookParams('halftone', 1).screen).toBe('cmyk');
+    expect(lookParams('newsprint', 1).screen).toBe('mono');
     expect(lookParams('halftone', 1).dots).toBeGreaterThan(lookParams('halftone', 0.4).dots);
-    expect(lookParams('halftone', 1).dots).toBeLessThanOrEqual(0.6);
-    const [r, g, b] = applyMatrix(lookParams('halftone', 1).matrix, [0.8, 0.3, 0.2]);
-    expect(Math.abs(r - g)).toBeLessThan(0.1);
-    expect(Math.abs(g - b)).toBeLessThan(0.1);
+    // The black and white looks have no colour left in the grade.
+    for (const id of ['mono', 'noir', 'newsprint'] as const) {
+      const [r, g, b] = applyMatrix(lookParams(id, 1).matrix, [0.8, 0.3, 0.2]);
+      expect(Math.abs(r - g)).toBeLessThan(0.01);
+      expect(Math.abs(g - b)).toBeLessThan(0.01);
+    }
   });
   it('steps through the looks and stops at the ends', () => {
-    expect(stepLook('none', 1)).toBe('colour-negative');
-    expect(stepLook('colour-negative', -1)).toBe('none');
+    expect(stepLook('none', 1)).toBe('vivid');
+    expect(stepLook('vivid', -1)).toBe('none');
     expect(stepLook('none', -1)).toBe('none');
-    expect(stepLook('cross-process', 1)).toBe('halftone');
-    expect(stepLook('halftone', 1)).toBe('halftone');
+    expect(stepLook('halftone', 1)).toBe('newsprint');
+    expect(stepLook('newsprint', 1)).toBe('newsprint');
   });
   it('reads a long sideways drag as a swipe: left is next, right is previous, short or steep drags are nothing', () => {
     expect(swipeStep(-80, 5, 40)).toBe(1);
