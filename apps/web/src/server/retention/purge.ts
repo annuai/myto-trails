@@ -26,6 +26,9 @@ export const RETENTION_DAYS = {
   rejectedSubmission: 365,
   abandonedFile: 365,
   orphanPhoto: 1,
+  /** Soft-deleted synced records: long enough that a phone that was off for a month still learns of the delete. SYNC_LIMITS.tombstoneDays. */
+  syncTombstone: 30,
+  syncDeviceIdle: 90,
 } as const;
 
 /** Most files removed in one run, so a backlog is cleared over a few nights instead of in one request that times out. */
@@ -69,6 +72,15 @@ const rules: Rule[] = [
       update condition_report set lat = null, lng = null
       where (lat is not null or lng is not null) and reported_at < ${ago(now, RETENTION_DAYS.conditionPosition)}
       returning id`),
+  },
+  {
+    // A deleted ride's track is already removed when the delete arrives; only the small tombstone row is left.
+    name: "syncTombstones",
+    run: async (db, now) => count(await db`delete from sync_record where deleted_at < ${ago(now, RETENTION_DAYS.syncTombstone)} returning id`),
+  },
+  {
+    name: "syncDevices",
+    run: async (db, now) => count(await db`delete from sync_device where last_pull_at < ${ago(now, RETENTION_DAYS.syncDeviceIdle)} returning device_id`),
   },
   {
     name: "draftSubmissions",

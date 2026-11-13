@@ -68,12 +68,12 @@ export function matchRoute(routes: RouteDef[], method: string, path: string): { 
   return pathMatched ? "method" : null;
 }
 
-/** Reads the body but stops as soon as it exceeds the cap, so a huge upload never sits in memory. */
-async function readCapped(req: Request): Promise<string> {
+/** Reads the raw body but stops as soon as it exceeds `max`, so a huge upload never sits in memory. */
+export async function readBytesCapped(req: Request, max: number): Promise<Uint8Array> {
   const tooLarge = () => new ApiError(413, "body_too_large", "The request body is too large.");
   const declared = Number(req.headers.get("content-length"));
-  if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) throw tooLarge();
-  if (!req.body) return "";
+  if (Number.isFinite(declared) && declared > max) throw tooLarge();
+  if (!req.body) return new Uint8Array();
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -81,13 +81,17 @@ async function readCapped(req: Request): Promise<string> {
     const { done, value } = await reader.read();
     if (done) break;
     total += value.byteLength;
-    if (total > MAX_BODY_BYTES) {
+    if (total > max) {
       await reader.cancel();
       throw tooLarge();
     }
     chunks.push(value);
   }
-  return new TextDecoder().decode(Buffer.concat(chunks));
+  return new Uint8Array(Buffer.concat(chunks));
+}
+
+async function readCapped(req: Request): Promise<string> {
+  return new TextDecoder().decode(await readBytesCapped(req, MAX_BODY_BYTES));
 }
 
 /**

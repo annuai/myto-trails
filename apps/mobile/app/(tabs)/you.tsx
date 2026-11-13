@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Award, Bell, House, Gauge, Vibrate, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload, Wrench, Users } from 'lucide-react-native';
+import { Award, Bell, Bug, Cloud, House, Gauge, Vibrate, BookOpen, Contrast, Globe, Map as MapIcon, CalendarDays, ClipboardList, Download, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, MessagesSquare, ShieldAlert, Stamp, Route as RouteIcon, Share2, Sparkles, TriangleAlert, Upload, Wrench, Users } from 'lucide-react-native';
 import Constants from 'expo-constants';
 import { CONTACT_EMAIL, DISCORD_URL, MYTO_URL, versionLabel } from '@moto-trails/domain';
 import { useMe } from '@/api/useApi';
@@ -31,6 +31,7 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Measure } from '@/ui/Measure';
 import { useAppearance } from '@/store/appearance';
+import { useSync, waitingCount } from '@/store/sync';
 import { PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Columns } from '@/ui/Columns';
@@ -48,6 +49,8 @@ export default function You() {
   const inverted = useAppearance((s) => s.inverted);
   const haptics = useAppearance((s) => s.haptics);
   const speedTicks = useAppearance((s) => s.speedTicks);
+  const crashReports = useAppearance((s) => s.crashReports);
+  const sync = useSync();
   const standingOn = useStandingPref((s) => s.optIn);
   const standingError = useStandingPref((s) => s.error);
   const osmOn = useOsm((s) => s.asked && s.enabled);
@@ -124,6 +127,8 @@ export default function You() {
         <Row icon={Globe} label="Country and units" sub={`${home ? countryName(home) : 'Not set'} · ${unit === 'mi' ? 'miles' : 'kilometres'}`} onPress={() => router.push('/region')} />
         <Row icon={Contrast} label="Inverted colours" sub="Light riding screen, dark everywhere else" value={inverted ? 'On' : 'Off'} onPress={() => useAppearance.getState().setInverted(!inverted)} />
         <Row icon={Vibrate} label="Haptics" sub="Taps and vibration for checks, finished tasks and marks" value={haptics ? 'On' : 'Off'} onPress={() => useAppearance.getState().setHaptics(!haptics)} />
+        <Row icon={Cloud} label="Sync across phones" sub={sync.enabled ? (sync.lastError ?? (waitingCount(sync) > 0 ? `Waiting to sync: ${waitingCount(sync)}` : 'Up to date')) : 'Rides, trips and to-dos on every phone you sign in on'} value={sync.enabled ? 'On' : 'Off'} onPress={() => router.push('/sync')} />
+        <Row icon={Bug} label="Crash reports" sub="Sends the error when the app crashes. No rides, routes or contacts; it can show roughly which city you are in" value={crashReports ? 'On' : 'Off'} onPress={() => useAppearance.getState().setCrashReports(!crashReports)} />
         {haptics ? <Row icon={Gauge} label="Speed ticks" sub="A soft tick each time your speed passes a multiple of 10, and as numbers roll" value={speedTicks ? 'On' : 'Off'} onPress={() => useAppearance.getState().setSpeedTicks(!speedTicks)} /> : null}
         <Row icon={House} label="Home and work" sub="Used for the ride home offer and to end a ride when you arrive" value={homePlace?.label ?? 'Not set'} onPress={() => router.push('/home-place')} />
         <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />

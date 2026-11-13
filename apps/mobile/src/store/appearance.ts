@@ -12,6 +12,9 @@ type State = {
   /** A soft tick each time the live speed passes a multiple of 10 on the ride screen, and as numbers roll. Needs `haptics`. */
   speedTicks: boolean;
   setSpeedTicks: (on: boolean) => void;
+  /** Anonymous crash reports (no position, no contacts: see `scrubCrashEvent`). On unless the rider turns it off. */
+  crashReports: boolean;
+  setCrashReports: (on: boolean) => void;
 };
 
 export const useAppearance = create<State>()(
@@ -20,7 +23,8 @@ export const useAppearance = create<State>()(
       inverted: false, setInverted: (inverted) => set({ inverted }),
       haptics: true, setHaptics: (haptics) => set({ haptics }),
       speedTicks: true, setSpeedTicks: (speedTicks) => set({ speedTicks }),
+      crashReports: true, setCrashReports: (crashReports) => set({ crashReports }),
     }),
-    { name: 'myto-appearance', storage, partialize: (s) => ({ inverted: s.inverted, haptics: s.haptics, speedTicks: s.speedTicks }) },
+    { name: 'myto-appearance', storage, partialize: (s) => ({ inverted: s.inverted, haptics: s.haptics, speedTicks: s.speedTicks, crashReports: s.crashReports }) },
   ),
 );

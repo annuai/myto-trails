@@ -11,6 +11,8 @@ vi.mock('@/store/persist', async () => {
 });
 vi.mock('@/api/checkins', () => ({ arriveCheckin: async () => {} }));
 vi.mock('@/api/sharedRoutes', () => ({ deleteSharedRoute: async () => {} }));
+vi.mock('@/api/sync', () => ({ eraseCloudCopy: async () => {} }));
+vi.mock('@/store/sync', () => ({ resetSync: () => {} }));
 vi.mock('@/lib/motionTraceFile', () => ({ traceDelete: () => {} }));
 vi.mock('@/lib/backup/device', () => ({ eraseDocumentPhotos: () => {} }));
 vi.mock('@/lib/shareRoute', () => ({ sharedIdOf: (u: string) => u }));

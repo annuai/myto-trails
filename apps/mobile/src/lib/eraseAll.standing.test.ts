@@ -12,6 +12,8 @@ vi.mock('@/store/places', () => ({ usePlaces: { setState: () => undefined, getSt
 vi.mock('@/store/homeOffer', () => ({ useHomeOffer: { getState: () => ({ clear: () => undefined }) } }));
 vi.mock('@/api/checkins', () => ({ arriveCheckin: vi.fn() }));
 vi.mock('@/api/sharedRoutes', () => ({ deleteSharedRoute: vi.fn() }));
+vi.mock('@/api/sync', () => ({ eraseCloudCopy: async () => {} }));
+vi.mock('@/store/sync', () => ({ resetSync: () => {} }));
 vi.mock('@/lib/motionTraceFile', () => ({ traceDelete: vi.fn() }));
 vi.mock('@/lib/backup/device', () => ({ eraseDocumentPhotos: vi.fn() }));
 vi.mock('@/lib/shareRoute', () => ({ sharedIdOf: vi.fn() }));

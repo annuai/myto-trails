@@ -17,6 +17,9 @@ Until then the club feed refreshes when the screen opens and while it stays open
 
 ## Other open items
 
+- **Crash reporting, what is left:** Sentry projects `myto-web` and `myto-mobile` exist (org `myto-xc`) and the site's `SENTRY_DSN` is set on Vercel. The phone reports only from a release build with `EXPO_PUBLIC_SENTRY_DSN` in `apps/mobile/.env`. Left: `pod install` and a device build (the Sentry pod is new), a Sentry auth token as `SENTRY_AUTH_TOKEN` on the build machine (never committed) to upload source maps, and an upload step for the source maps in the Xcode build (the Sentry Expo plugin is not used: it wants `expo prebuild --clean`, which would wipe the hand-made native setup; Metro already adds debug ids via `metro.config.js`). Sentry can still store a coarse city and country per phone report; a data-scrubbing rule for `$user.geo.**` would remove it (declined for now).
+- **Apply migrations 0049 (sweep heartbeat) and 0050 (sync, and the `sync` token scope) to Supabase** before deploying; sign-in fails against the old scope check otherwise. After deploying, the check-in workflow's watchdog step stays red until the first sweep has run.
+
 - **Rider story:** Before standing is useful in production, set `CRON_SECRET` on Vercel (the rollup needs it; migration 0048 is applied). More Pillion poses (helmet, chai stall, rain) are P1; see `apps/mobile/assets/pillion/README.md`. Move cells to districts for a district once it has 20 opted-in riders (`ride_summary` stores a 1-degree cell, so district challenges cannot be counted yet).
 - **R2 lifecycle rule:** expire objects in the `quarantine` bucket after one day. Photos that were sent but never posted leave nothing in the database for the purge to find.
 - **Custom domain for the public bucket** behind Cloudflare, so photos are cached at the edge (the `r2.dev` address is rate limited and not for production). Set `R2_PUBLIC_BASE_URL` to it.

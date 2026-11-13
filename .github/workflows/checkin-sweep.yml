@@ -7,7 +7,9 @@ name: Check-in sweep
 # One-time set-up in the repository settings, Secrets and variables, Actions:
 #   Secret    CRON_SECRET  the same value as the CRON_SECRET the site uses (at least 32 characters)
 #   Variable  SITE_URL     the site's address, for example https://moto-trails.com (no trailing slash)
-# Without both, the job does nothing and says so.
+# Without both, the job FAILS (GitHub emails you): a safety email that silently never runs is worse than a red job.
+# The second step asks /api/cron/watchdog whether the sweep has finished in the last 45 minutes, so a wrong secret or a sweep
+# that errors inside the site also turns the job red.
 on:
   schedule:
     - cron: "*/10 * * * *"
@@ -26,7 +28,15 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL }}
         run: |
           if [ -z "$CRON_SECRET" ] || [ -z "$SITE_URL" ]; then
-            echo "CRON_SECRET or SITE_URL is not set in this repository; nothing was called. See the comment at the top of this file."
-            exit 0
+            echo "::error::CRON_SECRET or SITE_URL is not set in this repository, so the check-in sweep did not run. See the comment at the top of this file."
+            exit 1
           fi
           curl --fail --silent --show-error --max-time 60 -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/cron/checkins"
+      - name: Check the sweep is alive
+        if: always()
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          [ -n "$CRON_SECRET" ] && [ -n "$SITE_URL" ] || exit 1
+          curl --fail --silent --show-error --max-time 60 -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/cron/watchdog"

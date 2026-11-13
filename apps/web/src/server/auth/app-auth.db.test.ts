@@ -40,7 +40,7 @@ describe("exchangeAppCode", () => {
     expect(stored!.code_hash).not.toContain(code);
     const r = await exchangeAppCode(db.sql, { code, verifier: VERIFIER, kind: "app_android" });
     if (!r.ok) throw new Error(r.reason);
-    expect(await verifyToken(db.sql, r.token)).toMatchObject({ userId: u, kind: "app_android", scopes: ["saved", "write:submission"] });
+    expect(await verifyToken(db.sql, r.token)).toMatchObject({ userId: u, kind: "app_android", scopes: ["saved", "write:submission", "sync"] });
     expect(await exchangeAppCode(db.sql, { code, verifier: VERIFIER, kind: "app_android" })).toEqual({ ok: false, reason: "invalid_grant" });
   });
 

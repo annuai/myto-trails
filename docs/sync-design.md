@@ -1,6 +1,6 @@
-# Sync design (not built)
+# Sync design
 
-Status: design only. Phase 5 of the Rider OS plan. It is not built because it needs new server tables and conflict handling that can only be tested against a real Postgres (the project tests against Supabase), and a sync that is mostly right loses riders' data. Build it with a test project available.
+Status: built (rides, trips, to-dos; moments are accepted by the server but the phone has no moment store yet). Opt-in from You, Sync. Differences from the first design: one table `sync_record` with a `kind` column instead of four (migration `0050_sync.sql`); pull reads from the server clock with a 5 s overlap; the track is raw bytes at `PUT /sync/rides/{id}/track`; `DELETE /sync` erases the cloud copy; a ride forked by a two-phone edit gives the local copy the new id, so a trip that listed the old id now lists the other phone's version. Engine: `apps/mobile/src/lib/sync/` (pure, with a two-phone test), server: `apps/web/src/server/sync/`. Old tokens lack the `sync` scope until the rider signs in again. Original reasoning: it was not built because it needs new server tables and conflict handling that can only be tested against a real Postgres (the project tests against Supabase), and a sync that is mostly right loses riders' data. Build it with a test project available.
 
 ## Goal
 
