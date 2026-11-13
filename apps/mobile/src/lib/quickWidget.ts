@@ -30,3 +30,9 @@ export const QUICK_LINKS = {
   sosRecording: 'myto://ride/live?sos=1',
   sosIdle: 'myto://documents/contacts',
 } as const;
+
+/** True when `url` is a link the app really routes to: the `myto://` scheme and a screen under apps/mobile/app. */
+export function isRoutableQuickLink(url: string, routes: readonly string[]): boolean {
+  const m = /^myto:\/\/([^?#]+)(?:[?#].*)?$/.exec(url);
+  return !!m && routes.includes('/' + m[1].replace(/\/+$/, ''));
+}

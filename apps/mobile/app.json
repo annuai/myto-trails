@@ -91,16 +91,17 @@
               "ios": {
                 "supportedFamilies": [
                   "systemSmall",
-                  "systemMedium"
+                  "systemMedium",
+                  "systemLarge"
                 ],
                 "initialLayout": "src/features/widgets/QuickActions.ios.tokens.tsx"
               },
               "android": {
                 "targetCellWidth": 4,
                 "targetCellHeight": 2,
-                "minWidth": 250,
+                "minWidth": 110,
                 "minHeight": 110,
-                "resizeMode": "horizontal",
+                "resizeMode": "both",
                 "initialLayout": "src/features/widgets/QuickActions.android.tokens.tsx"
               }
             }
