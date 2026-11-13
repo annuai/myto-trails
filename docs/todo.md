@@ -28,3 +28,4 @@ Until then the club feed refreshes when the screen opens and while it stays open
 - **GitHub `CRON_SECRET`** must equal the Vercel one (the check-in sweep got a 401 on 6 Nov 2026). Reveal the Vercel value, then `pbpaste | gh secret set CRON_SECRET --repo annuai/myto-trails`, and run the Check-in sweep workflow to confirm.
 - **Video in club posts:** short clips (15 s or less), compressed on the phone, stored in R2. Not started.
 - **Community heat map:** needs sync, consent and 30 or more active riders first (see the architecture notes in the conversation of 5 Nov 2026 and `docs/sync-design.md`).
+- **Offline regions:** build and upload the states in `tooling/offline-regions/regions.json` that are not yet published, set up a monthly refresh, and run the device checks (download, airplane-mode map and search, delete, update, trail inside a region) on a phone.
