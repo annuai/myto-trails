@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { dragPlacement, overlayBox, pinchPlacement, toPictureDelta, type OverlayInk, type PhotoLayout, type Placement } from '@/lib/photoCard';
+import { applyPan, applyPinch, overlayBox, type OverlayInk, type PhotoLayout, type Placement } from '@/lib/photoCard';
 import type { PickedPhoto } from '@/lib/pickPhoto';
 import type { CardModel } from '@/lib/rideCard';
 import { PhotoCard } from '@/ui/PhotoCard';
@@ -13,23 +13,23 @@ export function PhotoComposer({ model, photo, layout, ink, placement, onPlacemen
   const height = (width * model.height) / model.width;
   const box = useMemo(() => overlayBox(layout, model), [layout, model]);
   const card = useMemo(() => ({ width: model.width, height: model.height }), [model.width, model.height]);
-  // Gesture callbacks outlive a render, so they read the newest placement from a ref.
+  // Gesture callbacks outlive a render and events can arrive faster than React renders, so they work on refs:
+  // the newest placement (synced from props each render, so an outside change wins; set by each event) and the callback.
   const latest = useRef(placement);
   latest.current = placement;
+  const emit = useRef(onPlacement);
+  emit.current = onPlacement;
   const startScale = useRef(placement.scale);
+  const shown = useMemo(() => ({ width, height }), [width, height]);
 
   const gesture = useMemo(() => {
-    const pan = Gesture.Pan().runOnJS(true).onChange((e) => {
-      onPlacement(dragPlacement(latest.current, toPictureDelta(e.changeX, width, model.width), toPictureDelta(e.changeY, height, model.height), box, card));
-    });
+    const push = (next: Placement) => { latest.current = next; emit.current(next); };
+    const pan = Gesture.Pan().runOnJS(true).onChange((e) => push(applyPan(latest.current, e.changeX, e.changeY, shown, box, card)));
     const pinch = Gesture.Pinch().runOnJS(true)
       .onBegin(() => { startScale.current = latest.current.scale; })
-      .onChange((e) => {
-        // Scale about the overlay's centre: only the scale changes, from the scale at gesture start; a drag at the same time keeps its position.
-        onPlacement(pinchPlacement({ ...latest.current, scale: startScale.current }, e.scale, box, card));
-      });
+      .onChange((e) => push(applyPinch(latest.current, startScale.current, e.scale, box, card)));
     return Gesture.Simultaneous(pan, pinch);
-  }, [onPlacement, width, height, model.width, model.height, box, card]);
+  }, [shown, box, card]);
 
   return (
     <GestureDetector gesture={gesture}>

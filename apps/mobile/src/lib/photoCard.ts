@@ -57,3 +57,13 @@ export function pinchPlacement(start: Placement, factor: number, box: Size, card
 export function toPictureDelta(deltaPx: number, pictureWidth: number, cardWidth: number): number {
   return (deltaPx * cardWidth) / pictureWidth;
 }
+
+/** One pan step: a change in screen pixels on a card shown `shown` big, applied to the newest placement. */
+export function applyPan(prev: Placement, changeX: number, changeY: number, shown: Size, box: Size, card: Size): Placement {
+  return dragPlacement(prev, toPictureDelta(changeX, shown.width, card.width), toPictureDelta(changeY, shown.height, card.height), box, card);
+}
+
+/** One pinch step: the scale is the one at gesture start times the gesture's factor; x and y stay the newest (a pan may be running too). */
+export function applyPinch(prev: Placement, startScale: number, factor: number, box: Size, card: Size): Placement {
+  return pinchPlacement({ ...prev, scale: startScale }, factor, box, card);
+}

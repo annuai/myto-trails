@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CARD_SIZE, type CardFormat } from './rideCard';
 import { CARD_PAD } from './cardMap';
-import { PLACEMENT_LIMITS, clampPlacement, defaultPlacement, dragPlacement, overlayBox, pinchPlacement, toPictureDelta } from './photoCard';
+import { PLACEMENT_LIMITS, clampPlacement, defaultPlacement, dragPlacement, overlayBox, pinchPlacement, toPictureDelta, applyPan, applyPinch } from './photoCard';
 
 const card = CARD_SIZE.story;
 const stat = { key: 'distance', label: 'Distance', parts: [] } as const;
@@ -122,5 +122,23 @@ describe('toPictureDelta', () => {
   it('converts screen pixels to picture pixels', () => {
     expect(toPictureDelta(50, 220, 1080)).toBe((50 * 1080) / 220);
     expect(toPictureDelta(-10, 540, 1080)).toBe(-20);
+  });
+});
+
+describe('applyPan and applyPinch', () => {
+  const shown = { width: 360, height: 640 };
+  const big = { width: 400, height: 300 };
+  const start = { x: 0.5, y: 0.5, scale: 1 };
+  it('accumulates two pan deltas applied to the returned value', () => {
+    const a = applyPan(start, 36, 0, shown, big, card);
+    const b = applyPan(a, 36, 0, shown, big, card);
+    expect(b.x).toBeCloseTo(0.5 + (2 * 36 * card.width) / shown.width / card.width);
+  });
+  it('keeps the pan x and y on a pinch after a pan', () => {
+    const panned = applyPan(start, 18, 32, shown, big, card);
+    const pinched = applyPinch(panned, 1, 1.5, big, card);
+    expect(pinched.x).toBe(panned.x);
+    expect(pinched.y).toBe(panned.y);
+    expect(pinched.scale).toBe(1.5);
   });
 });
