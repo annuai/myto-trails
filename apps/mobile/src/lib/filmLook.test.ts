@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_INTENSITY, IDENTITY, LOOKS, applyMatrix, clampIntensity, lookParams, matrixValues, multiply, saturation, type LookId } from './filmLook';
+import { stepLook, swipeStep, DEFAULT_INTENSITY, IDENTITY, LOOKS, applyMatrix, clampIntensity, lookParams, matrixValues, multiply, saturation, type LookId } from './filmLook';
 
 const gray = [0.5, 0.5, 0.5] as const;
 const ids = LOOKS.map((l) => l.id);
 
 describe('filmLook maths', () => {
-  it('offers none and five looks, with none first', () => {
-    expect(ids).toEqual(['none', 'colour-negative', 'faded-slide', 'mono', 'sepia', 'cross-process']);
+  it('offers none and six looks, with none first', () => {
+    expect(ids).toEqual(['none', 'colour-negative', 'faded-slide', 'mono', 'sepia', 'cross-process', 'halftone']);
   });
   it('multiplying by the identity changes nothing', () => {
     const m = saturation(0.5);
@@ -30,6 +30,7 @@ describe('filmLook maths', () => {
       expect(p.matrix).toEqual(IDENTITY);
       expect(p.grain).toBe(0);
       expect(p.vignette).toBe(0);
+      expect(p.dots).toBe(0);
       expect(p.neutral).toBe(true);
     }
   });
@@ -75,5 +76,26 @@ describe('filmLook maths', () => {
   });
   it('writes the matrix as the 20 numbers SVG wants', () => {
     expect(matrixValues(IDENTITY).split(' ')).toHaveLength(20);
+  });
+  it('only halftone has a dot screen, and it grows with intensity', () => {
+    expect(lookParams('sepia', 1).dots).toBe(0);
+    expect(lookParams('halftone', 1).dots).toBeGreaterThan(lookParams('halftone', 0.4).dots);
+    expect(lookParams('halftone', 1).dots).toBeLessThanOrEqual(0.6);
+    const [r, g, b] = applyMatrix(lookParams('halftone', 1).matrix, [0.8, 0.3, 0.2]);
+    expect(Math.abs(r - g)).toBeLessThan(0.1);
+    expect(Math.abs(g - b)).toBeLessThan(0.1);
+  });
+  it('steps through the looks and stops at the ends', () => {
+    expect(stepLook('none', 1)).toBe('colour-negative');
+    expect(stepLook('colour-negative', -1)).toBe('none');
+    expect(stepLook('none', -1)).toBe('none');
+    expect(stepLook('cross-process', 1)).toBe('halftone');
+    expect(stepLook('halftone', 1)).toBe('halftone');
+  });
+  it('reads a long sideways drag as a swipe: left is next, right is previous, short or steep drags are nothing', () => {
+    expect(swipeStep(-80, 5, 40)).toBe(1);
+    expect(swipeStep(80, -5, 40)).toBe(-1);
+    expect(swipeStep(20, 0, 40)).toBe(0);
+    expect(swipeStep(60, 60, 40)).toBe(0);
   });
 });

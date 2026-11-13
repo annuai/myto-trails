@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import Svg, { Defs, FeColorMatrix, FeTurbulence, Filter, Image as SvgImage, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, FeColorMatrix, FeTurbulence, Filter, Image as SvgImage, Pattern, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { lookParams, matrixValues, type FilmLook } from '@/lib/filmLook';
 import { fixed } from '@/theme/tokens';
 import { filmImage as t } from './FilmImage.tokens';
@@ -15,6 +15,7 @@ const GREY = '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.8 0 0 0 -0.6';
 export function FilmImage({ uri, pixelWidth, pixelHeight, width, height, look }: { uri: string; pixelWidth: number; pixelHeight: number; width: number; height: number; look: FilmLook }) {
   const key = useId().replace(/[^a-zA-Z0-9]/g, '');
   const p = lookParams(look.id, look.intensity);
+  const cell = pixelWidth / t.dotCells;
   return (
     <Svg width={width} height={height} viewBox={`0 0 ${pixelWidth} ${pixelHeight}`}>
       <Defs>
@@ -25,6 +26,9 @@ export function FilmImage({ uri, pixelWidth, pixelHeight, width, height, look }:
           <FeTurbulence type="fractalNoise" baseFrequency={t.grainFrequency} numOctaves={t.grainOctaves} seed={t.grainSeed} stitchTiles="stitch" />
           <FeColorMatrix type="matrix" values={GREY} />
         </Filter>
+        <Pattern id={`d${key}`} width={cell} height={cell} patternUnits="userSpaceOnUse">
+          <Circle cx={cell / 2} cy={cell / 2} r={cell * t.dotRadius} fill={fixed.shadow} />
+        </Pattern>
         <RadialGradient id={`v${key}`} cx="50%" cy="50%" r="75%">
           <Stop offset={t.vignetteStart} stopColor={fixed.shadow} stopOpacity={0} />
           <Stop offset={1} stopColor={fixed.shadow} stopOpacity={p.vignette} />
@@ -32,6 +36,7 @@ export function FilmImage({ uri, pixelWidth, pixelHeight, width, height, look }:
       </Defs>
       <SvgImage href={{ uri }} x={0} y={0} width={pixelWidth} height={pixelHeight} preserveAspectRatio="xMidYMid slice" filter={p.neutral ? undefined : `url(#c${key})`} />
       {p.grain > 0 ? <Rect x={0} y={0} width={pixelWidth} height={pixelHeight} fill={fixed.shadow} filter={`url(#g${key})`} opacity={p.grain * t.grainOpacityScale} /> : null}
+      {p.dots > 0 ? <Rect x={0} y={0} width={pixelWidth} height={pixelHeight} fill={`url(#d${key})`} opacity={p.dots} /> : null}
       {p.vignette > 0 ? <Rect x={0} y={0} width={pixelWidth} height={pixelHeight} fill={`url(#v${key})`} /> : null}
     </Svg>
   );

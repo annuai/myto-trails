@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Image, Platform, ScrollView, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Image, PanResponder, Platform, ScrollView, View } from 'react-native';
 import { Check } from 'lucide-react-native';
-import { DEFAULT_INTENSITY, LOOKS, type FilmLook } from '@/lib/filmLook';
+import { buzz } from '@/lib/haptics';
+import { DEFAULT_INTENSITY, LOOKS, lookById, stepLook, swipeStep, type FilmLook } from '@/lib/filmLook';
+import { useLatest } from '@/lib/useLatest';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
@@ -42,6 +44,19 @@ export function FilmSheet({ open, source, initial, onSave, onClose }: {
   const previewW = dims ? dims.width * fit : 0;
   const previewH = dims ? dims.height * fit : 0;
 
+  // Swiping the picture steps through the looks, like a photo app: the preview changes at once.
+  const swipe = useLatest((dx: number, dy: number) => {
+    const step = swipeStep(dx, dy, filmSheet.swipeDistance);
+    if (!step) return;
+    const id = stepLook(look.id, step);
+    if (id !== look.id) { buzz.tick(); setLook({ id, intensity: look.intensity }); }
+  });
+  const pan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy),
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderRelease: (_, g) => swipe(g.dx, g.dy),
+  }), [swipe]);
+
   const save = async () => {
     if (!source || !target) return;
     setBusy(true); setProblem(undefined);
@@ -57,11 +72,12 @@ export function FilmSheet({ open, source, initial, onSave, onClose }: {
     <Sheet open={open} title="Film" onClose={onClose}>
       <View onLayout={(e) => setWide(e.nativeEvent.layout.width)} style={{ alignItems: 'center', gap: space[4] }}>
         {source && dims && target && fit ? (
-          <View style={{ width: previewW, height: previewH, borderRadius: radius.control, overflow: 'hidden', backgroundColor: c.raised }}>
+          <View {...pan.panHandlers} accessibilityHint="Swipe sideways to change the look" style={{ width: previewW, height: previewH, borderRadius: radius.control, overflow: 'hidden', backgroundColor: c.raised }}>
             <FilmImage uri={source} pixelWidth={target.width} pixelHeight={target.height} width={previewW} height={previewH} look={look} />
           </View>
         ) : null}
       </View>
+      <Text variant="label" tone="muted" style={{ textAlign: 'center' }}>{lookById(look.id).label}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space[2] }}>
         {LOOKS.map((l) => <ChoiceChip key={l.id} label={l.label} selected={look.id === l.id} onPress={() => setLook({ id: l.id, intensity: look.intensity })} />)}
       </ScrollView>

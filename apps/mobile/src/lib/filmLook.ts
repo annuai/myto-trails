@@ -10,8 +10,8 @@ export type Rgb = readonly [number, number, number];
 
 export const IDENTITY: Matrix = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
 
-export type LookId = 'none' | 'colour-negative' | 'faded-slide' | 'mono' | 'sepia' | 'cross-process';
-export type Look = { id: LookId; label: string; matrix: Matrix; /** Grain and vignette at full intensity. */ grain: number; vignette: number };
+export type LookId = 'none' | 'colour-negative' | 'faded-slide' | 'mono' | 'sepia' | 'cross-process' | 'halftone';
+export type Look = { id: LookId; label: string; matrix: Matrix; /** Grain and vignette at full intensity. */ grain: number; vignette: number; /** Halftone dot screen opacity at full intensity (0 for the film looks). */ dots?: number };
 export type FilmLook = { id: LookId; intensity: number };
 
 export const DEFAULT_INTENSITY = 0.7;
@@ -56,20 +56,33 @@ export const LOOKS: readonly Look[] = [
   { id: 'mono', label: 'Black and white', matrix: stock(0, [1, 1, 1], 1.3, [0, 0, 0]), grain: 0.45, vignette: 0.34 },
   { id: 'sepia', label: 'Sepia', matrix: stock(0, [1.1, 0.96, 0.76], 1.05, [0.02, 0.015, 0.0]), grain: 0.28, vignette: 0.3 },
   { id: 'cross-process', label: 'Cross process', matrix: stock(1.15, [1.1, 1.02, 0.9], 1.12, [-0.03, 0.0, 0.06]), grain: 0.34, vignette: 0.28 },
+  { id: 'halftone', label: 'Halftone', matrix: stock(0, [1.02, 1, 0.96], 1.4, [0.02, 0.02, 0.02]), grain: 0.12, vignette: 0.12, dots: 0.55 },
 ];
+
+/** The look a swipe lands on: `step` 1 is the next look, -1 the previous. It stops at either end rather than wrapping. */
+export function stepLook(id: LookId, step: 1 | -1): LookId {
+  const i = LOOKS.findIndex((l) => l.id === id);
+  return LOOKS[Math.min(LOOKS.length - 1, Math.max(0, i + step))].id;
+}
+
+/** Whether a drag is a swipe between looks: mostly sideways and long enough. Returns the step (a swipe left goes to the next look, as in a photo app), or 0. */
+export function swipeStep(dx: number, dy: number, minDistance: number): 1 | -1 | 0 {
+  if (Math.abs(dx) < minDistance || Math.abs(dx) < Math.abs(dy) * 1.5) return 0;
+  return dx < 0 ? 1 : -1;
+}
 
 export const lookById = (id: string): Look => LOOKS.find((l) => l.id === id) ?? LOOKS[0];
 
 const lerp = (a: Matrix, b: Matrix, t: number): Matrix => a.map((v, i) => v + (b[i] - v) * t);
 
-export type LookParams = { matrix: Matrix; /** Grain opacity, 0 to 0.5. */ grain: number; /** Vignette opacity at the corners, 0 to 0.4. */ vignette: number; /** True when the picture is left exactly as it was. */ neutral: boolean };
+export type LookParams = { matrix: Matrix; /** Grain opacity, 0 to 0.5. */ grain: number; /** Vignette opacity at the corners, 0 to 0.4. */ vignette: number; /** Dot screen opacity, 0 to 0.6. */ dots: number; /** True when the picture is left exactly as it was. */ neutral: boolean };
 
 /** What to draw for a look at an intensity (0 to 1): the matrix blended with "no change", and grain and vignette scaled the same way. */
 export function lookParams(id: LookId, intensity: number): LookParams {
   const look = lookById(id);
   const t = look.id === 'none' ? 0 : clampIntensity(intensity);
   const neutral = t === 0;
-  return { matrix: neutral ? IDENTITY : lerp(IDENTITY, look.matrix, t), grain: look.grain * t, vignette: look.vignette * t, neutral };
+  return { matrix: neutral ? IDENTITY : lerp(IDENTITY, look.matrix, t), grain: look.grain * t, vignette: look.vignette * t, dots: (look.dots ?? 0) * t, neutral };
 }
 
 /** Applies a matrix to one colour (values 0..1). For tests and any code that needs the real result of a look. */
