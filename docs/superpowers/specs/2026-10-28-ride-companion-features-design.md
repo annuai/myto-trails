@@ -22,7 +22,7 @@ Make Myto the one app a rider uses from planning to the story afterwards, withou
 
 | # | Feature | Server | Mobile |
 |---|---|---|---|
-| 1 | Ride card (Instagram story, post, square; Myto badge; stat toggles) | none | `ui/RideCard`, `lib/rideCard`, share sheet |
+| 1 | Ride card (Instagram story, post, square; Myto badge; stat toggles); Photo mode over the rider's own photo | none | `ui/RideCard`, `lib/rideCard`, `ui/PhotoCard`, `lib/photoCard`, share sheet |
 | 2 | Share a route (link, GPX) | `shared_route`, `/route/[id]` page | `lib/shareRoute`, Story and Plan |
 | 3 | Privacy trim of start and end on anything shared | server rounds and caps | `lib/privacy` |
 | 4 | "I haven't arrived" check-in + manual SOS share | `ride_checkin`, `/track/[token]` page | `lib/checkinCore`, Ride ready row, Live |
@@ -37,6 +37,8 @@ Make Myto the one app a rider uses from planning to the story afterwards, withou
 | 13 | Trip mode (several days, one story) | none | trips store |
 | 14 | "Are you OK?" prompt after a long unexplained stop | none | `lib/stoppedPrompt`, NotificationHost |
 | 15 | Waypoint types (fuel, water, hazard, photo) | none | recorder, GPX |
+
+**Photo mode** ([design](2026-11-13-photo-share-card-design.md)): the share sheet's `Card | Photo` choice lays the same `buildRideCard` model (same privacy trim, stat chips, Hide route) over a photo picked or taken on the phone, with no map tiles; "Save overlay only" saves that overlay alone as a transparent PNG to paste over a photo in another app. Why: riders post photos, not map cards; everything is made on the phone (free, nothing uploaded, the capture is a new bitmap so the photo's EXIF never leaves). Layout and ink are remembered; the photo and placement last only while the sheet is open.
 
 **(my call)** Group rides and check-ins use polling (a request every 10 to 20 seconds while a ride is on), not websockets: it works on the existing Next.js on Vercel and Postgres, tolerates bad signal, and needs no new service.
 

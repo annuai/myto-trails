@@ -5,7 +5,8 @@ import type { GroupCapacity, GroupRegroup } from '@/api/groups';
 import type { GroupRiderView, GroupStatus } from '@/lib/groupCore';
 import type { Outbox } from '@/lib/conditions';
 import type { CardFormat, CardStat } from '@/lib/rideCard';
-import { DEFAULT_STATS } from '@/lib/rideCard';
+import type { OverlayInk, PhotoLayout } from '@/lib/photoCard';
+import { CARD_SIZE, DEFAULT_STATS } from '@/lib/rideCard';
 import { storage } from './persist';
 
 /** The timer the server watches. The link is kept so it can be shared again; the server holds only its hash. */
@@ -20,7 +21,7 @@ type State = {
   group: GroupSession | null;
   /** Condition reports waiting for a signal. */
   outbox: Outbox;
-  card: { format: CardFormat; stats: CardStat[] };
+  card: { format: CardFormat; stats: CardStat[]; layout: PhotoLayout; ink: OverlayInk };
   /** Pause the ride by itself after a long stop (opt-in). */
   autoPause: boolean;
   /** End the ride by itself on arrival at Home or Work (opt-in). */
@@ -42,12 +43,37 @@ type State = {
   wipe: () => void;
 };
 
+const defaultCard = (): State['card'] => ({ format: 'story', stats: DEFAULT_STATS, layout: 'bar', ink: 'light' });
+
+const CARD_STATS: CardStat[] = ['distance', 'time', 'topSpeed', 'waypoints', 'elevation'];
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** Check a saved card field by field; each bad or missing field falls back to its default on its own. */
+function cleanCard(saved: unknown): State['card'] {
+  const d = defaultCard();
+  if (!isObject(saved)) return d;
+  const stats = Array.isArray(saved.stats) ? saved.stats.filter((x): x is CardStat => CARD_STATS.includes(x as CardStat)) : [];
+  return {
+    format: typeof saved.format === 'string' && Object.hasOwn(CARD_SIZE, saved.format) ? (saved.format as CardFormat) : d.format,
+    stats: stats.length ? stats : d.stats,
+    layout: saved.layout === 'bar' || saved.layout === 'corner' ? saved.layout : d.layout,
+    ink: saved.ink === 'light' || saved.ink === 'dark' ? saved.ink : d.ink,
+  };
+}
+
+/** Rebuild the stored state on load: a card saved by an older build (or a damaged one) is checked and completed with defaults here, once. */
+export function mergeCompanion(saved: unknown, current: State): State {
+  if (!isObject(saved)) return current;
+  const p = saved as Partial<State>;
+  return { ...current, ...p, card: cleanCard(p.card), group: p.group?.id === SIM_GROUP_ID ? null : p.group ?? current.group };
+}
+
 const noLive: Live = { riders: [], regroup: null, myStatus: 'ok' };
 
 export const useCompanion = create<State>()(
   persist(
     (set) => ({
-      checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, autoEnd: false, batterySaver: true, live: noLive,
+      checkin: null, group: null, outbox: [], card: defaultCard(), autoPause: false, autoEnd: false, batterySaver: true, live: noLive,
       setCheckin: (checkin) => set({ checkin }),
       setGroup: (group) => set({ group, live: noLive }),
       setOutbox: (outbox) => set({ outbox }),
@@ -57,13 +83,13 @@ export const useCompanion = create<State>()(
       setBatterySaver: (batterySaver) => set({ batterySaver }),
       setLive: (l) => set((s) => ({ live: { ...s.live, ...l } })),
       setGroupRole: (role) => set((s) => (s.group ? { group: { ...s.group, role } } : s)),
-      wipe: () => set({ checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, autoEnd: false, batterySaver: true, live: noLive }),
+      wipe: () => set({ checkin: null, group: null, outbox: [], card: defaultCard(), autoPause: false, autoEnd: false, batterySaver: true, live: noLive }),
     }),
     {
       name: 'myto-companion', storage,
       // A simulated group ride is only for the test in front of the rider: it is never kept, and one left in storage by an older build is dropped.
       partialize: (s) => ({ checkin: s.checkin, group: s.group?.id === SIM_GROUP_ID ? null : s.group, outbox: s.outbox, card: s.card, autoPause: s.autoPause, autoEnd: s.autoEnd, batterySaver: s.batterySaver }),
-      merge: (saved, current) => { const p = saved as Partial<State> | undefined; return { ...current, ...p, group: p?.group?.id === SIM_GROUP_ID ? null : p?.group ?? current.group }; },
+      merge: mergeCompanion,
     },
   ),
 );

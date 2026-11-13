@@ -1,0 +1,84 @@
+import { CARD_PAD } from './cardMap';
+import { photoLayout } from './photoCard.tokens';
+import type { CardModel } from './rideCard';
+
+export type PhotoLayout = 'bar' | 'corner';
+export type OverlayInk = 'light' | 'dark';
+/** x, y = the overlay's centre as fractions of the picture's width and height. */
+export type Placement = { x: number; y: number; scale: number };
+type Size = { width: number; height: number };
+
+export const PLACEMENT_LIMITS = { minScale: 0.6, maxScale: 2.2 } as const;
+
+const { pictureWidth: PICTURE_WIDTH, corner: CORNER } = photoLayout;
+
+/** The overlay's size in picture pixels at scale 1. */
+export function overlayBox(layout: PhotoLayout, model: Pick<CardModel, 'stats' | 'route'>): Size {
+  if (layout === 'bar') return { width: PICTURE_WIDTH - 2 * CARD_PAD, height: model.route ? photoLayout.bar.routeHeight : photoLayout.bar.plainHeight };
+  return { width: CORNER.width, height: (model.route ? CORNER.routeHeight : 0) + CORNER.perStat * model.stats.length + CORNER.pad };
+}
+
+// A non-finite drag or pinch input snaps to the centre (0.5) or scale 1 by design, so a bad gesture never yields NaN.
+const finite = (n: number, fallback: number) => (Number.isFinite(n) ? n : fallback);
+
+/**
+ * Clamping rules (no rounding anywhere; values stay exact fractions):
+ * - scale is limited to PLACEMENT_LIMITS (a non-finite scale becomes 1), and then to the largest scale at which the whole box
+ *   fits the picture, so a pinch never pushes the overlay past an edge (a box too big even at minScale gets that fitting scale);
+ * - the whole scaled box then stays inside the picture, with no margin (the margin CARD_PAD only applies to defaultPlacement);
+ * - on an axis where the scaled box fills the picture exactly, the centre is 0.5.
+ */
+export function clampPlacement(p: Placement, box: Size, card: Size): Placement {
+  const fit = Math.min(box.width > 0 ? card.width / box.width : Infinity, box.height > 0 ? card.height / box.height : Infinity);
+  const scale = Math.min(fit, PLACEMENT_LIMITS.maxScale, Math.max(PLACEMENT_LIMITS.minScale, finite(p.scale, 1)));
+  const axis = (centre: number, extent: number) => {
+    const half = extent / 2;
+    if (!(extent > 0) || half * 2 >= 1) return 0.5;
+    return Math.min(1 - half, Math.max(half, finite(centre, 0.5)));
+  };
+  return { x: axis(p.x, (box.width * scale) / card.width), y: axis(p.y, (box.height * scale) / card.height), scale };
+}
+
+/** Bar: bottom-centred; corner: top-left; both CARD_PAD from the edges (centred on an axis the box overflows). */
+export function defaultPlacement(layout: PhotoLayout, card: Size, box: Size): Placement {
+  const x = layout === 'bar' ? 0.5 : (CARD_PAD + box.width / 2) / card.width;
+  const y = layout === 'bar' ? (card.height - CARD_PAD - box.height / 2) / card.height : (CARD_PAD + box.height / 2) / card.height;
+  return clampPlacement({ x, y, scale: 1 }, box, card);
+}
+
+/** dx, dy in picture pixels. */
+export function dragPlacement(p: Placement, dx: number, dy: number, box: Size, card: Size): Placement {
+  return clampPlacement({ ...p, x: p.x + dx / card.width, y: p.y + dy / card.height }, box, card);
+}
+
+export function pinchPlacement(start: Placement, factor: number, box: Size, card: Size): Placement {
+  return clampPlacement({ ...start, scale: start.scale * factor }, box, card);
+}
+
+/** A drag measured in screen pixels on a card shown `pictureWidth` wide, as picture pixels of the `cardWidth`-wide picture. */
+export function toPictureDelta(deltaPx: number, pictureWidth: number, cardWidth: number): number {
+  return (deltaPx * cardWidth) / pictureWidth;
+}
+
+/** One pan step: a change in screen pixels on a card shown `shown` big, applied to the newest placement. */
+export function applyPan(prev: Placement, changeX: number, changeY: number, shown: Size, box: Size, card: Size): Placement {
+  return dragPlacement(prev, toPictureDelta(changeX, shown.width, card.width), toPictureDelta(changeY, shown.height, card.height), box, card);
+}
+
+/** One pinch step: the scale is the one at gesture start times the gesture's factor; x and y stay the newest (a pan may be running too). */
+export function applyPinch(prev: Placement, startScale: number, factor: number, box: Size, card: Size): Placement {
+  return pinchPlacement({ ...prev, scale: startScale }, factor, box, card);
+}
+
+/** After a format change: the same centre and scale, kept inside the new card (a moved overlay is not reset). */
+export function placementAfterFormatChange(p: Placement, box: Size, nextCard: Size): Placement {
+  return clampPlacement(p, box, nextCard);
+}
+
+/**
+ * The placement to draw: the layout's default until the rider moves the overlay (`stored` null), then theirs, kept inside the
+ * card for the current box (more stats or Hide route change the box's size, so a moved overlay is clamped again).
+ */
+export function currentPlacement(stored: Placement | null, layout: PhotoLayout, box: Size, card: Size): Placement {
+  return stored ? clampPlacement(stored, box, card) : defaultPlacement(layout, card, box);
+}

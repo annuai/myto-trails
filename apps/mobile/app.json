@@ -41,8 +41,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Myto Moto uses your photos for your profile picture, your bike, club covers, club posts and the photos of your documents.",
-          "cameraPermission": "Myto Moto uses the camera to photograph your licence, registration, insurance and PUC. The photos stay on this phone."
+          "photosPermission": "Myto Moto uses your photos for your profile picture, your bike, club covers, club posts, the photos of your documents and a photo on a ride card you share.",
+          "cameraPermission": "Myto Moto uses the camera to photograph your licence, registration, insurance and PUC, and to add a photo to a ride card you share. The photos stay on this phone."
         }
       ],
       [
