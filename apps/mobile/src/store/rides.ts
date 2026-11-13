@@ -48,12 +48,12 @@ export const useRides = create<State>()(
     }),
     // Version 1: top speeds of rides saved before they were judged over several steps are worked out again from the saved points.
     // Version 2: the sample ride that test builds saved on every phone is removed.
-    // Version 3: rides recorded at coarse accuracy (battery saver, idle) that saved a top speed of 0 are worked out again.
+    // Version 4: top speeds are worked out again: a stop of over a minute used to throw away every speed before it, so a ride left recording read 0.
     {
-      name: 'myto-rides', storage, version: 3,
+      name: 'myto-rides', storage, version: 4,
       migrate: (state, from) => {
         let rides = (state as { rides?: Ride[] }).rides ?? [];
-        if (from < 3) rides = withCorrectTopSpeeds(rides);
+        if (from < 4) rides = withCorrectTopSpeeds(rides);
         if (from < 2) rides = withoutSampleRide(rides);
         return { ...(state as object), rides } as State;
       },
