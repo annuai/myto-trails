@@ -1,6 +1,8 @@
 # Self-hosted map tiles (for offline maps)
 
-Status: **superseded by downloadable regions** (state by state), not a Worker. Offline maps and search are R2 files the rider downloads from the Offline maps screen (Others): `regions/manifest.json` plus, per region, a map file (PMTiles) and a search file, each with a size and sha256. Build one with `node tooling/offline-regions/build.mjs <id>` and upload it under `regions/` in the public bucket; the app reads the manifest from `EXPO_PUBLIC_REGIONS_BASE_URL`. A region's map is used whenever the map opens inside its box (`src/lib/offlineRegions/`), and its trails skip the per-trail tile download. Attribution "Map data © OpenStreetMap contributors" shows on the screen. Online maps still use OpenFreeMap (`apps/mobile/src/ui/map/style.ts`, free, no key). The Worker plan below is kept only as a fallback if OpenFreeMap becomes unavailable: set `EXPO_PUBLIC_MAP_STYLE_URL` to the style it describes.
+Status: **superseded by downloadable regions** (state by state), not a Worker. Offline maps and search are R2 files the rider downloads from the Offline maps screen: `regions/manifest.json` plus, per region, a PMTiles map and a search file, each with size and sha256. Build one with `node tooling/offline-regions/build.mjs <id>` and upload under `regions/` in the public bucket.
+The app reads the manifest from `EXPO_PUBLIC_REGIONS_BASE_URL` in `apps/mobile/.env` (must equal `R2_PUBLIC_BASE_URL`; no `.env.example` exists for mobile). While the map's centre is inside an installed region it uses the local style (`src/lib/offlineRegions/`); outside, or online, OpenFreeMap (`src/ui/map/style.ts`).
+The Worker plan below is only a fallback if OpenFreeMap becomes unavailable: set `EXPO_PUBLIC_MAP_STYLE_URL` to the style it describes.
 
 Worker plan, not run: Nothing here has been deployed or tested; steps marked *(unverified)* are from the tools' documentation and need checking on the first real try.
 
