@@ -12,11 +12,12 @@
 //              from https://download.geofabrik.de/asia/india-latest.osm.pbf); never downloaded by this script
 //   OUT_DIR    output folder (default offline-regions/out, git-ignored)
 // For --upload also set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE_URL
-// (see .env.example). Uploads <id>.pmtiles and <id>.places.sqlite to regions/<id>/<version>/ and rewrites
-// the region's entry in regions/manifest.json.
+// (see .env.example). Uploads <id>.pmtiles and <id>.places.sqlite to public/regions/<id>/<version>/ and rewrites
+// the region's entry in public/regions/manifest.json (published URLs omit the public/ prefix).
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createReadStream, existsSync, mkdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { createInterface } from 'node:readline';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
@@ -48,6 +49,7 @@ function need(cmd, versionArg = '--version') {
 }
 
 const run = (cmd, args) => execFileSync(cmd, args, { stdio: 'inherit' });
+const runIn = (cwd, cmd, args) => execFileSync(cmd, args, { stdio: 'inherit', cwd }); // Planetiler writes data/ and tmp files to cwd
 
 function sha256(file) {
   return new Promise((resolveHash, reject) => {
@@ -66,12 +68,17 @@ function centre(geometry) {
   const walk = (c) => (typeof c[0] === 'number' ? pts.push(c) : c.forEach(walk));
   walk(geometry.coordinates);
   if (!pts.length) return null;
-  const xs = pts.map((p) => p[0]);
-  const ys = pts.map((p) => p[1]);
-  return { lng: (Math.min(...xs) + Math.max(...xs)) / 2, lat: (Math.min(...ys) + Math.max(...ys)) / 2 };
+  let w = Infinity, e = -Infinity, so = Infinity, n = -Infinity;
+  for (const [x, y] of pts) {
+    if (x < w) w = x;
+    if (x > e) e = x;
+    if (y < so) so = y;
+    if (y > n) n = y;
+  }
+  return { lng: (w + e) / 2, lat: (so + n) / 2 };
 }
 
-function writeSearchDb(dbPath, geojsonSeq, stateName) {
+async function writeSearchDb(dbPath, geojsonSeqPath, stateName) {
   rmSync(dbPath, { force: true });
   const db = new Database(dbPath);
   db.exec(`
@@ -80,19 +87,27 @@ function writeSearchDb(dbPath, geojsonSeq, stateName) {
   `);
   const insert = db.prepare('INSERT INTO places(name, alt, kind, detail, lat, lng, rank) VALUES (?,?,?,?,?,?,?)');
   let count = 0;
-  db.transaction(() => {
-    for (const line of geojsonSeq.split('\n')) {
-      const text = line.replace(/^\x1e/, '').trim();
-      if (!text) continue;
+  let skipped = 0;
+  db.exec('BEGIN');
+  const lines = createInterface({ input: createReadStream(geojsonSeqPath, { encoding: 'utf8' }), crlfDelay: Infinity });
+  for await (const line of lines) {
+    const text = line.replace(/^\x1e/, '').trim();
+    if (!text) continue;
+    try {
       const feature = JSON.parse(text);
+      if (!feature.properties?.name) continue;
       const c = feature.geometry && centre(feature.geometry);
       if (!c) continue;
-      const row = buildRow(feature.properties ?? {}, c.lat, c.lng, stateName);
+      const row = buildRow(feature.properties, c.lat, c.lng, stateName);
       if (!row) continue;
       insert.run(row.name, row.alt, row.kind, row.detail, row.lat, row.lng, row.rank);
       count++;
+    } catch {
+      skipped++;
     }
-  })();
+  }
+  db.exec('COMMIT');
+  if (skipped) console.warn(`Skipped ${skipped} bad features`);
   db.exec("INSERT INTO places_fts(places_fts) VALUES('rebuild')");
   db.exec('VACUUM');
   db.close();
@@ -101,6 +116,7 @@ function writeSearchDb(dbPath, geojsonSeq, stateName) {
 
 async function upload({ region, version, files, entry }) {
   const { S3Client, PutObjectCommand, GetObjectCommand } = await import('@aws-sdk/client-s3');
+  const { Upload } = await import('@aws-sdk/lib-storage');
   const env = process.env;
   for (const k of ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET', 'R2_PUBLIC_BASE_URL']) {
     if (!env[k]) throw new Error(`Missing ${k} for --upload`);
@@ -111,15 +127,21 @@ async function upload({ region, version, files, entry }) {
     credentials: { accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY },
   });
   const base = env.R2_PUBLIC_BASE_URL.replace(/\/$/, '');
+  // R2_PUBLIC_BASE_URL serves the public/ prefix, so keys carry it and URLs do not.
   const put = (Key, Body, ContentType) =>
-    client.send(new PutObjectCommand({ Bucket: env.R2_BUCKET, Key, Body, ContentType }));
+    client.send(new PutObjectCommand({ Bucket: env.R2_BUCKET, Key: `public/${Key}`, Body, ContentType }));
+  const putFile = (Key, path) =>
+    new Upload({
+      client,
+      params: { Bucket: env.R2_BUCKET, Key: `public/${Key}`, Body: createReadStream(path), ContentType: 'application/octet-stream' },
+    }).done();
   for (const f of files) {
-    await put(`regions/${region.id}/${version}/${f.name}`, readFileSync(f.path), 'application/octet-stream');
+    await putFile(`regions/${region.id}/${version}/${f.name}`, f.path);
     f.url = `${base}/regions/${region.id}/${version}/${f.name}`;
   }
   let manifest = { format: 1, regions: [] };
   try {
-    const res = await client.send(new GetObjectCommand({ Bucket: env.R2_BUCKET, Key: 'regions/manifest.json' }));
+    const res = await client.send(new GetObjectCommand({ Bucket: env.R2_BUCKET, Key: 'public/regions/manifest.json' }));
     manifest = JSON.parse(await res.Body.transformToString());
   } catch (e) {
     if (e?.name !== 'NoSuchKey') throw e;
@@ -157,12 +179,12 @@ async function main() {
   // (a) cut the region
   run('osmium', ['extract', '--overwrite', '-b', region.bbox.join(','), '-o', regionPbf, india]);
   // (b) vector tiles, Planetiler OpenMapTiles profile
-  run('java', ['-Xmx4g', '-jar', jar, `--osm-path=${regionPbf}`, `--output=${mapFile}`, `--maxzoom=${maxzoom}`, '--download', '--force']);
+  runIn(outDir, 'java', ['-Xmx4g', '-jar', jar, `--osm-path=${regionPbf}`, `--output=${mapFile}`, `--maxzoom=${maxzoom}`, '--download', '--force']);
   // (c) places
   run('osmium', ['tags-filter', '--overwrite', '-o', placesPbf, regionPbf,
     'nwr/place=city,town,village,hamlet', 'nwr/natural=peak,saddle,beach,water', 'nwr/tourism=attraction,viewpoint']);
   run('osmium', ['export', '--overwrite', '-f', 'geojsonseq', '-o', placesJson, placesPbf]);
-  const count = writeSearchDb(searchFile, readFileSync(placesJson, 'utf8'), region.name);
+  const count = await writeSearchDb(searchFile, placesJson, region.name);
   console.log(`Wrote ${count} places to ${searchFile}`);
 
   // (d) hashes and sizes
