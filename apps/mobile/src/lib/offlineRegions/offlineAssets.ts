@@ -4,7 +4,7 @@ import { OFFLINE_MAP_ASSETS } from '../../../assets/offline-map/assets';
 import type { LocalPaths } from './style';
 
 /** Bump when the bundled style assets change; the copy in the document directory is redone once. */
-const ASSETS_VERSION = '1';
+const ASSETS_VERSION = '2';
 const DIR = `${documentDirectory ?? ''}offline-map/`;
 const MARKER = `${DIR}.version`;
 
