@@ -16,6 +16,8 @@ import { markRidden, unmarkRidden } from '@/api/ridden';
 import { useRidden } from '@/features/passport/useRidden';
 import { ElevationChart } from '@/ui/ElevationChart';
 import { RouteCheck } from '@/features/RouteCheck';
+import { listInstalled } from '@/lib/offlineRegions/store';
+import { regionAt } from '@/lib/offlineRegions/style';
 import { deleteTiles, downloadTiles, hasTiles, tilesAvailable } from '@/lib/offlineTiles';
 import { formatDate } from '@/lib/dates';
 import { asText, distanceKm, elevationM } from '@/lib/units';
@@ -63,6 +65,11 @@ export default function TrailDetail() {
   useEffect(() => { void hasTiles(slug).then((v) => v && setTiles(true)).catch(() => undefined); }, [slug]);
   const routeDto = t.data?.route;
   const line = useMemo(() => (routeDto ? toLatLng(routeDto.line) : undefined), [routeDto]);
+  /** A downloaded region that holds the trail's start already has its map, so the trail skips its own tiles. */
+  const [regions, setRegions] = useState<Awaited<ReturnType<typeof listInstalled>>>([]);
+  useEffect(() => { void listInstalled().then(setRegions).catch(() => undefined); }, []);
+  const start = line?.[0];
+  const inRegion = !!start && !!regionAt(start, regions);
 
   if (!t.data) {
     return <Screen><BackHeader title="Trails" /><Text variant="body" tone={t.error ? 'stop' : 'muted'}>{t.error ?? 'Loading…'}</Text>{t.error ? <View style={{ marginTop: space[4] }}><Button variant="soft" label="Try again" onPress={t.reload} /></View> : null}</Screen>;
@@ -89,7 +96,7 @@ export default function TrailDetail() {
       await download(slug);
       // The map itself, when the project has a tile provider that allows saving tiles (the public OpenStreetMap servers do not).
       const saved = useTrailStore.getState().offline[slug]?.route;
-      if (tilesAvailable && saved) { setTiles(0); await downloadTiles(slug, toLatLng(saved.line), setTiles); setTiles(true); }
+      if (tilesAvailable && saved && !inRegion) { setTiles(0); await downloadTiles(slug, toLatLng(saved.line), setTiles); setTiles(true); }
     } catch (e) { setTiles(undefined); setProblem(e instanceof Error ? e.message : 'Download failed.'); }
   };
   const dropPack = () => { removeDownload(slug); void deleteTiles(slug).catch(() => undefined); setTiles(undefined); };
@@ -175,7 +182,7 @@ export default function TrailDetail() {
       <BackHeader title="Trails" />
       {t.fromOffline ? <Card style={{ marginBottom: space[3], flexDirection: 'row', gap: space[3], alignItems: 'center' }}><Icon icon={CloudOff} tone="muted" /><Text variant="label" tone="muted" style={{ flex: 1 }}>Showing your downloaded copy, saved {formatDate(new Date(pack?.savedAt ?? nowMs()).toISOString().slice(0, 10))}. Access may have changed.</Text></Card> : null}
       {landscape ? <Columns left={<>{topEl}{actionsEl}</>} right={<>{routeEl}{comments.body}</>} /> : <>{topEl}{routeEl}{actionsEl}{comments.body}</>}
-      <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: space[5] }}>{tiles === true ? 'Offline saves the details, access, route and map.' : 'Offline saves the details, access and route. Map tiles still need a connection.'}</Text>
+      <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: space[5] }}>{tiles === true ? 'Offline saves the details, access, route and map.' : inRegion ? 'Offline saves the details, access and route. The map is already saved with your offline region.' : 'Offline saves the details, access and route. Map tiles still need a connection.'}</Text>
     </Screen>
   );
 }
