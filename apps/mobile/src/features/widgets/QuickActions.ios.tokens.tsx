@@ -33,7 +33,7 @@ const QuickActions = createWidget('QuickActions', (props: QuickWidgetProps, env)
   const ride = props.recording
     ? <Button target={props.paused ? 'ride.resume' : 'ride.pause'} modifiers={[buttonStyle('plain'), frame({ maxWidth: Infinity, maxHeight: Infinity })]}>{face(props.paused ? 'play.fill' : 'pause.fill', props.paused ? 'Resume' : 'Pause', brand)}</Button>
     : <Link destination="myto://ride?autostart=1" modifiers={[frame({ maxWidth: Infinity, maxHeight: Infinity })]}>{face('play.fill', 'Start ride', brand)}</Link>;
-  const sos = <Link destination={props.recording ? 'myto://ride/live?sos=1' : 'myto://documents/contacts'} modifiers={[frame({ maxWidth: Infinity, maxHeight: Infinity })]}>{face('exclamationmark.triangle.fill', 'SOS', red)}</Link>;
+  const sos = <Link destination={props.recording ? 'myto://ride/live?sos=1' : 'myto://sos'} modifiers={[frame({ maxWidth: Infinity, maxHeight: Infinity })]}>{face('exclamationmark.triangle.fill', 'SOS', red)}</Link>;
   const group = <Link destination="myto://ride?mode=group" modifiers={[frame({ maxWidth: Infinity, maxHeight: Infinity })]}>{face('person.2.fill', props.group ? 'Group ride' : 'Group', brand)}</Link>;
   const checkin = <Link destination="myto://ride?checkin=1" modifiers={[frame({ maxWidth: Infinity, maxHeight: Infinity })]}>{face('checkmark.circle.fill', 'Check-in', brand)}</Link>;
   const header = (

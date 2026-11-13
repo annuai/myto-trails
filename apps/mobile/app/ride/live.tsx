@@ -7,7 +7,7 @@ import { isWeak, startGpsHealth, stepGpsHealth } from '@/lib/gpsHealth';
 import { shownSpeedKmh } from '@/lib/liveSpeed';
 import { AppState, Linking, Platform, Pressable, ScrollView, Share, Vibration, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Camera, Eye, EyeOff, Flag, Megaphone, Mic, Minus, Pause, PenLine, Phone, Play, Share2, Square, Siren, Users } from 'lucide-react-native';
+import { Camera, Eye, EyeOff, Flag, Megaphone, Mic, Minus, Pause, PenLine, Play, Square, Siren, Users } from 'lucide-react-native';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { DocumentsSheet } from '@/features/DocumentsSheet';
 import { Compass } from '@/ui/Compass';
@@ -15,12 +15,13 @@ import { compass } from '@/ui/Compass.tokens';
 import { CompassOverlay } from '@/ui/CompassOverlay';
 import { headingDegrees, headingWord } from '@/lib/compass';
 import { useSensorHeading } from '@/lib/useSensorHeading';
+import { SosActions } from '@/features/emergency/SosActions';
 import { useEmergency } from '@/features/emergency/useEmergency';
 import { GroupSheet } from '@/features/GroupSheet';
 import { NoteSheet } from '@/features/NoteSheet';
 import { ReportSheet } from '@/features/ReportSheet';
 import { clockLabel } from '@/lib/community';
-import { telUrl } from '@/lib/crashAlert';
+import { sosMessage } from '@/lib/sosMessage';
 import { rejoinTarget, routeBearing, startReroute, stepReroute } from '@/lib/reroute';
 import { compassWord, prepareTrail, startGuide, stepGuide, type Guide } from '@/lib/trailGuide';
 import { WAYPOINT_KINDS, WAYPOINT_LABEL } from '@/lib/waypointKinds';
@@ -51,12 +52,10 @@ import { clock } from '@/lib/format';
 import { endRide } from '@/features/ride/endRide';
 import { useAutoEndPrompt } from '@/AutoEndHost';
 import { breaksOf, mergeBreaks, splitSegments } from '@/lib/track';
-import { useProfile } from '@/store/profile';
 import { useRecorder } from '@/store/recorder';
 import { Button } from '@/ui/Button';
 import { buzz } from '@/lib/haptics';
 import { useMotion } from '@/store/motion';
-import { EmergencyEditor } from '@/ui/EmergencyEditor';
 import { HoldButton } from '@/ui/HoldButton';
 import { haversine, travelHeading, type LatLng } from '@/lib/geo';
 import type { RiderMark } from '@/lib/riderClusters';
@@ -84,8 +83,6 @@ function LiveBody() {
   const { c } = useTheme();
   const { landscape } = useLayout();
   const r = useRecorder();
-  const contacts = useProfile((s) => s.contacts);
-  const medical = useProfile((s) => s.medical);
   const emergency = useEmergency();
   const planned = useTrailStore((s) => s.nextTrip);
   const trailLine = useRouteLine(planned?.slug);
@@ -244,7 +241,7 @@ function LiveBody() {
   // On reaching the rider, or when they say they are OK, the card asks whether to carry on: one tap goes back to the ride as it was.
   const helpResolved = !!rescue && !!rescueRider && rescue.startStatus !== 'ok' && rescueRider.status === 'ok';
   const helpPrompt = rescue && (instruction?.arrived || helpResolved) ? { text: helpResolved ? `${rescue.name} is OK now.` : `You have reached ${rescue.name}.`, action: 'Help given, continue the ride', onAction: endRescue } : undefined;
-  const shareHere = () => last && Share.share({ message: `I need help. My position: https://maps.google.com/?q=${last.lat.toFixed(5)},${last.lng.toFixed(5)}` });
+  const shareHere = () => Share.share({ message: sosMessage(last) });
 
   const [exitOpen, setExitOpen] = useState(false);
   /** A leader whose group is still riding cannot just stop: they pass the lead on (and leave), or end the group for everyone. */
@@ -385,13 +382,7 @@ function LiveBody() {
         {j.problem ? <Text variant="label" tone="stop">{j.problem}</Text> : null}
       </Sheet>
       <Sheet open={sos} title="SOS" onClose={() => setSos(false)}>
-        <Text variant="label" tone="muted">Call for help. This does not replace emergency services.</Text>
-        <Button label={`Call ${emergency.number} (emergency)`} variant="emergency" icon={Phone} onPress={() => Linking.openURL(telUrl(emergency.number))} />
-        <EmergencyEditor choice={emergency} />
-        <Button variant="soft" icon={Share2} label="Share my position" onPress={() => void shareHere()} />
-        {medical.bloodGroup || medical.notes ? <Text variant="label" tone="muted">Emergency card: {[medical.bloodGroup && `blood group ${medical.bloodGroup}`, medical.notes].filter(Boolean).join(' · ')}</Text> : null}
-        {contacts.map((c) => <Button key={c.id} variant="soft" icon={Phone} label={`${c.name}${c.primary ? ' (main)' : ''}`} onPress={() => Linking.openURL(`tel:${c.phone}`)} />)}
-        {contacts.length === 0 ? <Text variant="label" tone="muted">No emergency contacts yet. Add them under You, Documents and emergency.</Text> : null}
+        <SosActions emergency={emergency} onShare={() => void shareHere()} />
       </Sheet>
     </>}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: size.target }}>

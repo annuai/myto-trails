@@ -30,7 +30,7 @@ const QuickActions = createWidget('QuickActions', (props: QuickWidgetProps) => {
   const ride = props.recording
     ? tile(props.paused ? '▶' : '❚❚', props.paused ? 'Resume' : 'Pause', props.paused ? 'ride.resume' : 'ride.pause', brand)
     : tile('▶', 'Start ride', 'open:myto://ride?autostart=1', brand);
-  const sos = tile('!', 'SOS', props.recording ? 'open:myto://ride/live?sos=1' : 'open:myto://documents/contacts', red);
+  const sos = tile('!', 'SOS', props.recording ? 'open:myto://ride/live?sos=1' : 'open:myto://sos', red);
   const group = tile('●●', props.group ? 'Group ride' : 'Group', 'open:myto://ride?mode=group', brand);
   const checkin = tile('✓', 'Check-in', 'open:myto://ride?checkin=1', brand);
   return (
