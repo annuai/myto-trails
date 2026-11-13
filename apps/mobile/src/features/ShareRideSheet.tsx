@@ -54,7 +54,11 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   const [placement, setPlacement] = useState<Placement | null>(null);
   /** The photo the full-size picture has finished loading, so it is never saved before the photo shows. */
   const [loadedUri, setLoadedUri] = useState<string>();
+  /** A photo that would not open: its picture cannot be shared, so the rider is asked to change it. */
+  const [failedUri, setFailedUri] = useState<string>();
   const [capturing, setCapturing] = useState(false);
+  /** While a finger moves the overlay the sheet does not scroll, so the drag is not taken over by the scroll. */
+  const [dragging, setDragging] = useState(false);
   const places = useSavedPlaces();
   const tooShort = useMemo(() => forSharing(ride.points, places).length < 2, [ride.points, places]);
   /** What may be shown at all: a ride that never got 500 m from Home or Work has nothing, not even the area map. */
@@ -89,15 +93,20 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   const cardSize = useMemo(() => ({ width: model.width, height: model.height }), [model.width, model.height]);
   const placed = useMemo(() => currentPlacement(placement, card.layout, box, cardSize), [placement, card.layout, box, cardSize]);
   const photoReady = !!photo && loadedUri === photo.picked.uri;
+  const photoFailed = !!photo && failedUri === photo.picked.uri;
+  const redLine = message ?? (mode === 'photo' && photoFailed ? 'That photo could not be opened. Choose another one.' : undefined) ?? problem;
 
   // Closing the sheet lets the photo go: the app never keeps it. (Set during render, React's pattern for state that follows a prop.)
   const [wasOpen, setWasOpen] = useState(open);
   if (wasOpen !== open) {
     setWasOpen(open);
     if (!open) {
+      setMode('card');
       setPhoto(undefined);
       setPlacement(null);
       setLoadedUri(undefined);
+      setFailedUri(undefined);
+      setDragging(false);
     }
   }
 
@@ -115,6 +124,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   };
   const switchMode = (m: Mode) => {
     setMessage(undefined);
+    setDragging(false);
     // Each mode's full-size picture is drawn afresh when the mode opens, so it waits for its tiles or its photo again.
     if (m === 'photo') setReadyKey('');
     else setLoadedUri(undefined);
@@ -133,7 +143,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
     setMessage(undefined);
     const format = card.format;
     const r = await pickCardPhoto(source, format);
-    if (r.ok) setPhoto({ picked: r.photo, format });
+    if (r.ok) { setDragging(false); setPhoto({ picked: r.photo, format }); }
     else if (r.reason !== 'cancelled') setMessage(r.message);
   };
   const shareLink = async () => {
@@ -172,7 +182,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   const photoMode = photo ? (
     <>
       <View style={{ alignItems: 'center' }}>
-        <PhotoComposer model={model} photo={photo.picked} layout={card.layout} ink={card.ink} placement={placed} onPlacement={setPlacement} width={PREVIEW_W} />
+        <PhotoComposer model={model} photo={photo.picked} layout={card.layout} ink={card.ink} placement={placed} onPlacement={setPlacement} onActive={setDragging} width={PREVIEW_W} />
       </View>
       {shortCaption}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2], justifyContent: 'center' }}>
@@ -183,7 +193,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
       {formatChips}
       {photo.format !== card.format ? <Text variant="caption" tone="muted">Pick the photo again for an exact crop.</Text> : null}
       {statChips}
-      <Button icon={ImageIcon} label={photoReady ? 'Share picture' : 'Preparing the picture…'} disabled={capturing || !photoReady} onPress={() => void capture(photoRef.current)} />
+      {photoFailed ? null : <Button icon={ImageIcon} label={photoReady ? 'Share picture' : 'Preparing the picture…'} disabled={capturing || !photoReady} onPress={() => void capture(photoRef.current)} />}
       <Button variant="soft" icon={Layers} label="Save overlay only" disabled={capturing} onPress={() => void capture(overlayRef.current)} />
       <Button variant="soft" icon={ImagePlus} label="Change photo" disabled={capturing} onPress={() => void choosePhoto('library')} />
     </>
@@ -197,7 +207,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   );
 
   return (
-    <Sheet open={open} title="Share this ride" onClose={onClose}>
+    <Sheet open={open} title="Share this ride" onClose={onClose} scrollEnabled={!dragging}>
       <View style={{ flexDirection: 'row', gap: space[2], justifyContent: 'center' }}>
         <ChoiceChip label="Card" selected={mode === 'card'} onPress={() => switchMode('card')} />
         <ChoiceChip label="Photo" selected={mode === 'photo'} onPress={() => switchMode('photo')} />
@@ -205,7 +215,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
       {mode === 'card' ? cardMode : photoMode}
       {mode === 'photo' ? <Text variant="caption" tone="muted">Your photo stays on your phone.</Text> : null}
       <Text variant="caption" tone="muted">The first and last 300 m, and the part near Home or Work, are left out of the picture and the link.</Text>
-      {message ?? problem ? <Text variant="label" tone="stop">{message ?? problem}</Text> : null}
+      {redLine ? <Text variant="label" tone="stop">{redLine}</Text> : null}
       {/* The picture that is saved is drawn at its full size, off screen, so it is sharp whatever the preview's size. */}
       {mode === 'card' ? (
         <View pointerEvents="none" style={{ position: 'absolute', left: -full.width - 50, top: 0 }}>
@@ -224,7 +234,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
             layout={card.layout}
             ink={card.ink}
             placement={placed}
-            onReady={(ok) => (ok ? setLoadedUri(photo.picked.uri) : setMessage('That photo could not be opened. Choose another one.'))}
+            onReady={(ok) => (ok ? setLoadedUri(photo.picked.uri) : setFailedUri(photo.picked.uri))}
           />
           <PhotoOverlay ref={overlayRef} model={model} layout={card.layout} ink={card.ink} width={box.width} />
         </View>

@@ -16,6 +16,9 @@ const asset: unknown = require('../../assets/rider-on-ridge.jpg');
 const uri = typeof asset === 'string' ? asset : (Image.resolveAssetSource?.(asset as number)?.uri ?? (asset as { uri?: string }).uri ?? '');
 const photo = { uri, width: sample.photoWidth, height: sample.photoHeight };
 
+/** A fixed start date, so drawing the screen stays pure. */
+const SAMPLE_START = Date.UTC(2026, 10, 1);
+
 /** A gently curving route of 40 points. */
 const route = Array.from({ length: 40 }, (_, i) => ({ lat: 12.97 + i * 0.002, lng: 77.59 + 0.02 * Math.sin(i / 6) + i * 0.001 }));
 
@@ -27,7 +30,7 @@ export default function PhotoCardDev() {
 
 function Preview() {
   const { width: screen } = useWindowDimensions();
-  const model = useMemo(() => buildRideCard({ name: 'Sample ride', startedAt: Date.now(), distanceKm: 84.2, durationSec: 5400, maxKmh: 71, waypoints: 0, points: route }, { format: 'story' }), []);
+  const model = useMemo(() => buildRideCard({ name: 'Sample ride', startedAt: SAMPLE_START, distanceKm: 84.2, durationSec: 5400, maxKmh: 71, waypoints: 0, points: route }, { format: 'story' }), []);
   const [layout, setLayout] = useState<PhotoLayout>('bar');
   const [ink, setInk] = useState<OverlayInk>('light');
   const [placement, setPlacement] = useState<Placement>(() => defaultPlacement('bar', model, overlayBox('bar', model)));

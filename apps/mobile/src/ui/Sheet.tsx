@@ -35,7 +35,7 @@ import { useLatest } from '@/lib/useLatest';
  * A sheet opened while another is open stacks on it: the one below steps back (smaller, a little higher, dimmed) with its rounded top
  * showing above the new one, and returns when the new one closes. Closing the top sheet never closes the one below.
  */
-export function Sheet({ open, title, onClose, children, footer }: { open: boolean; title: string; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
+export function Sheet({ open, title, onClose, children, footer, scrollEnabled = true }: { open: boolean; title: string; onClose: () => void; children: ReactNode; footer?: ReactNode; /** Off while something inside is being dragged, so the drag does not scroll the sheet. */ scrollEnabled?: boolean }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const { landscape } = useLayout();
@@ -118,7 +118,7 @@ export function Sheet({ open, title, onClose, children, footer }: { open: boolea
             <IconButton icon={X} label="Close" onPress={onClose} plain />
           </View>
         </View>
-        <ScrollView contentContainerStyle={{ paddingHorizontal: space[5], paddingBottom: space[2], gap: space[3] }} keyboardShouldPersistTaps="handled">{children}</ScrollView>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: space[5], paddingBottom: space[2], gap: space[3] }} keyboardShouldPersistTaps="handled" scrollEnabled={scrollEnabled}>{children}</ScrollView>
         {footer ? <View style={{ paddingHorizontal: space[5], paddingTop: space[3], borderTopWidth: 1, borderTopColor: c.line }}>{footer}</View> : null}
         <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, backgroundColor: scrim.sheet, opacity: step.interpolate({ inputRange: [0, 1, 2], outputRange: [...sheet.recedeDim] }) }} />
       </Animated.View>
