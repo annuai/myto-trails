@@ -1,4 +1,5 @@
 import { CARD_PAD } from './cardMap';
+import { photoLayout } from './photoCard.tokens';
 import type { CardModel } from './rideCard';
 
 export type PhotoLayout = 'bar' | 'corner';
@@ -9,14 +10,12 @@ type Size = { width: number; height: number };
 
 export const PLACEMENT_LIMITS = { minScale: 0.6, maxScale: 2.2 } as const;
 
-const PICTURE_WIDTH = 1080;
-const BAR_HEIGHT = { route: 300, plain: 190 };
-const CORNER = { width: 540, route: 400, perStat: 130, pad: 40 };
+const { pictureWidth: PICTURE_WIDTH, corner: CORNER } = photoLayout;
 
 /** The overlay's size in picture pixels at scale 1. */
 export function overlayBox(layout: PhotoLayout, model: Pick<CardModel, 'stats' | 'route'>): Size {
-  if (layout === 'bar') return { width: PICTURE_WIDTH - 2 * CARD_PAD, height: model.route ? BAR_HEIGHT.route : BAR_HEIGHT.plain };
-  return { width: CORNER.width, height: (model.route ? CORNER.route : 0) + CORNER.perStat * model.stats.length + CORNER.pad };
+  if (layout === 'bar') return { width: PICTURE_WIDTH - 2 * CARD_PAD, height: model.route ? photoLayout.bar.routeHeight : photoLayout.bar.plainHeight };
+  return { width: CORNER.width, height: (model.route ? CORNER.routeHeight : 0) + CORNER.perStat * model.stats.length + CORNER.pad };
 }
 
 // A non-finite drag or pinch input snaps to the centre (0.5) or scale 1 by design, so a bad gesture never yields NaN.
