@@ -1,3 +1,5 @@
+import type { FilmLook } from './filmLook';
+
 export type JournalKind = 'note' | 'voice' | 'photo';
 
 /**
@@ -15,6 +17,8 @@ export type JournalEntry = {
   /** Voice length. */
   durationSec?: number;
   width?: number; height?: number;
+  /** The film look baked into a photo (its original is kept on the phone, so the look can be changed or removed). Absent on a plain photo. */
+  look?: FilmLook;
 };
 
 const label = (n: number, one: string, many: string) => (n === 1 ? `1 ${one}` : `${n} ${many}`);

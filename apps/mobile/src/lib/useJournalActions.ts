@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { uid } from './id';
 import { canTypeNow } from './typingGate';
-import { savePhoto } from './journalMedia';
+import { applyFilm, hasOriginal, mediaUri, originalUri, savePhoto } from './journalMedia';
+import type { JournalEntry } from './journalEntries';
+import type { FilmLook } from './filmLook';
 import { useJournal } from '@/store/journal';
 import { useMotion } from '@/store/motion';
 import { useRecorder } from '@/store/recorder';
@@ -24,6 +26,8 @@ export function useJournalActions(rideKey: number) {
   const unfinished = useRecorder((s) => s.recoverable !== null);
   const stopped = useMotion((s) => s.stopped);
   const [problem, setProblem] = useState<string>();
+  /** A photo just taken or picked, waiting in the Film step, or a saved photo being re-filmed. */
+  const [film, setFilm] = useState<{ source: string; entry?: JournalEntry } | null>(null);
   const canType = canTypeNow({ riding, unfinished, stopped });
 
   const addNote = (text: string) => {
@@ -38,13 +42,28 @@ export function useJournalActions(rideKey: number) {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
         if (!perm.granted) return setProblem('The camera is turned off for Myto Moto. Allow it in your phone settings.');
       }
-      const r = from === 'camera' ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 }) : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+      const options = { mediaTypes: ['images' as const], quality: 1, exif: false };
+      const r = from === 'camera' ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
       if (r.canceled) return;
-      const p = await savePhoto(r.assets[0].uri);
-      add({ id: p.id, rideKey, at: Date.now(), kind: 'photo', width: p.width, height: p.height });
+      setFilm({ source: r.assets[0].uri });
     } catch {
       setProblem('Could not save the photo.');
     }
   };
-  return { canType, addNote, toggleVoice, addPhoto, recording, seconds: recording ? Math.round((nowMs() - startedAt) / 1000) : 0, problem: problem ?? voiceError };
+  /** Saves what the Film step made: a new photo (with its original kept when a look was applied), or a new look on a saved one. */
+  const saveFilm = async (look: FilmLook, rendered: string | null) => {
+    if (!film) return;
+    if (film.entry) {
+      const e = film.entry;
+      await applyFilm(e.id, look.id === 'none' ? null : rendered);
+      useJournal.getState().patch(e.id, { look: look.id === 'none' ? undefined : look });
+    } else {
+      const p = await savePhoto(film.source, look.id === 'none' ? undefined : rendered ?? undefined);
+      add({ id: p.id, rideKey, at: Date.now(), kind: 'photo', width: p.width, height: p.height, ...(look.id === 'none' || !rendered ? {} : { look }) });
+    }
+    setFilm(null);
+  };
+  /** Opens the Film step on a saved photo, from its original when there is one. Not offered when the original is gone (a restored backup). */
+  const editFilm = (e: JournalEntry) => setFilm({ source: hasOriginal(e.id) ? originalUri(e.id) : mediaUri(e.id, 'photo'), entry: e });
+  return { film, saveFilm, editFilm, closeFilm: () => setFilm(null), canType, addNote, toggleVoice, addPhoto, recording, seconds: recording ? Math.round((nowMs() - startedAt) / 1000) : 0, problem: problem ?? voiceError };
 }

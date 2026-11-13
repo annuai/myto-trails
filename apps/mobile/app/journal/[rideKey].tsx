@@ -4,6 +4,10 @@ import { useLocalSearchParams } from 'expo-router';
 import { BookOpen, Camera, Image as ImageIcon, Mic, Square, Trash2, PenLine, Pencil } from 'lucide-react-native';
 import { JournalEntryCard } from '@/features/JournalEntryCard';
 import { NoteSheet } from '@/features/NoteSheet';
+import { FilmSheet } from '@/features/film/FilmSheet';
+import { openPhotoComposer } from '@/lib/photoShare';
+import { rideForEntry } from '@/lib/rideForEntry';
+import { mediaUri } from '@/lib/journalMedia';
 import { journalDate, journalTitle } from '@/lib/journalTitle';
 import { useJournalActions } from '@/lib/useJournalActions';
 import { useJournal } from '@/store/journal';
@@ -39,6 +43,7 @@ export default function RideJournal() {
         <Field label="Title" value={draft} onChangeText={setDraft} placeholder={journalDate(rideKey)} autoFocus />
         <Button label="Save title" onPress={() => { useJournal.getState().rename(rideKey, draft); setRenaming(false); }} />
       </Sheet>
+      <FilmSheet open={!!a.film} source={a.film?.source ?? null} initial={a.film?.entry?.look} onSave={a.saveFilm} onClose={a.closeFilm} />
       <NoteSheet open={note} canType={a.canType} onSave={a.addNote} onClose={() => setNote(false)} />
       <Sheet open={!!deleting} title="Delete this entry?" onClose={() => setDeleting(undefined)}>
         <Text variant="label" tone="muted">It is removed from this phone, along with its photo or recording. This cannot be undone.</Text>
@@ -60,7 +65,7 @@ export default function RideJournal() {
       </View>
       <SectionTitle>Entries</SectionTitle>
       {entries.length ? (
-        <View style={{ gap: space[3] }}>{entries.map((e) => <JournalEntryCard key={e.id} entry={e} onDelete={() => setDeleting(e.id)} />)}</View>
+        <View style={{ gap: space[3] }}>{entries.map((e) => <JournalEntryCard key={e.id} entry={e} onDelete={() => setDeleting(e.id)} onFilm={() => a.editFilm(e)} onShare={() => void openPhotoComposer({ uri: mediaUri(e.id, 'photo'), rideId: rideForEntry(e, rides) })} />)}</View>
       ) : <EmptyState icon={BookOpen} title="Nothing here yet" body="Add a note, a voice note or a photo." />}
     </Screen>
   );

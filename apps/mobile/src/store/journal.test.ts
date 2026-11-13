@@ -15,6 +15,14 @@ describe('journal store', () => {
     store.getState().add(entry('a', 1, 'note'));
     expect(store.getState().entries).toHaveLength(1);
   });
+  it('patching an entry sets or clears its film look and leaves the rest', () => {
+    const { store } = setup();
+    store.getState().add(entry('a', 1, 'photo'));
+    store.getState().patch('a', { look: { id: 'sepia', intensity: 0.5 } });
+    expect(store.getState().entries[0]).toMatchObject({ id: 'a', rideKey: 1, look: { id: 'sepia', intensity: 0.5 } });
+    store.getState().patch('a', { look: undefined });
+    expect(store.getState().entries[0].look).toBeUndefined();
+  });
   it('removing an entry deletes its file, but a note has none', () => {
     const { store, media } = setup();
     store.getState().add(entry('a', 1, 'photo'));
