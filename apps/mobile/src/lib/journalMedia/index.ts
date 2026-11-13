@@ -29,7 +29,9 @@ export async function savePhoto(sourceUri: string, rendered?: string): Promise<{
   const out = await manipulateAsync(sourceUri, [{ resize }], { compress: JPEG_QUALITY, format: SaveFormat.JPEG });
   const id = uid();
   const d = ensure(dir());
-  if (rendered) { await put(out.uri, new File(d, originalName(id))); await put(rendered, new File(d, name(id, 'photo'))); } else await put(out.uri, new File(d, name(id, 'photo')));
+  if (rendered) {
+    try { await put(out.uri, new File(d, originalName(id))); await put(rendered, new File(d, name(id, 'photo'))); } catch (e) { removeMedia(id, 'photo'); throw e; }
+  } else await put(out.uri, new File(d, name(id, 'photo')));
   return { id, width: out.width, height: out.height };
 }
 

@@ -53,13 +53,15 @@ export function useJournalActions(rideKey: number) {
   /** Saves what the Film step made: a new photo (with its original kept when a look was applied), or a new look on a saved one. */
   const saveFilm = async (look: FilmLook, rendered: string | null) => {
     if (!film) return;
+    // Without a baked picture (a browser cannot make one) the photo is kept plain, so no look is recorded.
+    const plain = look.id === 'none' || !rendered;
     if (film.entry) {
       const e = film.entry;
-      await applyFilm(e.id, look.id === 'none' ? null : rendered);
-      useJournal.getState().patch(e.id, { look: look.id === 'none' ? undefined : look });
+      await applyFilm(e.id, plain ? null : rendered);
+      useJournal.getState().patch(e.id, { look: plain ? undefined : look });
     } else {
-      const p = await savePhoto(film.source, look.id === 'none' ? undefined : rendered ?? undefined);
-      add({ id: p.id, rideKey, at: Date.now(), kind: 'photo', width: p.width, height: p.height, ...(look.id === 'none' || !rendered ? {} : { look }) });
+      const p = await savePhoto(film.source, plain ? undefined : rendered);
+      add({ id: p.id, rideKey, at: Date.now(), kind: 'photo', width: p.width, height: p.height, ...(plain ? {} : { look }) });
     }
     setFilm(null);
   };

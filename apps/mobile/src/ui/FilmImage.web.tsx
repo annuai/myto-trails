@@ -3,7 +3,7 @@ import { lookParams, matrixValues, type FilmLook } from '@/lib/filmLook';
 import { fixed } from '@/theme/tokens';
 import { filmImage as t } from './FilmImage.tokens';
 
-const GREY = '0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 0 1';
+const GREY = '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.8 0 0 0 -0.6';
 
 /**
  * The browser version of the film picture: react-native-svg cannot draw an image on the web, so this is plain SVG with the

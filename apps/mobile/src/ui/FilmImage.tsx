@@ -4,8 +4,8 @@ import { lookParams, matrixValues, type FilmLook } from '@/lib/filmLook';
 import { fixed } from '@/theme/tokens';
 import { filmImage as t } from './FilmImage.tokens';
 
-/** Grey noise, written as a colour matrix over turbulence: every channel is the mean of the noise, fully opaque. */
-const GREY = '0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 0 1';
+/** Black speckle: the noise's red channel becomes the alpha (only its upper part, so most of the picture is untouched and blacks and whites keep their contrast). */
+const GREY = '0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.8 0 0 0 -0.6';
 
 /**
  * A photo drawn with a film look. The look's colour matrix, grain and vignette are SVG filters over the picture, so
