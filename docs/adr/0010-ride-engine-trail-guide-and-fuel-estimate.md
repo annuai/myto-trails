@@ -8,7 +8,7 @@ Date: 2026-10-30. Status: built; GPS fixes are tested by unit tests and not yet 
 |---|---|---|
 | "Lost GPS signal" many times | Background task used `distanceInterval: 5`, so a stopped bike got no fixes. `moving` stayed true from before the stop, so after 15 s the banner fired at every light. One late fix cleared it, the next gap raised it again. | Distance filter 0 so fixes keep coming. `lib/gpsHealth`: 20 s of silence to raise, 5 s of fresh fixes to clear, app-resume grace. Weak accuracy is its own message. |
 | 5 to 6 km/h while standing | (a) Fixes inside the drift radius returned before `speedKmh` was set, so the last riding speed stayed. (b) A parked phone's own speed reading (often 1 to 2 m/s) was trusted. | `lib/liveSpeed`: inside the radius the position must agree with the reading, otherwise 0. Speed older than 4 s shows "–". |
-| Top speed 162 km/h | `trackStats` took the fastest single fix-to-fix step. One 45 m jump in a second is 162 km/h. Live max had the same weakness. | `lib/topSpeed`: median of 5 steps, poor-accuracy fixes and sub-0.5 s steps dropped. A reading far above what the track shows is replaced by the track. |
+| Top speed 162 km/h | `trackStats` took the fastest single fix-to-fix step. One 45 m jump in a second is 162 km/h. Live max had the same weakness. | `lib/topSpeed`: median of 5 steps, poor-accuracy fixes and sub-0.5 s steps dropped. A reading far above what the track shows is replaced by the track. Each run of steps between gaps of over a minute is judged on its own; a ride left recording after a stop used to lose every speed before the gap and read 0. |
 
 ## 2. Engine shape (what is built, what is next)
 
