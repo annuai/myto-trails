@@ -19,6 +19,7 @@ export function overlayBox(layout: PhotoLayout, model: Pick<CardModel, 'stats' |
   return { width: CORNER.width, height: (model.route ? CORNER.route : 0) + CORNER.perStat * model.stats.length + CORNER.pad };
 }
 
+// A non-finite drag or pinch input snaps to the centre (0.5) or scale 1 by design, so a bad gesture never yields NaN.
 const finite = (n: number, fallback: number) => (Number.isFinite(n) ? n : fallback);
 
 /**

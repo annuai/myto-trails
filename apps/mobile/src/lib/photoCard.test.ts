@@ -25,12 +25,14 @@ describe('overlayBox', () => {
 });
 
 describe('clampPlacement', () => {
-  it('limits scale and keeps the box inside; wider-than-card is centred', () => {
-    const p = clampPlacement({ x: 2, y: -1, scale: 9 }, bar, card);
-    expect(p.scale).toBe(PLACEMENT_LIMITS.maxScale);
-    expect(p.x).toBe(0.5);
-    expect(inside({ ...p, x: 0.5 }, { width: bar.width, height: bar.height }, card) || bar.width * 2.2 > card.width).toBe(true);
-    expect(p.y).toBeGreaterThan(0);
+  it('limits scale; a wider-than-card overlay is centred on x and clamped exactly on y', () => {
+    const lo = clampPlacement({ x: 2, y: 0, scale: 9 }, bar, card);
+    expect(lo).toEqual({ x: 0.5, y: 330 / 1920, scale: 2.2 });
+    const hi = clampPlacement({ x: 2, y: 5, scale: 9 }, bar, card);
+    expect(hi).toEqual({ x: 0.5, y: 1 - 330 / 1920, scale: 2.2 });
+  });
+  it('raises a too-small scale to the minimum', () => {
+    expect(clampPlacement({ x: 0.5, y: 0.5, scale: 0.1 }, bar, card).scale).toBe(0.6);
   });
   it('pulls an out-of-bounds centre back inside', () => {
     const p = clampPlacement({ x: 2, y: -1, scale: 0.6 }, bar, card);
@@ -41,7 +43,7 @@ describe('clampPlacement', () => {
     const big = { width: 5000, height: 5000 };
     const p = clampPlacement({ x: 0.1, y: 0.9, scale: 1 }, big, card);
     expect(p).toEqual({ x: 0.5, y: 0.5, scale: 1 });
-    expect(Object.values(clampPlacement({ x: NaN, y: Infinity, scale: NaN }, bar, card)).every(Number.isFinite)).toBe(true);
+    expect(clampPlacement({ x: NaN, y: Infinity, scale: NaN }, bar, card)).toEqual({ x: 0.5, y: 0.5, scale: 1 });
   });
 });
 
@@ -54,8 +56,8 @@ describe('dragPlacement', () => {
   });
   it('never leaves the picture', () => {
     const box = { width: 300, height: 200 };
-    const p = dragPlacement({ x: 0.5, y: 0.5, scale: 1 }, 99999, -99999, box, card);
-    expect(inside(p, box, card)).toBe(true);
+    expect(dragPlacement({ x: 0.5, y: 0.5, scale: 1 }, 99999, -99999, box, card)).toEqual({ x: 1 - 150 / 1080, y: 100 / 1920, scale: 1 });
+    expect(dragPlacement({ x: 0.5, y: 0.5, scale: 1 }, -99999, 99999, box, card)).toEqual({ x: 150 / 1080, y: 1 - 100 / 1920, scale: 1 });
   });
 });
 
@@ -65,10 +67,14 @@ describe('pinchPlacement', () => {
     expect(pinchPlacement(start, 0.1, bar, card).scale).toBe(0.6);
     expect(pinchPlacement({ x: 0.5, y: 0.5, scale: 1 }, 50, { width: 100, height: 100 }, card).scale).toBe(2.2);
   });
-  it('keeps the box inside after growing', () => {
+  it('keeps the centre when the result still fits', () => {
+    const box = { width: 300, height: 200 };
+    expect(pinchPlacement({ x: 0.5, y: 0.5, scale: 1 }, 1.5, box, card)).toEqual({ x: 0.5, y: 0.5, scale: 1.5 });
+  });
+  it('keeps the centre, then clamps to the exact edge after growing', () => {
     const box = { width: 300, height: 200 };
     const p = pinchPlacement({ x: 0.95, y: 0.95, scale: 1 }, 2, box, card);
-    expect(inside(p, box, card)).toBe(true);
+    expect(p).toEqual({ x: 1 - 300 / 1080, y: 1 - 200 / 1920, scale: 2 });
   });
 });
 
@@ -87,6 +93,23 @@ describe('defaultPlacement', () => {
       const p = defaultPlacement('corner', c, box);
       expect(p.x * c.width - box.width / 2).toBeCloseTo(CARD_PAD);
       expect(p.y * c.height - box.height / 2).toBeCloseTo(CARD_PAD);
+    });
+  }
+  for (const f of ['story', 'post', 'square'] as CardFormat[]) {
+    const c = CARD_SIZE[f];
+    it(`corner with a route and bar without a route keep exact margins (${f})`, () => {
+      const route = [{ x: 0, y: 0 }];
+      const cb = overlayBox('corner', { stats: [stat, stat] as never, route });
+      expect(cb.height).toBe(400 + 2 * 130 + 40);
+      const cp = defaultPlacement('corner', c, cb);
+      expect(cp.x * c.width - cb.width / 2).toBeCloseTo(CARD_PAD);
+      expect(cp.y * c.height - cb.height / 2).toBeCloseTo(CARD_PAD);
+      const bb = overlayBox('bar', { stats: [], route: null });
+      expect(bb.height).toBe(190);
+      const bp = defaultPlacement('bar', c, bb);
+      expect(bp.x).toBe(0.5);
+      expect(c.height - (bp.y * c.height + bb.height / 2)).toBeCloseTo(CARD_PAD);
+      expect(bp.x * c.width - bb.width / 2).toBeCloseTo(CARD_PAD);
     });
   }
   it('centres a box larger than the card', () => {
