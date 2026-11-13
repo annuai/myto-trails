@@ -4,13 +4,12 @@ import { ExternalLink } from 'lucide-react-native';
 import { SHOP_BRAND } from '@/data/shop';
 import { openShopSite } from '@/features/shop/openShop';
 import { ShopProductCard } from '@/features/shop/ShopProductCard';
-import { categoriesWithProducts, collectionsWithProducts, featuredProducts, shopHostLabel } from '@/lib/shop';
+import { featuredProducts, shopHostLabel } from '@/lib/shop';
 import { space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { EmptyState } from '@/ui/EmptyState';
 import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
-import { ListCard, Row } from '@/ui/ListCard';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 
@@ -18,8 +17,6 @@ import { Text } from '@/ui/Text';
 export default function Shop() {
   const router = useRouter();
   const featured = featuredProducts();
-  const collections = collectionsWithProducts();
-  const categories = categoriesWithProducts();
   const open = (slug: string) => router.push(`/shop/${slug}`);
 
   return (
@@ -33,20 +30,6 @@ export default function Shop() {
           <SectionTitle first>Featured</SectionTitle>
           <View style={{ gap: space[3] }}>{featured.map((p) => <ShopProductCard key={p.slug} product={p} onPress={() => open(p.slug)} />)}</View>
 
-          {collections.map((c) => (
-            <View key={c.id}>
-              <SectionTitle>{c.name}</SectionTitle>
-              <Text variant="label" tone="muted" style={{ marginBottom: space[3] }}>{c.blurb}</Text>
-              <ListCard>{c.products.map((p) => <Row key={p.slug} label={p.name} sub={p.tagline} onPress={() => open(p.slug)} />)}</ListCard>
-            </View>
-          ))}
-
-          {categories.map((c) => (
-            <View key={c.id}>
-              <SectionTitle>{c.name}</SectionTitle>
-              <ListCard>{c.products.map((p) => <Row key={p.slug} label={p.name} sub={p.tagline} onPress={() => open(p.slug)} />)}</ListCard>
-            </View>
-          ))}
 
           <SectionTitle>{`About ${SHOP_BRAND.name}`}</SectionTitle>
           <Card style={{ gap: space[3] }}>
