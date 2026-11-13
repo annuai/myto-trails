@@ -7,6 +7,7 @@ export function buildSitemap(entries: Entries, siteUrl: string): MetadataRoute.S
     { url: siteUrl },
     { url: `${siteUrl}/trails` },
     { url: `${siteUrl}/regions` },
+    { url: `${siteUrl}/app` },
     ...entries.regions.map((r) => ({ url: `${siteUrl}${r.path}` })),
     ...entries.trails.map((t) => ({ url: `${siteUrl}/trails/${t.slug}`, lastModified: new Date(t.updatedAt) })),
   ];

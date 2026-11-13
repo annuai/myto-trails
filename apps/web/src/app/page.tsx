@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AccessExplainer } from "@/features/home/AccessExplainer";
+import { AppBand } from "@/features/app-beta/AppBand";
 import { ContributeBand } from "@/features/home/ContributeBand";
 import { Hero } from "@/features/home/Hero";
 import { RegionTiles } from "@/features/home/RegionTiles";
@@ -31,6 +32,7 @@ export default function Home() {
   return (
     <>
       <Hero imageSrc="/images/hero/home-hero-rider-on-dirt-trail.webp" />
+      <AppBand />
       <Section id="nearby" eyebrow="Nearby" title="Trails near you" intro="Allow your location to see the closest trails and roughly how long each takes to reach.">
         <NearbyTrails />
       </Section>

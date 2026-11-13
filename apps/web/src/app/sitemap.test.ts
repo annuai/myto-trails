@@ -14,6 +14,7 @@ describe("buildSitemap", () => {
       "https://moto-trails.com",
       "https://moto-trails.com/trails",
       "https://moto-trails.com/regions",
+      "https://moto-trails.com/app",
       "https://moto-trails.com/regions/kerala",
       "https://moto-trails.com/regions/kerala/wayanad",
       "https://moto-trails.com/trails/a-trail",
