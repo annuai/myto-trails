@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Installed } from './manifest';
-import { composeLocalStyle, regionAt, type StyleJson } from './style';
+import { chooseStyle, composeLocalStyle, isPmtilesHeader, regionAt, type StyleJson } from './style';
 
 const goa: Installed = { id: 'goa', version: 'v1', bbox: [73.6, 14.9, 74.4, 15.8], mapPath: 'file:///docs/regions/goa.pmtiles', searchPath: 'x' };
 const overlap: Installed = { id: 'konkan', version: 'v1', bbox: [73.0, 14.0, 74.0, 16.5], mapPath: '/docs/regions/konkan.pmtiles', searchPath: 'x' };
@@ -50,4 +50,21 @@ describe('composeLocalStyle', () => {
     expect(none.layers).toEqual(base.layers);
     expect(none.glyphs).toBe(paths.glyphs);
   });
+});
+
+describe('isPmtilesHeader', () => {
+  const good = Uint8Array.from([0x50, 0x4d, 0x54, 0x69, 0x6c, 0x65, 0x73, 3, 0]);
+  it('accepts PMTiles v3', () => expect(isPmtilesHeader(good)).toBe(true));
+  it('rejects a wrong version, wrong magic or short file', () => {
+    expect(isPmtilesHeader(Uint8Array.from([...good.slice(0, 7), 2]))).toBe(false);
+    expect(isPmtilesHeader(Uint8Array.from([0, 0, 0, 0, 0, 0, 0, 3]))).toBe(false);
+    expect(isPmtilesHeader(good.slice(0, 5))).toBe(false);
+    expect(isPmtilesHeader(new Uint8Array())).toBe(false);
+  });
+});
+
+describe('chooseStyle', () => {
+  it('is online until the local style exists', () => expect(chooseStyle('url', undefined, false)).toEqual({ style: 'url', isLocal: false }));
+  it('switches to local once available, even after an online failure', () => expect(chooseStyle('url', '{}', false)).toEqual({ style: '{}', isLocal: true }));
+  it('falls back to online once the local style failed', () => expect(chooseStyle('url', '{}', true)).toEqual({ style: 'url', isLocal: false }));
 });

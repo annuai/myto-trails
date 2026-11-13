@@ -41,3 +41,14 @@ export function composeLocalStyle(base: StyleJson, installed: Installed[], paths
   }
   return { ...local, sources, layers };
 }
+
+/** A PMTiles v3 file starts with the ASCII bytes "PMTiles" and the version byte 3. Catches a truncated or wrong file, not a damaged body. */
+export function isPmtilesHeader(bytes: Uint8Array): boolean {
+  const magic = [0x50, 0x4d, 0x54, 0x69, 0x6c, 0x65, 0x73];
+  return bytes.length >= 8 && magic.every((b, i) => bytes[i] === b) && bytes[7] === 3;
+}
+
+/** Which style the map uses: the local one until it fails to load, otherwise the online URL (a failure of the online URL is never retried as itself). */
+export function chooseStyle(online: string, local: string | undefined, localFailed: boolean): { style: string; isLocal: boolean } {
+  return local && !localFailed ? { style: local, isLocal: true } : { style: online, isLocal: false };
+}

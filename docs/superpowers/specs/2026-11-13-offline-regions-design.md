@@ -63,4 +63,5 @@ Before building the screen: load one small PMTiles file (a district) from local 
 - **Search scope:** my proposal from the conversation; the user said "town and village names, major locations".
 - **Per-trail pack:** keep for now; if a downloaded region covers the trail, the trail screen should say the map is already saved. Retiring `offlineTiles.ts` is a later decision.
 - **Updates:** manual, per region, with a prompt only when a newer version exists (no background downloads, to save data and battery).
+- **Corrupt map body:** the app checks only the PMTiles header before using a downloaded file (the download is hash-checked); a file with a good header but a damaged body shows missing tiles, not a fallback to the online map.
 - **Docs on build:** fold a short paragraph into `docs/runbooks/self-hosted-map-tiles.md` (it currently says Worker-based plan; update it to this design) and add a line to `docs/todo.md`; no further new doc files.
