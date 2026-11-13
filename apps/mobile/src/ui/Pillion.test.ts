@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { POSES, POSE_IDS } from '../../assets/pillion/poses';
 import { pillion } from './Pillion.tokens';
@@ -9,6 +11,9 @@ describe('Pillion poses', () => {
   });
   it('never labels a rider a beginner', () => {
     for (const p of Object.values(POSES)) expect(p.label).not.toMatch(/noob|beginner|new/i);
+  });
+  it('has a webp picture for every pose', () => {
+    for (const id of POSE_IDS) expect(existsSync(resolve(__dirname, `../../assets/pillion/${id}.webp`)), id).toBe(true);
   });
   it('has growing sizes', () => {
     expect(pillion.sm).toBeLessThan(pillion.md);
