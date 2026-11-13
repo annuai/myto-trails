@@ -75,6 +75,17 @@ describe("GET /sync/pull", () => {
   });
 });
 
+describe("pull cursor", () => {
+  it("accepts the epoch, which an idle phone is given as its cursor", async () => {
+    sy.pullChanges.mockResolvedValueOnce({ changes: [], cursor: "1970-01-01T00:00:00.000Z", more: false });
+    expect((await call("GET", `/sync/pull?deviceId=${DEVICE}&since=1970-01-01T00:00:00.000Z`)).status).toBe(200);
+    expect(sy.pullChanges.mock.calls[0]![1].since).toEqual(new Date(0));
+  });
+  it("still refuses an edit time in the distant past", async () => {
+    expect((await call("POST", "/sync/push", { deviceId: DEVICE, changes: [{ ...change, updatedAt: "1999-01-01T00:00:00Z" }] })).status).toBe(400);
+  });
+});
+
 describe("tracks", () => {
   it("stores the bytes, and maps each refusal to its status", async () => {
     sy.putTrack.mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce({ ok: false, reason: "no_such_ride" }).mockResolvedValueOnce({ ok: false, reason: "over_quota" });
