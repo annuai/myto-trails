@@ -21,6 +21,12 @@ describe('parseManifest', () => {
     expect(out).toEqual([raw()]);
   });
 
+  it('drops a region whose id or version could escape the regions folder', () => {
+    for (const id of ['a/b', '../x', '..', '', 'Goa', 'goa.v2', 'go a']) expect(parseManifest(manifest(raw({ id })))).toEqual([]);
+    for (const version of ['a/b', '..', '1..2', '', '../v', 'v 1']) expect(parseManifest(manifest(raw({ version })))).toEqual([]);
+    expect(parseManifest(manifest(raw({ id: 'goa-2', version: 'v1.2-b' })))).toHaveLength(1);
+  });
+
   it('drops a region whose bbox has west >= east or south >= north', () => {
     expect(parseManifest(manifest(raw({ bbox: [78, 11, 74, 18] })))).toEqual([]);
     expect(parseManifest(manifest(raw({ bbox: [74, 18, 78, 11] })))).toEqual([]);

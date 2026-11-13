@@ -2,7 +2,7 @@ import { FileMode, File as ExpoFile } from 'expo-file-system';
 import { createDownloadResumable, deleteAsync, documentDirectory, getFreeDiskStorageAsync, getInfoAsync, makeDirectoryAsync, moveAsync, readAsStringAsync, readDirectoryAsync, writeAsStringAsync } from 'expo-file-system/legacy';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
-import { createInflight, MANIFEST_CACHE_FILE, rangePlan, readInstalled, resolveManifest, runDelete, runDownload, type DownloadFs } from './download';
+import { assertNotDownloading, createInflight, MANIFEST_CACHE_FILE, rangePlan, readInstalled, resolveManifest, runDelete, runDownload, type DownloadFs } from './download';
 import { parseManifest, type Installed, type Region } from './manifest';
 
 /** The phone side of offline regions: real files, real network. The logic worth testing lives in `download.ts`. */
@@ -117,6 +117,13 @@ export const listInstalled = (): Promise<Installed[]> => readInstalled(nativeFs,
 /** Downloads and installs a region; `onProgress` gets 0 to 100. Throws a plain-words message when it cannot. */
 export const downloadRegion = (region: Region, onProgress: (pct: number) => void): Promise<void> => inflight.run(region.id, (emit) => runDownload(nativeFs, DIR, region, emit), onProgress);
 
-export const deleteRegion = (id: string): Promise<void> => runDelete(nativeFs, DIR, id);
+/** True while a download for this region is running (also after the screen that started it was left). */
+export const isDownloading = (id: string): boolean => inflight.has(id);
+
+/** Rejects in plain words while the region is downloading. */
+export async function deleteRegion(id: string): Promise<void> {
+  assertNotDownloading(inflight.has(id));
+  await runDelete(nativeFs, DIR, id);
+}
 
 export { checkSpace } from './download';

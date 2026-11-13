@@ -68,6 +68,8 @@ export function createSerial() {
 export function createInflight() {
   const running = new Map<string, { promise: Promise<void>; listeners: Set<(pct: number) => void> }>();
   return {
+    /** True while a run for the key is going. */
+    has: (key: string): boolean => running.has(key),
     run(key: string, start: (emit: (pct: number) => void) => Promise<void>, listener?: (pct: number) => void): Promise<void> {
       const existing = running.get(key);
       if (existing) {
@@ -165,6 +167,13 @@ async function writeIndex(fs: DownloadFs, dir: string, entries: IndexEntry[]): P
   const tmp = `${dir}${INDEX_FILE}.tmp`;
   await fs.writeText(tmp, JSON.stringify(entries));
   await fs.move(tmp, `${dir}${INDEX_FILE}`);
+}
+
+export const STILL_DOWNLOADING = 'This map is still downloading. Wait for it to finish, then delete it.';
+
+/** A region cannot be deleted while its download runs: the download would put the files straight back. */
+export function assertNotDownloading(downloading: boolean): void {
+  if (downloading) throw new DownloadError(STILL_DOWNLOADING);
 }
 
 /** Removes the files first, then the entry: if it stops half way the entry's files are missing and `filterInstalled` drops it. Leftover part files of the region go too. */

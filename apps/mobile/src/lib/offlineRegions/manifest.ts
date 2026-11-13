@@ -32,6 +32,8 @@ function parseRegion(v: unknown): Region | null {
   const map = parseFile(r.map);
   const search = parseFile(r.search);
   if (!text(r.id) || !text(r.name) || !text(r.version) || !bbox || !map || !search) return null;
+  // The id and version become file names under the regions folder, so nothing that could climb out of it gets through.
+  if (!/^[a-z0-9-]+$/.test(r.id) || !/^[0-9A-Za-z.-]+$/.test(r.version) || r.version.includes('..')) return null;
   return { id: r.id, name: r.name, bbox, version: r.version, map, search };
 }
 

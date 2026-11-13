@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkSpace, createInflight, createSerial, filterInstalled, rangePlan, resolveManifest, runDelete, runDownload, type DownloadFs, type IndexEntry } from './download';
+import { assertNotDownloading, checkSpace, createInflight, DownloadError, createSerial, filterInstalled, rangePlan, resolveManifest, runDelete, runDownload, type DownloadFs, type IndexEntry } from './download';
 import type { Region } from './manifest';
 
 const MB = 1024 * 1024;
@@ -166,6 +166,16 @@ describe('createInflight', () => {
     expect(starts).toBe(1);
     expect([a, b]).toEqual([[40], [40]]);
   });
+  it('reports a run in flight with has() and frees it afterwards', async () => {
+    const inflight = createInflight();
+    let finish: () => void = () => {};
+    const p = inflight.run('goa', () => new Promise<void>((r) => { finish = r; }));
+    expect(inflight.has('goa')).toBe(true);
+    expect(inflight.has('ker')).toBe(false);
+    finish();
+    await p;
+    expect(inflight.has('goa')).toBe(false);
+  });
   it('frees the slot after a failure so a retry runs', async () => {
     const inflight = createInflight();
     let starts = 0;
@@ -236,4 +246,12 @@ describe('plain-words errors', () => {
     expect(err.message).not.toMatch(/ENOENT/);
     expect(err.cause).toBe(boom);
   });
+});
+
+describe('assertNotDownloading', () => {
+  it('rejects with plain words while a download runs', () => {
+    expect(() => assertNotDownloading(true)).toThrow(DownloadError);
+    expect(() => assertNotDownloading(true)).toThrow('This map is still downloading. Wait for it to finish, then delete it.');
+  });
+  it('lets a delete through otherwise', () => expect(() => assertNotDownloading(false)).not.toThrow());
 });
