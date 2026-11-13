@@ -5,51 +5,15 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { runAll, SCENARIOS, SHARED, inr, inrShort, MONTHS } from "../model.mjs";
+import { MONTHS, inrShort } from "../model.mjs";
+import { ARCH, TRAILS_NOTE, DECK } from "./deck-data.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 try { execFileSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "prepare-assets.mjs")], { stdio: "inherit" }); } catch {}
-const md = readFileSync(join(here, "deck-content.md"), "utf8");
-const model = runAll();
-
-// ---------- formatting and placeholders ----------
-const FMT = {
-  inr: (v) => inr(v), short: (v) => inrShort(v),
-  num: (v) => Number(v).toLocaleString("en-IN"), pct: (v) => Math.round(v * 100) + "%", raw: (v) => String(v),
-};
-function resolvePath(path) {
-  const p = path.split(".");
-  if (p[0] === "in") return p.slice(2).reduce((o, k) => o?.[k], SCENARIOS[p[1]]);
-  if (p[0] === "shared") return SHARED[p[1]];
-  const r = model.scenarios[p[0]];
-  if (!r) throw new Error(`Unknown model path: ${path}`);
-  const v = p.slice(1).reduce((o, k) => o?.[k], r);
-  if (v === undefined) throw new Error(`Unknown model path: ${path}`);
-  return v;
-}
-const fill = (s) => s.replace(/\{\{\s*([\w.]+)\s*(?:\|\s*(\w+))?\s*\}\}/g, (_, path, f) => (FMT[f || "raw"])(resolvePath(path)));
-
-// ---------- parse ----------
-const sections = md.split(/^## /m).slice(1);
-const slides = [];
-for (const sec of sections) {
-  const [head, ...lines] = sec.split("\n");
-  const [num, layout] = head.split("|").map((x) => x.trim());
-  const d = { n: Number(num), layout }; let key = null;
-  for (const raw of lines) {
-    const l = raw.replace(/\s+$/, ""); if (!l.trim()) continue;
-    const m = l.match(/^([a-z_]+):\s?(.*)$/);
-    if (m && !l.startsWith("- ")) { key = m[1]; d[key] ??= []; if (m[2]) d[key].push(fill(m[2])); }
-    else if (l.startsWith("- ") && key) d[key].push(fill(l.slice(2)));
-  }
-  slides.push(d);
-}
-slides.sort((a, b) => a.n - b.n);
+import { slides, model, cells, one } from "./deck-data.mjs";
 
 // ---------- helpers ----------
 const esc = (s = "") => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-const one = (d, k) => (d[k] && d[k][0]) || "";
-const cells = (s) => s.split(" | ").map((x) => x.trim());
 const LOGO = readFileSync(join(here, "assets/img/myto-logo.svg"), "utf8").replace(/fill="white"/g, 'fill="currentColor"').replace(/<svg /, '<svg class="logo" role="img" aria-label="Myto" ');
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -204,7 +168,7 @@ L.group = (d) => `<div class="gr"><div class="gr-a"><div class="hd wide"><h2 cla
   <div class="phone-wrap" style="align-self:start">${realPhone(one(d, "shot"), "full")}</div></div>`;
 
 L.monetisation = (d) => {
-  const arch = [["Participants", "Never pay, in any group ride"], ["Free for everyone", "Explore, Ride, Fix-it, clubs, rides to 5"], ["Organiser pays", "Large Ride Pass, Myto Organiser"], ["Shop, outside the app", "Originals and curated, physical goods"], ["Partner pays", "Labelled sponsored challenges"]];
+  const arch = ARCH;
   return `${hd(d, "wide")}<div class="mo"><div class="arch">${arch.map(([a, b], k) => `<div class="a${k}"><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("")}</div>
   <ul class="list">${d.items.map((it) => { const [t, w, r, sc] = cells(it); return `<li><b class="t">${esc(t)}</b><span class="w">${esc(w)}</span><div class="score">${progress(Number(sc), 35)}<span class="t-data">${esc(sc)}</span></div><div class="rec">${badges(r, REC)}</div></li>`; }).join("")}</ul></div>`;
 };
@@ -217,7 +181,7 @@ L.partnerships = (d) => {
 };
 
 L.gtm = (d) => `<div class="gt"><div class="gt-l">${hd(d, "wide")}<div class="gt-cards">${d.items.map((it, k) => { const [t, x] = cells(it); return `<div class="tint-${["sky", "sage", "sand", "clay"][k]}"><h3>${esc(t)}</h3><p>${esc(x)}</p></div>`; }).join("")}</div></div>
-  <div class="gt-r">${frame(one(d, "img"), "", "50% 70%")}<div class="card"><h3>Approved trails in the repo, not samples</h3><ul class="trails">${d.trails.map((t) => { const [n, dist, km] = cells(t); return `<li><div class="nm">${esc(n)}<small>${esc(dist)}</small></div><span class="t-data">${esc(km)}</span></li>`; }).join("")}</ul><p class="note">All four are in Karnataka. Six further trails in the seed data are flagged sample and are not coverage.</p></div></div></div>`;
+  <div class="gt-r">${frame(one(d, "img"), "", "50% 70%")}<div class="card"><h3>Approved trails in the repo, not samples</h3><ul class="trails">${d.trails.map((t) => { const [n, dist, km] = cells(t); return `<li><div class="nm">${esc(n)}<small>${esc(dist)}</small></div><span class="t-data">${esc(km)}</span></li>`; }).join("")}</ul><p class="note">${esc(TRAILS_NOTE)}</p></div></div></div>`;
 
 L.roadmap = (d) => `<div class="rm-top">${hd(d, "wide")}<div class="rm-key">${badges("Built+In build+Planned+Hypothesis")}</div></div>
   <div class="rm">${d.phases.map((p, k) => { const [n, dt, th, gate] = cells(p); const items = d.items.filter((i) => cells(i)[0] === String(k + 1)); return `<div class="ph tint-${["sky", "sage", "sand", "clay"][k]}"><div class="ph-h"><h3>${esc(n)}</h3><div class="t-data">${esc(dt)}</div><p>${esc(th)}</p></div>
@@ -273,8 +237,30 @@ L.competitive = (d) => `${hd(d, "wide")}
   <div class="cp"><div class="card"><div class="r h"><span>Capability</span><span>Myto today</span><span>Riding Verse, per the note</span><span>Evidence grade</span></div>
   ${d.items.map((it) => { const [c, s, o, e] = cells(it); return `<div class="r"><span class="c">${esc(c)}</span><span class="s">${badges(s)}</span><span class="o">${esc(o)}</span><span class="e">${esc(e)}</span></div>`; }).join("")}</div></div>`;
 
+L.landscape = (d) => `${hd(d, "wide")}
+  <div class="cp ls"><div class="card"><div class="r h"><span>App</span><span>What the listing shows</span><span>Where we stand</span></div>
+  ${d.items.map((it) => { const [a, k, o, w] = cells(it); return `<div class="r"><span class="c">${esc(a)}<small>${esc(k)}</small></span><span class="e">${esc(o)}</span><span class="o">${esc(w)}</span></div>`; }).join("")}</div></div>`;
+
 L["vision-long"] = (d) => `<!--ART--><div class="vl-art"><img src="${picture(one(d, "img"))}" alt=""></div><!--/ART-->
   <div class="vl">${hd(d, "wide", "t-display")}<ul class="list">${d.items.map((it) => { const [t, x] = cells(it); return `<li><h3>${esc(t)}</h3><p>${esc(x)}</p></li>`; }).join("")}</ul></div>`;
+
+// pitch deck only: product slide with a demo video slot (poster + play until a video file is given)
+L.demo = (d) => {
+  const video = one(d, "video");
+  const poster = shotFile(one(d, "shot"));
+  const screen = video
+    ? `<video controls preload="metadata" poster="${poster}" src="assets/video/${esc(video)}"></video>`
+    : `<img src="${poster}" alt=""><span class="play" aria-label="Demo video, to be added"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></span>`;
+  return `<div class="dm"><div class="dm-a">${hd(d, "wide")}<div class="dm-cards">${d.items.map((it, k) => { const [t, x] = cells(it); return `<div class="tint-${["sky", "sage", "sand"][k]}"><span class="num">${k + 1}</span><h3>${esc(t)}</h3><p>${esc(x)}</p></div>`; }).join("")}</div></div>
+  <div class="phone-wrap"><div class="phone full"><div class="scr">${screen}</div></div></div></div>`;
+};
+
+// pitch deck only: the raise, with the four phases as the use of funds
+L.ask = (d) => {
+  const [v, l, st] = cells(one(d, "raise"));
+  return `<div class="gt"><div class="gt-l">${hd(d, "wide")}<div class="gt-cards">${d.items.map((it, k) => { const [t, x, g] = cells(it); return `<div class="tint-${["sky", "sage", "sand", "clay"][k]}"><h3>${esc(t)}</h3><p>${esc(x)}</p><p class="gate">${esc(g)}</p></div>`; }).join("")}</div></div>
+  <div class="gt-r">${frame(one(d, "img"), "", "50% 70%")}<div class="card"><h3>Raising</h3><div class="stat hero"><b>${esc(v)}</b><span>${esc(l)}</span></div>${badges(st)}<p class="note">${esc(one(d, "note"))}</p></div></div></div>`;
+};
 
 // ---------- assemble ----------
 const total = slides.length;
@@ -298,7 +284,7 @@ ${art}
 
 const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Myto strategy deck</title>
+<title>${DECK === "pitch" ? "Myto investor pitch" : "Myto strategy deck"}</title>
 <link rel="stylesheet" href="styles.css">
 </head><body>
 <!-- GENERATED by build.mjs from deck-content.md and ../model.mjs. Do not edit by hand. -->
@@ -309,5 +295,6 @@ ${sec}
 <script src="presentation.js"></script>
 </body></html>
 `;
-writeFileSync(join(here, "index.html"), html);
-console.log(`index.html written: ${total} slides`);
+const OUT = DECK === "pitch" ? "index-pitch.html" : "index.html";
+writeFileSync(join(here, OUT), html);
+console.log(`${OUT} written: ${total} slides`);
