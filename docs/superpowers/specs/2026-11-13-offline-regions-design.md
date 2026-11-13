@@ -28,7 +28,7 @@ A rider downloads a state (Karnataka, Kerala, Goa, …) once, on wifi, and then 
 - Free tier only (CLAUDE.md). Hosting is the existing R2 bucket, in a separate prefix from trail photos.
 - MapLibre React Native 11.5.0 (Android SDK 13.6.1). Hand-made native setup, so no `expo prebuild --clean`.
 - `expo-sqlite` and `expo-file-system` are already dependencies.
-- Data is OpenStreetMap: attribution "© OpenStreetMap contributors" and Protomaps must stay visible.
+- Data is OpenStreetMap: attribution "© OpenStreetMap contributors" and OpenMapTiles must stay visible.
 
 ## Approaches considered
 - **A. One PMTiles file per region read from disk (chosen).** Phone downloads the file; the map style uses a `pmtiles://file://` source. No server, no per-tile requests, resumable, delete is one file. Risk: local PMTiles support in the iOS MapLibre build is unverified.
@@ -40,7 +40,7 @@ Chosen by the user on 2026-11-13: A, with a device test first.
 ## Design (A)
 
 **Build pipeline (laptop, run per region and about monthly; script in `tooling/`)**
-1. Map: `pmtiles extract` of the region's bounding box (with a small margin) from the Protomaps build, to a chosen max zoom.
+1. Map: cut the region's bounding box (with a small margin) from the Geofabrik India extract with `osmium extract`, then build tiles with Planetiler's OpenMapTiles profile to a chosen max zoom (not Protomaps; the OpenMapTiles schema matches the existing OpenFreeMap style).
 2. Search: from the Geofabrik India extract, keep `place=city|town|village|hamlet|suburb`, district boundaries' names, `natural=peak|saddle` (passes) and major `tourism=attraction|viewpoint` and `natural=water|beach` features that have a name. Write one SQLite file per region with an FTS5 table (`name`, `alt_names`, `kind`, `detail` such as "Mysuru, Karnataka", lat, lng, a rank so cities beat hamlets).
 3. Upload both files to R2 under a `regions/` prefix, then update `regions/manifest.json`: per region `id`, name, bbox, map and search file URLs, sizes in bytes, a version string (build date), and a SHA-256 for each file.
 
