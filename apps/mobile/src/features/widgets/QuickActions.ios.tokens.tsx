@@ -1,7 +1,10 @@
 import { Button, HStack, Image, Link, Text, VStack } from '@expo/ui/swift-ui';
 import { background, buttonStyle, clipShape, containerBackground, font, foregroundStyle, frame, lineLimit, padding } from '@expo/ui/swift-ui/modifiers';
 import { createWidget } from 'expo-widgets';
+import type { ComponentProps } from 'react';
 import type { QuickWidgetProps } from '@/lib/quickWidget';
+
+type Symbol = NonNullable<ComponentProps<typeof Image>['systemName']>;
 
 /**
  * The iPhone home-screen widget: large tiles (icon over a short label) for ride (start, pause or resume), SOS, group ride
@@ -21,7 +24,7 @@ const QuickActions = createWidget('QuickActions', (props: QuickWidgetProps, env)
   const small = family === 'systemSmall';
   const large = family === 'systemLarge' || family === 'systemExtraLarge';
   const status = !props.recording ? 'Ready to ride' : `${props.paused ? 'Paused' : 'Recording'} · ${props.km} ${props.unit} · ${props.clock}`;
-  const face = (icon: string, label: string, fill: string) => (
+  const face = (icon: Symbol, label: string, fill: string) => (
     <VStack spacing={small ? 2 : 6} modifiers={[frame({ maxWidth: Infinity, maxHeight: Infinity }), background(fill), clipShape('roundedRectangle', 16)]}>
       <Image systemName={icon} size={small ? 22 : large ? 34 : 26} color={white} />
       <Text modifiers={[font({ size: small ? 12 : 14, weight: 'bold' }), foregroundStyle(white), lineLimit(1)]}>{label}</Text>
