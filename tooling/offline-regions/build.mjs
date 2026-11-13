@@ -88,25 +88,43 @@ async function writeSearchDb(dbPath, geojsonSeqPath, stateName) {
   const insert = db.prepare('INSERT INTO places(name, alt, kind, detail, lat, lng, rank) VALUES (?,?,?,?,?,?,?)');
   let count = 0;
   let skipped = 0;
+  let firstError = null;
   db.exec('BEGIN');
-  const lines = createInterface({ input: createReadStream(geojsonSeqPath, { encoding: 'utf8' }), crlfDelay: Infinity });
-  for await (const line of lines) {
-    const text = line.replace(/^\x1e/, '').trim();
-    if (!text) continue;
-    try {
-      const feature = JSON.parse(text);
-      if (!feature.properties?.name) continue;
-      const c = feature.geometry && centre(feature.geometry);
-      if (!c) continue;
-      const row = buildRow(feature.properties, c.lat, c.lng, stateName);
-      if (!row) continue;
-      insert.run(row.name, row.alt, row.kind, row.detail, row.lat, row.lng, row.rank);
-      count++;
-    } catch {
-      skipped++;
+  try {
+    const lines = createInterface({ input: createReadStream(geojsonSeqPath, { encoding: 'utf8' }), crlfDelay: Infinity });
+    for await (const line of lines) {
+      const text = line.replace(/^\x1e/, '').trim();
+      if (!text) continue;
+      try {
+        const feature = JSON.parse(text);
+        if (!feature.properties?.name) continue;
+        const c = feature.geometry && centre(feature.geometry);
+        if (!c) continue;
+        const row = buildRow(feature.properties, c.lat, c.lng, stateName);
+        if (!row) continue;
+        insert.run(row.name, row.alt, row.kind, row.detail, row.lat, row.lng, row.rank);
+        count++;
+      } catch (e) {
+        skipped++;
+        if (!firstError) {
+          firstError = e.message;
+          console.warn(`First bad feature: ${firstError}`);
+        }
+      }
     }
+    // Zero places always fails; the 5 percent rule applies once there are enough features to judge.
+    const processed = count + skipped;
+    if (count === 0) throw new Error(`No places written (${skipped} bad features, first error: ${firstError ?? 'none'})`);
+    if (processed >= 100 && skipped / processed > 0.05) {
+      throw new Error(`Too many bad features: ${skipped} of ${processed} (first error: ${firstError})`);
+    }
+    db.exec('COMMIT');
+  } catch (e) {
+    if (db.inTransaction) db.exec('ROLLBACK');
+    db.close();
+    rmSync(dbPath, { force: true });
+    throw e;
   }
-  db.exec('COMMIT');
   if (skipped) console.warn(`Skipped ${skipped} bad features`);
   db.exec("INSERT INTO places_fts(places_fts) VALUES('rebuild')");
   db.exec('VACUUM');
@@ -161,7 +179,7 @@ async function main() {
   if (!region) throw new Error(`Unknown region "${regionId}". Known: ${regions.map((r) => r.id).join(', ')}`);
 
   const india = resolve(process.env.INDIA_PBF ?? join(here, 'cache', 'india-latest.osm.pbf'));
-  const jar = process.env.PLANETILER_JAR;
+  const jar = process.env.PLANETILER_JAR ? resolve(process.env.PLANETILER_JAR) : null;
   const outDir = resolve(process.env.OUT_DIR ?? join(here, 'out'));
   if (!existsSync(india)) throw new Error(`India extract not found at ${india} (set INDIA_PBF)`);
   if (!jar || !existsSync(jar)) throw new Error('Set PLANETILER_JAR to the planetiler.jar path');
