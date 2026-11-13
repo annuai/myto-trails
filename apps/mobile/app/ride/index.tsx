@@ -73,7 +73,7 @@ export default function RideReady() {
   const router = useRouter();
   const home = usePlaces((s) => s.home);
   const { c: colors } = useTheme();
-  const { autostart } = useLocalSearchParams<{ autostart?: string }>();
+  const { autostart, mode, checkin: checkinParam } = useLocalSearchParams<{ autostart?: string; mode?: string; checkin?: string }>();
   const running = useRecorder((s) => s.status === 'running');
   const [source, setSource] = useState<'gps' | 'sim'>('gps');
   /** A simulated ride with a made-up group riding the test route, for trying the live map, the turns and the group on one phone. */
@@ -84,10 +84,10 @@ export default function RideReady() {
   const lowBattery = useSimRide((s) => s.lowBattery);
   const mapDebug = useSimRide((s) => s.mapDebug);
   const [explain, setExplain] = useState(false);
-  const [checkinOpen, setCheckinOpen] = useState(false);
+  const [checkinOpen, setCheckinOpen] = useState(checkinParam === '1');
   const [groupOpen, setGroupOpen] = useState(false);
   // Solo or with a group. A group that is on always shows as Group; the first time this screen opens, the explainer opens over it.
-  const [together, setTogether] = useState(false);
+  const [together, setTogether] = useState(mode === 'group');
   const introDue = useGroupIntroDue();
   const [howOpen, setHowOpen] = useState(false);
   const showHow = howOpen || introDue;

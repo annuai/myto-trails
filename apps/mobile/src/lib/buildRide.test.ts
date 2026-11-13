@@ -38,6 +38,11 @@ describe('buildRide', () => {
     expect(ride.durationSec).toBe(40);
     expect(ride.breaks).toEqual([2]);
   });
+  it('counts the ground covered while paused in the distance', () => {
+    const r = { ...raw([pt(0, 0), pt(300, 30), pt(900, 120), pt(1200, 150)]), pauses: [{ from: T0 + 40_000, to: T0 + 100_000 }] };
+    expect(buildRide(r, T0 + 200_000)!.distanceKm).toBe(1.2);
+  });
+
   it('closes a pause that is still open when the ride ends, and does not subtract time after the last fix twice', () => {
     const r = { ...raw([pt(0, 0), pt(100, 10), pt(200, 20)]), pauses: [{ from: T0 + 20_000 }] };
     const ride = buildRide(r, T0 + 500_000)!;
