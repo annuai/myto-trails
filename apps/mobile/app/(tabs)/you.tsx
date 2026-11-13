@@ -127,7 +127,6 @@ export default function You() {
         <Row icon={Globe} label="Country and units" sub={`${home ? countryName(home) : 'Not set'} · ${unit === 'mi' ? 'miles' : 'kilometres'}`} onPress={() => router.push('/region')} />
         <Row icon={Contrast} label="Inverted colours" sub="Light riding screen, dark everywhere else" value={inverted ? 'On' : 'Off'} onPress={() => useAppearance.getState().setInverted(!inverted)} />
         <Row icon={Vibrate} label="Haptics" sub="Taps and vibration for checks, finished tasks and marks" value={haptics ? 'On' : 'Off'} onPress={() => useAppearance.getState().setHaptics(!haptics)} />
-        <Row icon={Cloud} label="Sync across phones" sub={sync.enabled ? (sync.lastError ?? (waitingCount(sync) > 0 ? `Waiting to sync: ${waitingCount(sync)}` : 'Up to date')) : 'Rides, trips and to-dos on every phone you sign in on'} value={sync.enabled ? 'On' : 'Off'} onPress={() => router.push('/sync')} />
         <Row icon={Bug} label="Crash reports" sub="Sends the error when the app crashes. No rides, routes or contacts; it can show roughly which city you are in" value={crashReports ? 'On' : 'Off'} onPress={() => useAppearance.getState().setCrashReports(!crashReports)} />
         {haptics ? <Row icon={Gauge} label="Speed ticks" sub="A soft tick each time your speed passes a multiple of 10, and as numbers roll" value={speedTicks ? 'On' : 'Off'} onPress={() => useAppearance.getState().setSpeedTicks(!speedTicks)} /> : null}
         <Row icon={House} label="Home and work" sub="Used for the ride home offer and to end a ride when you arrive" value={homePlace?.label ?? 'Not set'} onPress={() => router.push('/home-place')} />
@@ -146,6 +145,7 @@ export default function You() {
       <ListCard>
         <Row icon={Upload} label="Export my data" sub="One encrypted file you keep" onPress={() => router.push('/backup/export')} />
         <Row icon={Download} label="Import data" sub="From a Myto Moto backup file" onPress={() => router.push('/backup/import')} />
+        <Row icon={Cloud} label="Sync across phones" sub={sync.enabled ? (sync.lastError ?? (waitingCount(sync) > 0 ? `Waiting to sync: ${waitingCount(sync)}` : 'Up to date')) : 'Rides, trips and to-dos on every phone you sign in on'} value={sync.enabled ? 'On' : 'Off'} onPress={() => router.push('/sync')} />
       </ListCard>
       <View style={{ marginTop: space[8] }} />
       <ListCard>

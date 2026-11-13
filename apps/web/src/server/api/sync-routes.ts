@@ -10,12 +10,12 @@ const deviceOf = (v: unknown): string => {
   if (typeof v !== "string" || !DEVICE.test(v)) throw bad("deviceId is 8 to 64 letters, digits, dot, dash or underscore.");
   return v;
 };
-function dateOf(v: unknown, field: string, now: Date): Date {
+function dateOf(v: unknown, field: string, now: Date, opts: { allowOld?: boolean } = {}): Date {
   const t = typeof v === "string" ? Date.parse(v) : NaN;
   if (Number.isNaN(t)) throw bad(`${field} is an ISO date and time.`);
   // A phone with a wrong clock must not be able to win every conflict from the future, nor write the distant past.
   if (t > now.getTime() + DAY_MS) throw bad(`${field} cannot be more than a day in the future.`);
-  if (t < Date.UTC(2015, 0, 1)) throw bad(`${field} is too old.`);
+  if (!opts.allowOld && t < Date.UTC(2015, 0, 1)) throw bad(`${field} is too old.`);
   return new Date(t);
 }
 
@@ -61,7 +61,8 @@ export const syncRoutes: RouteDef[] = [
       const q = c.url.searchParams;
       const deviceId = deviceOf(q.get("deviceId"));
       const sinceRaw = q.get("since");
-      const since = sinceRaw ? dateOf(sinceRaw, "since", c.now) : null;
+      // An idle phone is handed the epoch as its cursor, so an old `since` is normal; only edit times are limited.
+      const since = sinceRaw ? dateOf(sinceRaw, "since", c.now, { allowOld: true }) : null;
       const kindsRaw = q.get("kinds");
       const kinds = kindsRaw ? kindsRaw.split(",") : [...SYNC_KINDS];
       if (!kinds.every(isSyncKind)) throw bad(`kinds are from ${SYNC_KINDS.join(", ")}.`);
