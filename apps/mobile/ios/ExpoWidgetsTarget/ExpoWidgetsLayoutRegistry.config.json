@@ -1,3 +1,8 @@
 {
-  "widgets": []
+  "widgets": [
+    {
+      "name": "QuickActions",
+      "initialLayout": "src/features/widgets/QuickActions.ios.tokens.tsx"
+    }
+  ]
 }
