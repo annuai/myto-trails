@@ -18,6 +18,7 @@ import { NudgeHost } from '@/NudgeHost';
 import { AutoEndHost } from '@/AutoEndHost';
 import { MarkHost } from '@/MarkHost';
 import { PhotoOutboxHost } from '@/PhotoOutboxHost';
+import { SyncHost } from '@/SyncHost';
 import { SubmissionQueueHost } from '@/SubmissionQueueHost';
 import { refreshFixit } from '@/fixit/content';
 import { refreshQuotes } from '@/store/quotes';
@@ -30,7 +31,9 @@ import { RideNotificationHost } from '@/RideNotificationHost';
 import { VoiceHost } from '@/VoiceHost';
 import { runRideIdMigration } from '@/lib/rideIdMigration.run';
 import { startCachePersistence } from '@/api/cachePersist.run';
+import { startCrashReporting } from '@/lib/crashReporting';
 
+startCrashReporting();
 void SplashScreen.preventAutoHideAsync();
 
 // Web build only. A phone app does not select text when you press and hold a button, so the browser build should not either.
@@ -76,6 +79,7 @@ export default function Root() {
       <CompanionHost />
       <SubmissionQueueHost />
       <PhotoOutboxHost />
+      <SyncHost />
       <NudgeHost />
       <AutoEndHost />
       <ResumeHost />

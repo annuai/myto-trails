@@ -25,6 +25,8 @@ import { useRides } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { useTrailStore } from '@/store/trails';
 import { useTrips } from '@/store/trips';
+import { eraseCloudCopy } from '@/api/sync';
+import { resetSync } from '@/store/sync';
 
 /**
  * Erase all my data: everything this app keeps on the phone, and what is on the server because of it. An open check-in is closed (so
@@ -34,6 +36,9 @@ export function eraseEverything(token: string | null) {
   const checkin = useCompanion.getState().checkin;
   if (token && checkin) void arriveCheckin(token, checkin.id).catch(() => undefined);
   if (token) for (const r of useMyRoutes.getState().routes) if (r.sharedUrl) void deleteSharedRoute(token, sharedIdOf(r.sharedUrl)).catch(() => undefined);
+  // The cloud copy goes with the phone's data (the rider asked for everything to be erased); the phone forgets it ever synced.
+  if (token) void eraseCloudCopy(token).catch(() => undefined);
+  resetSync();
   eraseDocumentPhotos();
   useJournal.getState().wipe();
   useMarks.getState().wipe();
