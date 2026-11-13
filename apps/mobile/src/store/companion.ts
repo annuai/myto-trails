@@ -5,6 +5,7 @@ import type { GroupCapacity, GroupRegroup } from '@/api/groups';
 import type { GroupRiderView, GroupStatus } from '@/lib/groupCore';
 import type { Outbox } from '@/lib/conditions';
 import type { CardFormat, CardStat } from '@/lib/rideCard';
+import type { OverlayInk, PhotoLayout } from '@/lib/photoCard';
 import { DEFAULT_STATS } from '@/lib/rideCard';
 import { storage } from './persist';
 
@@ -20,7 +21,7 @@ type State = {
   group: GroupSession | null;
   /** Condition reports waiting for a signal. */
   outbox: Outbox;
-  card: { format: CardFormat; stats: CardStat[] };
+  card: { format: CardFormat; stats: CardStat[]; layout: PhotoLayout; ink: OverlayInk };
   /** Pause the ride by itself after a long stop (opt-in). */
   autoPause: boolean;
   /** End the ride by itself on arrival at Home or Work (opt-in). */
@@ -42,12 +43,20 @@ type State = {
   wipe: () => void;
 };
 
+const defaultCard = (): State['card'] => ({ format: 'story', stats: DEFAULT_STATS, layout: 'bar', ink: 'light' });
+
+/** Rebuild the stored state on load: a card saved by an older build has no layout or ink, so it gets the defaults here, once. */
+export function mergeCompanion(saved: unknown, current: State): State {
+  const p = saved as Partial<State> | undefined;
+  return { ...current, ...p, card: { ...current.card, ...p?.card }, group: p?.group?.id === SIM_GROUP_ID ? null : p?.group ?? current.group };
+}
+
 const noLive: Live = { riders: [], regroup: null, myStatus: 'ok' };
 
 export const useCompanion = create<State>()(
   persist(
     (set) => ({
-      checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, autoEnd: false, batterySaver: true, live: noLive,
+      checkin: null, group: null, outbox: [], card: defaultCard(), autoPause: false, autoEnd: false, batterySaver: true, live: noLive,
       setCheckin: (checkin) => set({ checkin }),
       setGroup: (group) => set({ group, live: noLive }),
       setOutbox: (outbox) => set({ outbox }),
@@ -57,13 +66,13 @@ export const useCompanion = create<State>()(
       setBatterySaver: (batterySaver) => set({ batterySaver }),
       setLive: (l) => set((s) => ({ live: { ...s.live, ...l } })),
       setGroupRole: (role) => set((s) => (s.group ? { group: { ...s.group, role } } : s)),
-      wipe: () => set({ checkin: null, group: null, outbox: [], card: { format: 'story', stats: DEFAULT_STATS }, autoPause: false, autoEnd: false, batterySaver: true, live: noLive }),
+      wipe: () => set({ checkin: null, group: null, outbox: [], card: defaultCard(), autoPause: false, autoEnd: false, batterySaver: true, live: noLive }),
     }),
     {
       name: 'myto-companion', storage,
       // A simulated group ride is only for the test in front of the rider: it is never kept, and one left in storage by an older build is dropped.
       partialize: (s) => ({ checkin: s.checkin, group: s.group?.id === SIM_GROUP_ID ? null : s.group, outbox: s.outbox, card: s.card, autoPause: s.autoPause, autoEnd: s.autoEnd, batterySaver: s.batterySaver }),
-      merge: (saved, current) => { const p = saved as Partial<State> | undefined; return { ...current, ...p, group: p?.group?.id === SIM_GROUP_ID ? null : p?.group ?? current.group }; },
+      merge: mergeCompanion,
     },
   ),
 );
