@@ -67,3 +67,16 @@ export function applyPan(prev: Placement, changeX: number, changeY: number, show
 export function applyPinch(prev: Placement, startScale: number, factor: number, box: Size, card: Size): Placement {
   return pinchPlacement({ ...prev, scale: startScale }, factor, box, card);
 }
+
+/** After a format change: the same centre and scale, kept inside the new card (a moved overlay is not reset). */
+export function placementAfterFormatChange(p: Placement, box: Size, nextCard: Size): Placement {
+  return clampPlacement(p, box, nextCard);
+}
+
+/**
+ * The placement to draw: the layout's default until the rider moves the overlay (`stored` null), then theirs, kept inside the
+ * card for the current box (more stats or Hide route change the box's size, so a moved overlay is clamped again).
+ */
+export function currentPlacement(stored: Placement | null, layout: PhotoLayout, box: Size, card: Size): Placement {
+  return stored ? clampPlacement(stored, box, card) : defaultPlacement(layout, card, box);
+}

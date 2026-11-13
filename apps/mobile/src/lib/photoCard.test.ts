@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CARD_SIZE, type CardFormat } from './rideCard';
 import { CARD_PAD } from './cardMap';
-import { PLACEMENT_LIMITS, clampPlacement, defaultPlacement, dragPlacement, overlayBox, pinchPlacement, toPictureDelta, applyPan, applyPinch } from './photoCard';
+import { PLACEMENT_LIMITS, clampPlacement, defaultPlacement, dragPlacement, overlayBox, pinchPlacement, toPictureDelta, applyPan, applyPinch, placementAfterFormatChange, currentPlacement } from './photoCard';
 
 const card = CARD_SIZE.story;
 const stat = { key: 'distance', label: 'Distance', parts: [] } as const;
@@ -140,5 +140,37 @@ describe('applyPan and applyPinch', () => {
     expect(pinched.x).toBe(panned.x);
     expect(pinched.y).toBe(panned.y);
     expect(pinched.scale).toBe(1.5);
+  });
+});
+
+describe('placementAfterFormatChange', () => {
+  const square = CARD_SIZE.square;
+  it('keeps a bar placement unchanged from square to story (the fractions still fit)', () => {
+    const p = defaultPlacement('bar', square, bar);
+    expect(placementAfterFormatChange(p, bar, card)).toEqual(p);
+  });
+  it('clamps a low bar placement from story into the shorter square', () => {
+    const next = placementAfterFormatChange({ x: 0.5, y: 0.95, scale: 1 }, bar, square);
+    expect(next).toEqual({ x: 0.5, y: 1 - 150 / 1080, scale: 1 });
+    expect(inside(next, bar, square)).toBe(true);
+  });
+});
+
+describe('currentPlacement', () => {
+  it('is the layout default when the rider has not moved the overlay', () => {
+    expect(currentPlacement(null, 'corner', bar, card)).toEqual(defaultPlacement('corner', card, bar));
+  });
+  it('re-clamps a moved overlay when more stats make the corner box taller', () => {
+    const two = overlayBox('corner', { stats: [stat, stat] as never, route: [{ x: 0, y: 0 }] });
+    const four = overlayBox('corner', { stats: [stat, stat, stat, stat] as never, route: [{ x: 0, y: 0 }] });
+    const low = { x: 0.5, y: 1 - two.height / 2 / card.height, scale: 1 };
+    const next = currentPlacement(low, 'corner', four, card);
+    expect(next.y).toBeCloseTo(1 - four.height / 2 / card.height);
+    expect(inside(next, four, card)).toBe(true);
+  });
+  it('keeps a moved bar where it is when Hide route makes the box shorter', () => {
+    const plain = overlayBox('bar', { stats: [], route: null });
+    const p = { x: 0.5, y: 0.6, scale: 1.4 };
+    expect(currentPlacement(p, 'bar', plain, card)).toEqual(p);
   });
 });
