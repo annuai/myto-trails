@@ -31,7 +31,7 @@ import { RideNotificationHost } from '@/RideNotificationHost';
 import { VoiceHost } from '@/VoiceHost';
 import { runRideIdMigration } from '@/lib/rideIdMigration.run';
 import { startCachePersistence } from '@/api/cachePersist.run';
-import { startCrashReporting } from '@/lib/crashReporting';
+import { startCrashReporting, withCrashReporting } from '@/lib/crashReporting';
 
 startCrashReporting();
 void SplashScreen.preventAutoHideAsync();
@@ -45,7 +45,7 @@ const WEB_BASE_CSS = `
   [role=button], [role=tab], [role=checkbox], [role=link] { touch-action: manipulation; }
 `;
 
-export default function Root() {
+function Root() {
   const { width, height } = useWindowDimensions();
   useEffect(() => {
     if (Platform.OS !== 'web' || document.getElementById('myto-web-base')) return;
@@ -109,3 +109,5 @@ export default function Root() {
     </GestureHandlerRootView>
   );
 }
+
+export default withCrashReporting(Root);

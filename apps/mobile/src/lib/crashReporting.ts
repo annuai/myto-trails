@@ -1,18 +1,23 @@
+import type React from 'react';
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { scrubCrashEvent } from '@moto-trails/domain';
 import { useAppearance } from '@/store/appearance';
 
 /**
- * Starts crash reporting. Off without EXPO_PUBLIC_SENTRY_DSN (development, tests). Every report is scrubbed of personal data
+ * Starts crash reporting. Off in a development build and without EXPO_PUBLIC_SENTRY_DSN, so running the app from Xcode or Metro never fills
+ * the real project with the developer's own errors. Every report is scrubbed of personal data
  * (`scrubCrashEvent`) and dropped when the rider has turned "Crash reports" off, checked when the report is made, so the switch
  * works at once.
  */
-export function startCrashReporting(dsn: string | undefined = process.env.EXPO_PUBLIC_SENTRY_DSN): boolean {
-  if (!dsn?.trim()) return false;
+const isDevBuild = () => typeof __DEV__ !== 'undefined' && __DEV__;
+
+export function startCrashReporting(dsn: string | undefined = process.env.EXPO_PUBLIC_SENTRY_DSN, dev: boolean = isDevBuild()): boolean {
+  if (dev || !dsn?.trim()) return false;
   Sentry.init({
     dsn: dsn.trim(),
     release: Constants.expoConfig?.version,
+    environment: 'production',
     sendDefaultPii: false,
     tracesSampleRate: 0,
     enableAutoSessionTracking: false,
@@ -23,3 +28,6 @@ export function startCrashReporting(dsn: string | undefined = process.env.EXPO_P
   });
   return true;
 }
+
+/** Wraps the root component so an error a screen throws is reported before the app's error screen replaces it. A no-op while reporting is off. */
+export const withCrashReporting = <T extends React.ComponentType<any>>(root: T): T => Sentry.wrap(root) as unknown as T;
