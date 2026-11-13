@@ -13,7 +13,17 @@ describe('classifyPlace', () => {
     expect(classifyPlace({ natural: 'peak' })).toEqual({ kind: 'peak', rank: 55 });
     expect(classifyPlace({ tourism: 'attraction' })).toEqual({ kind: 'landmark', rank: 40 });
     expect(classifyPlace({ tourism: 'viewpoint' })).toEqual({ kind: 'landmark', rank: 40 });
-    expect(classifyPlace({ natural: 'beach' })).toEqual({ kind: 'landmark', rank: 40 });
+  });
+  it('ranks suburbs, districts and localities', () => {
+    for (const place of ['suburb', 'neighbourhood']) expect(classifyPlace({ place })).toEqual({ kind: 'suburb', rank: 35 });
+    for (const place of ['county', 'district', 'region', 'state_district']) expect(classifyPlace({ place })).toEqual({ kind: 'district', rank: 70 });
+    for (const place of ['locality', 'island']) expect(classifyPlace({ place })).toEqual({ kind: 'landmark', rank: 40 });
+  });
+  it('counts water and beaches only with a wikidata or wikipedia tag', () => {
+    expect(classifyPlace({ natural: 'beach' })).toBeNull();
+    expect(classifyPlace({ natural: 'water' })).toBeNull();
+    expect(classifyPlace({ natural: 'water', wikidata: 'Q1' })).toEqual({ kind: 'landmark', rank: 40 });
+    expect(classifyPlace({ natural: 'beach', wikipedia: 'en:Palolem' })).toEqual({ kind: 'landmark', rank: 40 });
   });
   it('ignores everything else', () => {
     expect(classifyPlace({ highway: 'residential' })).toBeNull();
@@ -44,5 +54,9 @@ describe('buildRow', () => {
     );
     expect(row?.alt).toBe('Mysore ಮೈಸೂರು');
     expect(row?.detail).toBe('Karnataka');
+  });
+  it('takes the other Indian scripts as alt names, deduplicated', () => {
+    const row = buildRow({ place: 'city', name: 'Mysuru', 'name:ml': 'മൈസൂർ', 'name:hi': 'मैसूर', 'name:ta': 'மைசூர்', 'name:ur': 'मैसूर', 'name:or': 'ମାଇସୁର' }, 12.3, 76.6, 'Karnataka');
+    expect(row?.alt).toBe('മൈസൂർ मैसूर மைசூர் ମାଇସୁର');
   });
 });

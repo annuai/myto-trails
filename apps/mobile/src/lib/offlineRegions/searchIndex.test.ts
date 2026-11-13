@@ -9,10 +9,15 @@ describe('ftsQuery', () => {
     expect(ftsQuery('mys')).toBe('"mys"*');
     expect(ftsQuery('coorg  hills')).toBe('"coorg" "hills"*');
   });
-  it('strips FTS operators from inside tokens', () => {
+  it('splits on FTS operators and punctuation like the index does', () => {
     const q = ftsQuery('a"b*(c)-d:e')!;
-    expect(q).toBe('"abcde"*');
-    expect(q.slice(1, -2)).not.toMatch(/["*():-]/);
+    expect(q).toBe('"a" "b" "c" "d" "e"*');
+    expect(q.replace(/"[^"]*"\*?/g, '').trim()).toBe('');
+  });
+  it('splits on hyphen, apostrophe and dot', () => {
+    expect(ftsQuery('Hosa-halli')).toBe('"Hosa" "halli"*');
+    expect(ftsQuery("St. Mary's")).toBe('"St" "Mary" "s"*');
+    expect(ftsQuery('k.r.nagar')).toBe('"k" "r" "nagar"*');
   });
   it('is null when nothing is searchable', () => {
     for (const t of ['', '   ', '"*', '()-:', '***']) expect(ftsQuery(t)).toBeNull();

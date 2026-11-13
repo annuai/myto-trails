@@ -8,11 +8,11 @@ export type PlaceRow = { name: string; detail: string | null; lat: number; lng: 
 export const rowToPlace = (r: PlaceRow): Place => ({ name: r.name, detail: r.detail ?? '', point: { lat: r.lat, lng: r.lng } });
 
 /**
- * An FTS5 MATCH string for what the rider typed. Every token is reduced to letters, digits and marks (so `"`, `*`, `-`, `:`, `(`, `)` can never reach FTS5 as syntax),
- * quoted, and the last one gets a prefix star. Null when nothing searchable is left.
+ * An FTS5 MATCH string for what the rider typed. Every run of anything but letters, digits and marks becomes a space (the index's unicode61 tokenizer splits there too, so "Hosa-halli" is two tokens
+ * and `"`, `*`, `-`, `:`, `(`, `)` can never reach FTS5 as syntax), then each token is quoted, and the last one gets a prefix star. Null when nothing searchable is left.
  */
 export function ftsQuery(text: string): string | null {
-  const tokens = text.split(/\s+/).map((t) => t.replace(/[^\p{L}\p{N}\p{M}]/gu, '')).filter((t) => t.length > 0);
+  const tokens = text.replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ').split(' ').filter((t) => t.length > 0);
   if (tokens.length === 0) return null;
   return tokens.map((t, i) => (i === tokens.length - 1 ? `"${t}"*` : `"${t}"`)).join(' ');
 }

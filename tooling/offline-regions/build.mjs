@@ -200,7 +200,7 @@ async function main() {
   runIn(outDir, 'java', ['-Xmx4g', '-jar', jar, `--osm-path=${regionPbf}`, `--output=${mapFile}`, `--maxzoom=${maxzoom}`, '--download', '--force']);
   // (c) places
   run('osmium', ['tags-filter', '--overwrite', '-o', placesPbf, regionPbf,
-    'nwr/place=city,town,village,hamlet', 'nwr/natural=peak,saddle,beach,water', 'nwr/tourism=attraction,viewpoint']);
+    'nwr/place=city,town,village,hamlet,suburb,neighbourhood,county,district,region,state_district,locality,island', 'nwr/natural=peak,saddle,beach,water', 'nwr/tourism=attraction,viewpoint']);
   run('osmium', ['export', '--overwrite', '-f', 'geojsonseq', '-o', placesJson, placesPbf]);
   const count = await writeSearchDb(searchFile, placesJson, region.name);
   console.log(`Wrote ${count} places to ${searchFile}`);
