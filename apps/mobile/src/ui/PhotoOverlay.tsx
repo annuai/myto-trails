@@ -31,10 +31,10 @@ function Drawing({ model, layout, color, w, h, shadow }: { model: CardModel; lay
   let statTop = 0;
   if (model.route) {
     // A route sits above the stats and fills its area without stretching: a wide strip on the bar, a block in the corner.
-    const room = { w, h: bar ? L.bar.routeHeight - L.barStats : L.corner.routeHeight };
+    const room = { w, h: bar ? L.bar.routeHeight - L.bar.plainHeight : L.corner.routeHeight };
     const area = { w: room.w - 2 * L.routePad, h: room.h - 2 * L.routePad };
     const fit = model.routeAspect >= area.w / area.h ? { w: area.w, h: area.w / model.routeAspect } : { w: area.h * model.routeAspect, h: area.h };
-    routeBox = { x: (w - fit.w) / 2, y: L.routePad + (area.h - fit.h) / 2, ...fit };
+    routeBox = { x: bar ? (w - fit.w) / 2 : 0, y: L.routePad + (area.h - fit.h) / 2, ...fit };
     statTop = room.h;
   }
   const pts = routeBox && model.route ? model.route.map((p) => `${(routeBox.x + p.x * routeBox.w).toFixed(1)},${(routeBox.y + p.y * routeBox.h).toFixed(1)}`).join(' ') : null;
