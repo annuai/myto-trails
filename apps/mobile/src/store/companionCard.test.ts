@@ -15,7 +15,7 @@ describe('companion card', () => {
   it('setCard({ format, stats }) keeps the remembered layout and ink', () => {
     useCompanion.getState().setCard({ layout: 'corner', ink: 'dark' });
     useCompanion.getState().setCard({ format: 'post', stats: ['time'] });
-    expect(useCompanion.getState().card).toEqual({ format: 'post', stats: ['time'], layout: 'corner', ink: 'dark' });
+    expect(useCompanion.getState().card).toEqual({ format: 'post', stats: ['time'], layout: 'corner', ink: 'dark', redRoute: false });
   });
   it('wipe restores the defaults', () => {
     useCompanion.getState().setCard({ layout: 'corner', ink: 'dark', format: 'square' });
@@ -24,22 +24,31 @@ describe('companion card', () => {
   });
   it('a card saved by an older build rehydrates with the defaults', () => {
     const out = mergeCompanion({ card: { format: 'post', stats: ['time'] } }, useCompanion.getState());
-    expect(out.card).toEqual({ format: 'post', stats: ['time'], layout: 'bar', ink: 'light' });
+    expect(out.card).toEqual({ format: 'post', stats: ['time'], layout: 'bar', ink: 'light', redRoute: false });
   });
   it('a saved card with a layout and ink keeps them', () => {
     const out = mergeCompanion({ card: { format: 'story', stats: [], layout: 'corner', ink: 'dark' } }, useCompanion.getState());
     expect(out.card).toMatchObject({ layout: 'corner', ink: 'dark' });
   });
-  const DEFAULTS = { format: 'story', stats: ['distance', 'time', 'topSpeed'], layout: 'bar', ink: 'light' };
+  it('the red route is off at first, can be turned on, and is remembered', () => {
+    expect(useCompanion.getState().card.redRoute).toBe(false);
+    useCompanion.getState().setCard({ redRoute: true });
+    expect(useCompanion.getState().card.redRoute).toBe(true);
+    expect(mergeCompanion({ card: { format: 'story', stats: [], redRoute: true } }, useCompanion.getState()).card.redRoute).toBe(true);
+  });
+  it('a saved red route that is not true or false falls back to off', () => {
+    expect(mergeCompanion({ card: { format: 'story', stats: [], redRoute: 'yes' } }, useCompanion.getState()).card.redRoute).toBe(false);
+  });
+  const DEFAULTS = { format: 'story', stats: ['distance', 'time', 'topSpeed'], layout: 'bar', ink: 'light', redRoute: false };
   const merged = (saved: unknown) => mergeCompanion(saved, useCompanion.getState());
   it.each([[undefined], [null], ['abc'], [[]], [42]])('a saved card of %j falls back to the defaults', (card) => {
     expect(merged({ card }).card).toEqual(DEFAULTS);
   });
   it('an unknown layout keeps a valid format', () => {
-    expect(merged({ card: { format: 'square', stats: ['time'], layout: 'wide', ink: 'dark' } }).card).toEqual({ format: 'square', stats: ['time'], layout: 'bar', ink: 'dark' });
+    expect(merged({ card: { format: 'square', stats: ['time'], layout: 'wide', ink: 'dark' } }).card).toEqual({ format: 'square', stats: ['time'], layout: 'bar', ink: 'dark', redRoute: false });
   });
   it('an unknown format keeps valid stats', () => {
-    expect(merged({ card: { format: 'banner', stats: ['elevation'], layout: 'corner', ink: 'light' } }).card).toEqual({ format: 'story', stats: ['elevation'], layout: 'corner', ink: 'light' });
+    expect(merged({ card: { format: 'banner', stats: ['elevation'], layout: 'corner', ink: 'light' } }).card).toEqual({ format: 'story', stats: ['elevation'], layout: 'corner', ink: 'light', redRoute: false });
     expect(merged({ card: { format: 'toString', stats: ['time'] } }).card.format).toBe('story');
   });
   it('drops unknown stats, and falls back when none are left or stats is not an array', () => {
@@ -61,6 +70,6 @@ describe('companion card', () => {
     vi.doMock('./persist', () => ({ storage: createJSONStorage(() => ({ getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v), removeItem: (k: string) => void mem.delete(k) })) }));
     mem.set('myto-companion', JSON.stringify({ state: { card: { format: 'post', stats: ['time'] } }, version: 0 }));
     const { useCompanion: fresh } = await import('./companion');
-    expect(fresh.getState().card).toEqual({ format: 'post', stats: ['time'], layout: 'bar', ink: 'light' });
+    expect(fresh.getState().card).toEqual({ format: 'post', stats: ['time'], layout: 'bar', ink: 'light', redRoute: false });
   });
 });

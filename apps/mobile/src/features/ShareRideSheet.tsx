@@ -165,13 +165,14 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
       {STATS.map((s) => <ChoiceChip key={s.key} label={s.label} selected={card.stats.includes(s.key)} onPress={() => toggle(s.key)} />)}
       <ChoiceChip label="Hide route" selected={hideRoute} onPress={() => setHideRoute(!hideRoute)} />
+      <ChoiceChip label="Red route" selected={card.redRoute} onPress={() => useCompanion.getState().setCard({ redRoute: !card.redRoute })} />
       {tooShort ? <ChoiceChip label="Show whole route" selected={fullRoute} onPress={() => setFullRoute(!fullRoute)} /> : null}
     </View>
   );
 
   const cardMode = (
     <>
-      <View style={{ alignItems: 'center' }}><RideCard key={`p${mapKey}`} model={model} width={PREVIEW_W} map={map} /></View>
+      <View style={{ alignItems: 'center' }}><RideCard key={`p${mapKey}`} model={model} width={PREVIEW_W} map={map} redRoute={card.redRoute} /></View>
       {shortCaption}
       {formatChips}
       {statChips}
@@ -182,7 +183,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
   const photoMode = photo ? (
     <>
       <View style={{ alignItems: 'center' }}>
-        <PhotoComposer model={model} photo={photo.picked} layout={card.layout} ink={card.ink} placement={placed} onPlacement={setPlacement} onActive={setDragging} width={PREVIEW_W} />
+        <PhotoComposer model={model} photo={photo.picked} layout={card.layout} ink={card.ink} redRoute={card.redRoute} placement={placed} onPlacement={setPlacement} onActive={setDragging} width={PREVIEW_W} />
       </View>
       {shortCaption}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2], justifyContent: 'center' }}>
@@ -219,7 +220,7 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
       {/* The picture that is saved is drawn at its full size, off screen, so it is sharp whatever the preview's size. */}
       {mode === 'card' ? (
         <View pointerEvents="none" style={{ position: 'absolute', left: -full.width - 50, top: 0 }}>
-          <RideCard key={`f${mapKey}`} ref={fullRef} model={model} width={full.width} map={map} onMapReady={() => setReadyKey(mapKey)} />
+          <RideCard key={`f${mapKey}`} ref={fullRef} model={model} width={full.width} map={map} redRoute={card.redRoute} onMapReady={() => setReadyKey(mapKey)} />
         </View>
       ) : null}
       {/* Photo mode saves the photo card, or the overlay alone at scale 1 with nothing behind it, so the PNG stays transparent. */}
@@ -233,10 +234,11 @@ export function ShareRideSheet({ ride, open, onClose }: { ride: Ride; open: bool
             photo={photo.picked}
             layout={card.layout}
             ink={card.ink}
+            redRoute={card.redRoute}
             placement={placed}
             onReady={(ok) => (ok ? setLoadedUri(photo.picked.uri) : setFailedUri(photo.picked.uri))}
           />
-          <PhotoOverlay ref={overlayRef} model={model} layout={card.layout} ink={card.ink} width={box.width} />
+          <PhotoOverlay ref={overlayRef} model={model} layout={card.layout} ink={card.ink} redRoute={card.redRoute} width={box.width} />
         </View>
       ) : null}
     </Sheet>

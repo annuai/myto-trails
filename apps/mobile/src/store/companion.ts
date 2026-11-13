@@ -21,7 +21,7 @@ type State = {
   group: GroupSession | null;
   /** Condition reports waiting for a signal. */
   outbox: Outbox;
-  card: { format: CardFormat; stats: CardStat[]; layout: PhotoLayout; ink: OverlayInk };
+  card: { format: CardFormat; stats: CardStat[]; layout: PhotoLayout; ink: OverlayInk; /** The route line in the signature red. */ redRoute: boolean };
   /** Pause the ride by itself after a long stop (opt-in). */
   autoPause: boolean;
   /** End the ride by itself on arrival at Home or Work (opt-in). */
@@ -43,7 +43,7 @@ type State = {
   wipe: () => void;
 };
 
-const defaultCard = (): State['card'] => ({ format: 'story', stats: DEFAULT_STATS, layout: 'bar', ink: 'light' });
+const defaultCard = (): State['card'] => ({ format: 'story', stats: DEFAULT_STATS, layout: 'bar', ink: 'light', redRoute: false });
 
 const CARD_STATS: CardStat[] = ['distance', 'time', 'topSpeed', 'waypoints', 'elevation'];
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -58,6 +58,7 @@ function cleanCard(saved: unknown): State['card'] {
     stats: stats.length ? stats : d.stats,
     layout: saved.layout === 'bar' || saved.layout === 'corner' ? saved.layout : d.layout,
     ink: saved.ink === 'light' || saved.ink === 'dark' ? saved.ink : d.ink,
+    redRoute: typeof saved.redRoute === 'boolean' ? saved.redRoute : d.redRoute,
   };
 }
 

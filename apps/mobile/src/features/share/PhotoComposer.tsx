@@ -10,7 +10,7 @@ import { PhotoCard } from '@/ui/PhotoCard';
  * The photo card with the overlay the rider can drag and pinch. Gestures report screen pixels; they are turned into
  * picture pixels, and the placement helpers keep the overlay inside the picture, so nothing here clamps.
  */
-export function PhotoComposer({ model, photo, layout, ink, placement, onPlacement, onActive, width }: { model: CardModel; photo: PickedPhoto; layout: PhotoLayout; ink: OverlayInk; placement: Placement; onPlacement: (p: Placement) => void; /** True while a finger drags or pinches the overlay (so the screen can stop scrolling), false when it lets go. */ onActive?: (active: boolean) => void; width: number }) {
+export function PhotoComposer({ model, photo, layout, ink, redRoute, placement, onPlacement, onActive, width }: { model: CardModel; photo: PickedPhoto; layout: PhotoLayout; ink: OverlayInk; redRoute?: boolean; placement: Placement; onPlacement: (p: Placement) => void; /** True while a finger drags or pinches the overlay (so the screen can stop scrolling), false when it lets go. */ onActive?: (active: boolean) => void; width: number }) {
   const height = (width * model.height) / model.width;
   const box = useMemo(() => overlayBox(layout, model), [layout, model]);
   const card = useMemo(() => ({ width: model.width, height: model.height }), [model.width, model.height]);
@@ -37,7 +37,7 @@ export function PhotoComposer({ model, photo, layout, ink, placement, onPlacemen
 
   return (
     <GestureDetector gesture={gesture}>
-      <PhotoCard model={model} width={width} photo={photo} layout={layout} ink={ink} placement={placement} />
+      <PhotoCard model={model} width={width} photo={photo} layout={layout} ink={ink} redRoute={redRoute} placement={placement} />
     </GestureDetector>
   );
 }
