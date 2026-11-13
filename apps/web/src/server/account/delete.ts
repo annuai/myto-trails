@@ -2,6 +2,7 @@ import { DELETE_CONFIRMATION } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
 import type { StorageBucket, StorageProvider } from "../storage";
 import { photoCopyKeys } from "../community/photo-shared";
+import { trackKeys } from "../sync/sync";
 
 type Db = Sql | TransactionSql;
 
@@ -87,6 +88,9 @@ export async function deleteAccount(sql: Sql, storage: StorageProvider, userId: 
       update media set credit = null
       where credit = ${user.display_name as string}
         and (uploaded_by = ${userId} or revision_id in (select revision_id from submission where user_id = ${userId} and revision_id is not null))`;
+
+    // Synced ride tracks. The records follow the account (cascade); the files are removed after the commit like the rest.
+    for (const key of await trackKeys(tx, userId)) doomed.push({ bucket: "originals", key });
 
     // Their club photos (three public files each) go with them; the rows follow the account.
     for (const a of await tx`select stem from asset where owner_id = ${userId}`) {

@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { isCronRequest } from "@/server/api/cron-auth";
+import { recordHeartbeat } from "@/server/api/heartbeat";
 import { getEmailSender } from "@/server/auth/session";
 import { getSql } from "@/server/db/client";
 import { sweepCheckins } from "@/server/rides/checkins";
@@ -16,5 +17,7 @@ export async function GET(request: Request) {
   const now = new Date();
   const sql = getSql();
   const checkins = await sweepCheckins(sql, getEmailSender(), now);
-  return Response.json({ ...checkins, groupRidesEnded: await sweepGroupRides(sql, now) });
+  const groupRidesEnded = await sweepGroupRides(sql, now);
+  await recordHeartbeat(sql, "checkins");
+  return Response.json({ ...checkins, groupRidesEnded });
 }

@@ -17,6 +17,9 @@ Until then the club feed refreshes when the screen opens and while it stays open
 
 ## Other open items
 
+- **Crash reporting needs a DSN:** the code is in (web `SENTRY_DSN`, phone `EXPO_PUBLIC_SENTRY_DSN`, off while unset). Create the Sentry projects, set both, rebuild the phone app (native module), and add source-map upload at build time. The Sentry CLI install was not completed (the installer download was reset).
+- **Apply migrations 0049 (sweep heartbeat) and 0050 (sync, and the `sync` token scope) to Supabase** before deploying; sign-in fails against the old scope check otherwise. After deploying, the check-in workflow's watchdog step stays red until the first sweep has run.
+
 - **Rider story:** Before standing is useful in production, set `CRON_SECRET` on Vercel (the rollup needs it; migration 0048 is applied). More Pillion poses (helmet, chai stall, rain) are P1; see `apps/mobile/assets/pillion/README.md`. Move cells to districts for a district once it has 20 opted-in riders (`ride_summary` stores a 1-degree cell, so district challenges cannot be counted yet).
 - **R2 lifecycle rule:** expire objects in the `quarantine` bucket after one day. Photos that were sent but never posted leave nothing in the database for the purge to find.
 - **Custom domain for the public bucket** behind Cloudflare, so photos are cached at the edge (the `r2.dev` address is rate limited and not for production). Set `R2_PUBLIC_BASE_URL` to it.
