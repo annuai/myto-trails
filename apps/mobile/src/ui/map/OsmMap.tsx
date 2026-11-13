@@ -15,6 +15,7 @@ import { ClusterList, ClusterPin, DestinationPin, HeadingPointer, RiderPin } fro
 import { heatLineLayout, heatPaints } from './heat.tokens';
 import { heatDotFeatures, heatLineFeatures } from '@/lib/heat';
 import { mapStyleUrl, ROUTE_COLOR, TRACK_COLOR } from './style';
+import { useMapStyle } from '@/lib/offlineRegions/useMapStyle';
 import { trackFeature } from './geojson';
 import { useMapDark } from './useMapDark';
 import { useMapStart } from './useMapStart';
@@ -89,6 +90,12 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
     const lngs = all.map((p) => p.lng), lats = all.map((p) => p.lat);
     return [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)] as [number, number, number, number];
   }, [route, track, heat]);
+  // Offline regions: the map opens on the local style when its first view is inside a downloaded region (decided once, see useMapStyle); a style that fails to load falls back to the online one.
+  const [styleFailed, setStyleFailed] = useState(false);
+  const mid = (b: [number, number, number, number]) => ({ lng: (b[0] + b[2]) / 2, lat: (b[1] + b[3]) / 2 });
+  const initialCenter = pickFrom ?? route?.[0] ?? position ?? (bounds ? mid(bounds) : start.kind === 'bounds' ? mid(start.bounds) : { lng: start.center[0], lat: start.center[1] });
+  const composed = useMapStyle(dark, initialCenter);
+  const mapStyle = styleFailed ? mapStyleUrl(dark) : composed;
   // The camera's first view can be set before the map has its size, which leaves it on the wrong spot with no line in sight. Fit again once the map is drawn, and whenever the route changes.
   const coverTop = covered?.top ?? 0, coverBottom = covered?.bottom ?? 0, coverLeft = covered?.left ?? 0;
   // What floats over the map is kept out of the view in one of two ways. On iPhone the map's own inset: its centre and the point it turns about are both the middle of what is left,
@@ -142,7 +149,7 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
   return (
     <GestureDetector gesture={pinch}>
     <View onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })} style={{ height: height === 'fill' ? undefined : height, flex: height === 'fill' ? 1 : undefined, borderRadius: radius, overflow: 'hidden' }}>
-      <Map mapStyle={mapStyleUrl(dark)} attribution={interactive} logo={interactive} attributionPosition={{ bottom: ornamentBottom, right: space[2] }} logoPosition={{ bottom: ornamentBottom, left: (insetMap ? 0 : coverLeft) + space[2] }} contentInset={inset} onDidFinishLoadingMap={fit} onRegionWillChange={(e) => { if (e.nativeEvent.userInteraction && follow) setFollowing(false); }} onRegionIsChanging={(e) => readBearing(e.nativeEvent.bearing)} onRegionDidChange={(e) => { onCenter?.({ lng: e.nativeEvent.center[0], lat: e.nativeEvent.center[1] }); setZoom(e.nativeEvent.zoom); bearingAt.current = 0; readBearing(e.nativeEvent.bearing); if (e.nativeEvent.userInteraction && follow) setFollowing(false); }} compassPosition={{ top: size.compact + space[4], right: space[3] }} style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive && !(follow && following)} doubleTapZoom={interactive && !(follow && following)} onPress={onTap ? (e) => onTap({ lat: e.nativeEvent.lngLat[1], lng: e.nativeEvent.lngLat[0] }) : undefined}>
+      <Map mapStyle={mapStyle} onDidFailLoadingMap={() => setStyleFailed(true)} attribution={interactive} logo={interactive} attributionPosition={{ bottom: ornamentBottom, right: space[2] }} logoPosition={{ bottom: ornamentBottom, left: (insetMap ? 0 : coverLeft) + space[2] }} contentInset={inset} onDidFinishLoadingMap={fit} onRegionWillChange={(e) => { if (e.nativeEvent.userInteraction && follow) setFollowing(false); }} onRegionIsChanging={(e) => readBearing(e.nativeEvent.bearing)} onRegionDidChange={(e) => { onCenter?.({ lng: e.nativeEvent.center[0], lat: e.nativeEvent.center[1] }); setZoom(e.nativeEvent.zoom); bearingAt.current = 0; readBearing(e.nativeEvent.bearing); if (e.nativeEvent.userInteraction && follow) setFollowing(false); }} compassPosition={{ top: size.compact + space[4], right: space[3] }} style={{ flex: 1 }} dragPan={interactive} touchZoom={interactive && !(follow && following)} doubleTapZoom={interactive && !(follow && following)} onPress={onTap ? (e) => onTap({ lat: e.nativeEvent.lngLat[1], lng: e.nativeEvent.lngLat[0] }) : undefined}>
         <Camera ref={camera} initialViewState={pickFrom ? { center: [pickFrom.lng, pickFrom.lat], zoom: PICK_ZOOM, bearing: 0, padding: undefined } : follow && position ? { center: [position.lng, position.lat], zoom: FOLLOW_ZOOM, bearing: heading ?? 0, padding } : bounds ? { bounds, padding: FIT_PADDING } : start.kind === 'bounds' ? { bounds: start.bounds, padding: FIT_PADDING } : { center: start.center, zoom: start.zoom }} />
         <GeoJSONSource id="heat-dots" data={heatDots}><Layer id="heat-glow" type="heatmap" paint={heatPaint.glow as never} /></GeoJSONSource>
         <GeoJSONSource id="heat-lines" data={heatLines}>
