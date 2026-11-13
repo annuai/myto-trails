@@ -52,3 +52,8 @@ export function dragPlacement(p: Placement, dx: number, dy: number, box: Size, c
 export function pinchPlacement(start: Placement, factor: number, box: Size, card: Size): Placement {
   return clampPlacement({ ...start, scale: start.scale * factor }, box, card);
 }
+
+/** A drag measured in screen pixels on a card shown `pictureWidth` wide, as picture pixels of the `cardWidth`-wide picture. */
+export function toPictureDelta(deltaPx: number, pictureWidth: number, cardWidth: number): number {
+  return (deltaPx * cardWidth) / pictureWidth;
+}

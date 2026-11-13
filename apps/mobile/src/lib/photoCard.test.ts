@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CARD_SIZE, type CardFormat } from './rideCard';
 import { CARD_PAD } from './cardMap';
-import { PLACEMENT_LIMITS, clampPlacement, defaultPlacement, dragPlacement, overlayBox, pinchPlacement } from './photoCard';
+import { PLACEMENT_LIMITS, clampPlacement, defaultPlacement, dragPlacement, overlayBox, pinchPlacement, toPictureDelta } from './photoCard';
 
 const card = CARD_SIZE.story;
 const stat = { key: 'distance', label: 'Distance', parts: [] } as const;
@@ -115,5 +115,12 @@ describe('defaultPlacement', () => {
   it('centres a box larger than the card', () => {
     const p = defaultPlacement('corner', card, { width: 2000, height: 3000 });
     expect(p).toEqual({ x: 0.5, y: 0.5, scale: 1 });
+  });
+});
+
+describe('toPictureDelta', () => {
+  it('converts screen pixels to picture pixels', () => {
+    expect(toPictureDelta(50, 220, 1080)).toBe((50 * 1080) / 220);
+    expect(toPictureDelta(-10, 540, 1080)).toBe(-20);
   });
 });
