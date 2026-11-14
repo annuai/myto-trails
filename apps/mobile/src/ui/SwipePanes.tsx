@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Dimensions, PanResponder, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isSideways, swipeOffset, swipeTarget } from '@/lib/swipePanes';
@@ -25,6 +25,8 @@ export function SwipePanes<T extends string>({ keys, value, onChange, enabled = 
   /** How tall the swipeable area is at least: from where the views start to just above the tab bar. */
   const [fill, setFill] = useState(0);
   const reserve = tabBar.height + space[6] + insets.bottom;
+  const measureTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(measureTimer.current), []);
   const index = Math.max(0, keys.indexOf(value));
   const now = useLatest(() => ({ index, count: keys.length, width, enabled, reduced }));
   const change = useLatest((i: number) => onChange(keys[i]!));
@@ -73,7 +75,11 @@ export function SwipePanes<T extends string>({ keys, value, onChange, enabled = 
       onLayout={(e) => {
         setWidth(e.nativeEvent.layout.width);
         // Where the views start on the screen, measured once laid out: the rest of the screen down to the tab bar is theirs to swipe.
-        frame.current?.measureInWindow((_x, y) => setFill(Math.max(0, Math.round(Dimensions.get('window').height - y - reserve))));
+        const measure = () => frame.current?.measureInWindow((_x, y) => setFill(Math.max(0, Math.round(Dimensions.get('window').height - y - reserve))));
+        measure();
+        // Again once the page has settled: on Android a tab page is scrolled to its resting place just after it first lays out, which moves the views on the screen.
+        clearTimeout(measureTimer.current);
+        measureTimer.current = setTimeout(measure, swipePanes.remeasureMs);
       }}>
       <Animated.View style={{ opacity: x.interpolate({ inputRange: [-span, 0, span], outputRange: [1 - swipePanes.fade, 1, 1 - swipePanes.fade], extrapolate: 'clamp' }), transform: [{ translateX: x }] }}>{children}</Animated.View>
     </View>

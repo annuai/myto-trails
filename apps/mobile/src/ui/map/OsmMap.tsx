@@ -146,7 +146,8 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
   // MapLibre reports the map as loaded after every style load, so a style switch must not snap the camera back to the route: refit on the first load only.
   const fitted = useRef(false);
   const fitOnFirstLoad = () => { if (fitted.current) return; fitted.current = true; fit(); };
-  useEffect(fit, [bounds, follow]);
+  // Also once the view has a size, and when it changes: a fit made before Android has measured the map uses the wrong viewport and leaves the route half out of view.
+  useEffect(() => { if (box.w > 0 && box.h > 0) fit(); }, [bounds, follow, box.w, box.h]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <GestureDetector gesture={pinch}>
     <View onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })} style={{ height: height === 'fill' ? undefined : height, flex: height === 'fill' ? 1 : undefined, borderRadius: radius, overflow: 'hidden' }}>
