@@ -19,3 +19,7 @@ video/out/
 *.apk
 .claude/
 apps/mobile/android/app/debug.keystore
+
+# offline region build output and cached extracts
+tooling/offline-regions/out/
+tooling/offline-regions/cache/

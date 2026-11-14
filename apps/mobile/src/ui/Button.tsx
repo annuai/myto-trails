@@ -13,10 +13,11 @@ type Variant = 'primary' | 'accent' | 'soft' | 'danger' | 'emergency';
 type Props = {
   label: string; onPress?: () => void; variant?: Variant; icon?: LucideIcon; arrow?: boolean;
   big?: boolean; disabled?: boolean; align?: 'center' | 'between'; trailing?: string; flex?: boolean;
+  /** Read by screen readers instead of `label`, for a button whose visible text needs the object it acts on ('Delete' becomes 'Delete Karnataka'). */ accessibilityLabel?: string;
   /** Set when a soft button sits on a Card, so its fill differs from the card's. */ onCard?: boolean;
 };
 
-export function Button({ label, onPress, variant = 'primary', icon, arrow, big, disabled, align, trailing, flex, onCard }: Props) {
+export function Button({ label, onPress, variant = 'primary', icon, arrow, big, disabled, align, trailing, flex, onCard, accessibilityLabel }: Props) {
   const { c } = useTheme();
   const bg = { primary: undefined, accent: c.accent, soft: onCard ? c.raised : c.card, danger: onCard ? c.raised : c.card, emergency: fixed.stopFill }[variant];
   const fg = (variant === 'primary' ? 'onInk' : variant === 'accent' ? 'onInk' : variant === 'danger' ? 'stop' : 'ink') as 'onInk' | 'ink' | 'stop';
@@ -25,6 +26,7 @@ export function Button({ label, onPress, variant = 'primary', icon, arrow, big, 
   return (
     <ScalePressable scaleTo={0.97}
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
       onPress={onPress}

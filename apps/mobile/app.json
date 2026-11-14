@@ -110,7 +110,7 @@
               "android": {
                 "targetCellWidth": 4,
                 "targetCellHeight": 2,
-                "minWidth": 110,
+                "minWidth": 250,
                 "minHeight": 110,
                 "resizeMode": "both",
                 "initialLayout": "src/features/widgets/QuickActions.android.tokens.tsx"
@@ -119,7 +119,7 @@
           ]
         }
       ],
-      "expo-build-properties"
+      ["expo-build-properties", { "android": { "minSdkVersion": 26 } }]
     ],
     "experiments": {
       "typedRoutes": true
@@ -130,7 +130,13 @@
       "favicon": "./assets/myto-logo.png"
     },
     "android": {
-      "package": "com.myto.app"
+      "package": "com.myto.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon-foreground.png",
+        "monochromeImage": "./assets/adaptive-icon-foreground.png",
+        "backgroundColor": "#b0442e"
+      },
+      "permissions": ["android.permission.CAMERA"]
     }
   }
 }

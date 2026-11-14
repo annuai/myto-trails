@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findVersionDrift, isSemver, plistVersion } from "./find-version-drift";
+import { findVersionDrift, gradleVersion, isSemver, plistVersion } from "./find-version-drift";
 
 describe("isSemver", () => {
   it("accepts MAJOR.MINOR.PATCH, with an optional pre-release, and nothing looser", () => {
@@ -43,5 +43,14 @@ describe("plistVersion", () => {
 
   it("is undefined when the key is missing", () => {
     expect(plistVersion("<dict><key>CFBundleVersion</key><string>1</string></dict>")).toBeUndefined();
+  });
+});
+
+describe("gradleVersion", () => {
+  it("reads versionName, not versionCode, and ignores a trailing release-please marker", () => {
+    expect(gradleVersion('versionCode 7\n        versionName "0.11.0" // x-release-please-version')).toBe("0.11.0");
+  });
+  it("is undefined when there is no versionName", () => {
+    expect(gradleVersion("versionCode 1")).toBeUndefined();
   });
 });

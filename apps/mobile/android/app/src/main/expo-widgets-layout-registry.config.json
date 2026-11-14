@@ -1,0 +1,8 @@
+{
+  "widgets": [
+    {
+      "name": "QuickActions",
+      "initialLayout": "src/features/widgets/QuickActions.android.tokens.tsx"
+    }
+  ]
+}

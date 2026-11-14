@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Award, Bell, Cloud, House, BookOpen, Globe, Map as MapIcon, CalendarDays, ClipboardList, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, ShieldAlert, Stamp, Route as RouteIcon, Share2, TriangleAlert, Wrench, Users, Ellipsis } from 'lucide-react-native';
+import { Award, Bell, Cloud, House, BookOpen, Globe, CalendarDays, ClipboardList, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, ShieldAlert, Stamp, Route as RouteIcon, Share2, TriangleAlert, Wrench, Users, Ellipsis } from 'lucide-react-native';
 import Constants from 'expo-constants';
 import { CONTACT_EMAIL, MYTO_URL, versionLabel } from '@moto-trails/domain';
 import { useMe } from '@/api/useApi';
 import { countryName } from '@/lib/countryNames';
 import { signOut, startSignIn } from '@/lib/signIn';
-import { useOsm } from '@/store/osm';
 import { chooseStanding } from '@/lib/standingSync';
 import { STANDING_CONSENT, STANDING_TITLE } from '@/lib/story/standing';
 import { useStandingPref } from '@/store/standingPref';
@@ -46,7 +45,6 @@ export default function You() {
   const sync = useSync();
   const standingOn = useStandingPref((s) => s.optIn);
   const standingError = useStandingPref((s) => s.error);
-  const osmOn = useOsm((s) => s.asked && s.enabled);
   const unit = useDistanceUnit(); // re-draws this page's distances when the unit changes
   const rides = useRides((s) => s.rides);
   const { licence, vehicle, contacts } = useProfile();
@@ -119,8 +117,7 @@ export default function You() {
         <Row icon={Globe} label="Country and units" sub={`${home ? countryName(home) : 'Not set'} · ${unit === 'mi' ? 'miles' : 'kilometres'}`} onPress={() => router.push('/region')} />
         <Row icon={House} label="Home and work" sub="Used for the ride home offer and to end a ride when you arrive" onPress={() => router.push('/home-place')} />
         <Row icon={Bell} label="Notifications" sub="Reminders for to-dos and trips" onPress={() => router.push('/notifications/settings')} />
-        <Row icon={MapIcon} label="Improve the map" sub="Share rides with OpenStreetMap" value={osmOn ? 'On' : 'Off'} onPress={() => router.push('/osm')} />
-        <Row icon={Ellipsis} label="Others" sub="Haptics, colours, motion, crash reports and Discord" onPress={() => router.push('/others')} />
+        <Row icon={Ellipsis} label="Others" sub="Haptics, colours, motion, offline maps, improve the map, crash reports and Discord" onPress={() => router.push('/others')} />
         <Row icon={LifeBuoy} label="Report a problem" sub="Opens an email with your app version" onPress={reportProblem} />
       </ListCard>
       <SectionTitle>Privacy</SectionTitle>

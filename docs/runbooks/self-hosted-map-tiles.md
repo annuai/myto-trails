@@ -1,8 +1,10 @@
 # Self-hosted map tiles (for offline maps)
 
-Status: **not needed for now.** The app's maps and offline downloads use OpenFreeMap (free, no key; offline downloads allowed up to 3,000 tiles or 50 MB each), see `apps/mobile/src/ui/map/style.ts`. This runbook stays as the fallback if OpenFreeMap is ever unavailable or its terms change: set `EXPO_PUBLIC_MAP_STYLE_URL` to the style it describes.
+Status: **superseded by downloadable regions** (state by state), not a Worker. Offline maps and search are R2 files the rider downloads from the Offline maps screen: `regions/manifest.json` plus, per region, a PMTiles map and a search file, each with size and sha256. Build one with `node tooling/offline-regions/build.mjs <id>` and upload under `regions/` in the public bucket.
+The app reads the manifest from `EXPO_PUBLIC_REGIONS_BASE_URL` in `apps/mobile/.env` (must be `<R2_PUBLIC_BASE_URL>/public`, e.g. `https://media.example.com/public`, because the media host maps the bucket root; no `.env.example` exists for mobile). While the map's centre is inside an installed region it uses the local style (`src/lib/offlineRegions/`); outside, or online, OpenFreeMap (`src/ui/map/style.ts`).
+The Worker plan below is only a fallback if OpenFreeMap becomes unavailable: set `EXPO_PUBLIC_MAP_STYLE_URL` to the style it describes.
 
-Original plan, not run: Nothing here has been deployed or tested; steps marked *(unverified)* are from the tools' documentation and need checking on the first real try.
+Worker plan, not run: Nothing here has been deployed or tested; steps marked *(unverified)* are from the tools' documentation and need checking on the first real try.
 
 ## Why
 The phone's offline map download (MapLibre `OfflineManager`) cannot save tiles from a single PMTiles file. It needs a normal tile service at `https://…/{z}/{x}/{y}`. OpenStreetMap's own servers forbid bulk downloads. So we serve our own: the map data sits in our R2 bucket as one PMTiles file, and a small Cloudflare Worker turns it into `{z}/{x}/{y}` tiles.

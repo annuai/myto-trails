@@ -1,0 +1,77 @@
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
+index b0b6479..74587ae 100644
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
+@@ -5,6 +5,7 @@ import android.content.Intent
+ import android.net.Uri
+ import androidx.glance.action.Action
+ import androidx.glance.appwidget.action.actionSendBroadcast
++import androidx.glance.appwidget.action.actionStartActivity
+ import expo.modules.widgets.notifications.ExpoWidgetsNotificationReceiver
+ 
+ internal const val WIDGET_INTERACTION_ACTION = "expo.modules.widgets.ACTION_WIDGET_INTERACTION"
+@@ -27,6 +28,14 @@ internal data class WidgetInteraction(
+ )
+ 
+ internal fun WidgetInteraction.toGlanceAction(context: Context): Action {
++  // A target written "open:<url>" opens the app at that link straight from the press. Android does not let the app start
++  // a screen later from the background, so the press itself has to carry it.
++  if (target.startsWith("open:")) {
++    val open = Intent(Intent.ACTION_VIEW, Uri.parse(target.removePrefix("open:")))
++      .setPackage(context.packageName)
++      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
++    return actionStartActivity(open)
++  }
+   val intent = when (source) {
+     is InteractionSource.Widget -> Intent(WIDGET_INTERACTION_ACTION)
+       .setComponent(widgetProviderComponentName(context, source.name))
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
+@@ -83,6 +83,9 @@ import androidx.glance.layout.EmittableBox
+ import androidx.glance.layout.EmittableColumn
+ import androidx.glance.layout.EmittableRow
+ import androidx.glance.layout.EmittableSpacer
++import androidx.glance.layout.HeightModifier
++import androidx.glance.layout.WidthModifier
++import androidx.glance.unit.Dimension
+ import androidx.glance.layout.fillMaxHeight
+ import androidx.glance.layout.fillMaxSize
+ import androidx.glance.layout.fillMaxWidth
+@@ -175,7 +178,7 @@ private fun ReadableMap.toPeekRow(converterContext: WidgetConverterContext, sour
+     it.modifier = props.modifiers.toPeekModifier(converterContext)
+     it.horizontalAlignment = props.toPeekHorizontalAlignment()
+     it.verticalAlignment = props.toPeekVerticalAlignment()
+-    it.children += children().flatMap { child -> child.toPeekNodes(converterContext, source) }
++    it.children += children().flatMap { child -> child.toPeekWeighted(converterContext, source, horizontal = true) }
+   }
+ }
+ 
+@@ -185,8 +188,26 @@ private fun ReadableMap.toPeekColumn(converterContext: WidgetConverterContext, s
+     it.modifier = props.modifiers.toPeekModifier(converterContext)
+     it.verticalAlignment = props.toPeekVerticalAlignment()
+     it.horizontalAlignment = props.toPeekHorizontalAlignment()
+-    it.children += children().flatMap { child -> child.toPeekNodes(converterContext, source) }
++    it.children += children().flatMap { child -> child.toPeekWeighted(converterContext, source, horizontal = false) }
++  }
++}
++
++/**
++ * A child of a Row or Column given the `weight` modifier shares the room left over by its siblings: Glance has only the
++ * "default weight" (every weighted child gets an equal share), which is a width or height of `Dimension.Expand`. Without
++ * this the modifier is ignored and one `fillMaxSize` child takes the whole widget.
++ */
++@SuppressLint("RestrictedApi")
++private fun ReadableMap.toPeekWeighted(converterContext: WidgetConverterContext, source: InteractionSource, horizontal: Boolean): List<Emittable> {
++  val nodes = toPeekNodes(converterContext, source)
++  val modifiers = propsMap()?.takeIf { it.hasKey("modifiers") && !it.isNull("modifiers") }?.getArray("modifiers")
++  val weighted = (0 until (modifiers?.size() ?: 0)).any { modifiers?.getMap(it)?.getString("\$type") == "weight" }
++  if (weighted) {
++    nodes.forEach {
++      it.modifier = it.modifier.then(if (horizontal) WidthModifier(Dimension.Expand) else HeightModifier(Dimension.Expand))
++    }
+   }
++  return nodes
+ }
+ 
+ private fun ReadableMap.toPeekLazyColumn(converterContext: WidgetConverterContext, source: InteractionSource): EmittableLazyColumn {

@@ -16,3 +16,8 @@ export function findVersionDrift(expected: string, files: { path: string; versio
 export function plistVersion(plist: string): string | undefined {
   return /<key>CFBundleShortVersionString<\/key>\s*<string>([^<]*)<\/string>/.exec(plist)?.[1];
 }
+
+/** The `versionName` in an Android app `build.gradle`, not the `versionCode` build number. */
+export function gradleVersion(gradle: string): string | undefined {
+  return /versionName\s+"([^"]*)"/.exec(gradle)?.[1];
+}
