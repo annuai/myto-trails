@@ -4,7 +4,7 @@ const h = vi.hoisted(() => ({ calls: [] as string[] }));
 // Every store and helper eraseEverything touches is stubbed; only the order of the sign-out call matters here.
 const state = () => new Proxy({}, { get: (_t, k) => (k === 'routes' ? [] : k === 'checkin' ? undefined : () => undefined) });
 const stub = () => ({ getState: state, setState: () => undefined });
-for (const m of ['companion', 'crash', 'fixit', 'fuel', 'journal', 'marks', 'seen', 'story', 'myRoutes', 'notifications', 'profile', 'region', 'rides', 'todos', 'trails', 'trips']) {
+for (const m of ['companion', 'crash', 'fixit', 'fuel', 'journal', 'marks', 'seen', 'story', 'myRoutes', 'notifications', 'pillion', 'profile', 'region', 'rides', 'todos', 'trails', 'trips']) {
   vi.doMock(`@/store/${m}`, () => new Proxy({}, { get: () => stub(), has: () => true }));
 }
 vi.mock('@/features/home/quickPosition', () => ({ resetQuickPosition: vi.fn() }));
