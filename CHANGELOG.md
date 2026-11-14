@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.12.0](https://github.com/annuai/myto-trails/compare/v0.11.0...v0.12.0) (2026-11-14)
+
+
+### Features
+
+* **mobile:** camera film looks, sync, pillion visits, OpenStreetMap sign-in fix; camera Hermes OOM fix ([7df14aa](https://github.com/annuai/myto-trails/commit/7df14aa960969a4f858edf0e6153e67f7fd96f36))
+* **mobile:** compose a local map style for downloaded regions ([831d68b](https://github.com/annuai/myto-trails/commit/831d68b1efe554ec807d3de96ae896853f1aa582))
+* **mobile:** offline maps rows read the region name to screen readers and show a running download; env docs ([f4a0908](https://github.com/annuai/myto-trails/commit/f4a09082f108f07662ce3804fbb395098b018c9b))
+* **mobile:** offline maps screen ([f512329](https://github.com/annuai/myto-trails/commit/f51232948ad6004f453fb63bb903a128728f5f66))
+* **mobile:** offline place search ([8404da6](https://github.com/annuai/myto-trails/commit/8404da628ca4b7cffacab15e5a6c8c21d6282a2e))
+* **mobile:** offline region download manager ([8c8b2ef](https://github.com/annuai/myto-trails/commit/8c8b2efc70f746466a1ebb8c006283ec7238c9ff))
+* **mobile:** offline region manifest parser ([0a3d11f](https://github.com/annuai/myto-trails/commit/0a3d11f9fa80c987f73eb2ee7ab5a68f3d0d1ddb))
+* **mobile:** register quick-actions widget in iOS project; pitch deck and PPTX export ([#56](https://github.com/annuai/myto-trails/issues/56)) ([54130b3](https://github.com/annuai/myto-trails/commit/54130b399bd2df225a99924080e92727fb7e3054))
+* **mobile:** share a ride to Instagram Stories ([89e2eb8](https://github.com/annuai/myto-trails/commit/89e2eb898e8a5f273cb5482ce1d3d0ceab7f899b))
+* **mobile:** signature red route option and a bigger Myto logo on the share picture ([50de1d6](https://github.com/annuai/myto-trails/commit/50de1d630052639206e8d5305ed257aaffd6754c))
+* **mobile:** switch between the local and online map style as the view crosses a region edge; dark base; drop relief raster ([2f79401](https://github.com/annuai/myto-trails/commit/2f794011845bc69b52aed2f75cdaf6a823007f03))
+* **mobile:** use the local style when the map opens inside a downloaded region ([f84d910](https://github.com/annuai/myto-trails/commit/f84d910a83bb4d7d4b287cc32f702b8b011475a5))
+* **offline-regions:** bundle the dark style and Latin extended and Indic glyph ranges ([c09dd1c](https://github.com/annuai/myto-trails/commit/c09dd1c7f58c263a2234bff70f0c47b58aa551e5))
+* sweep watchdog, crash reporting and sync across phones ([#63](https://github.com/annuai/myto-trails/issues/63)) ([667b766](https://github.com/annuai/myto-trails/commit/667b766e2bfd1d4c07eae13acbb8985fcb9c6b5e))
+* **tooling:** offline region build pipeline ([5518000](https://github.com/annuai/myto-trails/commit/55180005c0d18c5f6e91cde17a3347432d5ebf47))
+
+
+### Bug Fixes
+
+* Android versionName follows the product version and is checked in CI ([1748266](https://github.com/annuai/myto-trails/commit/174826614929f7499a0338ca861d70af814fdc03))
+* **mobile:** Android camera feed, responsive widget, adaptive icon ([000893d](https://github.com/annuai/myto-trails/commit/000893d2056e56026b29bea03c16165a8868eaab))
+* **mobile:** guard concurrent region downloads ([2518cff](https://github.com/annuai/myto-trails/commit/2518cff9547270852d71546f8a49115403998563))
+* **mobile:** keep the camera on style switch and the local map while any of the view is in a region ([8560def](https://github.com/annuai/myto-trails/commit/8560def40f019a385484043de0b8dbfbd894b478))
+* **mobile:** keep the local style when the online one fails first ([3341181](https://github.com/annuai/myto-trails/commit/3341181739de2530921fc300f79b3ecdcb1ae102))
+* **mobile:** refuse unsafe region ids and versions; refuse delete while downloading ([fefe07a](https://github.com/annuai/myto-trails/commit/fefe07a7f44b914eed46360c050bcaed14aba16f))
+* **mobile:** stop the hold animation when the button unmounts ([0a7ab0c](https://github.com/annuai/myto-trails/commit/0a7ab0ce63142dc3f6bcf14e7aa1d0f62d1f02b6))
+* **mobile:** top speed no longer lost when the fixes stop for a minute or more ([4e4c2b5](https://github.com/annuai/myto-trails/commit/4e4c2b506c6233eef04777afc9e7f8c81a2b2e24))
+* **mobile:** top speed no longer reads 0 for rides recorded at coarse GPS accuracy ([8cad054](https://github.com/annuai/myto-trails/commit/8cad0541db2289d2efac1f5cbab3a959a53375e2))
+* **mobile:** widget SOS opens the SOS actions, not emergency contact setup ([9571729](https://github.com/annuai/myto-trails/commit/957172975b459adfeb79691cc3fdca45a10e8649))
+* **offline-regions:** manifest URLs under /public, Planetiler download retries, Metro-safe sprite name ([05bc53a](https://github.com/annuai/myto-trails/commit/05bc53a00f241aaffbad9d169bd9ac52e475f5e7))
+* **offline-regions:** split search tokens on punctuation; index districts, suburbs, localities and more scripts ([e85ff53](https://github.com/annuai/myto-trails/commit/e85ff53d8787bec5725ff361daff87929a913faf))
+* **sync:** accept the epoch as a pull cursor; tidy Sync page, move it to Backup ([#64](https://github.com/annuai/myto-trails/issues/64)) ([0d502ec](https://github.com/annuai/myto-trails/commit/0d502ec9c8d7de94e37b81e37d0d15671d583fce))
+* **tooling:** fail loudly when no places are written ([f52b005](https://github.com/annuai/myto-trails/commit/f52b00550b135e67a49083ddf63a0945bbed76ce))
+* **tooling:** stream big files in region build ([48e478d](https://github.com/annuai/myto-trails/commit/48e478dfee01d3a8c00ebaf9e4c1607628ca7888))
+
 ## [0.11.0](https://github.com/annuai/myto-trails/compare/v0.10.0...v0.11.0) (2026-11-13)
 
 

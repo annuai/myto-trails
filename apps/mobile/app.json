@@ -4,7 +4,7 @@
     "slug": "myto",
     "scheme": "myto",
     "icon": "./assets/icon.png",
-    "version": "0.11.0",
+    "version": "0.12.0",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -119,7 +119,14 @@
           ]
         }
       ],
-      ["expo-build-properties", { "android": { "minSdkVersion": 26 } }]
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -136,7 +143,9 @@
         "monochromeImage": "./assets/adaptive-icon-foreground.png",
         "backgroundColor": "#b0442e"
       },
-      "permissions": ["android.permission.CAMERA"]
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     }
   }
 }
