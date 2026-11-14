@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, View } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { fixed, radius, type Tone, space, scrim, size } from '@/theme/tokens';
@@ -11,6 +11,9 @@ export function HoldButton({ label, icon, color, borderOnly, background, ms = 10
   const fill = useAnimatedValue(0);
   const [holding, setHolding] = useState(false);
   const anim = useRef<Animated.CompositeAnimation | null>(null);
+  // The screen this sits on is often replaced the moment the hold completes (stop leaves /ride/live): a fill update still in
+  // flight then targets a view that is gone ("reactTag resolved to view null"). Stopping the animation on unmount ends it.
+  useEffect(() => () => { anim.current?.stop(); }, []);
   const start = () => {
     setHolding(true);
     anim.current = Animated.timing(fill, { toValue: 1, duration: ms, easing: Easing.linear, useNativeDriver: false });
