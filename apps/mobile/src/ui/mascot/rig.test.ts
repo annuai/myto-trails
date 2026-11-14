@@ -16,12 +16,16 @@ describe('trail dog rig', () => {
   it('turns every traced shape back into the same path it came from', () => {
     const nums = (d: string) => (d.match(/-?\d*\.?\d+/g) ?? []).map(Number);
     const verbs = (d: string) => d.replace(/[^MLCZ]/g, '');
+    // Collected and asserted once: an `expect` per number made this take 7 s, and it timed out on CI.
+    const wrong: string[] = [];
     rig.shapes.forEach((_, i) => {
       const made = shapeToSvg(rig, i, rig.rest);
       const was = art.paths[i][1];
-      expect(verbs(made)).toBe(verbs(was));
-      nums(was).forEach((n, k) => expect(Math.abs(nums(made)[k] - n)).toBeLessThan(0.06));
+      if (verbs(made) !== verbs(was)) wrong.push(`shape ${i}: path commands differ`);
+      const m = nums(made);
+      nums(was).forEach((n, k) => { if (!(Math.abs(m[k] - n) < 0.06)) wrong.push(`shape ${i} number ${k}: ${m[k]} vs ${n}`); });
     });
+    expect(wrong).toEqual([]);
   });
 
   it('ends on the drawn spot, looking up as drawn, with every paw down', () => {
@@ -79,13 +83,18 @@ describe('trail dog rig', () => {
 
   it('gives finite points for the whole animation and never moves the rock or grass', () => {
     const out = new Float32Array(rig.rest.length);
+    // Collected and asserted once: an `expect` per point made this take 10 s, and it timed out on CI.
+    let notFinite = 0;
+    const moved: string[] = [];
     for (const t of times) {
       skin(rig, poseAt(t), out);
-      for (const v of out) expect(Number.isFinite(v)).toBe(true);
+      for (const v of out) if (!Number.isFinite(v)) notFinite++;
       for (const [si, s] of rig.shapes.entries()) {
         if (!rig.still[si]) continue;
-        for (let k = s.pointStart * 2; k < (s.pointStart + s.pointCount) * 2; k++) expect(out[k]).toBe(rig.rest[k]);
+        for (let k = s.pointStart * 2; k < (s.pointStart + s.pointCount) * 2; k++) if (out[k] !== rig.rest[k]) moved.push(`t ${t} shape ${si} value ${k}`);
       }
     }
+    expect(notFinite).toBe(0);
+    expect(moved).toEqual([]);
   });
 });
