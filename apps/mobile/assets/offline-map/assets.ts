@@ -30,5 +30,5 @@ export const OFFLINE_MAP_ASSETS: [string, number][] = [
   ['sprite/sprite.json', require('./sprite/sprite.json')],
   ['sprite/sprite.png', require('./sprite/sprite.png')],
   ['sprite/sprite@2x.json', require('./sprite/sprite@2x.json')],
-  ['sprite/sprite@2x.png', require('./sprite/sprite@2x.png')],
+  ['sprite/sprite@2x.png', require('./sprite/sprite-2x.png')],
 ];

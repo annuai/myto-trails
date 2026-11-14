@@ -13,7 +13,7 @@
 //   OUT_DIR    output folder (default offline-regions/out, git-ignored)
 // For --upload also set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE_URL
 // (see .env.example). Uploads <id>.pmtiles and <id>.places.sqlite to public/regions/<id>/<version>/ and rewrites
-// the region's entry in public/regions/manifest.json (published URLs omit the public/ prefix).
+// the region's entry in public/regions/manifest.json (published URLs keep the public/ prefix: the media host maps the bucket root, as publicUrl() in apps/web/src/server/storage/r2-provider.ts does).
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createReadStream, existsSync, mkdirSync, readFileSync, rmSync, statSync } from 'node:fs';
@@ -145,7 +145,7 @@ async function upload({ region, version, files, entry }) {
     credentials: { accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY },
   });
   const base = env.R2_PUBLIC_BASE_URL.replace(/\/$/, '');
-  // R2_PUBLIC_BASE_URL serves the public/ prefix, so keys carry it and URLs do not.
+  // Keys carry the public/ prefix and so do the URLs: the media host maps the bucket root (r2-provider publicUrl()).
   const put = (Key, Body, ContentType) =>
     client.send(new PutObjectCommand({ Bucket: env.R2_BUCKET, Key: `public/${Key}`, Body, ContentType }));
   const putFile = (Key, path) =>
@@ -155,7 +155,7 @@ async function upload({ region, version, files, entry }) {
     }).done();
   for (const f of files) {
     await putFile(`regions/${region.id}/${version}/${f.name}`, f.path);
-    f.url = `${base}/regions/${region.id}/${version}/${f.name}`;
+    f.url = `${base}/public/regions/${region.id}/${version}/${f.name}`;
   }
   let manifest = { format: 1, regions: [] };
   try {
@@ -197,7 +197,7 @@ async function main() {
   // (a) cut the region
   run('osmium', ['extract', '--overwrite', '-b', region.bbox.join(','), '-o', regionPbf, india]);
   // (b) vector tiles, Planetiler OpenMapTiles profile
-  runIn(outDir, 'java', ['-Xmx4g', '-jar', jar, `--osm-path=${regionPbf}`, `--output=${mapFile}`, `--maxzoom=${maxzoom}`, '--download', '--force']);
+  runIn(outDir, 'java', ['-Xmx4g', '-jar', jar, `--osm-path=${regionPbf}`, `--output=${mapFile}`, `--maxzoom=${maxzoom}`, '--download', '--http-timeout=5m', '--http-retries=10', '--force']);
   // (c) places
   run('osmium', ['tags-filter', '--overwrite', '-o', placesPbf, regionPbf,
     'nwr/place=city,town,village,hamlet,suburb,neighbourhood,county,district,region,state_district,locality,island', 'nwr/natural=peak,saddle,beach,water', 'nwr/tourism=attraction,viewpoint']);
