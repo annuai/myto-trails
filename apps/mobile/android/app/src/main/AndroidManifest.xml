@@ -2,6 +2,7 @@
   <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+  <uses-permission android:name="android.permission.CAMERA"/>
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
   <uses-permission android:name="android.permission.INTERNET"/>
@@ -41,5 +42,13 @@
         <data android:scheme="exp+myto"/>
       </intent-filter>
     </activity>
+    <receiver android:name=".QuickActionsProvider" android:exported="true" android:label="@string/quick_actions_display_name">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="expo.modules.widgets.ACTION_WIDGET_INTERACTION"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/quick_actions_info"/>
+      <meta-data android:name="expo.modules.widgets.NAME" android:value="QuickActions"/>
+    </receiver>
   </application>
 </manifest>

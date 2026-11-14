@@ -25,3 +25,53 @@ index b0b6479..74587ae 100644
    val intent = when (source) {
      is InteractionSource.Widget -> Intent(WIDGET_INTERACTION_ACTION)
        .setComponent(widgetProviderComponentName(context, source.name))
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
+@@ -83,6 +83,9 @@ import androidx.glance.layout.EmittableBox
+ import androidx.glance.layout.EmittableColumn
+ import androidx.glance.layout.EmittableRow
+ import androidx.glance.layout.EmittableSpacer
++import androidx.glance.layout.HeightModifier
++import androidx.glance.layout.WidthModifier
++import androidx.glance.unit.Dimension
+ import androidx.glance.layout.fillMaxHeight
+ import androidx.glance.layout.fillMaxSize
+ import androidx.glance.layout.fillMaxWidth
+@@ -175,7 +178,7 @@ private fun ReadableMap.toPeekRow(converterContext: WidgetConverterContext, sour
+     it.modifier = props.modifiers.toPeekModifier(converterContext)
+     it.horizontalAlignment = props.toPeekHorizontalAlignment()
+     it.verticalAlignment = props.toPeekVerticalAlignment()
+-    it.children += children().flatMap { child -> child.toPeekNodes(converterContext, source) }
++    it.children += children().flatMap { child -> child.toPeekWeighted(converterContext, source, horizontal = true) }
+   }
+ }
+ 
+@@ -185,8 +188,26 @@ private fun ReadableMap.toPeekColumn(converterContext: WidgetConverterContext, s
+     it.modifier = props.modifiers.toPeekModifier(converterContext)
+     it.verticalAlignment = props.toPeekVerticalAlignment()
+     it.horizontalAlignment = props.toPeekHorizontalAlignment()
+-    it.children += children().flatMap { child -> child.toPeekNodes(converterContext, source) }
++    it.children += children().flatMap { child -> child.toPeekWeighted(converterContext, source, horizontal = false) }
++  }
++}
++
++/**
++ * A child of a Row or Column given the `weight` modifier shares the room left over by its siblings: Glance has only the
++ * "default weight" (every weighted child gets an equal share), which is a width or height of `Dimension.Expand`. Without
++ * this the modifier is ignored and one `fillMaxSize` child takes the whole widget.
++ */
++@SuppressLint("RestrictedApi")
++private fun ReadableMap.toPeekWeighted(converterContext: WidgetConverterContext, source: InteractionSource, horizontal: Boolean): List<Emittable> {
++  val nodes = toPeekNodes(converterContext, source)
++  val modifiers = propsMap()?.takeIf { it.hasKey("modifiers") && !it.isNull("modifiers") }?.getArray("modifiers")
++  val weighted = (0 until (modifiers?.size() ?: 0)).any { modifiers?.getMap(it)?.getString("\$type") == "weight" }
++  if (weighted) {
++    nodes.forEach {
++      it.modifier = it.modifier.then(if (horizontal) WidthModifier(Dimension.Expand) else HeightModifier(Dimension.Expand))
++    }
+   }
++  return nodes
+ }
+ 
+ private fun ReadableMap.toPeekLazyColumn(converterContext: WidgetConverterContext, source: InteractionSource): EmittableLazyColumn {
