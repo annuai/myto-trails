@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { RegionRow } from '@/features/offlineMaps/RegionRow';
 import { rowState } from '@/features/offlineMaps/rowState';
-import type { Installed, Region } from '@/lib/offlineRegions/manifest';
+import { groupByCountry, type Installed, type Region } from '@/lib/offlineRegions/manifest';
 import { deleteRegion, downloadRegion, isDownloading, listInstalled, loadManifest } from '@/lib/offlineRegions/store';
 import { space } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
@@ -51,7 +51,7 @@ export default function OfflineMaps() {
   useFocusEffect(useCallback(() => { void listInstalled().then(setInstalled).catch(() => undefined); }, []));
 
   const have = useMemo(() => new Map(installed.map((i) => [i.id, i])), [installed]);
-  const rows = useMemo(() => [...regions].sort((a, b) => Number(have.has(b.id)) - Number(have.has(a.id)) || a.name.localeCompare(b.name)), [regions, have]);
+  const groups = useMemo(() => groupByCountry(regions, new Set(have.keys())), [regions, have]);
 
   const remove = (region: Region) => Alert.alert(`Delete ${region.name}?`, 'Its map and place search leave this phone. You can download them again later.', [
     { text: 'Keep', style: 'cancel' },
@@ -63,20 +63,24 @@ export default function OfflineMaps() {
       <BackHeader title="You" />
       <PageTitle sub="Keep a map and place search on your phone so they work with no signal.">Offline maps</PageTitle>
       {problem ? <Text variant="label" tone="stop" style={{ marginBottom: space[3] }}>{problem}</Text> : null}
-      {rows.length === 0 ? (
+      {groups.length === 0 ? (
         <>
           <Text variant="body" tone="muted">{loading ? 'Loading…' : 'Maps are not available to download right now. Connect to the internet and try again.'}</Text>
           {!loading ? <Button variant="soft" label="Try again" onPress={() => { setLoading(true); void refresh(); }} /> : null}
         </>
       ) : (
         <>
-          <SectionTitle first>Regions</SectionTitle>
-          <ListCard>
-            {rows.map((r) => {
-              const pct = progress[r.id];
-              return <RegionRow key={r.id} region={r} state={rowState(r, have.get(r.id), pct)} percent={pct} onDownload={() => void start(r)} onDelete={() => remove(r)} />;
-            })}
-          </ListCard>
+          {groups.map((g, i) => (
+            <View key={g.country}>
+              <SectionTitle first={i === 0}>{g.country}</SectionTitle>
+              <ListCard>
+                {g.regions.map((r) => {
+                  const pct = progress[r.id];
+                  return <RegionRow key={r.id} region={r} state={rowState(r, have.get(r.id), pct)} percent={pct} onDownload={() => void start(r)} onDelete={() => remove(r)} />;
+                })}
+              </ListCard>
+            </View>
+          ))}
         </>
       )}
       <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: space[5] }}>Map data © OpenStreetMap contributors</Text>

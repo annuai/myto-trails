@@ -7,6 +7,7 @@ const DIR = 'file:///docs/regions/';
 const region = (over: Partial<Region> = {}): Region => ({
   id: 'goa',
   name: 'Goa',
+  country: 'India',
   bbox: [73, 14, 75, 16],
   version: 'v2',
   map: { url: 'https://r2/goa.map', bytes: 100 * MB, sha256: 'aa' },
