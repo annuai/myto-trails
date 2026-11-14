@@ -1,77 +1,86 @@
 # Product roadmap: Nov 2026 to Oct 2027
 
-Written 2026-11-12. Status words: **Built** (in repo, tested), **In build** (other agents working now, not verified), **Planned**, **Hypothesis**. Effort is in person-weeks of one full-stack developer (S 1 to 2, M 3 to 5, L 6 to 10); these are estimates, not measured velocity. Priority: P0 gate, P1 should, P2 could.
+Written 2026-11-12, re-planned traction-first 2026-11-14. Status words: **Built** (in repo, tested), **In build** (other agents working now, not verified), **Planned**, **Hypothesis**. Effort is in person-weeks of one full-stack developer (S 1 to 2, M 3 to 5, L 6 to 10); these are estimates, not measured velocity. Priority: P0 gate, P1 should, P2 could.
 
-Principle: do not schedule everything at once. Each phase has one theme and one exit gate; the next phase starts only when the gate is met, so dates move, not scope quality.
+Principle: traction before revenue. Clubs are the growth channel and a club ride is bigger than 5 riders, so group rides stay free (cap 100) until retention is measured. Each phase has one theme and one exit gate; the next starts only when the gate is met, so dates move, not scope quality. Weeks count from 16 Nov 2026.
 
 ```
-Foundation      Nov-Jan   store-ready, verify what is in build, founding cohort
-First monetis.  Feb-Apr   purchase path, Large Ride Pass, Organiser, Shop link
-Engagement      May-Jul   Trailmarks and challenges, ride events, sponsored challenge pilot
-Consolidation   Aug-Oct   measure, prune, sync/garage decision, year-two plan
+0 Ship-ready        weeks 1-2    Android store track, ops debts, feature freeze
+1 Club loop polish  weeks 2-4    club -> event -> WhatsApp link -> ride -> album
+2 Club beta         weeks 4-10   3-5 Bengaluru clubs, founding riders, 30+ trails
+3 Public launch     months 3-5   iOS, public stores, club-to-club growth
+4 Monetisation      month 5+     only if retention holds; founding clubs grandfathered
 ```
 
-## Phase 1: Foundation (Nov 2026 to Jan 2027)
+## Phase 0: Ship-ready (weeks 1 to 2)
 
-Theme: be shippable and honest. Exit gate: app on at least one store track (TestFlight or Play internal) with a paid developer account, in-build features verified or cut, founding cohort at 50 riders.
-
-| # | Initiative | Status now | Objective | User problem | Deliverables | Depends on | Effort | Pri | Metrics |
-|---|---|---|---|---|---|---|---|---|---|
-| F1 | Store readiness | Planned | Get the app onto a store | Riders cannot install it; no billing without a store | Paid Apple developer account, Google Play developer account, store listings, privacy labels, review pass | Owner buys accounts (`docs/todo.md`) | M | P0 | Build accepted on TestFlight and Play internal |
-| F2 | Verify in-build work | In build | Know what actually works | Unverified features would be marketed | Run Shop discovery, achievements/Trailmarks/challenges, contribution mapping on device; cut or fix | The other agents' work | M | P0 | Checklist signed off; defects open |
-| F3 | Entitlement config in production | Built (unit-tested) | Prices and limits as configuration | Hard-coded limits block experiments | Configure limits (5/20/50) off by default; admin docs | None | S | P1 | A limit changes without a deploy |
-| F4 | Founding contributor programme | Planned | 50 to 100 contributors | Directory is thin | Invite list, Founding mark, ride-and-verify days (strategy 6.2) | F2 (contribution mapping) | M | P0 | Contributors with 1+ approved item; median days to moderate |
-| F5 | Measurement without tracking | Built | Learn without ad identifiers | We do not know active riders | Anonymous PostHog analytics, on with an opt-out (docs/11); MAR = distinct app ids with `app_opened` in a calendar month | F1 | S | P1 | MAR defined and reported monthly |
-| F6 | Launch region coverage | Planned | Credible Bengaluru-radius directory | Riders find an empty app | 30+ approved trails in radius (assumption) | F4 | M | P1 | Approved trails in radius |
-
-Not now: new monetisation code beyond configuration.
-
-## Phase 2: First monetisation (Feb to Apr 2027)
-
-Theme: one honest purchase path for the people who organise. Exit gate: first real paid purchase made through a store, free cap switched to 5 for new rides, no regression in free group-ride use.
+Theme: installable and safe for real users. Exit gate: build on Google Play internal or closed testing, the production items below done, `main` is what ships.
 
 | # | Initiative | Status now | Objective | User problem | Deliverables | Depends on | Effort | Pri | Metrics |
 |---|---|---|---|---|---|---|---|---|---|
-| M1 | Purchase path (IAP / Play Billing) | Planned | Make capacity purchasable | Organiser hits the cap with no way to go larger | Store products (Large Ride Pass, Organiser), receipt validation, restore purchases, server entitlement grant, refund handling | F1, F3 | L | P0 | Purchase success rate; entitlement mismatches (target zero) |
-| M2 | Large Ride Pass (max 20, about ₹99 hypothesis) | Cap logic built; purchase Planned | Revenue from larger rides | Free cap of 5 too small for a club ride | Pass product per ride; organiser prompt already built; participants join free | M1 | S | P0 | Passes sold per large ride; free-ride completion unchanged |
-| M3 | Myto Organiser (max 50, ₹249 to 299 per month hypothesis) | Planned | Recurring revenue from regular organisers | Road captains pay per ride repeatedly | Auto-renewing subscription with compliant terms, manage-subscription link | M1 | M | P1 | Organisers subscribed; churn |
-| M4 | Switch free cap to 5 | Built (config) | Make the cap real | n/a | Flip config after M1 is live; in-app notice two weeks earlier; grandfather rides in progress | M1, M2 | S | P0 | Complaints; ride creation rate |
-| M5 | Shop link in app | In build | Connect Equip to physical goods | Riders buy gear elsewhere, no link to trip context | Shop discovery layer (labelled, external `shop.myto-moto.com`), no in-app payment | F2 | M | P1 | Shop link opens; orders attributed |
-| M6 | Pricing test | Planned | Learn willingness to pay | Prices are hypotheses | Vary price through entitlement config for new organisers only | M2, F5 | S | P2 | Conversion by price point |
+| F1 | Store readiness, Android first | Planned | Get the app onto a store | Riders cannot install it | Google Play developer account (one-time fee), listing, data-safety form, internal then closed track; Apple account later (Phase 3) | Owner buys account | S | P0 | Build accepted on Play testing |
+| F7 | Production debts | Planned | Nothing breaks on first real use | Sign-in, photos or sweeps fail under real users | Migrations 0049 and 0050 on Supabase, `CRON_SECRET` equal on Vercel and GitHub, R2 custom domain (`r2.dev` is rate limited), quarantine lifecycle rule, Sentry on a device build ([todo](../todo.md)) | None | S | P0 | Checklist done; zero sign-in failures |
+| F2 | Verify in-build work, feature freeze | In build | Know what actually works | Unverified features would be shown to clubs | Merge or close open branches; run each feature on a device; hide what fails (ADR 0009 pattern); no new features until Phase 2 | None | S | P0 | Checklist signed off |
 
-Not now: advertising, event ticketing, in-app payment for physical goods.
+## Phase 1: Club loop polish (weeks 2 to 4)
 
-## Phase 3: Engagement (May to Jul 2027)
-
-Theme: reasons to return that celebrate exploration. Exit gate: riders retained across two months measurably; one sponsored challenge run with the labelling rules intact.
+Theme: one path flawless rather than everything polished. Exit gate: a real club ride of 5+ riders run end to end on Myto with no blocking defect.
 
 | # | Initiative | Status now | Objective | User problem | Deliverables | Depends on | Effort | Pri | Metrics |
 |---|---|---|---|---|---|---|---|---|---|
-| E1 | Trailmarks and achievements | In build | Reward reaching places | Rides vanish into a log | Marks for places and rides ridden; no speed-based or ranked achievements | F2 | M | P1 | Share of riders with 1+ Trailmark; two-month retention |
-| E2 | Challenges (exploration, not speed) | In build | Reasons to ride a new place | The same few trails get ridden | Time-boxed trail challenges; none rewards speed or risk | E1 | M | P1 | Challenge participation |
-| E3 | Contributor loop | In build | More verified data | Trails go stale | Contribution mapping to moderation; credit, Marks and Trailmarks; an opt-in leaderboard of verified contributions only (built, not yet run), never ranked by speed or distance | F4 | M | P0 | Verified items per month; freshness |
-| E4 | Ride events (RSVP, check-in, QR) | Partly built: club events with start time, meeting point, rider limit, going count and check-in an hour before are visible in the test build; QR check-in and a no-install event page are not verified | Finish the main competitor gap | Club rides run on chat and payment screenshots | Verify the existing club event flow, add QR check-in into the group ride and a web event page | M1, clubs | M | P1 | Events created; check-ins |
-| E5 | Sponsored challenge pilot | Hypothesis | Test partner revenue | Brands want a fitting audience | One labelled sponsored challenge, partner pays Myto directly, no effect on trail data | E2, labelling rules | S | P2 | Partner renewal intent |
-| E6 | Year-in-rides 2027 | Built (2026 version) | Annual share moment | Riders want to share the journey | Carry over recap and share card | None | S | P2 | Shares |
+| L1 | First run | Planned | Value in under 60 seconds | A new rider sees an empty or crowded app | Onboarding that lands on a club or a nearby trail | F2 | S | P0 | Time to first useful screen |
+| L2 | Organiser loop | Partly built | Clubs can run a ride on Myto | Club rides run on chat and payment screenshots | Create club, post event, share link, join, live group ride, event album, all checked on device | F2 | M | P0 | Events created; joins per event |
+| E4 | No-install event page | Partly built: club events with start time, meeting point, rider limit, going count and check-in are in the test build; web event page and QR check-in not built | A WhatsApp link works for anyone | Riders without the app cannot see or RSVP | Web event page with RSVP and app handoff ([universal-links](../universal-links.md)); QR check-in later | L2 | M | P0 | Invite link opened to joined |
+| L3 | Android push | Planned | Clubs stay alive between rides | No signal that a ride was posted | Expo push with FCM (free, no Apple account): new club event, ride starting; same opt-out and quiet hours as local reminders ([todo](../todo.md)) | F1 | S | P0 | Opt-in rate; event views from push |
 
-Not now: public rider rankings by anything but verified contribution, ads.
+## Phase 2: Club beta (weeks 4 to 10)
 
-## Phase 4: Consolidation (Aug to Oct 2027)
-
-Theme: decide with evidence. Exit gate: year-two plan with measured MAR, conversion and cost; explicit keep/cut list.
+Theme: real clubs, by hand, no ads. Exit gate: 3+ clubs each ran 4 weekend rides on Myto, 30+ approved trails in the launch radius, founding cohort at 50 riders.
 
 | # | Initiative | Status now | Objective | User problem | Deliverables | Depends on | Effort | Pri | Metrics |
 |---|---|---|---|---|---|---|---|---|---|
-| C1 | Measure and re-run the model | Planned | Replace assumptions with data | The plan rests on inputs | Update `model.mjs` from measured MAR, conversion, orders; republish deck | F5, M1 | S | P0 | Share of inputs measured |
-| C2 | Sync and garage decision | Planned | Choose the next platform investment | Data is local only | Decide on `docs/sync-design.md` (not built) given retention data | C1 | S | P1 | Decision recorded as an ADR |
-| C3 | Moderation and trust audit | Planned | Protect the moat | Access accuracy must stay high | Audit a sample against the `PRODUCT.md` target (access accuracy 95% or more) | E3 | M | P0 | Audit accuracy |
-| C4 | Second region | Hypothesis | Expand only if Bengaluru works | Riders elsewhere | Choose from contribution evidence | C1, C3 | M | P2 | Contributors in new region |
-| C5 | Prune | Planned | Cut what is unused | Feature sprawl | Remove or fold low-use features (ADR 0009 pattern) | C1 | S | P1 | Features removed |
+| B1 | Concierge club onboarding | Planned | 3 to 5 Bengaluru clubs | Clubs will not switch tools on a cold invite | Road captains the team knows; set up their club; ride their first Myto ride with them; ask for their next 4 rides | Phase 1 gate | M | P0 | Club rides per week; clubs with 2+ events a month |
+| F4 | Founding contributor programme | Planned | 50 to 100 contributors | Directory is thin | Invite list, Founding mark, monthly ride-and-verify day with a club ([strategy 6.2](strategy.md)) | F2 | M | P0 | Contributors with 1+ approved item |
+| F6 | Launch region coverage | Planned | Credible Bengaluru-radius directory | Riders find an empty app | 30+ approved trails in radius (assumption) | F4 | M | P0 | Approved trails in radius |
+| B2 | Share cards | In build (`feat/share-to-instagram-stories` pushed) | Every ride advertises the app | Rides vanish after the weekend | Ride and event share cards, Instagram Stories | F2 | S | P1 | Shares; installs from shares |
+| B3 | Feedback loop | Planned | Fix what clubs hit | Silent churn | Road-captain WhatsApp group, review every two weeks, their top 3 fixed first | B1 | S | P0 | Issues closed per cycle |
+| F5 | Measurement without tracking | Built | Learn without ad identifiers | We do not know active riders | Anonymous PostHog analytics, on with an opt-out (docs/11); MAR = distinct app ids with `app_opened` in a calendar month | F1 | S | P1 | 4-week retention; invite conversion |
+
+## Phase 3: Public launch (months 3 to 5)
+
+Theme: widen only on a full directory. Exit gate: on both stores publicly, a second wave of clubs brought by the first.
+
+| # | Initiative | Status now | Objective | User problem | Deliverables | Depends on | Effort | Pri | Metrics |
+|---|---|---|---|---|---|---|---|---|---|
+| P1 | iOS and public release | Planned | Reach iPhone riders | Half of a club cannot install | Paid Apple account, TestFlight, iOS push, both stores public | Phase 2 gate | M | P0 | Installs; store rating |
+| P2 | Club-to-club referral | Planned | Clubs bring clubs | Growth limited to the founder's network | Organiser invite link, Founding club mark, public club page | B1 | S | P1 | Clubs joined by referral |
+| P3 | Content | Planned | Reasons to open the app | Quiet weeks between rides | Trail of the month, ride reports, Fix it clips, contributor spotlight ([strategy 6.3](strategy.md)) | F6 | S | P1 | Shares |
+| E1 | Trailmarks and achievements | In build | Reward reaching places | Rides vanish into a log | Marks for places and rides ridden; no speed-based or ranked achievements | F2 | M | P1 | Share of riders with 1+ Trailmark |
+| E2 | Challenges (exploration, not speed) | In build | Reasons to ride a new place | The same few trails get ridden | Time-boxed trail challenges; none rewards speed or risk | E1 | M | P2 | Challenge participation |
+| E3 | Contributor loop | In build | More verified data | Trails go stale | Contribution mapping to moderation; credit and Marks; opt-in leaderboard of verified contributions only | F4 | M | P1 | Verified items per month |
+
+## Phase 4: Monetisation (month 5 onward, only if retention holds)
+
+Theme: one honest purchase path for the people who organise. Entry gate: 4-week retention measured and holding. Exit gate: first real store purchase, no drop in free club rides.
+
+| # | Initiative | Status now | Objective | User problem | Deliverables | Depends on | Effort | Pri | Metrics |
+|---|---|---|---|---|---|---|---|---|---|
+| M1 | Purchase path (IAP / Play Billing) | Planned | Make capacity purchasable | Organiser hits the cap with no way to go larger | Store products, receipt validation, restore, server entitlement grant, refunds | F1, P1 | L | P0 | Purchase success rate |
+| M2 | Large Ride Pass (about ₹99 hypothesis) | Cap logic built; purchase Planned | Revenue from larger rides | n/a while cap is 100 | Pass per ride; participants join free | M1 | S | P0 | Passes sold per large ride |
+| M3 | Myto Organiser (₹249 to 299 a month hypothesis) | Planned | Recurring revenue from regular organisers | Road captains pay per ride repeatedly | Auto-renewing subscription, manage-subscription link | M1 | M | P1 | Organisers subscribed; churn |
+| M4 | Lower the free cap | Built (config) | Make the cap real | n/a | New clubs only, notice two weeks earlier; founding clubs keep their terms; never during the beta | M1, M2 | S | P1 | Ride creation rate |
+| M5 | Shop link in app | In build | Connect Equip to physical goods | Riders buy gear elsewhere | Labelled external shop, no in-app payment | F2 | S | P2 | Orders attributed |
+| M6 | Pricing test | Planned | Learn willingness to pay | Prices are hypotheses | Vary price through entitlement config for new organisers only | M2, F5 | S | P2 | Conversion by price |
+| E5 | Sponsored challenge pilot | Hypothesis | Test partner revenue | Brands want a fitting audience | One labelled sponsored challenge, no effect on trail data | E2 | S | P2 | Partner renewal intent |
+
+Consolidation (C1 re-run the model on measured data, C2 sync and garage decision as an ADR, C3 trust audit against the 95% access-accuracy target, C4 second region, C5 prune) runs as a review at month 6 and month 12, not as a build phase. F3 (entitlement config) is built and needs nothing until M4. E6 (Year-in-rides 2027) carries over in December.
+
+Not now: sync, garage, community heat map, video posts, a second region, advertising.
 
 ## Dependencies at a glance
 
-F1 (store accounts) gates M1, which gates M2, M3 and M4. F2 (verify in-build) gates M5, E1, E2 and E3. Nothing in Phases 2 to 4 starts building until its gate is met.
+F1 gates L3 and the beta; the Phase 1 gate gates B1; the Phase 2 gate gates public launch. M1 needs both store accounts and measured retention; M4 never runs during the beta.
 
 ## What changes the plan
 
-If store accounts slip, Phase 2 slips month for month, and Phase 3 content work (E1 to E3) can run first because it needs no billing. If the founding cohort is below 50 by January, hold the public release rather than launch an empty directory.
+If the Play account slips, run the beta on direct Android installs and keep Phase 1. If fewer than 3 clubs run 4 rides by week 10, fix the club loop before launching publicly. If the founding cohort is below 50, hold the public release rather than launch an empty directory.

@@ -43,7 +43,7 @@ items:
 - Group rides run on chat | Chat groups and payment screenshots, with no roster or capacity.
 - Rides leave no record | A good ride vanishes: no journal, no recap, no places reached.
 - Gear is detached from the trip | What to carry, how to fix it and where to buy it are separate searches.
-caption: These statements come from product docs and one competitor review. They are not user research; testing them with riders is a Foundation task.
+caption: These statements come from product docs and one competitor review. They are not user research; testing them with riders is the club beta's job.
 sources: docs/01, docs/02, docs/competitive
 img: safety.webp
 
@@ -222,26 +222,24 @@ img: trails.webp
 ## 15 | roadmap
 status: Planned
 kicker: Roadmap
-headline: Four phases. One gate each.
-sub: Nov 2026 to Oct 2027. Each phase waits for its gate.
+headline: Traction first. Four phases, one gate each.
+sub: From Nov 2026. Each phase waits for its gate; group rides stay free until retention is measured.
 phases:
-- Foundation | Nov to Jan | Be shippable and honest | On a store track, in-build work verified, 50 founding contributors
-- First monetisation | Feb to Apr | One honest purchase path for organisers | First real store purchase, free cap switched to 5
-- Engagement | May to Jul | Reasons to return | Two-month retention measured, one labelled sponsored pilot
-- Consolidation | Aug to Oct | Decide with evidence | Year-two plan from measured inputs
+- Ship and polish | Weeks 1 to 4 | Installable, one club loop flawless | On Google Play testing, a real club ride of 5+ run end to end
+- Club beta | Weeks 4 to 10 | Real clubs, by hand | 3+ clubs ran 4 rides, 30+ trails, 50 founding riders
+- Public launch | Months 3 to 5 | Widen on a full directory | Both stores public, clubs bringing clubs
+- Monetisation | Month 5 on | Only if retention holds | First store purchase, no drop in free club rides
 items:
-- 1 | Store accounts and readiness | P0 | Planned
-- 1 | Verify in-build work | P0 | In build
-- 1 | Founding contributors, coverage | P0 | Planned
-- 2 | Purchase path, Pass and Organiser | P0 | Planned
-- 2 | Switch free cap to 5 | P0 | Built
-- 2 | Shop link in app | P1 | In build
-- 3 | Trailmarks, challenges, contributors | P1 | In build
-- 3 | Club ride events, QR check-in | P1 | Planned
-- 3 | Sponsored challenge pilot | P2 | Hypothesis
-- 4 | Re-run the model on measured data | P0 | Planned
-- 4 | Trust audit, sync, garage decision | P0 | Planned
-- 4 | Prune, second-region decision | P1 | Hypothesis
+- 1 | Android store track, production debts | P0 | Planned
+- 1 | Club loop, no-install event page | P0 | In build
+- 1 | Android push | P0 | Planned
+- 2 | Concierge club onboarding | P0 | Planned
+- 2 | Founding contributors, coverage | P0 | Planned
+- 2 | Share cards | P1 | In build
+- 3 | iOS and public release | P0 | Planned
+- 3 | Club referral, content, Trailmarks | P1 | In build
+- 4 | Purchase path, Pass and Organiser | P0 | Planned
+- 4 | Lower free cap, new clubs only | P1 | Built
 caption: Full table with objective, user problem, deliverables, dependencies, effort and metrics: product-roadmap.md.
 
 ## 16 | financials
