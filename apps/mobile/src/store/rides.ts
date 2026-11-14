@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { uid } from '@/lib/id';
 import type { LatLng } from '@/lib/geo';
 import { withCorrectTopSpeeds } from '@/lib/fixTopSpeeds';
+import { newestFirst } from '@/lib/ridesOrder';
 import { withoutSampleRide } from '@/lib/sim';
 import type { WaypointKind } from '@/lib/waypointKinds';
 import { storage } from './persist';
@@ -49,12 +50,14 @@ export const useRides = create<State>()(
     // Version 1: top speeds of rides saved before they were judged over several steps are worked out again from the saved points.
     // Version 2: the sample ride that test builds saved on every phone is removed.
     // Version 4: top speeds are worked out again: a stop of over a minute used to throw away every speed before it, so a ride left recording read 0.
+    // Version 5: the list is put back in date order: rides pulled by a sync used to be added on top, whatever their date.
     {
-      name: 'myto-rides', storage, version: 4,
+      name: 'myto-rides', storage, version: 5,
       migrate: (state, from) => {
         let rides = (state as { rides?: Ride[] }).rides ?? [];
         if (from < 4) rides = withCorrectTopSpeeds(rides);
         if (from < 2) rides = withoutSampleRide(rides);
+        if (from < 5) rides = newestFirst(rides);
         return { ...(state as object), rides } as State;
       },
     },
