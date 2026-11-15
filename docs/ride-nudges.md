@@ -20,7 +20,7 @@ An occasional, on-phone idea to go riding. No server and no push: everything is 
 | home | 10 minutes after a ride ends more than 1.5 km from a saved Home (opens the Dash offer), not on a trip day or after a group ride; wins over photos in the shared 4-day after-ride spacing; a ride ending after about 20:50 or before about 07:50 gets none (send window) | "Heading home?" |
 | standing | Monday 09:30 in the same month (the copy says "this month"), only if the rider chose to see standing and is ahead of half or more of riders near home; never says 100% (capped at 99) | "You are ahead of 72% of riders near your area" |
 
-The usual-time reminder ("Ready for your next ride?") and the daylight alert already exist as reminders; the engine keeps a day that has one free of nudges.
+The usual-time reminder ("Ready for your next ride?") and the daylight alert already exist as reminders; the engine keeps a day that has one free of nudges. Ride alarms ([spec](superpowers/specs/2026-11-15-ride-alarms.md)) are kept 3 hours clear of nudges like any other reminder.
 
 ## The rules (never weighed against a score)
 

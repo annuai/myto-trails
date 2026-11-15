@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.myto-moto.myto",
-      "appleTeamId": "42XYUS7TVE"
+      "appleTeamId": "42XYUS7TVE",
+      "infoPlist": {
+        "NSAlarmKitUsageDescription": "Myto Moto rings a wake-up alarm before a ride you planned, and warns you before a snooze would make you miss the sunrise."
+      }
     },
     "plugins": [
       "expo-router",

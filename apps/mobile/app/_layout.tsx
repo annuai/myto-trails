@@ -12,6 +12,7 @@ import { Theme } from '@/theme/ThemeProvider';
 import { dark, fixed, light, layout } from '@/theme/tokens';
 import { useAppearance } from '@/store/appearance';
 import { NotificationHost } from '@/NotificationHost';
+import { AlarmHost } from '@/AlarmHost';
 import { RecorderHost } from '@/RecorderHost';
 import { CompanionHost } from '@/CompanionHost';
 import { NudgeHost } from '@/NudgeHost';
@@ -80,6 +81,7 @@ function Root() {
     <Theme mode="light" screen>
       <RecorderHost />
       <NotificationHost />
+      <AlarmHost />
       <CompanionHost />
       <SubmissionQueueHost />
       <PhotoOutboxHost />

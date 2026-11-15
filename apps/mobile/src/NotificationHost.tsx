@@ -14,12 +14,15 @@ import { dayDate, soonestTrip } from '@/lib/tripPlan';
 import { planForSync } from '@/nudgeWorld';
 import { useNudges } from '@/store/nudges';
 import { usePillion } from '@/store/pillion';
+import { syncAlarms } from '@/alarmWorld';
+import { useAlarms } from '@/store/alarms';
 
 const syncer = createSyncer({
   now: Date.now,
   store: useNotifications,
   notifier,
   nudges: planForSync,
+  alarms: syncAlarms,
   world: () => {
     // A planned trip (with its days and pack to-dos) is what the reminders follow; a trail planned the old way is the fallback.
     const planned = soonestTrip(useTrips.getState().trips);
@@ -58,7 +61,7 @@ export function NotificationHost() {
     let prefs = useNotifications.getState().prefs;
     let pause = '';
     const off = [
-      useTodos.subscribe(soon), useFixit.subscribe(soon), useRides.subscribe(soon), useTrailStore.subscribe(soon), useTrips.subscribe(soon),
+      useTodos.subscribe(soon), useFixit.subscribe(soon), useRides.subscribe(soon), useTrailStore.subscribe(soon), useTrips.subscribe(soon), useAlarms.subscribe(soon),
       useNotifications.subscribe((s) => { if (s.prefs !== prefs) { prefs = s.prefs; soon(); } }),
       useNudges.subscribe((s, prev) => { if (s.level !== prev.level || s.muted !== prev.muted || s.forecast !== prev.forecast || s.clubs !== prev.clubs) soon(); }),
       usePillion.subscribe((s, prev) => { if (s.firstOpenAt !== prev.firstOpenAt) soon(); }),

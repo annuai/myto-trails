@@ -11,11 +11,28 @@ Notifications.setNotificationHandler({
   handleNotification: async (n) => ({ shouldShowBanner: n.request.content.categoryIdentifier?.startsWith('ride') !== true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
 });
 
-let channel: Promise<unknown> | undefined;
-/** Android needs a channel to show anything. */
-const ensureChannel = () => (Platform.OS === 'android' ? (channel ??= Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: AndroidImportance.DEFAULT })) : Promise.resolve());
+/** Ride alarm rings sent as notifications (when the phone's own alarm cannot be used): loud, and allowed to pop up. */
+const ALARM_CHANNEL = 'ride-alarm-v1';
+const ALARM_UP = 'alarm.up';
+const ALARM_SNOOZE = 'alarm.snooze';
 
-const content = (n: Shown): Notifications.NotificationContentInput => ({ title: n.title, body: n.body, data: { route: n.route }, ...(n.loud ? { sound: 'default' } : {}) });
+let channel: Promise<unknown> | undefined;
+/**
+ * Android needs a channel to show anything. The alarm buttons are registered once: Snooze only takes the ring away (the next ring is
+ * already set), so it works without the app; I'm up opens the app, which cancels the rest.
+ */
+const ensureChannel = () => (channel ??= Promise.all([
+  Notifications.setNotificationCategoryAsync('ride-alarm', [{ identifier: ALARM_SNOOZE, buttonTitle: 'Snooze', options: { opensAppToForeground: false } }, { identifier: ALARM_UP, buttonTitle: "I'm up", options: { opensAppToForeground: true } }]),
+  Notifications.setNotificationCategoryAsync('ride-alarm-last', [{ identifier: ALARM_UP, buttonTitle: "I'm up", options: { opensAppToForeground: true } }]),
+  ...(Platform.OS === 'android' ? [
+    Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Reminders', importance: AndroidImportance.DEFAULT }),
+    Notifications.setNotificationChannelAsync(ALARM_CHANNEL, { name: 'Ride alarms', importance: AndroidImportance.MAX, sound: 'default', bypassDnd: true }),
+  ] : []),
+]));
+
+const content = (n: Shown): Notifications.NotificationContentInput => (n.alarm
+  ? { title: n.title, body: n.body, data: { route: n.route, alarmGroup: n.alarm.group }, sound: 'default', categoryIdentifier: n.alarm.snooze ? 'ride-alarm' : 'ride-alarm-last', interruptionLevel: 'timeSensitive' }
+  : { title: n.title, body: n.body, data: { route: n.route }, ...(n.loud ? { sound: 'default' } : {}) });
 
 export const notifier: Notifier = {
   async permission(): Promise<Permission> {
@@ -29,7 +46,7 @@ export const notifier: Notifier = {
   async cancelAll() { await Notifications.cancelAllScheduledNotificationsAsync(); },
   async schedule(n) {
     await ensureChannel();
-    await Notifications.scheduleNotificationAsync({ identifier: n.id, content: content(n), trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.fireAt, channelId: CHANNEL } });
+    await Notifications.scheduleNotificationAsync({ identifier: n.id, content: content(n), trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.fireAt, channelId: n.alarm ? ALARM_CHANNEL : CHANNEL } });
   },
   async notifyNow(n) {
     await ensureChannel();
@@ -48,4 +65,13 @@ export function useTappedRoute(): { route: string; key: string; id: string } | n
   const route = last?.notification.request.content.data?.route;
   // A press on one of a notification's buttons is not a tap: it must not open the screen.
   return last && last.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER && typeof route === 'string' ? { route, id: last.notification.request.identifier, key: last.notification.request.identifier + last.notification.date } : null;
+}
+
+/** The last response to a ride alarm ring sent as a notification: the I'm up button, a tap on the ring, or Snooze. Changes with each one. */
+export function useAlarmResponse(): { group: string; action: 'up' | 'tap' | 'snooze'; key: string } | null {
+  const last = Notifications.useLastNotificationResponse();
+  const group = last?.notification.request.content.data?.alarmGroup;
+  if (!last || typeof group !== 'string') return null;
+  const action = last.actionIdentifier === ALARM_UP ? 'up' : last.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER ? 'tap' : 'snooze';
+  return { group, action, key: last.notification.request.identifier + last.notification.date + last.actionIdentifier };
 }

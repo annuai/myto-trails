@@ -3,7 +3,7 @@ import { planReminders, serviceKmReminders, type PlanInput, type Reminder } from
 import { createSerial } from './serial';
 
 /** What the phone is told to show. */
-export type Shown = { id: string; fireAt: number; title: string; body: string; route: string; /** Play the phone's notification sound (and so its vibration): for something the rider must notice while riding. */ loud?: boolean };
+export type Shown = { id: string; fireAt: number; title: string; body: string; route: string; /** Play the phone's notification sound (and so its vibration): for something the rider must notice while riding. */ loud?: boolean; /** A ride alarm ring: Snooze and I'm up buttons, time-sensitive. */ alarm?: { group: string; snooze: boolean } };
 export type Permission = 'granted' | 'denied' | 'undetermined';
 
 /** The phone's notification service. The only part that touches the native module (see notifier.ts). */
@@ -26,13 +26,16 @@ export type World = Pick<PlanInput, 'todos' | 'appKm' | 'trip' | 'paused' | 'rid
 export const MAX_SCHEDULED = 60;
 export const HIDDEN_TITLE = 'Myto Moto reminder';
 
-const shown = (r: Reminder, showDetails: boolean): Shown => ({ id: r.id, fireAt: r.fireAt, title: showDetails ? r.title : HIDDEN_TITLE, body: showDetails ? r.body : r.lock, route: r.route });
+// An alarm the rider set always says what it is about: hidden, it could not warn about the sunrise.
+const shown = (r: Reminder, showDetails: boolean): Shown => (r.alarm
+  ? { id: r.id, fireAt: r.fireAt, title: r.title, body: r.body, route: r.route, loud: true, alarm: r.alarm }
+  : { id: r.id, fireAt: r.fireAt, title: showDetails ? r.title : HIDDEN_TITLE, body: showDetails ? r.body : r.lock, route: r.route });
 
 /**
  * Rebuilds the schedule from what the rider has now, so it is always right: finished to-dos, a moved date, a cancelled trip or a restored
  * backup all just change the input. Syncs run one at a time.
  */
-export function createSyncer(deps: { now: () => number; world: () => World; store: { getState: () => NotificationsState }; notifier: Notifier; /** Ride nudges to add to the plan, given the other reminders so they keep clear of them. */ nudges?: (now: number, others: Reminder[]) => Reminder[] }) {
+export function createSyncer(deps: { now: () => number; world: () => World; store: { getState: () => NotificationsState }; notifier: Notifier; /** Ride nudges to add to the plan, given the other reminders so they keep clear of them. */ nudges?: (now: number, others: Reminder[]) => Reminder[]; /** Ride alarm rings to send as notifications, and the reminders they stand in for. */ alarms?: (now: number) => Promise<{ add: Reminder[]; drop: string[] }> }) {
   const serial = createSerial();
   const run = async () => {
     const { store, notifier } = deps;
@@ -47,8 +50,9 @@ export function createSyncer(deps: { now: () => number; world: () => World; stor
     const lastRideAt = (world.rides ?? []).filter((r) => !r.sample && !r.simulated).reduce((m, r) => Math.max(m, r.startedAt), 0);
     const pillionSeen = inbox.filter((n) => n.id.startsWith('pillion:'));
     const pillion = { since: world.pillionSince, lastAt: pillionSeen.reduce((m, n) => Math.max(m, n.at), 0) || undefined, waited: pillionSeen.filter((n) => n.id.startsWith('pillion:waiting') && n.at > lastRideAt).length };
-    const base = planReminders({ ...world, now, prefs, lastCheckReminderAt, pillion });
-    const planned = deps.nudges ? [...base, ...deps.nudges(now, base)].sort((a, b) => a.fireAt - b.fireAt) : base;
+    const alarms = deps.alarms ? await deps.alarms(now) : { add: [], drop: [] };
+    const base = planReminders({ ...world, now, prefs, lastCheckReminderAt, pillion }).filter((r) => !alarms.drop.includes(r.id));
+    const planned = [...base, ...(deps.nudges ? deps.nudges(now, [...base, ...alarms.add]) : []), ...alarms.add].sort((a, b) => a.fireAt - b.fireAt);
 
     for (const r of serviceKmReminders(world.todos, world.appKm, kmNotified, now, prefs)) {
       const cut = r.id.lastIndexOf(':');

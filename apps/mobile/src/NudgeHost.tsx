@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
-import { refreshNudgeData } from '@/lib/nudge/refresh';
+import { alarmsSet, refreshNudgeData } from '@/lib/nudge/refresh';
 import { syncReminders } from '@/NotificationHost';
 import { useAuth } from '@/store/auth';
 import { useNudges } from '@/store/nudges';
@@ -16,11 +16,12 @@ async function refreshAndPlan() {
   } finally { running = false; }
 }
 
-/** When the app opens or comes back to the front, the ride nudges read fresh data (weather, club rides) and are planned again. */
+/** When the app opens or comes back to the front, the ride nudges (and ride alarms) read fresh data (weather, club rides) and are planned again. */
 export function NudgeHost() {
   useEffect(() => {
-    if (useNudges.getState().level && useNudges.getState().level !== 'off') void refreshAndPlan();
-    const app = AppState.addEventListener('change', (s) => { if (s === 'active' && useNudges.getState().level && useNudges.getState().level !== 'off') void refreshAndPlan(); });
+    const wanted = () => (!!useNudges.getState().level && useNudges.getState().level !== 'off') || alarmsSet();
+    if (wanted()) void refreshAndPlan();
+    const app = AppState.addEventListener('change', (s) => { if (s === 'active' && wanted()) void refreshAndPlan(); });
     // Choosing a level starts it straight away.
     const unsub = useNudges.subscribe((s, prev) => { if (s.level !== prev.level && s.level && s.level !== 'off') void refreshAndPlan(); });
     return () => { app.remove(); unsub(); };

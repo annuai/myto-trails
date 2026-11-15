@@ -8,7 +8,7 @@ const at = (iso: string, h: number, m = 0) => new Date(+iso.slice(0, 4), +iso.sl
 const NOW = at('2026-10-28', 10);
 const doc = (id: string, due: string): Todo => ({ id, title: `Doc ${id}`, category: 'document', kind: 'date', due, done: false });
 
-function setup(opts: { permission?: 'granted' | 'denied' | 'undetermined'; todos?: Todo[]; appKm?: number; now?: () => number; nudges?: (now: number, others: import('./reminders').Reminder[]) => import('./reminders').Reminder[] } = {}) {
+function setup(opts: { permission?: 'granted' | 'denied' | 'undetermined'; todos?: Todo[]; appKm?: number; now?: () => number; nudges?: (now: number, others: import('./reminders').Reminder[]) => import('./reminders').Reminder[]; alarms?: (now: number) => Promise<{ add: import('./reminders').Reminder[]; drop: string[] }> } = {}) {
   const store = create(notificationsSlice());
   const log: string[] = [];
   const scheduled: Shown[] = [], now: Shown[] = [];
@@ -21,11 +21,19 @@ function setup(opts: { permission?: 'granted' | 'denied' | 'undetermined'; todos
     openSettings: () => {},
   };
   const world = { todos: opts.todos ?? [], appKm: opts.appKm ?? 0 };
-  const syncer = createSyncer({ now: opts.now ?? (() => NOW), world: () => world, store, notifier, nudges: opts.nudges });
+  const syncer = createSyncer({ now: opts.now ?? (() => NOW), world: () => world, store, notifier, nudges: opts.nudges, alarms: opts.alarms });
   return { store, log, scheduled, now, syncer, world };
 }
 
 describe('syncReminders', () => {
+  it('adds alarm rings with their text and buttons, and drops the reminders they stand in for', async () => {
+    const ring = { id: 'alarm:g:0', fireAt: NOW + 3_600_000, title: 'Nandi Hills at 5:30', body: 'Sunrise 6:18.', lock: 'x', route: '/alarm/g', kind: 'alarm' as const, alarm: { group: 'g', snooze: true } };
+    const t = setup({ todos: [doc('a', '2026-11-20')], alarms: async () => ({ add: [ring], drop: ['todo:a:2026-11-20:-7'] }) });
+    await t.syncer.sync();
+    expect(t.scheduled[0]).toMatchObject({ id: 'alarm:g:0', title: 'Nandi Hills at 5:30', body: 'Sunrise 6:18.', alarm: { group: 'g', snooze: true }, loud: true });
+    expect(t.scheduled.map((n) => n.id)).not.toContain('todo:a:2026-11-20:-7');
+    expect(t.scheduled).toHaveLength(4);
+  });
   it('cancels what was scheduled and schedules the plan, with the lock-screen text unless details are shown', async () => {
     const t = setup({ todos: [doc('a', '2026-11-20')] });
     await t.syncer.sync();

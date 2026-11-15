@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["RideAlarmModule"] },
+  "android": { "modules": ["expo.modules.ridealarm.RideAlarmModule"] }
+}

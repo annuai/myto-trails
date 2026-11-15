@@ -12,3 +12,5 @@ export const notifier: Notifier = {
 };
 
 export const useTappedRoute = (): { route: string; key: string; id: string } | null => null;
+
+export const useAlarmResponse = (): { group: string; action: 'up' | 'tap' | 'snooze'; key: string } | null => null;

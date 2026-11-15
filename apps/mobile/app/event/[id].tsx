@@ -10,12 +10,14 @@ import type { DeclineReason, EventRole } from '@/api/types';
 import { useEvent } from '@/api/useApi';
 import { ConfirmSheet } from '@/features/community/ConfirmSheet';
 import { EventAlbum } from '@/features/community/EventAlbum';
+import { AlarmCard } from '@/features/alarm/AlarmCard';
 import { DeclineSheet } from '@/features/event/DeclineSheet';
 import { RosterSheet } from '@/features/event/RosterSheet';
 import { RESPONSE_LABEL } from '@/features/event/labels';
 import { canCheckIn, primaryAction } from '@/lib/eventCore';
 import { formatRideWhen } from '@/lib/community';
 import { useAction } from '@/lib/useAction';
+import { useAlarms } from '@/store/alarms';
 import { useAuth } from '@/store/auth';
 import { useCompanion } from '@/store/companion';
 import { useLocation } from '@/store/location';
@@ -46,6 +48,15 @@ export default function EventScreen() {
   // The phone only needs a position while a rider could be checking in.
   const watching = !!ev && ev.status !== 'cancelled' && ev.status !== 'ended' && ev.myResponse !== 'declined' && ev.myResponse !== 'waitlisted' && !ev.checkedIn;
   useEffect(() => (watching ? useLocation.getState().acquire() : undefined), [watching]);
+  // An alarm follows the ride: a moved start or a new name is kept, and it goes when the rider is no longer going or the ride is off.
+  const alarmable = !!ev && ev.status === 'scheduled' && (ev.mine || ev.myResponse === 'going') && Date.parse(ev.startsAt) > now;
+  useEffect(() => {
+    if (!ev) return;
+    const a = useAlarms.getState().settings[`event:${ev.id}`];
+    if (!a) return;
+    if (ev.status === 'cancelled' || ev.status === 'ended' || (!ev.mine && ev.myResponse !== 'going')) useAlarms.getState().remove(a.key);
+    else if (a.startsAt !== Date.parse(ev.startsAt) || a.title !== ev.title) useAlarms.getState().set({ ...a, startsAt: Date.parse(ev.startsAt), title: ev.title });
+  }, [ev?.id, ev?.status, ev?.myResponse, ev?.startsAt, ev?.title, ev?.mine]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoProblem, setPhotoProblem] = useState<string>();
@@ -150,6 +161,10 @@ export default function EventScreen() {
           ) : null}
           {act.problem && !open ? <Text variant="label" tone="stop" accessibilityLiveRegion="polite">{act.problem}</Text> : null}
         </View>
+      ) : null}
+
+      {alarmable ? (
+        <View style={{ marginTop: space[4] }}><AlarmCard target={{ key: `event:${ev.id}`, kind: 'event', refId: ev.id, title: ev.title, startsAt: Date.parse(ev.startsAt) }} /></View>
       ) : null}
 
       {ev.mine && !over ? (

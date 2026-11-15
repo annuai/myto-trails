@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { goBack } from '@/lib/goBack';
 import { Copy, ListPlus, Users, Pencil, Play, Route as RouteIcon, ShoppingBag, Square, Trash2 } from 'lucide-react-native';
+import { AlarmCard } from '@/features/alarm/AlarmCard';
 import { GroupSheet } from '@/features/GroupSheet';
 import { PlanTripSheet } from '@/features/trip/PlanTripSheet';
 import { startTodaysRide, startTrip } from '@/features/trip/startTrip';
@@ -81,13 +82,17 @@ export default function TripDetail() {
           <Button variant="soft" icon={Square} label="End trip" onPress={() => useTrips.getState().end(trip.id)} />
         </View>
       ) : status === 'upcoming' ? (
-        <Text variant="label" tone="muted">{whenText(trip, today)}{trip.startTime !== undefined ? ` at ${startTimeText(trip.startTime)}` : ''}. Tap Start trip here to begin recording. The reminder to start is set in Notifications.</Text>
+        <Text variant="label" tone="muted">{whenText(trip, today)}{trip.startTime !== undefined ? ` at ${startTimeText(trip.startTime)}` : ''}. Tap Start trip here to begin recording. Set a wake-up alarm below, or the reminder to start in Notifications.</Text>
       ) : status === 'missed' ? (
         <Card style={{ gap: space[3] }}>
           <Text variant="bodyMedium">This trip was not started</Text>
           <Text variant="label" tone="muted">Nothing was recorded: recording only begins when you press Start trip. The plan is still here, so move it to a new date and time, or delete it.</Text>
           <Button label="Move it" onPress={() => setEditing(true)} />
         </Card>
+      ) : null}
+
+      {trip.startDate && trip.startTime !== undefined && (status === 'upcoming' || status === 'ready' || status === 'active') ? (
+        <View style={{ marginTop: space[4] }}><AlarmCard target={{ key: `trip:${trip.id}`, kind: 'trip', refId: trip.id }} /></View>
       ) : null}
 
       {expiring.length ? (
