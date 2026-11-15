@@ -75,5 +75,5 @@ export function PillionHost() {
 
   if (!current) return null;
   const { visit } = current;
-  return <PillionDialog key={current.key} visit={visit} onClose={() => usePillion.getState().dismiss()} onAction={() => visit.route && router.push(visit.route as never)} />;
+  return <PillionDialog key={current.key} visit={visit} onClose={() => usePillion.getState().dismiss()} onAction={() => { if (visit.route && visit.route !== path) router.push(visit.route as never); }} />;
 }
