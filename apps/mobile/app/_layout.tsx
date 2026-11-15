@@ -33,8 +33,10 @@ import { VoiceHost } from '@/VoiceHost';
 import { runRideIdMigration } from '@/lib/rideIdMigration.run';
 import { startCachePersistence } from '@/api/cachePersist.run';
 import { startCrashReporting, withCrashReporting } from '@/lib/crashReporting';
+import { startAnalytics, useScreenTracking } from '@/lib/analytics.run';
 
 startCrashReporting();
+startAnalytics();
 void SplashScreen.preventAutoHideAsync();
 
 // Web build only. A phone app does not select text when you press and hold a button, so the browser build should not either.
@@ -48,6 +50,7 @@ const WEB_BASE_CSS = `
 
 function Root() {
   const { width, height } = useWindowDimensions();
+  useScreenTracking();
   useEffect(() => {
     if (Platform.OS !== 'web' || document.getElementById('myto-web-base')) return;
     const el = document.createElement('style');
