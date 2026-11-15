@@ -31,6 +31,7 @@ import { RiderSheet } from '@/features/group/RiderSheet';
 import { GroupRail, StatsStrip, TurnCard } from '@/features/ride/LiveHud';
 import { useSpeedTicks } from '@/features/ride/useSpeedTicks';
 import { useDirections } from '@/features/ride/useDirections';
+import { useVoiceGuidance } from '@/features/ride/useVoiceGuidance';
 import { useStatusSince } from '@/features/ride/useStatusSince';
 import { useSmoothedRide } from '@/features/ride/useSmoothedRide';
 import { fromDirections, fromTrail, type Instruction } from '@/lib/guidance';
@@ -240,6 +241,7 @@ function LiveBody() {
     }
     return routeLine && guide ? fromTrail(guide, start, spot, off) : undefined;
   }, [spot, roadTo?.lat, roadTo?.lng, toStart, target, rescueSpot, directions, roadFailed, routeLine, simRoad, guide, start, off, rerouting, rejoining]); // eslint-disable-line react-hooks/exhaustive-deps
+  useVoiceGuidance(instruction, r.speedKmh / 3.6);
   // On reaching the rider, or when they say they are OK, the card asks whether to carry on: one tap goes back to the ride as it was.
   const helpResolved = !!rescue && !!rescueRider && rescue.startStatus !== 'ok' && rescueRider.status === 'ok';
   const helpPrompt = rescue && (instruction?.arrived || helpResolved) ? { text: helpResolved ? `${rescue.name} is OK now.` : `You have reached ${rescue.name}.`, action: 'Help given, continue the ride', onAction: endRescue } : undefined;

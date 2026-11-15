@@ -107,3 +107,16 @@ describe('groupByCountry', () => {
     expect(groupByCountry([], new Set())).toEqual([]);
   });
 });
+
+describe('routing file in the manifest', () => {
+  it('keeps a good routing file and counts it in the download size', () => {
+    const [r] = parseManifest({ format: 1, regions: [raw({ route: { ...file(500), unpackedBytes: 1300 } })] })!;
+    expect(r!.route).toEqual({ ...file(500), unpackedBytes: 1300 });
+    expect(regionTotalBytes(r!)).toBe(1700);
+  });
+  it('drops only the routing file when it is broken', () => {
+    const [r] = parseManifest({ format: 1, regions: [raw({ route: file(500) })] })!;
+    expect(r!.id).toBeTruthy();
+    expect(r!.route).toBeUndefined();
+  });
+});

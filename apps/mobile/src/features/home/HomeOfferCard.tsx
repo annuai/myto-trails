@@ -10,7 +10,7 @@ import { goHome } from './goHome';
 import { offerCardView } from './offerView';
 import { useHomeOfferNow } from './useHomeOffer';
 
-/** The "Ride home" offer: guide home, record the ride home, or not now. Renders nothing when there is no offer. */
+/** The "Ride home" offer: guide and record the ride home, or not now. Renders nothing when there is no offer. */
 export function HomeOfferCard() {
   const router = useRouter();
   const r = useHomeOfferNow();
@@ -22,7 +22,6 @@ export function HomeOfferCard() {
       <Text variant="bodyMedium">{view.title}</Text>
       <Text variant="label" tone="muted">{view.body}</Text>
       <Button label="Ride home" arrow onPress={() => goHome(router, home)} />
-      <Button variant="soft" onCard label="Record it" onPress={() => goHome(router, home, { record: true })} />
       <View style={{ alignItems: 'flex-start' }}><TextButton label="Not now" onPress={() => useHomeOffer.getState().dismiss()} /></View>
     </Card>
   );

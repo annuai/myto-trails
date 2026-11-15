@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["OfflineRouterModule"] },
+  "android": { "modules": ["expo.modules.offlinerouter.OfflineRouterModule"] }
+}

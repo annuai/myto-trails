@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { nowMs } from '@/lib/clock';
 import { haversine, type LatLng } from '@/lib/geo';
 import { answered, askFirst, dropped, failed, isFresh, readAgainst, startReroute, stepReroute } from '@/lib/reroute';
+import { HEADING_MIN_MPS } from '@/lib/routing';
 import { fetchDirections, navigateStep, type Directions } from '@/lib/turnByTurn';
+import { routePrefs } from '@/store/routePrefs';
 
 /** A place that has moved less than this keeps its road. */
 const TARGET_MOVED_M = 100;
@@ -50,10 +52,12 @@ export function useDirections(here: LatLng | undefined, to: LatLng | undefined, 
       inFlight.current?.abort();
       const ctl = new AbortController();
       inFlight.current = ctl;
-      fetchDirections(from, dest, ctl.signal)
+      const m = opts.motion;
+      const heading = m && m.speedMps >= HEADING_MIN_MPS ? m.headingDeg : undefined;
+      fetchDirections(from, dest, { heading, prefs: routePrefs(), signal: ctl.signal })
         .then((d) => {
-          // An answer for a question that is no longer the one wanted, or for a rider who has since ridden on, is not used.
-          if (!isFresh(engine.current, seq, from, latest.current.here ?? from)) { engine.current = dropped(engine.current, nowMs()); return; }
+          // An answer for a question that is no longer the one wanted, or for a rider who has ridden on and is not on the new way, is not used.
+          if (!isFresh(engine.current, seq, from, latest.current.here ?? from, d.line)) { engine.current = dropped(engine.current, nowMs()); return; }
           engine.current = answered(engine.current, nowMs());
           askedTo.current = dest; setDirections(d); setFailed(false);
           if (isReroute) setRerouted((n) => n + 1);

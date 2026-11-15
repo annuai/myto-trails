@@ -5,7 +5,7 @@ import { RouteCheck } from '@/features/RouteCheck';
 import type { LatLng } from '@/lib/geo';
 import { uid } from '@/lib/id';
 import type { Place } from '@/lib/placeSearch';
-import { roadRoute } from '@/lib/roadRoute';
+import { roadRoute, type RoadPlan } from '@/lib/roadRoute';
 import { planRoute, type PlannedRoute } from '@/lib/routePlan';
 import { asText, distanceKm, durationParts } from '@/lib/units';
 import { moveWaypoint, routeNameFor, type Waypoint } from '@/lib/waypoints';
@@ -17,6 +17,7 @@ import { IconButton } from '@/ui/IconButton';
 import { ListCard, Row } from '@/ui/ListCard';
 import { OsmMap } from '@/ui/map/OsmMap';
 import { Text } from '@/ui/Text';
+import { routePrefs } from '@/store/routePrefs';
 import { PlaceSearch } from './PlaceSearch';
 
 /** Build a route from stops: search for places or tap the map, put them in order, save. */
@@ -24,7 +25,8 @@ export function RouteBuilder({ onSave }: { onSave: (r: { name: string; points: L
   const [stops, setStops] = useState<Waypoint[]>([]);
   const [focus, setFocus] = useState<LatLng>();
   const [name, setName] = useState('');
-  const [road, setRoad] = useState<PlannedRoute>();
+  const [plan, setPlan] = useState<RoadPlan>();
+  const [pick, setPick] = useState(0);
   const [routing, setRouting] = useState(false);
   const [straight, setStraight] = useState(false);
   const pins = stops.map((s) => s.point);
@@ -33,20 +35,23 @@ export function RouteBuilder({ onSave }: { onSave: (r: { name: string; points: L
   // Follow the roads between the stops. Until that arrives, or if it cannot, the stops are joined by straight lines.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- starting a request: it has to mark itself as loading before the answer comes back
-    setRoad(undefined); setStraight(false);
+    setPlan(undefined); setPick(0); setStraight(false);
     if (pins.length < 2) { setRouting(false); return; }
     setRouting(true);
     const ctl = new AbortController();
     const t = setTimeout(() => {
-      roadRoute(pins, ctl.signal)
-        .then((r) => { setRoad(r); setRouting(false); })
+      // Between two places the rider is offered up to two other ways; with more stops the order they chose is the route.
+      roadRoute(pins, { prefs: routePrefs(), alternates: pins.length === 2 ? 2 : 0, signal: ctl.signal })
+        .then((r) => { setPlan(r); setRouting(false); })
         .catch((e: Error) => { if (e.name === 'AbortError') return; setStraight(true); setRouting(false); });
     }, 400);
     return () => { clearTimeout(t); ctl.abort(); };
     // `where` stands for the stops' positions; reordering or moving one reruns this, renaming never does.
   }, [where]);
 
+  const road: PlannedRoute | undefined = plan?.routes[pick] ?? plan?.routes[0];
   const planned = road ?? (pins.length >= 2 ? planRoute(pins) : undefined);
+  const others = plan && plan.routes.length > 1 ? plan.routes : [];
   const points = planned?.points ?? pins;
   const suggested = routeNameFor(stops);
 
@@ -75,7 +80,12 @@ export function RouteBuilder({ onSave }: { onSave: (r: { name: string; points: L
           ))}
         </ListCard>
       ) : null}
-      {planned ? <Text variant="label" tone="muted">{routing ? 'Finding the roads…' : `${asText(distanceKm(planned.distanceKm))} · about ${asText(durationParts(planned.etaMin * 60))} riding${road ? '' : straight ? ', in straight lines. The road service could not be reached.' : ''}`}</Text> : null}
+      {planned ? <Text variant="label" tone="muted">{routing ? 'Finding the roads…' : `${asText(distanceKm(planned.distanceKm))} · about ${asText(durationParts(planned.etaMin * 60))} riding${road ? (plan?.straightRuns ? '. Part of it is in straight lines: the road service could not route it.' : '') : straight ? ', in straight lines. The road service could not be reached.' : ''}`}</Text> : null}
+      {others.length && !routing ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2] }}>
+          {others.map((r, i) => <ChoiceChip key={i} selected={i === pick} label={`${i === 0 ? 'Best' : `Option ${i + 1}`} · ${asText(distanceKm(r.distanceKm))} · ${asText(durationParts(r.etaMin * 60))}`} onPress={() => setPick(i)} />)}
+        </View>
+      ) : null}
       {stops.length ? <View style={{ flexDirection: 'row' }}><ChoiceChip label="Clear all" onPress={() => setStops([])} /></View> : null}
       {planned ? (
         <>

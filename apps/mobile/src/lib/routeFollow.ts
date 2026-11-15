@@ -12,7 +12,7 @@ export const OFF_ROUTE_AFTER_MS = 20_000;
 export type RoutePosition = { distM: number; /** Index of the segment's first point. */ segment: number; /** Metres from the start of the line to the nearest point on it. */ alongM: number };
 
 /** The nearest point on a line to `p`: how far away it is and how far along the line it lies. Null for a line with no points. */
-export function nearestOnLine(line: LatLng[], p: LatLng): RoutePosition | null {
+export function nearestOnLine(line: LatLng[], p: LatLng, window?: { fromM: number; toM: number }): RoutePosition | null {
   if (!line.length) return null;
   if (line.length === 1) return { distM: dist(line[0], p), segment: 0, alongM: 0 };
   // Flat-earth metres around `p` are accurate to well under a metre for the distances a route needs.
@@ -27,10 +27,28 @@ export function nearestOnLine(line: LatLng[], p: LatLng): RoutePosition | null {
     const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len2));
     const d = Math.hypot(ax + t * dx, ay + t * dy);
     const seg = Math.sqrt(len2);
-    if (d < best.distM) best = { distM: d, segment: i, alongM: before + t * seg };
+    const inWindow = !window || (before + seg >= window.fromM && before <= window.toM);
+    if (inWindow && d < best.distM) best = { distM: d, segment: i, alongM: before + t * seg };
     before += seg;
   }
-  return best;
+  return best.distM === Infinity ? null : best;
+}
+
+/** How far back and ahead of the last known spot to look first, so a road that passes itself (a loop, a hairpin, an out-and-back) keeps the rider on the pass they are riding. */
+export const TRACK_BACK_M = 60;
+export const TRACK_AHEAD_M = 500;
+/** The windowed match is trusted while within this; beyond it, a match elsewhere on the line wins if it is clearly nearer. */
+const TRACK_TRUST_M = 50;
+const TRACK_JUMP_GAIN_M = 30;
+
+/** The nearest point on the line, preferring the stretch just ahead of `lastAlongM` (the previous match). Without one, the nearest anywhere. */
+export function trackOnLine(line: LatLng[], p: LatLng, lastAlongM: number | undefined): RoutePosition | null {
+  if (lastAlongM === undefined) return nearestOnLine(line, p);
+  const near = nearestOnLine(line, p, { fromM: lastAlongM - TRACK_BACK_M, toM: lastAlongM + TRACK_AHEAD_M });
+  if (near && near.distM <= TRACK_TRUST_M) return near;
+  const any = nearestOnLine(line, p);
+  if (!near) return any;
+  return any && any.distM + TRACK_JUMP_GAIN_M < near.distM ? any : near;
 }
 
 /** Metres from `p` to the line (Infinity for an empty line). */

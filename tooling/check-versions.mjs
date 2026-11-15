@@ -1,7 +1,7 @@
 // Every package and the phone app carry one product version, recorded in .release-please-manifest.json.
 // The release bot (see docs/versioning.md) bumps them together; this stops a hand edit from letting one drift.
 import { readFileSync } from "node:fs";
-import { findVersionDrift, gradleVersion, plistVersion } from "./find-version-drift.ts";
+import { findVersionDrift, gradleVersion, plistVersion, xcodeWidgetVersion } from "./find-version-drift.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const read = (path) => JSON.parse(readFileSync(root + path, "utf8"));
@@ -25,6 +25,9 @@ for (const plist of ["apps/mobile/ios/MytoMoto/Info.plist", "apps/mobile/ios/Exp
 // So does the Android build, from versionName in android/app/build.gradle.
 const gradle = "apps/mobile/android/app/build.gradle";
 files.push({ path: gradle, version: gradleVersion(readFileSync(root + gradle, "utf8")) });
+
+const pbx = "apps/mobile/ios/MytoMoto.xcodeproj/project.pbxproj";
+files.push({ path: pbx, version: xcodeWidgetVersion(readFileSync(root + pbx, "utf8")) });
 
 const drift = findVersionDrift(manifest, files);
 if (drift.length) {

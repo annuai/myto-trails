@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildRow, classifyPlace } from './places';
+import { buildOvertureRow, buildRow, classifyPlace, dedupeKey, dedupeKeys } from './places';
 
 describe('classifyPlace', () => {
   it('ranks settlements', () => {
@@ -58,5 +58,52 @@ describe('buildRow', () => {
   it('takes the other Indian scripts as alt names, deduplicated', () => {
     const row = buildRow({ place: 'city', name: 'Mysuru', 'name:ml': 'മൈസൂർ', 'name:hi': 'मैसूर', 'name:ta': 'மைசூர்', 'name:ur': 'मैसूर', 'name:or': 'ମାଇସୁର' }, 12.3, 76.6, 'Karnataka');
     expect(row?.alt).toBe('മൈസൂർ मैसूर மைசூர் ମାଇସୁର');
+  });
+});
+
+describe('buildOvertureRow', () => {
+  const base = { name: 'Shell Petrol Pump', h: ['travel_and_transportation', 'fueling_station'], cat: 'fueling_station', confidence: 0.9, locality: 'Panaji', lat: 15.5, lng: 73.8 };
+  it('keeps what a rider looks for, with the locality and state', () => {
+    expect(buildOvertureRow(base, 'Goa')).toMatchObject({ name: 'Shell Petrol Pump', kind: 'fuel', detail: 'Panaji, Goa', lat: 15.5, lng: 73.8 });
+  });
+  it('maps the other kinds', () => {
+    const kind = (h: string[], cat = h[h.length - 1]!) => buildOvertureRow({ ...base, h, cat }, 'Goa')?.kind;
+    expect(kind(['lodging', 'hotel'])).toBe('stay');
+    expect(kind(['food_and_drink', 'restaurant'])).toBe('food');
+    expect(kind(['health_care', 'hospital'])).toBe('health');
+    expect(kind(['cultural_and_historic', 'place_of_worship'])).toBe('landmark');
+    expect(kind(['travel_and_transportation', 'vehicle_service', 'motorcycle_repair'])).toBe('repair');
+    expect(kind(['services_and_business', 'financial_service', 'atm'])).toBe('bank');
+  });
+  it('drops what is not for the road, closed places and doubtful ones', () => {
+    expect(buildOvertureRow({ ...base, h: ['services_and_business', 'real_estate_service'] }, 'Goa')).toBeNull();
+    expect(buildOvertureRow({ ...base, h: ['food_and_drink', 'alcoholic_beverage_venue'] }, 'Goa')).toBeNull();
+    expect(buildOvertureRow({ ...base, status: 'permanently_closed' }, 'Goa')).toBeNull();
+    expect(buildOvertureRow({ ...base, confidence: 0.2 }, 'Goa')).toBeNull();
+    expect(buildOvertureRow({ ...base, name: ' ' }, 'Goa')).toBeNull();
+    expect(buildOvertureRow({ ...base, h: null }, 'Goa')).toBeNull();
+  });
+  it('ranks a business below any settlement, peak or pass, and a surer one higher', () => {
+    const hi = buildOvertureRow(base, 'Goa')!.rank;
+    const lo = buildOvertureRow({ ...base, confidence: 0.4 }, 'Goa')!.rank;
+    expect(hi).toBeGreaterThan(lo);
+    expect(hi).toBeLessThan(55);
+  });
+  it('indexes the words a rider uses for the kind, so "petrol pump" finds a fuel station', () => {
+    expect(buildOvertureRow(base, 'Goa')!.alt).toContain('petrol pump');
+    expect(buildOvertureRow({ ...base, h: ['food_and_drink', 'restaurant', 'indian_restaurant'], cat: 'indian_restaurant' }, 'Goa')!.alt).toContain('indian restaurant');
+  });
+  it('uses just the state when the locality is missing or is the name itself', () => {
+    expect(buildOvertureRow({ ...base, locality: null }, 'Goa')!.detail).toBe('Goa');
+    expect(buildOvertureRow({ ...base, locality: 'Shell Petrol Pump' }, 'Goa')!.detail).toBe('Goa');
+  });
+});
+
+describe('dedupeKeys', () => {
+  it('finds the same name within about 100 m, either side of a cell edge, ignoring case', () => {
+    const seen = new Set([dedupeKey('Fort Aguada', 15.4925, 73.7737)]);
+    expect(dedupeKeys('fort aguada', 15.4921, 73.7734).some((k) => seen.has(k))).toBe(true);
+    expect(dedupeKeys('Fort Aguada', 15.5925, 73.7737).some((k) => seen.has(k))).toBe(false);
+    expect(dedupeKeys('Other', 15.4925, 73.7737).some((k) => seen.has(k))).toBe(false);
   });
 });

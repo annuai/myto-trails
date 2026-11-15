@@ -19,7 +19,7 @@ Next, not built: replay real rides from `motionTraceFile` to tune the thresholds
 
 Phases move forward only: `to_start` -> `on_trail` -> `finished`. On the trail it gives distance to go and the next turn within 400 m, read from the line's shape (heading change of 40 degrees or more). To the start it gives distance and compass direction, plus a link that opens Google Maps for the road. Off-route alerts now run only on the trail (they used to buzz on the way to the start). A loop's end is not its finish: 60 percent must be ridden first.
 Trips need nothing new: `chooseDayRoute` already hands the day's trail to the ride screen.
-Limit: no road routing, because that costs money. Turns come from the GPX shape, so they are as good as the file's detail.
+Trail turns come from the GPX shape, so they are as good as the file's detail. Roads (to the start, back to the trail, to a place) now use road routing through `lib/routing`: free FOSSGIS Valhalla (motorcycle profile, rider preferences, heading) with a timeout and one retry, then the FOSSGIS OSRM car router as backup; inside a downloaded region it runs on the phone with no signal (Valhalla through valhalla-mobile, [runbook](../runbooks/self-hosted-map-tiles.md)).
 
 ## 4. Fuel
 

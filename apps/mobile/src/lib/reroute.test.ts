@@ -147,3 +147,12 @@ describe('rejoinTarget', () => {
     expect(haversine(rejoinTarget(trail, 4950, 20), P(5000, 0))).toBeLessThan(2);
   });
 });
+
+describe('isFresh at speed', () => {
+  it('keeps an answer for a rider who rode on, if the new way passes where they are now', () => {
+    const asked = askFirst(startReroute, 0);
+    const from = P(0, 0), now = P(400, 0);
+    expect(isFresh(asked.state, asked.seq, from, now, [P(0, 0), P(1000, 0)])).toBe(true);
+    expect(isFresh(asked.state, asked.seq, from, now, [P(0, 0), P(0, 1000)])).toBe(false);
+  });
+});

@@ -12,22 +12,16 @@ const router = () => ({ push: vi.fn() });
 
 describe('goHome', () => {
   beforeEach(() => { guide.setState({ to: undefined }); rec.setState({ status: 'idle' }); });
-  it('pushes /navigate with string coordinates by default', () => {
+  it('sets the guide target Home and starts a ride', () => {
     const r = router();
     goHome(r as never, home);
-    expect(r.push).toHaveBeenCalledWith({ pathname: '/navigate', params: { lat: '51.5', lng: '-0.12' } });
-    expect(guide.getState().to).toBeUndefined();
-  });
-  it('record: sets the guide target Home and starts a ride', () => {
-    const r = router();
-    goHome(r as never, home, { record: true });
     expect(guide.getState().to).toEqual({ lat: 51.5, lng: -0.12, name: 'Home' });
     expect(r.push).toHaveBeenCalledWith({ pathname: '/ride', params: { autostart: '1' } });
   });
-  it('record while a ride runs: opens the live ride', () => {
+  it('while a ride runs: opens the live ride', () => {
     rec.setState({ status: 'running' });
     const r = router();
-    goHome(r as never, home, { record: true });
+    goHome(r as never, home);
     expect(r.push).toHaveBeenCalledWith('/ride/live');
   });
 });

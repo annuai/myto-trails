@@ -256,3 +256,48 @@ describe('assertNotDownloading', () => {
   });
   it('lets a delete through otherwise', () => expect(() => assertNotDownloading(false)).not.toThrow());
 });
+
+describe('routing file', () => {
+  const withRoute = () => region({ route: { url: 'https://r2/goa.route.tar.gz', bytes: 10 * MB, sha256: 'bb', unpackedBytes: 25 * MB } });
+  const unpacking = (bytes: number) => {
+    const f = fakeFs();
+    f.fs.gunzip = async (from, to) => { f.log.push(`gunzip ${from}`); f.files.set(to, { size: bytes }); return bytes; };
+    return f;
+  };
+
+  it('is unpacked to its final name before the index is written, and the download removed', async () => {
+    const { fs, files, log } = unpacking(25 * MB);
+    await runDownload(fs, DIR, withRoute(), () => {});
+    expect(files.get(`${DIR}goa.v2.route.tar`)?.size).toBe(25 * MB);
+    expect(files.has(`${DIR}goa.v2.route.tar.gz.part`)).toBe(false);
+    expect(log.indexOf(`gunzip ${DIR}goa.v2.route.tar.gz.part`)).toBeLessThan(log.indexOf(`mv ${DIR}index.json.tmp`));
+    const [installed] = await filterInstalled(DIR, [{ id: 'goa', version: 'v2', bbox: [73, 14, 75, 16] }], async (p) => files.has(p));
+    expect(installed!.routePath).toBe(`${DIR}goa.v2.route.tar`);
+  });
+
+  it('a wrong unpacked size is damaged: nothing is installed', async () => {
+    const { fs, files } = unpacking(24 * MB);
+    await expect(runDownload(fs, DIR, withRoute(), () => {})).rejects.toThrow(/damaged/);
+    expect(files.has(`${DIR}goa.v2.route.tar`)).toBe(false);
+    expect(files.has(`${DIR}index.json`)).toBe(false);
+  });
+
+  it('is not fetched by a phone that cannot route offline', async () => {
+    const { fs, log, files } = fakeFs();
+    await runDownload(fs, DIR, withRoute(), () => {});
+    expect(log.some((l) => l.includes('route'))).toBe(false);
+    expect(files.has(`${DIR}goa.v2.map`)).toBe(true);
+  });
+
+  it('counts the unpacked size when checking space', () => {
+    expect(checkSpace(150 * MB, withRoute()).ok).toBe(false); // (120 + 25) x 1.1 = 159.5 MB
+    expect(checkSpace(160 * MB, withRoute()).ok).toBe(true);
+  });
+
+  it('goes with the region on delete', async () => {
+    const { fs, files } = unpacking(25 * MB);
+    await runDownload(fs, DIR, withRoute(), () => {});
+    await runDelete(fs, DIR, 'goa');
+    expect(files.has(`${DIR}goa.v2.route.tar`)).toBe(false);
+  });
+});

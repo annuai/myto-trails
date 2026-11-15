@@ -1,26 +1,13 @@
-import { APP_HEADERS } from './appHeaders';
-import type { LatLng } from './geo';
-import { simplify, type PlannedRoute } from './routePlan';
+import { pathLength, type LatLng } from './geo';
+import { PLAN_KMH, simplify, type PlannedRoute } from './routePlan';
+import { route, type Directions, type RoutePrefs } from './routing';
 
-const VALHALLA = 'https://valhalla1.openstreetmap.de/route';
+export { decodePolyline } from './routing';
+
 /** The public server refuses more than 20 locations in one request. */
 export const MAX_STOPS_PER_REQUEST = 20;
 /** Road geometry is dense; dropping points within 5 m of the line keeps its shape and a saved route small. */
 const SIMPLIFY_M = 5;
-
-/** Google's encoded polyline format. Valhalla uses 6 decimal places, Google's own uses 5. */
-export function decodePolyline(encoded: string, precision = 6): LatLng[] {
-  const f = 10 ** precision;
-  const out: LatLng[] = [];
-  let i = 0, lat = 0, lng = 0;
-  const next = () => {
-    let shift = 0, result = 0, b: number;
-    do { b = encoded.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-    return result & 1 ? ~(result >> 1) : result >> 1;
-  };
-  while (i < encoded.length) { lat += next(); lng += next(); out.push({ lat: lat / f, lng: lng / f }); }
-  return out;
-}
 
 /** Runs of stops that fit one request. Neighbouring runs share their joining stop, so the legs meet. */
 export function chunkStops<T>(stops: T[], max = MAX_STOPS_PER_REQUEST): T[][] {
@@ -29,25 +16,41 @@ export function chunkStops<T>(stops: T[], max = MAX_STOPS_PER_REQUEST): T[][] {
   return runs;
 }
 
-type Trip = { trip?: { legs?: { shape?: string }[]; summary?: { length?: number; time?: number } } };
+export type RoadPlan = {
+  /** The best route first, then any alternatives (offered only between two stops). */
+  routes: PlannedRoute[];
+  /** Runs of stops the road service could not route; they are joined by straight lines so the rest of the route still follows roads. */
+  straightRuns: number;
+};
 
-/** The road route a motorcycle can ride through the stops, in order. Stops off a road are moved to the nearest one. */
-export async function roadRoute(stops: LatLng[], signal?: AbortSignal): Promise<PlannedRoute> {
-  const points: LatLng[] = [];
-  let km = 0, seconds = 0;
-  for (const run of chunkStops(stops)) {
-    const res = await fetch(VALHALLA, {
-      method: 'POST', signal, headers: { ...APP_HEADERS, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ locations: run.map((p) => ({ lat: p.lat, lon: p.lng, type: 'break' })), costing: 'motorcycle', directions_options: { units: 'kilometers' } }),
-    });
-    if (!res.ok) throw new Error(`routing ${res.status}`);
-    const { trip } = (await res.json()) as Trip;
-    if (!trip?.legs?.length || trip.summary?.length === undefined) throw new Error('routing returned no route');
-    for (const leg of trip.legs) {
-      const shape = decodePolyline(leg.shape ?? '');
-      points.push(...(points.length ? shape.slice(1) : shape));
-    }
-    km += trip.summary.length; seconds += trip.summary.time ?? 0;
+type Asker = typeof route;
+
+const asPlanned = (d: Directions): PlannedRoute => ({ points: simplify(d.line, SIMPLIFY_M), distanceKm: d.totalM / 1000, etaMin: d.etaMin });
+
+/** The road route a motorcycle can ride through the stops, in order. Stops off a road are moved to the nearest one. Throws only when nothing at all could be routed. */
+export async function roadRoute(stops: LatLng[], opts: { prefs?: RoutePrefs; alternates?: number; signal?: AbortSignal } = {}, ask: Asker = route): Promise<RoadPlan> {
+  const runs = chunkStops(stops);
+  if (runs.length === 1 && opts.alternates) {
+    const all = await ask({ stops: runs[0]!, prefs: opts.prefs, alternates: opts.alternates }, opts.signal);
+    return { routes: all.map(asPlanned), straightRuns: 0 };
   }
-  return { points: simplify(points, SIMPLIFY_M), distanceKm: km, etaMin: Math.round(seconds / 60) };
+  const points: LatLng[] = [];
+  let km = 0, minutes = 0, straightRuns = 0;
+  let firstError: unknown;
+  for (const run of runs) {
+    let line: LatLng[], runKm: number, runMin: number;
+    try {
+      const [best] = await ask({ stops: run, prefs: opts.prefs }, opts.signal);
+      line = best!.line; runKm = best!.totalM / 1000; runMin = best!.etaMin;
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') throw e;
+      firstError ??= e;
+      straightRuns++;
+      line = run; runKm = pathLength(run) / 1000; runMin = Math.round((runKm / PLAN_KMH) * 60);
+    }
+    points.push(...(points.length ? line.slice(1) : line));
+    km += runKm; minutes += runMin;
+  }
+  if (straightRuns === runs.length) throw firstError instanceof Error ? firstError : new Error('routing failed');
+  return { routes: [{ points: simplify(points, SIMPLIFY_M), distanceKm: km, etaMin: minutes }], straightRuns };
 }

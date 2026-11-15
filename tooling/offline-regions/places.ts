@@ -1,5 +1,5 @@
 // Pure place classification and row building for the offline region search file.
-export type PlaceKind = 'city' | 'town' | 'village' | 'hamlet' | 'suburb' | 'district' | 'pass' | 'peak' | 'landmark';
+export type PlaceKind = 'city' | 'town' | 'village' | 'hamlet' | 'suburb' | 'district' | 'pass' | 'peak' | 'landmark' | 'fuel' | 'stay' | 'food' | 'health' | 'transport' | 'repair' | 'bank' | 'police';
 
 export interface PlaceRow {
   name: string;
@@ -64,4 +64,83 @@ export function buildRow(tags: Record<string, string>, lat: number, lng: number,
     lng,
     rank: cls.rank,
   };
+}
+
+/** One Overture Maps place as `overture.py` writes it: the taxonomy path, not the old category list. */
+export interface OverturePlace {
+  name?: string | null;
+  /** Taxonomy path, broad to narrow, e.g. ["travel_and_transportation", "fueling_station"]. */
+  h?: string[] | null;
+  cat?: string | null;
+  confidence?: number | null;
+  status?: string | null;
+  locality?: string | null;
+  lat: number;
+  lng: number;
+}
+
+/** Below this Overture's own confidence says the place probably is not real or has moved. */
+export const OVERTURE_MIN_CONFIDENCE = 0.4;
+
+/**
+ * What a rider looks for on the road, and nothing else (Overture lists web designers and estate agents too). Matched on the taxonomy path;
+ * the first rule that fits wins. Ranks stay under towns, passes and peaks (settlements 30 to 100, peaks 55, passes 60), so a business
+ * never outranks the place it is in; confidence adds up to 8 to order the businesses among themselves.
+ */
+const OVERTURE_RULES: { kind: PlaceKind; rank: number; test: (h: string[], cat: string) => boolean }[] = [
+  { kind: 'fuel', rank: 42, test: (h) => h.includes('fueling_station') || h.includes('ev_charging_station') },
+  { kind: 'repair', rank: 36, test: (h, cat) => h.includes('vehicle_service') && /motorcycle|automotive_repair|tire|mechanic/.test(h.join(' ') + cat) },
+  { kind: 'repair', rank: 36, test: (h, cat) => /motorcycle/.test(h.join(' ') + cat) },
+  { kind: 'health', rank: 40, test: (h) => h.includes('hospital') || h.includes('pharmacy') || h.includes('emergency_room') },
+  { kind: 'police', rank: 38, test: (h) => h.includes('police_department') },
+  { kind: 'transport', rank: 44, test: (h) => h[0] === 'travel_and_transportation' && h.some((x) => /airport|railway|train_station|bus_station|bus_stop|ferry_terminal|transportation_hub/.test(x)) },
+  { kind: 'bank', rank: 30, test: (h) => h.includes('atm') || h.includes('bank_or_credit_union') },
+  { kind: 'stay', rank: 34, test: (h) => h[0] === 'lodging' },
+  { kind: 'food', rank: 35, test: (h) => h[0] === 'food_and_drink' && !h.includes('alcoholic_beverage_venue') },
+  { kind: 'landmark', rank: 40, test: (h) => h[0] === 'cultural_and_historic' || h[0] === 'geographic_entities' || (h[0] === 'sports_and_recreation' && (h.includes('park') || h.includes('beach'))) },
+];
+
+/** What a rider types for a kind of place instead of a name ("petrol pump", "bike repair"). Indexed with the name, so those searches find it. */
+const KIND_WORDS: Partial<Record<PlaceKind, string>> = {
+  fuel: 'petrol pump fuel station gas diesel ev charging',
+  repair: 'bike repair motorcycle garage mechanic service showroom',
+  health: 'hospital clinic pharmacy medical emergency',
+  police: 'police station',
+  bank: 'atm bank cash',
+  stay: 'hotel stay lodge resort hostel homestay',
+  food: 'restaurant food cafe eat',
+};
+
+export function buildOvertureRow(p: OverturePlace, stateName: string): PlaceRow | null {
+  const name = p.name?.trim();
+  if (!name || !Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return null;
+  if (p.status === 'permanently_closed' || p.status === 'temporarily_closed') return null;
+  const confidence = p.confidence ?? 0;
+  if (confidence < OVERTURE_MIN_CONFIDENCE) return null;
+  const h = p.h ?? [];
+  const rule = OVERTURE_RULES.find((r) => r.test(h, p.cat ?? ''));
+  if (!rule) return null;
+  const locality = p.locality?.trim();
+  return {
+    name,
+    alt: [KIND_WORDS[rule.kind], p.cat?.replace(/_/g, ' ')].filter(Boolean).join(' '),
+    kind: rule.kind,
+    detail: locality && locality !== name && locality !== stateName ? `${locality}, ${stateName}` : stateName,
+    lat: p.lat,
+    lng: p.lng,
+    rank: rule.rank + Math.round(Math.min(1, confidence) * 8),
+  };
+}
+
+const CELL = 0.003;
+const cell = (v: number): number => Math.round(v / CELL);
+
+/** The grid cell (about 330 m) a place of this name sits in. */
+export const dedupeKey = (name: string, lat: number, lng: number): string => `${name.toLowerCase()}|${cell(lat)}|${cell(lng)}`;
+
+/** The cell and its eight neighbours, so two entries for one place are caught even when they fall either side of a cell edge. */
+export function dedupeKeys(name: string, lat: number, lng: number): string[] {
+  const out: string[] = [];
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) out.push(`${name.toLowerCase()}|${cell(lat) + dy}|${cell(lng) + dx}`);
+  return out;
 }

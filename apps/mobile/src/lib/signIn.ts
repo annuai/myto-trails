@@ -7,6 +7,7 @@ import { api } from '@/api/client';
 import { SITE_BASE } from '@/api/config';
 import { forgetProfile } from '@/api/useApi';
 import { wipeImageCache } from '@/lib/imageCache';
+import { useMyBikeStore } from '@/store/myBike';
 import { useSubmissionQueue } from '@/store/submissionQueue';
 import { useAuth } from '@/store/auth';
 import { flushStandingBeforeLeave } from '@/lib/standingSync';
@@ -79,6 +80,7 @@ export async function signOut(): Promise<void> {
   useSubmissionQueue.getState().setItems([]);
   // So is the standing choice and its queued ride refs.
   useStandingPref.getState().reset();
+  useMyBikeStore.getState().reset();
   await wipeImageCache();
   if (token) await api('/auth/token', { method: 'DELETE', token }).catch(() => undefined); // revokes it on the server; offline just forgets it here
 }
@@ -90,6 +92,7 @@ export async function deleteAccount(): Promise<void> {
   await api('/me', { method: 'DELETE', token, body: { confirm: DELETE_CONFIRMATION } });
   useAuth.getState().clear();
   useStandingPref.getState().reset();
+  useMyBikeStore.getState().reset();
   forgetProfile();
   await wipeImageCache();
 }

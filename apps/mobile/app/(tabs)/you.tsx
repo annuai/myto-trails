@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Award, Bell, Cloud, House, BookOpen, Globe, CalendarDays, ClipboardList, Flame, Fuel, IdCard, LifeBuoy, LogIn, LogOut, Luggage, ShieldAlert, Stamp, Route as RouteIcon, Share2, TriangleAlert, Wrench, Users, Ellipsis } from 'lucide-react-native';
 import Constants from 'expo-constants';
 import { CONTACT_EMAIL, MYTO_URL, versionLabel } from '@moto-trails/domain';
-import { useMe } from '@/api/useApi';
+import { useMyBike } from '@/features/bike/useMyBike';
 import { countryName } from '@/lib/countryNames';
 import { signOut, startSignIn } from '@/lib/signIn';
 import { chooseStanding } from '@/lib/standingSync';
@@ -54,7 +54,7 @@ export default function You() {
   const user = useAuth((s) => s.user);
   const token = useAuth((s) => s.token);
   const signedIn = !!token;
-  const me = useMe();
+  const { bike, me } = useMyBike();
   const [authError, setAuthError] = useState<string>();
   const marksHeld = useMarks((s) => MARKS.filter((m) => s.held[m.id]).length);
   const real = rides.filter((r) => !r.sample).length;
@@ -77,7 +77,7 @@ export default function You() {
       {signedIn ? (
         <>
           <SectionTitle>Your bike</SectionTitle>
-          <BikeCard bike={me.data?.bike} onPress={() => router.push('/bike')} />
+          <BikeCard bike={bike} onPress={() => router.push('/bike')} />
         </>
       ) : null}
       <SectionTitle>Account</SectionTitle>

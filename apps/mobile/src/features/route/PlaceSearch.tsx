@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react';
-import { MapPin } from 'lucide-react-native';
-import { searchPlaces, type Place } from '@/lib/placeSearch';
+import { useEffect, useRef, useState } from 'react';
+import { Globe, MapPin } from 'lucide-react-native';
+import { searchPlaces, type Place, type PlaceResults } from '@/lib/placeSearch';
+import { searchCentre, type SearchScope } from '@/lib/placeScope';
 import type { LatLng } from '@/lib/geo';
+import { asText, distanceKm } from '@/lib/units';
+import { useLocation } from '@/store/location';
+import { usePlaces } from '@/store/places';
 import { Field } from '@/ui/Field';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Text } from '@/ui/Text';
@@ -9,10 +13,22 @@ import { Text } from '@/ui/Text';
 const MIN_CHARS = 3;
 const WAIT_MS = 350;
 
-/** Search as you type. Picking a result hands it up and clears the box, ready for the next stop. */
+/** How a place is described: where it is, and how far when it is beyond "nearby". */
+export const placeSub = (p: Place): string | undefined => [p.detail, p.farKm ? `${asText(distanceKm(p.farKm))} away` : ''].filter(Boolean).join(' · ') || undefined;
+
+/**
+ * Search as you type, around the rider: `near` (the map or last stop being planned), else where the phone is, else Home. Far places are left out
+ * unless nothing is nearby or the rider taps "Search everywhere". Picking a result hands it up and clears the box, ready for the next stop.
+ */
 export function PlaceSearch({ near, onPick, label = 'Add a place' }: { near?: LatLng; onPick: (p: Place) => void; label?: string }) {
+  const fix = useLocation((s) => s.fix);
+  const home = usePlaces((s) => s.home);
+  const centre = searchCentre(near, fix, home);
+  const centreRef = useRef(centre);
+  useEffect(() => { centreRef.current = centre; });
   const [q, setQ] = useState('');
-  const [found, setFound] = useState<Place[]>();
+  const [scope, setScope] = useState<SearchScope>('nearby');
+  const [found, setFound] = useState<PlaceResults>();
   const [busy, setBusy] = useState(false);
   const [offline, setOffline] = useState(false);
   const query = q.trim();
@@ -24,21 +40,23 @@ export function PlaceSearch({ near, onPick, label = 'Add a place' }: { near?: La
     setBusy(true);
     const ctl = new AbortController();
     const t = setTimeout(() => {
-      searchPlaces(query, { near, signal: ctl.signal })
+      searchPlaces(query, { near: centreRef.current, scope, signal: ctl.signal })
         .then((r) => { setFound(r); setBusy(false); })
         .catch((e: Error) => { if (e.name === 'AbortError') return; setFound(undefined); setOffline(true); setBusy(false); });
     }, WAIT_MS);
     return () => { clearTimeout(t); ctl.abort(); };
-    // `near` only biases the order of results; a new stop must not restart a search that is already running.
-  }, [query]);
+    // The centre is read when the search starts; moving the map or adding a stop must not restart a search that is already running.
+  }, [query, scope]);
 
   return (
     <>
-      <Field label={label} value={q} onChangeText={setQ} placeholder="Search a town, viewpoint or address" autoCorrect={false} returnKeyType="search" />
+      <Field label={label} value={q} onChangeText={(t) => { setQ(t); setScope('nearby'); }} placeholder="Search a town, viewpoint or address" autoCorrect={false} returnKeyType="search" />
       {offline ? <Text variant="label" tone="stop">Search needs a connection. You can still tap the map to add points.</Text> : null}
-      {found?.length ? (
+      {found?.widened ? <Text variant="label" tone="muted">Nothing nearby, so this searched everywhere.</Text> : null}
+      {found?.places.length ? (
         <ListCard>
-          {found.map((p, i) => <Row key={`${p.name}-${i}`} icon={MapPin} label={p.name} sub={p.detail || undefined} chevron={false} onPress={() => { onPick(p); setQ(''); setFound(undefined); }} />)}
+          {found.places.map((p, i) => <Row key={`${p.name}-${i}`} icon={MapPin} label={p.name} sub={placeSub(p)} chevron={false} onPress={() => { onPick(p); setQ(''); setFound(undefined); setScope('nearby'); }} />)}
+          {found.limited ? <Row icon={Globe} label="Search everywhere" sub="Not what you wanted? Look beyond this area." chevron={false} onPress={() => setScope('everywhere')} /> : null}
         </ListCard>
       ) : found && !busy ? <Text variant="label" tone="muted">Nothing found for “{query}”. Try another spelling, or tap the map.</Text> : null}
     </>

@@ -118,9 +118,16 @@ export function askFirst(s: RerouteState, now: number): Step {
   return maybeAsk(s, now, false);
 }
 
-/** The answer to question `seq` arrived. False when it is not the question that is out, or the rider has moved on from where it was asked. */
-export function isFresh(s: RerouteState, seq: number, askedAt: LatLng, here: LatLng): boolean {
-  return s.asking === seq && haversine(askedAt, here) <= STALE_M;
+/**
+ * The answer to question `seq` arrived. False when it is not the question that is out, or the rider has moved on from where it was asked
+ * and the new way does not pass near where they are now. At speed a rider covers 150 m in a few seconds, so judging by distance alone
+ * would throw away almost every reroute on a fast road; the new line passing the rider is what matters.
+ */
+export function isFresh(s: RerouteState, seq: number, askedAt: LatLng, here: LatLng, line?: LatLng[]): boolean {
+  if (s.asking !== seq) return false;
+  if (haversine(askedAt, here) <= STALE_M) return true;
+  const at = line ? nearestOnLine(line, here) : null;
+  return !!at && at.distM <= MIN_OFF_M;
 }
 
 /** The way was found and is being used. The next question waits out the cooldown. */
