@@ -50,7 +50,7 @@ export const MapBase: React.FC<{ viewBox?: string; width?: number; height?: numb
 );
 
 /** A route: a faint full line, with the blue part drawn up to `p`. */
-const Route: React.FC<{ d: string; p: number; width?: number }> = ({ d, p, width = 6 }) => (
+export const Route: React.FC<{ d: string; p: number; width?: number }> = ({ d, p, width = 6 }) => (
   <>
     <path d={d} fill="none" stroke={c.ink} strokeOpacity={0.14} strokeWidth={width} strokeLinecap="round" />
     <path d={d} pathLength={1} fill="none" stroke={c.accent} strokeWidth={width} strokeLinecap="round" strokeDasharray={1} strokeDashoffset={1 - p} />
@@ -185,7 +185,7 @@ export const GroupScreen: React.FC<{ speed?: number }> = ({ speed = 1 }) => {
 };
 
 /** Real screen recordings (video/public/capture, status bar already cropped). The screen's own top strip is the app's background colour. */
-const RealScreen: React.FC<{ bg: string; children: React.ReactNode }> = ({ bg, children }) => (
+export const RealScreen: React.FC<{ bg: string; children: React.ReactNode }> = ({ bg, children }) => (
   <div style={{ position: 'absolute', inset: 0, background: bg }}>
     <div style={{ position: 'absolute', left: 0, top: 56, width: 390, height: 788, overflow: 'hidden' }}>{children}</div>
     <div style={{ position: 'absolute', left: 0, top: 56, width: 390, height: 14, background: `linear-gradient(${bg}, transparent)` }} />
@@ -193,7 +193,7 @@ const RealScreen: React.FC<{ bg: string; children: React.ReactNode }> = ({ bg, c
 );
 
 /** One stretch of a recording: `from` seconds into the clip, shown for `frames` frames starting at scene frame `at`, then held on its last frame. */
-const Seg: React.FC<{ src: string; from: number; frames: number; at?: number; rate?: number }> = ({ src, from, frames, at = 0, rate = 1 }) => {
+export const Seg: React.FC<{ src: string; from: number; frames: number; at?: number; rate?: number }> = ({ src, from, frames, at = 0, rate = 1 }) => {
   const video = (startSec: number) => (
     <OffthreadVideo src={staticFile(`capture/${src}.mp4`)} muted playbackRate={rate} startFrom={Math.round(startSec * FPS)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
   );

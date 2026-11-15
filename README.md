@@ -24,6 +24,7 @@ Read the row for your task, then only the section you need. Do not read `docs/su
 | Add a trail, operate the site, map tiles | [add-a-trail](docs/runbooks/add-a-trail.md), [operations](docs/runbooks/operations.md), [self-hosted-map-tiles](docs/runbooks/self-hosted-map-tiles.md) |
 | Versions and releases | [docs/versioning.md](docs/versioning.md) |
 | Competitor notes | [docs/competitive/](docs/competitive/) |
+| Promo videos (Remotion, draws the app's real components) | `video/`: `src/scenes.tsx` (60 s explainer, 3 sizes), `src/reel/` (55 s Instagram Reel/Story explainer on real iPhone recordings, cuts on the beat from `node beats.mjs`); recordings go in `video/raw/` (not committed) and `node prepare-captures.mjs` cuts them; render with `node render.mjs` or `node render.mjs reel` from `video/` |
 | Strategy, roadmap, monetisation, financial scenarios, image requests, the deck | [docs/myto-strategy/](docs/myto-strategy/strategy.md) (deck: `npm run deck:build`, `npm run deck:pdf`) |
 
 Database tests (`npm run test:db -w @moto-trails/web`) create throwaway local databases and need local PostGIS; day-to-day development runs against Supabase (see [dev-setup](docs/runbooks/dev-setup.md)).

@@ -3,6 +3,8 @@ import { AbsoluteFill, Audio, Composition, interpolate, staticFile } from 'remot
 import { DURATION, FPS, c } from './core';
 import { Backdrop, useFonts } from './ui';
 import { End, Group, Hook, Plan, Scene, Sos, Trail } from './scenes';
+import { Reel, type ReelProps } from './reel/Reel';
+import { REEL_DURATION } from './reel/beats';
 
 export type PromoProps = { music: boolean; voice: boolean };
 
@@ -47,5 +49,7 @@ export const Root: React.FC = () => (
     {sizes.map((s) => (
       <Composition key={s.id} id={s.id} component={Promo} durationInFrames={DURATION} fps={FPS} width={s.width} height={s.height} defaultProps={{ music: false, voice: false } satisfies PromoProps} />
     ))}
+    {/* Instagram Reels and Stories: one 9:16 file serves both. */}
+    <Composition id="Reel-9x16" component={Reel} durationInFrames={REEL_DURATION} fps={FPS} width={1080} height={1920} defaultProps={{ music: true } satisfies ReelProps} />
   </>
 );
