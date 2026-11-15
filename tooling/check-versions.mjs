@@ -16,9 +16,11 @@ const files = [
   ["packages/tokens/package.json", (j) => j.version],
   ["tooling/package.json", (j) => j.version],
 ].map(([path, pick]) => ({ path, version: pick(read(path)) }));
-// The iOS build reads its version from Info.plist, not from app.json.
-const plist = "apps/mobile/ios/MytoMoto/Info.plist";
-files.push({ path: plist, version: plistVersion(readFileSync(root + plist, "utf8")) });
+// The iOS build reads its version from Info.plist, not from app.json. The widget extension has its own, and Apple rejects
+// an upload whose extension version differs from the app's.
+for (const plist of ["apps/mobile/ios/MytoMoto/Info.plist", "apps/mobile/ios/ExpoWidgetsTarget/Info.plist"]) {
+  files.push({ path: plist, version: plistVersion(readFileSync(root + plist, "utf8")) });
+}
 
 // So does the Android build, from versionName in android/app/build.gradle.
 const gradle = "apps/mobile/android/app/build.gradle";
