@@ -5,6 +5,7 @@ import { bytesToHex } from '@noble/hashes/utils.js';
 import { assertNotDownloading, createInflight, MANIFEST_CACHE_FILE, rangePlan, readInstalled, resolveManifest, runDelete, runDownload, type DownloadFs } from './download';
 import { parseManifest, type Installed, type Region } from './manifest';
 import { track } from '../analytics';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { OfflineRouterNative } from '../../../modules/offline-router';
 import { regionsChanged } from '../offlineRouting';
 
@@ -16,6 +17,18 @@ const DIR = `${documentDirectory ?? ''}regions/`;
 const CHUNK = 1024 * 1024;
 const MANIFEST_TIMEOUT_MS = 10_000;
 const inflight = createInflight();
+
+// iOS suspends an app that is not in the foreground, and the download stops with it. The screen stays on while any download runs, so leaving the phone open finishes it.
+const KEEP_AWAKE_TAG = 'offline-download';
+let running = 0;
+async function whileAwake<T>(job: () => Promise<T>): Promise<T> {
+  if (running++ === 0) void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => undefined);
+  try {
+    return await job();
+  } finally {
+    if (--running === 0) void deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => undefined);
+  }
+}
 
 const nativeFs: DownloadFs = {
   freeBytes: () => getFreeDiskStorageAsync(),
@@ -123,7 +136,7 @@ export const listInstalled = (): Promise<Installed[]> => readInstalled(nativeFs,
 /** Downloads and installs a region; `onProgress` gets 0 to 100. Throws a plain-words message when it cannot. */
 export const downloadRegion = async (region: Region, onProgress: (pct: number) => void): Promise<void> => {
   const before = (await listInstalled()).find((r) => r.id === region.id);
-  await inflight.run(region.id, (emit) => runDownload(nativeFs, DIR, region, emit), onProgress);
+  await inflight.run(region.id, (emit) => whileAwake(() => runDownload(nativeFs, DIR, region, emit)), onProgress);
   // An update replaced the old routing file: let its engine go so the space is given back.
   if (before?.routePath && before.version !== region.version) await closeRouter(before.routePath);
   regionsChanged();
