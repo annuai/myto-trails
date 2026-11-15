@@ -25,7 +25,7 @@ export function PlaceSearch({ near, onPick, label = 'Add a place' }: { near?: La
   const home = usePlaces((s) => s.home);
   const centre = searchCentre(near, fix, home);
   const centreRef = useRef(centre);
-  centreRef.current = centre;
+  useEffect(() => { centreRef.current = centre; });
   const [q, setQ] = useState('');
   const [scope, setScope] = useState<SearchScope>('nearby');
   const [found, setFound] = useState<PlaceResults>();
