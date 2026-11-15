@@ -210,8 +210,9 @@ Doc 14 §5 already specifies the behaviour. The architecture adds:
 - **Android:** a foreground service with a persistent notification; battery-optimisation guidance per manufacturer (Xiaomi, Oppo, Vivo, Samsung and OnePlus kill background work most). Points are **written to the local database every few seconds**, so a crash or a killed app loses seconds, not the ride. On restart the app offers to resume.
 - **iOS:** "Always" location with the background mode; a visible blue bar is normal.
 - **Quality:** accuracy filter, smoothing, auto-pause, barometer elevation, battery-aware sampling, a battery estimate for the ride.
-- **Navigation:** follow a saved route on an offline map with a "back on route" cue; turn-by-turn is not in scope. Handing off to Google Maps for road navigation stays supported.
+- **Navigation:** follow a saved route on an offline map with a "back on route" cue, plus spoken turn-by-turn on roads (`lib/routing`, `lib/reroute`, `lib/voiceCue`; offline inside a downloaded region, see [ADR 0010](adr/0010-ride-engine-trail-guide-and-fuel-estimate.md)). Handing off to Google Maps stays supported.
 - **Maps:** MapLibre Native with **vector tiles we host** (OpenStreetMap-derived, in one file per region on R2, built by an open-source tile builder). Offline packs download per region. R2 has no download fees, which is why it fits. Licence terms and attribution for OpenStreetMap data must be shown (open: confirm exact wording before launch).
+- **Place search:** downloaded regions first, then Photon (OpenStreetMap, keyless). Search is nearby by default (`placeScope`: 500 km around the map or last stop being planned, else the phone, else Home), so a French town never outranks an Indian one; it widens by itself when nothing is nearby, and a "Search everywhere" row lets the rider ask for the world. Far results say how far they are. Google's place data is not used: its terms bar storing it or pairing it with our router.
 - **Privacy:** raw tracks are private; trim handles remove the start and end before anything is shared or submitted (the same rule as the web GPX trim).
 
 ## 7. Reminders (hydration, breaks, service)

@@ -1,14 +1,16 @@
 /** One downloadable file: where it lives, how big, and its checksum so a bad download is caught. */
 export type FileRef = { url: string; bytes: number; sha256: string };
 
-/** A region the rider can download: a map file and a search file, both published together under one version. */
+/** A region the rider can download: a map file, a search file and (from the routing release on) a routing file, published together under one version. */
 /** Manifests published before countries existed have none; every region in them is in India. */
 export const DEFAULT_COUNTRY = 'India';
 
-export type Region = { id: string; name: string; /** The country the region is listed under, so the screen can group by country. */ country: string; bbox: [number, number, number, number]; version: string; map: FileRef; search: FileRef };
+export type Region = { id: string; name: string; /** The country the region is listed under, so the screen can group by country. */ country: string; bbox: [number, number, number, number]; version: string; map: FileRef; search: FileRef; /** Valhalla routing tiles for directions with no signal, gzipped. Older regions have none. */ route?: RouteRef };
+/** The routing file is published gzipped and unpacked on the phone, so it has two sizes: the download and what it takes on disk. */
+export type RouteRef = FileRef & { unpackedBytes: number };
 
 /** What is on the phone for a region. Kept apart from `Region` because the manifest may move on while the files stay. */
-export type Installed = { id: string; version: string; bbox: Region['bbox']; mapPath: string; searchPath: string };
+export type Installed = { id: string; version: string; bbox: Region['bbox']; mapPath: string; searchPath: string; /** Present when the region was installed with its routing file. */ routePath?: string };
 
 const text = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
 const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -38,7 +40,11 @@ function parseRegion(v: unknown): Region | null {
   // The id and version become file names under the regions folder, so nothing that could climb out of it gets through.
   if (!/^[a-z0-9-]+$/.test(r.id) || !/^[0-9A-Za-z.-]+$/.test(r.version) || r.version.includes('..')) return null;
   const country = text(r.country) && r.country.trim() ? r.country.trim().slice(0, 60) : DEFAULT_COUNTRY;
-  return { id: r.id, name: r.name, country, bbox, version: r.version, map, search };
+  // A broken routing entry costs only offline routing, not the whole region.
+  const routeFile = r.route === undefined ? null : parseFile(r.route);
+  const unpacked = (r.route as { unpackedBytes?: unknown } | undefined)?.unpackedBytes;
+  const route: RouteRef | null = routeFile && num(unpacked) && unpacked > 0 ? { ...routeFile, unpackedBytes: unpacked } : null;
+  return { id: r.id, name: r.name, country, bbox, version: r.version, map, search, ...(route ? { route } : {}) };
 }
 
 /** Regions from the published manifest. Null when it is not a format we know; a single bad or repeated region is dropped so one slip does not hide the rest. */
@@ -61,9 +67,9 @@ export function updateAvailable(region: Region, installed: Installed | undefined
   return !!installed && installed.version !== region.version;
 }
 
-/** What a full download costs the rider in data, map and search together. */
+/** What a full download costs the rider in data: map, search and routing together. */
 export function regionTotalBytes(r: Region): number {
-  return r.map.bytes + r.search.bytes;
+  return r.map.bytes + r.search.bytes + (r.route?.bytes ?? 0);
 }
 
 /** The list as the screen shows it: one group per country (A to Z), and inside a group the regions on the phone first, then by name. */

@@ -1,4 +1,4 @@
-import { parseManifest, regionTotalBytes, type Installed, type Region } from './manifest';
+import { parseManifest, regionTotalBytes, type FileRef, type Installed, type Region } from './manifest';
 
 /**
  * The download logic with no native code in it: every file operation goes through `DownloadFs`, so the order of steps
@@ -25,6 +25,8 @@ export type DownloadFs = {
   sha256(path: string): Promise<string>;
   /** File names (not paths) in the folder; empty when the folder does not exist yet. */
   list(dir: string): Promise<string[]>;
+  /** Unpacks a gzip file and returns the bytes written. Absent where the phone cannot route offline: the routing file is then not fetched at all. */
+  gunzip?(from: string, to: string): Promise<number>;
 };
 
 export const INDEX_FILE = 'index.json';
@@ -33,10 +35,14 @@ export const MANIFEST_CACHE_FILE = 'manifest.cache.json';
 const stem = (id: string, version: string) => `${id}.${version}`;
 export const mapPath = (dir: string, id: string, version: string) => `${dir}${stem(id, version)}.map`;
 export const searchPath = (dir: string, id: string, version: string) => `${dir}${stem(id, version)}.search`;
+/** Valhalla's tile extract is a plain tar; the extension is what the native engine expects to map. */
+export const routePath = (dir: string, id: string, version: string) => `${dir}${stem(id, version)}.route.tar`;
+/** Every file a region version may have on the phone. */
+const allPaths = (dir: string, id: string, version: string) => [mapPath(dir, id, version), searchPath(dir, id, version), routePath(dir, id, version)];
 
-/** Needs the whole download plus a tenth spare, so the phone is not left with no room to work. */
+/** Needs the whole download, plus the unpacked routing file beside its download while it unpacks, plus a tenth spare, so the phone is not left with no room to work. */
 export function checkSpace(freeBytes: number, region: Region): { ok: true } | { ok: false; message: string } {
-  const need = (regionTotalBytes(region) * 11) / 10;
+  const need = ((regionTotalBytes(region) + (region.route?.unpackedBytes ?? 0)) * 11) / 10;
   if (freeBytes > need) return { ok: true };
   return { ok: false, message: `Not enough space on your phone. ${region.name} needs about ${Math.ceil(need / MB)} MB free; free some space and try again.` };
 }
@@ -116,7 +122,9 @@ export async function runDownload(fs: DownloadFs, dir: string, region: Region, o
   }
 }
 
-async function download(fs: DownloadFs, dir: string, region: Region, onProgress: (pct: number) => void): Promise<void> {
+async function download(fs: DownloadFs, dir: string, fullRegion: Region, onProgress: (pct: number) => void): Promise<void> {
+  // A phone that cannot route offline does not spend data or space on the routing file.
+  const region: Region = fs.gunzip ? fullRegion : { ...fullRegion, route: undefined };
   const space = checkSpace(await fs.freeBytes(), region);
   if (!space.ok) throw new DownloadError(space.message);
   await fs.makeDir(dir);
@@ -126,6 +134,8 @@ async function download(fs: DownloadFs, dir: string, region: Region, onProgress:
   const files = [
     { ref: region.map, final: mapPath(dir, region.id, region.version) },
     { ref: region.search, final: searchPath(dir, region.id, region.version) },
+    // The routing file arrives gzipped: it is checked as downloaded, then unpacked to its final name below.
+    ...(region.route ? [{ ref: region.route as FileRef, final: `${routePath(dir, region.id, region.version)}.gz` }] : []),
   ];
   for (const f of files) {
     const part = `${f.final}.part`;
@@ -145,7 +155,23 @@ async function download(fs: DownloadFs, dir: string, region: Region, onProgress:
     doneBefore += f.ref.bytes;
   }
 
-  for (const f of files) {
+  if (region.route) {
+    // Unpacked beside its final name and moved in only once complete and the right size, so a half-unpacked file is never routed on.
+    const gz = `${routePath(dir, region.id, region.version)}.gz.part`;
+    const tar = routePath(dir, region.id, region.version);
+    const tmp = `${tar}.unpack`;
+    let bytes = -1;
+    try { bytes = await fs.gunzip!(gz, tmp); } catch { /* reported below as damaged */ }
+    if (bytes !== region.route.unpackedBytes || (await fs.size(tmp)) !== region.route.unpackedBytes) {
+      await fs.remove(tmp);
+      await fs.remove(gz);
+      throw new DownloadError(DAMAGED);
+    }
+    await fs.remove(tar);
+    await fs.move(tmp, tar);
+    await fs.remove(gz);
+  }
+  for (const f of files.filter((x) => !x.final.endsWith('.gz'))) {
     await fs.remove(f.final);
     await fs.move(`${f.final}.part`, f.final);
   }
@@ -156,8 +182,7 @@ async function download(fs: DownloadFs, dir: string, region: Region, onProgress:
     const entry: IndexEntry = { id: region.id, version: region.version, bbox: region.bbox };
     await writeIndex(fs, dir, older ? index.map((e) => (e.id === region.id ? entry : e)) : [...index, entry]);
     if (older && older.version !== region.version) {
-      await fs.remove(mapPath(dir, older.id, older.version));
-      await fs.remove(searchPath(dir, older.id, older.version));
+      for (const p of allPaths(dir, older.id, older.version)) await fs.remove(p);
     }
   });
   onProgress(100);
@@ -181,25 +206,23 @@ export async function runDelete(fs: DownloadFs, dir: string, id: string): Promis
   await indexLock(async () => {
     const index = await readIndex(fs, dir);
     for (const name of await fs.list(dir)) {
-      if (name.startsWith(`${id}.`) && (name.endsWith('.part') || name.endsWith('.tail'))) await fs.remove(`${dir}${name}`);
+      if (name.startsWith(`${id}.`) && (name.endsWith('.part') || name.endsWith('.tail') || name.endsWith('.unpack'))) await fs.remove(`${dir}${name}`);
     }
     const mine = index.filter((x) => x.id === id);
     if (mine.length === 0) return;
-    for (const e of mine) {
-      await fs.remove(mapPath(dir, e.id, e.version));
-      await fs.remove(searchPath(dir, e.id, e.version));
-    }
+    for (const e of mine) for (const p of allPaths(dir, e.id, e.version)) await fs.remove(p);
     await writeIndex(fs, dir, index.filter((e) => e.id !== id));
   });
 }
 
-/** The installed regions whose map and search files are both really there; an entry with a missing file is dropped, never half-offered. */
+/** The installed regions whose map and search files are both really there; an entry with a missing file is dropped, never half-offered. The routing file is optional: without it the region still works, routing just stays online. */
 export async function filterInstalled(dir: string, entries: IndexEntry[], exists: (path: string) => Promise<boolean>): Promise<Installed[]> {
   const out: Installed[] = [];
   for (const e of entries) {
     const m = mapPath(dir, e.id, e.version);
     const s = searchPath(dir, e.id, e.version);
-    if ((await exists(m)) && (await exists(s))) out.push({ id: e.id, version: e.version, bbox: e.bbox, mapPath: m, searchPath: s });
+    const r = routePath(dir, e.id, e.version);
+    if ((await exists(m)) && (await exists(s))) out.push({ id: e.id, version: e.version, bbox: e.bbox, mapPath: m, searchPath: s, ...((await exists(r)) ? { routePath: r } : {}) });
   }
   return out;
 }

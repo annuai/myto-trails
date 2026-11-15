@@ -33,6 +33,7 @@ import { RideNotificationHost } from '@/RideNotificationHost';
 import { VoiceHost } from '@/VoiceHost';
 import { runRideIdMigration } from '@/lib/rideIdMigration.run';
 import { startCachePersistence } from '@/api/cachePersist.run';
+import { installOfflineRouting } from '@/lib/offlineRouting';
 import { startCrashReporting, withCrashReporting } from '@/lib/crashReporting';
 import { startAnalytics, useScreenTracking } from '@/lib/analytics.run';
 
@@ -64,6 +65,7 @@ function Root() {
   }, []);
   useEffect(() => { void runRideIdMigration().catch(() => undefined); }, []);
   useEffect(() => { void startCachePersistence(); }, []);
+  useEffect(() => { void installOfflineRouting(); }, []);
   // Download the Fix it guides while there is a signal, so they are on the phone when there is not one.
   useEffect(() => { void refreshFixit(Date.now()); }, []);
   // The pull-down quotes: fetched on first open and then weekly, on start and whenever the app comes back to the front.

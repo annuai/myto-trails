@@ -45,7 +45,7 @@ export function useRegions() {
 
   const have = useMemo(() => new Map(installed.map((i) => [i.id, i])), [installed]);
 
-  const remove = (region: Region) => Alert.alert(`Delete ${region.name}?`, 'Its map and place search leave this phone. You can download them again later.', [
+  const remove = (region: Region) => Alert.alert(`Delete ${region.name}?`, 'Its map, place search and offline directions leave this phone. You can download them again later.', [
     { text: 'Keep', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: () => { void deleteRegion(region.id).then(() => listInstalled()).then(setInstalled).catch((e) => setProblem(plain(e, `Could not delete ${region.name}.`))); } },
   ]);

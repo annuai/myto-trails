@@ -215,6 +215,8 @@ PODS:
     - ExpoModulesCore
   - ExpoSharing (58.0.23):
     - ExpoModulesCore
+  - ExpoSpeech (58.0.4):
+    - ExpoModulesCore
   - ExpoSplashScreen (58.0.14):
     - ExpoModulesCore
   - ExpoSQLite (58.0.17):
@@ -318,6 +320,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - OfflineRouter (1.0.0):
+    - ExpoModulesCore
   - RCT-Folly (2024.11.18.00):
     - RCT-Folly/Default (= 2024.11.18.00)
     - ReactNativeDependencies
@@ -2657,6 +2661,7 @@ DEPENDENCIES:
   - ExpoSecureStore (from `../../../node_modules/expo-secure-store/ios`)
   - ExpoSensors (from `../../../node_modules/expo-sensors/ios`)
   - ExpoSharing (from `../../../node_modules/expo-sharing/ios`)
+  - ExpoSpeech (from `../../../node_modules/expo-speech/ios`)
   - ExpoSplashScreen (from `../../../node_modules/expo-splash-screen/ios`)
   - ExpoSQLite (from `../../../node_modules/expo-sqlite/ios`)
   - ExpoStatusBar (from `../../../node_modules/expo-status-bar/ios`)
@@ -2673,6 +2678,7 @@ DEPENDENCIES:
   - "MapLibreReactNative (from `../../../node_modules/@maplibre/maplibre-react-native`)"
   - NitroImage (from `../../../node_modules/react-native-nitro-image`)
   - NitroModules (from `../../../node_modules/react-native-nitro-modules`)
+  - OfflineRouter (from `../modules/offline-router/ios`)
   - RCT-Folly (from `build/rndeps-facades/RCT-Folly`)
   - RCTDeprecation (from `build/rncore-facades/RCTDeprecation`)
   - RCTRequired (from `build/rncore-facades/RCTRequired`)
@@ -2851,6 +2857,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/expo-sensors/ios"
   ExpoSharing:
     :path: "../../../node_modules/expo-sharing/ios"
+  ExpoSpeech:
+    :path: "../../../node_modules/expo-speech/ios"
   ExpoSplashScreen:
     :path: "../../../node_modules/expo-splash-screen/ios"
   ExpoSQLite:
@@ -2884,6 +2892,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/react-native-nitro-image"
   NitroModules:
     :path: "../../../node_modules/react-native-nitro-modules"
+  OfflineRouter:
+    :path: "../modules/offline-router/ios"
   RCT-Folly:
     :path: build/rndeps-facades/RCT-Folly
   RCTDeprecation:
@@ -3116,6 +3126,7 @@ SPEC CHECKSUMS:
   ExpoSecureStore: 76bccb307911bd866852e6161dda9b1e8e281b99
   ExpoSensors: 1eb93696a200f9fd903e52c3cbe7ff152c486c9e
   ExpoSharing: 4831940284e0dd904b0522e027e85cd286e563d2
+  ExpoSpeech: 4710dc3bb82beac8886f926d15f8e6892ff69b33
   ExpoSplashScreen: 5df81b55f086d8acc7a24008537514f5379aa6f9
   ExpoSQLite: afd9a672ba4aef96495e077ded35423bb8a7b2d4
   ExpoStatusBar: 38eff05a54229c9a388cb56cef29117b8dc77eb1
@@ -3132,6 +3143,7 @@ SPEC CHECKSUMS:
   MapLibreReactNative: 0a515f1f18c5f24ae353306558727ea2e1511426
   NitroImage: eb713c7afe8fe1f6122d26e28d5c35f2b6495b82
   NitroModules: f1a11047ebbb0202a7d0033d6e99ad0527d34b00
+  OfflineRouter: 5e1b137f15e3694d71f95d29015a642351707167
   RCT-Folly: 82921e585c0400eda46fac1068297aa9dfb035e4
   RCTDeprecation: c62b9b3fbf0d26b76755f3ebd1c913a4fb469dde
   RCTRequired: d0563e2484633b657976195f0543e180133afd3a

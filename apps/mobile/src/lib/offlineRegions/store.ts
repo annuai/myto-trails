@@ -5,6 +5,8 @@ import { bytesToHex } from '@noble/hashes/utils.js';
 import { assertNotDownloading, createInflight, MANIFEST_CACHE_FILE, rangePlan, readInstalled, resolveManifest, runDelete, runDownload, type DownloadFs } from './download';
 import { parseManifest, type Installed, type Region } from './manifest';
 import { track } from '../analytics';
+import { OfflineRouterNative } from '../../../modules/offline-router';
+import { regionsChanged } from '../offlineRouting';
 
 /** The phone side of offline regions: real files, real network. The logic worth testing lives in `download.ts`. */
 
@@ -26,6 +28,8 @@ const nativeFs: DownloadFs = {
   writeText: (p, t) => writeAsStringAsync(p, t),
   remove: (p) => deleteAsync(p, { idempotent: true }).catch(() => undefined),
   move: (from, to) => moveAsync({ from, to }),
+  // Only where the native router is built in (not Expo Go, not the web): elsewhere the routing file is skipped.
+  ...(OfflineRouterNative ? { gunzip: (from: string, to: string) => OfflineRouterNative!.gunzip(from, to) } : {}),
   fetchTo: async (url, path, resumeFrom, onBytes) => {
     // The legacy resumable keeps no state across an app kill, so resume is done with an HTTP Range request into a side file, appended to the part.
     const resuming = resumeFrom > 0;
@@ -116,8 +120,17 @@ export function loadManifest(): Promise<Region[]> {
 export const listInstalled = (): Promise<Installed[]> => readInstalled(nativeFs, DIR);
 
 /** Downloads and installs a region; `onProgress` gets 0 to 100. Throws a plain-words message when it cannot. */
-export const downloadRegion = (region: Region, onProgress: (pct: number) => void): Promise<void> =>
-  inflight.run(region.id, (emit) => runDownload(nativeFs, DIR, region, emit), onProgress).then(() => track('offline_region_downloaded', { region: region.id }));
+export const downloadRegion = async (region: Region, onProgress: (pct: number) => void): Promise<void> => {
+  const before = (await listInstalled()).find((r) => r.id === region.id);
+  await inflight.run(region.id, (emit) => runDownload(nativeFs, DIR, region, emit), onProgress);
+  // An update replaced the old routing file: let its engine go so the space is given back.
+  if (before?.routePath && before.version !== region.version) await closeRouter(before.routePath);
+  regionsChanged();
+  track('offline_region_downloaded', { region: region.id });
+};
+
+/** Frees the native engine that has a routing file open; nothing to do where there is none. */
+const closeRouter = (path: string): Promise<void> => OfflineRouterNative?.close(path).catch(() => undefined) ?? Promise.resolve();
 
 /** True while a download for this region is running (also after the screen that started it was left). */
 export const isDownloading = (id: string): boolean => inflight.has(id);
@@ -125,7 +138,10 @@ export const isDownloading = (id: string): boolean => inflight.has(id);
 /** Rejects in plain words while the region is downloading. */
 export async function deleteRegion(id: string): Promise<void> {
   assertNotDownloading(inflight.has(id));
+  const mine = (await listInstalled()).find((r) => r.id === id);
+  if (mine?.routePath) await closeRouter(mine.routePath);
   await runDelete(nativeFs, DIR, id);
+  regionsChanged();
 }
 
 export { checkSpace } from './download';

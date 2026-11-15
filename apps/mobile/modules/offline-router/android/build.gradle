@@ -1,0 +1,21 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.myto.offlinerouter'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.offlinerouter"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
+
+dependencies {
+  // Valhalla built for Android (arm64 and x86_64), and the config model it is set up with.
+  implementation 'io.github.rallista:valhalla-mobile:0.6.4'
+  implementation 'io.github.rallista:valhalla-models-config:0.6.0'
+}
