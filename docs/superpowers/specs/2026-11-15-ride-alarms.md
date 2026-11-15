@@ -1,6 +1,6 @@
 # Ride alarms
 
-A wake-up alarm for a planned trip (each day) or a club ride the rider is going to: 15 or 30 minutes before the start. Everything is on the phone; no server, no push.
+A wake-up alarm for a planned trip (each day) or a club ride the rider is going to: 15 or 30 minutes before the start, or a custom 5 minutes to 3 hours (a lead past 30 minutes gets longer early snoozes and one more ring per extra half hour, so the rings still end close to the start). The card goes once every start has passed. Everything is on the phone; no server, no push.
 
 **Decision: every ring is planned when the alarm is set.** `apps/mobile/src/lib/alarm/ladder.ts` (pure, tested in `alarm.test.ts`) turns one ride into up to six rings. Snoozes shrink from 9 to 3 minutes as the latest wake-up (10 minutes before the start, or before the sun if sooner) nears. A ride timed for a sunrise (30 min before to 90 after the start) or a sunset (up to 2 h after) gets "Snooze again and you miss the sunrise" on the ring after which one more snooze loses it. The last ring has no snooze. The phone's alarm code only steps through these rings, so Snooze never needs the app's JavaScript: it stops the ring, and the next one is already set. "I'm up" cancels the rest. Why: on a locked phone with the app killed, JS may not run.
 

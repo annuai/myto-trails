@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_STEPS, pickGoal, planLadder, READY_MIN, type RideContext } from './ladder';
-import { planAlarms, rideContexts, type AlarmWorld } from './plan';
+import { nextStartAt, planAlarms, rideContexts, type AlarmWorld } from './plan';
 
 const MIN = 60_000;
 const at = (h: number, m: number, day = 16) => new Date(2026, 10, day, h, m).getTime();
@@ -68,6 +68,15 @@ describe('planLadder', () => {
     expect(late.map((s) => hhmm(s.fireAt))).toEqual(['5:18', '5:21', '5:24']);
   });
 
+  it('stretches the snoozes of a long custom lead so the rings still reach the start', () => {
+    const long = planLadder(ride({ sun: sunrise }), { leadMin: 120, goal: 'auto', now: 0, clock: hhmm });
+    expect(long[0].fireAt).toBe(at(3, 30));
+    expect(long.map((s) => hhmm(s.fireAt))).toEqual(['3:30', '4:00', '4:30', '4:55', '5:08', '5:14', '5:17', '5:20', '5:23']);
+    expect(long.at(-1)?.snooze).toBe(false);
+    expect(at(5, 30) - (long.at(-1)?.fireAt ?? 0)).toBeLessThanOrEqual(10 * MIN);
+    expect(long.some((s) => s.title === 'Snooze again and you miss the sunrise')).toBe(true);
+  });
+
   it('mentions rain and the cold', () => {
     const wet = planLadder(ride({ weather: { rainPct: 70, minC: 12, maxC: 20 } }), { leadMin: 30, goal: 'auto', now: 0, clock: hhmm });
     expect(wet[0].body).toContain('Rain likely (70%)');
@@ -112,6 +121,16 @@ describe('planAlarms', () => {
     const p = planAlarms(world({ settings: [{ key: 'event:e1', kind: 'event', refId: 'e1', leadMin: 15, goal: 'start', title: 'Dust Devils breakfast', startsAt: at(7, 0, 16) }] }));
     expect(p.steps[0].group).toBe('event:e1:2026-11-16');
     expect(p.steps[0].title).toBe('Dust Devils breakfast at 7:00');
+  });
+
+  it('finds the next start still ahead, past the horizon too, and none once all have passed', () => {
+    const w = world();
+    const s = { kind: 'trip' as const, refId: 't1' };
+    expect(nextStartAt(w, s)).toBe(at(6, 0, 16));
+    expect(nextStartAt({ ...w, now: at(7, 0, 16) }, s)).toBe(at(6, 0, 17));
+    expect(nextStartAt({ ...w, now: at(7, 0, 17) }, s)).toBeUndefined();
+    expect(nextStartAt({ ...w, trips: [{ id: 't1', name: 'Far', startDate: '2026-12-20', startTime: 360 }] }, s)).toBe(new Date(2026, 11, 20, 6, 0).getTime());
+    expect(nextStartAt(w, { kind: 'event', refId: 'e', startsAt: at(19, 0, 15) })).toBeUndefined();
   });
 
   it('plans nothing past the horizon', () => {

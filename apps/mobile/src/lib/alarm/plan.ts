@@ -88,3 +88,16 @@ export function planAlarms(w: AlarmWorld): { steps: AlarmStep[]; replaces: strin
 
 /** The ride behind one alarm group, whenever it is and whether or not the rider is up (for the pre-ride screen). */
 export const contextOf = (w: AlarmWorld, group: string) => rideContexts(w, true).find((r) => r.ctx.id === group);
+
+/** The next start still ahead for an alarm (any day of a trip, or the club ride), however far off; undefined once all have passed. */
+export function nextStartAt(w: Pick<AlarmWorld, 'now' | 'trips'>, s: Pick<AlarmSetting, 'kind' | 'refId' | 'startsAt'>): number | undefined {
+  if (s.kind === 'event') return s.startsAt !== undefined && s.startsAt > w.now ? s.startsAt : undefined;
+  const trip = w.trips.find((t) => t.id === s.refId);
+  if (!trip?.startDate || trip.startTime === undefined || trip.endedAt) return undefined;
+  for (let d = 0; d < Math.max(1, trip.days?.length ?? 1); d++) {
+    if (d === 0 && trip.startedAt) continue;
+    const at = localAt(dayDate(trip.startDate, d), trip.startTime);
+    if (at > w.now) return at;
+  }
+  return undefined;
+}

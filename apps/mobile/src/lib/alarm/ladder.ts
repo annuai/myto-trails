@@ -5,8 +5,11 @@
  */
 
 export const LEAD_CHOICES = [15, 30] as const;
+/** A custom lead: 5 minutes to 3 hours, in steps of 5. */
+export const CUSTOM_LEAD = { min: 5, max: 180, step: 5, default: 45 } as const;
 /** From waking to riding off: the least a rider needs to get geared up. */
 export const READY_MIN = 10;
+/** Rings for a lead of up to half an hour. */
 export const MAX_STEPS = 6;
 const SNOOZE_MAX_MIN = 9;
 const SNOOZE_MIN_MIN = 3;
@@ -98,10 +101,13 @@ export function planLadder(c: RideContext, i: { leadMin: number; goal: GoalChoic
   const out: AlarmStep[] = [];
   let t = c.startsAt - i.leadMin * MIN;
   let lostSaid = false;
-  for (let index = 0; index < MAX_STEPS && t < c.startsAt; index++) {
-    const snoozeMin = Math.min(SNOOZE_MAX_MIN, Math.max(SNOOZE_MIN_MIN, Math.round((wakeBy - t) / MIN / 2)));
+  // A lead past half an hour gets one ring more for each further half hour, so the last rings still come close to the start.
+  const maxSteps = MAX_STEPS + Math.ceil(Math.max(0, i.leadMin - 30) / 30);
+  for (let index = 0; index < maxSteps && t < c.startsAt; index++) {
+    // A long lead gets longer snoozes early on, so its rings still reach the start.
+    const snoozeMin = Math.min(Math.max(SNOOZE_MAX_MIN, Math.round(i.leadMin / 4)), Math.max(SNOOZE_MIN_MIN, Math.round((wakeBy - t) / MIN / 2)));
     const next = t + snoozeMin * MIN;
-    const last = index === MAX_STEPS - 1 || next >= c.startsAt - MIN;
+    const last = index === maxSteps - 1 || next >= c.startsAt - MIN;
     const startsIn = inMin(c.startsAt - t);
     let title: string;
     let body: string;
