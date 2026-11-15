@@ -20,6 +20,10 @@ export type YearRecap = {
   monthsRidden: number;
   /** The title this year's rides earn on their own (no trails counted), or null with no rides. */
   title: TitleId | null;
+  /** Distance in each month, January first (12 numbers), for the share cards' month bars. */
+  monthKm: number[];
+  /** For each month, January first, the days of the month (1 to 31) with a ride, in order: the share cards' calendar of dots. */
+  daysByMonth: number[][];
 };
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -41,6 +45,8 @@ export function yearRecap(rides: RecapRide[], year: number): YearRecap {
   const byMonth = new Array<number>(12).fill(0);
   for (const r of mine) byMonth[new Date(r.startedAt).getMonth()]! += r.distanceKm;
   const top = byMonth.reduce((best, km, m) => (km > byMonth[best]! ? m : best), 0);
+  const days = Array.from({ length: 12 }, () => new Set<number>());
+  for (const r of mine) { const d = new Date(r.startedAt); days[d.getMonth()]!.add(d.getDate()); }
   const longest = mine.reduce<RecapRide | null>((best, r) => (!best || r.distanceKm > best.distanceKm ? r : best), null);
   return {
     year,
@@ -54,5 +60,7 @@ export function yearRecap(rides: RecapRide[], year: number): YearRecap {
     averageKm: mine.length ? tenth(distanceKm / mine.length) : 0,
     monthsRidden: months,
     title: titleFor({ rides: mine.length, monthsRidden: months }),
+    monthKm: byMonth.map(tenth),
+    daysByMonth: days.map((d) => [...d].sort((a, b) => a - b)),
   };
 }

@@ -30,7 +30,14 @@ describe('yearRecap', () => {
     expect(yearRecap(edge, 2027)).toMatchObject({ rides: 1, distanceKm: 50 });
   });
   it('is zeros and nothing for a year with no rides', () => {
-    expect(yearRecap(rides, 2024)).toEqual({ year: 2024, rides: 0, distanceKm: 0, durationSec: 0, daysRidden: 0, longest: null, topSpeedKmh: 0, busiestMonth: null, averageKm: 0, monthsRidden: 0, title: null });
+    expect(yearRecap(rides, 2024)).toEqual({ year: 2024, rides: 0, distanceKm: 0, durationSec: 0, daysRidden: 0, longest: null, topSpeedKmh: 0, busiestMonth: null, averageKm: 0, monthsRidden: 0, title: null, monthKm: new Array(12).fill(0), daysByMonth: new Array(12).fill([]) });
+  });
+  it('splits the distance by month and lists the days ridden in each, once per day', () => {
+    const r = yearRecap(rides, 2026);
+    expect(r.monthKm).toEqual([60, 0, 120, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    expect(r.daysByMonth[0]).toEqual([5]);
+    expect(r.daysByMonth[2]).toEqual([14]);
+    expect(r.daysByMonth[5]).toEqual([]);
   });
   it('has no busiest month when no distance was ridden', () => {
     expect(yearRecap([ride(new Date(2026, 4, 1), 0)], 2026).busiestMonth).toBeNull();
