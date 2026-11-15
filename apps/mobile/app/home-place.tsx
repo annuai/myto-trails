@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import * as Location from 'expo-location';
 import { canEnableAutoEnd, canUseCurrentLocation, currentLocationLabel, isFreshFix, type LocationPermission } from '@/features/home/homePlace';
-import { searchPlaces, type Place } from '@/lib/placeSearch';
+import { searchPlaces, type Place, type PlaceResults } from '@/lib/placeSearch';
+import { searchCentre, type SearchScope } from '@/lib/placeScope';
+import { placeSub } from '@/features/route/PlaceSearch';
 import { useCompanion } from '@/store/companion';
 import { useLocation } from '@/store/location';
 import { usePlaces, type PlaceKind } from '@/store/places';
@@ -51,7 +53,7 @@ function useLocationPermission(): LocationPermission | undefined {
 function PlaceSection({ kind, title, permission }: { kind: PlaceKind; title: string; permission?: LocationPermission }) {
   const saved = usePlaces((s) => s[kind]);
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Place[]>();
+  const [results, setResults] = useState<PlaceResults>();
   const [note, setNote] = useState<string>();
   const [busy, setBusy] = useState(false);
   const seq = useRef(0);
@@ -64,18 +66,18 @@ function PlaceSection({ kind, title, permission }: { kind: PlaceKind; title: str
     if (!pos) return setNote('Your location is not available. Allow location for Myto Moto, or search for the place instead.');
     save(pos.lat, pos.lng, currentLocationLabel(kind));
   };
-  const search = async () => {
+  const search = async (scope: SearchScope = 'nearby') => {
     if (!query.trim()) return;
     const mine = ++seq.current;
     setBusy(true); setNote(undefined);
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), SEARCH_TIMEOUT_MS);
     try {
-      const near = useLocation.getState().fix;
-      const found = await searchPlaces(query, { near: near ? { lat: near.lat, lng: near.lng } : undefined, signal: ctl.signal });
+      const found = await searchPlaces(query, { near: searchCentre(useLocation.getState().fix, usePlaces.getState().home), scope, signal: ctl.signal });
       if (mine !== seq.current) return;
       setResults(found);
-      if (!found.length) setNote('No place found. Try a street, area or town.');
+      if (!found.places.length) setNote('No place found. Try a street, area or town.');
+      else if (found.widened) setNote('Nothing nearby, so this searched everywhere.');
     } catch { if (mine === seq.current) setNote('Search needs a connection. Try again, or use your current location.'); }
     clearTimeout(timer);
     if (mine === seq.current) setBusy(false);
@@ -100,9 +102,10 @@ function PlaceSection({ kind, title, permission }: { kind: PlaceKind; title: str
         <Button variant="soft" label="Search" onPress={() => void search()} disabled={busy || !query.trim()} onCard />
         {note ? <Text variant="label" tone="muted">{note}</Text> : null}
       </Card>
-      {results?.length ? (
+      {results?.places.length ? (
         <ListCard>
-          {results.map((r) => <Row key={`${r.name}|${r.detail}|${r.point.lat}`} label={r.name} sub={r.detail || undefined} chevron={false} onPress={() => save(r.point.lat, r.point.lng, r.detail ? `${r.name}, ${r.detail}` : r.name)} />)}
+          {results.places.map((r) => <Row key={`${r.name}|${r.detail}|${r.point.lat}`} label={r.name} sub={placeSub(r)} chevron={false} onPress={() => save(r.point.lat, r.point.lng, r.detail ? `${r.name}, ${r.detail}` : r.name)} />)}
+          {results.limited ? <Row label="Search everywhere" sub="Not what you wanted? Look beyond this area." chevron={false} onPress={() => void search('everywhere')} /> : null}
         </ListCard>
       ) : null}
     </>
