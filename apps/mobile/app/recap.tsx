@@ -21,7 +21,8 @@ import { BackHeader, PageTitle, SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Measure } from '@/ui/Measure';
 import { Pillion } from '@/ui/Pillion';
-import { RecapCard } from '@/ui/RecapCard';
+import { designsFor, RecapCard } from '@/ui/RecapCard';
+import { RecapPicker } from '@/ui/RecapPicker';
 import { Screen } from '@/ui/Screen';
 import { useCountUp, useOnce } from '@/ui/motionHooks';
 import { Stat } from '@/ui/Stat';
@@ -47,6 +48,9 @@ export default function Recap() {
   const [openedAt] = useState(() => Date.now());
   const invited = useStory((s) => s.seen.includes(INVITE_ID));
   const standing = optIn && cohort && year === current && cohort.period === localPeriod(openedAt) ? standingMoment({ metric: cohort.metric, value: cohort.value, row: cohort.row, region: cohort.region }) : undefined;
+  const designs = useMemo(() => (recap ? designsFor(recap) : []), [recap]);
+  const [cardAt, setCardAt] = useState(0);
+  const card = designs[Math.min(cardAt, designs.length - 1)];
   const fullRef = useRef<ComponentRef<typeof View>>(null);
   const [message, setMessage] = useState<string>();
   const share = async () => {
@@ -54,10 +58,10 @@ export default function Recap() {
     try { await shareCard(fullRef.current); } catch (e) { setMessage(e instanceof Error ? e.message : 'The picture could not be shared.'); }
   };
   return (
-    <Screen overlay={recap ? (
+    <Screen overlay={recap && card ? (
       // The picture that is saved is drawn at its full size, off screen, so it is sharp whatever the preview's size.
       <View pointerEvents="none" style={{ position: 'absolute', left: -recapTokens.size.width - 50, top: 0 }}>
-        <RecapCard ref={fullRef} recap={recap} width={recapTokens.size.width} />
+        <RecapCard ref={fullRef} recap={recap} design={card.id} width={recapTokens.size.width} />
       </View>
     ) : null}>
       <BackHeader title="You" />
@@ -66,7 +70,7 @@ export default function Recap() {
         <>
           {years.length > 1 ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space[2], marginBottom: space[4] }}>
-              {years.map((y) => <ChoiceChip key={y} label={String(y)} selected={y === year} onPress={() => setPicked(y)} />)}
+              {years.map((y) => <ChoiceChip key={y} label={String(y)} selected={y === year} onPress={() => { setPicked(y); setCardAt(0); }} />)}
             </View>
           ) : null}
           <View style={{ backgroundColor: c.accent, borderRadius: radius.card, padding: space[6], gap: space[1] }}>
@@ -101,9 +105,9 @@ export default function Recap() {
             </Card>
           ) : null}
           <SectionTitle>Share it</SectionTitle>
-          <View style={{ alignItems: 'center', marginBottom: space[4] }}><RecapCard recap={recap} width={recapTokens.previewWidth} /></View>
-          <Button icon={Share2} label="Share my year" onPress={() => void share()} />
-          <Text variant="caption" tone="muted" style={{ marginTop: space[2] }}>The picture shows no map and no ride names.</Text>
+          <Text variant="caption" tone="muted" style={{ marginBottom: space[4] }}>Swipe to pick a card. None shows a map or a ride name.</Text>
+          <RecapPicker recap={recap} designs={designs} picked={Math.min(cardAt, designs.length - 1)} onPick={setCardAt} />
+          <View style={{ marginTop: space[6] }}><Button icon={Share2} label="Share this card" onPress={() => void share()} /></View>
           {message ? <Text variant="label" tone="stop" style={{ marginTop: space[2] }}>{message}</Text> : null}
         </>
       )}
