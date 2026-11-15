@@ -3,7 +3,7 @@ import type { Installed, Region } from '@/lib/offlineRegions/manifest';
 import { rowState } from './rowState';
 
 const file = { url: 'https://x/f', bytes: 1, sha256: 'a' };
-const region: Region = { id: 'goa', name: 'Goa', bbox: [73, 14, 75, 16], version: '2', map: file, search: file };
+const region: Region = { id: 'goa', name: 'Goa', country: 'India', bbox: [73, 14, 75, 16], version: '2', map: file, search: file };
 const installed = (version: string): Installed => ({ id: 'goa', version, bbox: region.bbox, mapPath: 'm', searchPath: 's' });
 
 describe('rowState', () => {

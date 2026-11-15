@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, Platform, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Animated, Platform, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,7 +32,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   /** A footer's own height, so a tall one never covers the end of the page. */
   const [footerHeight, setFooterHeight] = useState(88);
   const [page, setPage] = useState({ content: 0, layout: 0 });
-  /** The scroll area's height, so a short page on Android is still tall enough to rest at the top of its pull space. */
+  /** The scroll area's height, so a short page on Android is still tall enough to rest at the top of its pull space (until it is measured, the window's height stands in, so the first frame can already rest there). */
   const [viewHeight, setViewHeight] = useState(0);
   const fingerDown = useRef(false);
   const setBar = (to: number, animate: boolean) => {
@@ -45,6 +45,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
   useFocusEffect(useCallback(() => () => { if (fadeTabs) setBar(1, false); }, [fadeTabs])); // eslint-disable-line react-hooks/exhaustive-deps
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const { landscape } = useLayout();
   // Keep clear of the notch and rounded corners when the phone is turned.
   const padL = Math.max(size.screenX, insets.left + 12), padR = Math.max(size.screenX, insets.right + 12);
@@ -59,6 +60,12 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
    */
   const zone = Platform.OS === 'android' && tabs && scroll ? pullQuote.zone : 0;
   const pulled = useMemo(() => (zone ? Animated.add(scrollY, -zone) : scrollY) as Animated.Value, [zone, scrollY]);
+  // A tab page that changes height (the phone turned, say) can be left scrolled off its resting place by the new size; put it back unless a finger is on it.
+  useEffect(() => {
+    if (!zone || !viewHeight) return;
+    const id = requestAnimationFrame(() => { if (!fingerDown.current) scroller.current?.scrollTo({ y: zone, animated: false }); });
+    return () => cancelAnimationFrame(id);
+  }, [zone, viewHeight]);
   const settle = (y: number) => { if (zone && y < zone - 1) scroller.current?.scrollTo({ y: zone, animated: true }); };
   // The picture is uncovered from the bottom up as the page reaches its end: nothing until the transparent space after the content
   // starts to enter the screen, all of it when the page can scroll no further. Bounce past the end changes nothing.
@@ -89,7 +96,7 @@ export function Screen({ children, overlay, tabs = false, scroll = true, footer,
       onContentSizeChange={fadeTabs || endCap || onNearEnd ? (_w, h) => { bar.content = h - zone; if (endCap) setPage((p) => ({ ...p, content: h })); if (onNearEnd && bar.layout > 0 && h - zone < bar.layout * 2) onNearEnd(); } : undefined}
       onTouchStart={fadeTabs ? (e) => { bar.touch = touchPoint(e.nativeEvent); } : undefined}
       onTouchEnd={fadeTabs ? (e) => { if (bar.value < 1 && bar.touch && isTap(bar.touch, touchPoint(e.nativeEvent))) setBar(1, true); } : undefined}
-      contentContainerStyle={{ minHeight: zone ? viewHeight + zone : undefined, paddingTop: zone + top, paddingBottom: endCap ? 0 : bottom, paddingLeft: padL, paddingRight: padR }}
+      contentContainerStyle={{ minHeight: zone ? (viewHeight || windowHeight) + zone : undefined, paddingTop: zone + top, paddingBottom: endCap ? 0 : bottom, paddingLeft: padL, paddingRight: padR }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >

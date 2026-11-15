@@ -1,5 +1,6 @@
 import type { Adapter, Item } from './syncCore';
 import { encodeTrack } from './trackCodec';
+import { newestFirst } from '@/lib/ridesOrder';
 import { useRides, type Ride } from '@/store/rides';
 import { useTodos } from '@/store/todos';
 import { useTrips, type Trip } from '@/store/trips';
@@ -22,7 +23,8 @@ export const ridesAdapter: Adapter = {
     useRides.setState((s) => {
       const cur = s.rides.find((r) => r.id === id);
       const next = clean({ submission: cur?.submission, clientId: cur?.clientId, ...data, id, updatedAt, points: (extra?.points as LatLng[] | undefined) ?? cur?.points ?? [], breaks: extra?.breaks ?? cur?.breaks }) as unknown as Ride;
-      return { rides: cur ? s.rides.map((r) => (r.id === id ? next : r)) : [next, ...s.rides] };
+      // A ride pulled from another phone goes where its date puts it, not on top: older rides pulled later used to bury the newest.
+      return { rides: cur ? s.rides.map((r) => (r.id === id ? next : r)) : newestFirst([next, ...s.rides]) };
     });
   },
   remove: (id) => useRides.setState((s) => ({ rides: s.rides.filter((r) => r.id !== id) })),

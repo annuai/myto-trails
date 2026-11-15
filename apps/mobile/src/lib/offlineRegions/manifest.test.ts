@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseManifest, regionTotalBytes, updateAvailable, type Installed, type Region } from './manifest';
+import { groupByCountry, parseManifest, regionTotalBytes, updateAvailable, type Installed, type Region } from './manifest';
 
 const file = (bytes = 100) => ({ url: 'https://r2.example/x.pmtiles', bytes, sha256: 'abc' });
 const raw = (over: Record<string, unknown> = {}) => ({
@@ -18,7 +18,7 @@ describe('parseManifest', () => {
 
   it('accepts a valid manifest', () => {
     const out = parseManifest(manifest(raw()));
-    expect(out).toEqual([raw()]);
+    expect(out).toEqual([{ ...raw(), country: 'India' }]);
   });
 
   it('drops a region whose id or version could escape the regions folder', () => {
@@ -82,5 +82,28 @@ describe('updateAvailable', () => {
 describe('regionTotalBytes', () => {
   it('sums map and search', () => {
     expect(regionTotalBytes(parseManifest(manifest(raw()))![0])).toBe(1200);
+  });
+});
+
+describe('country', () => {
+  it('is India when a manifest published before countries existed gives none', () => {
+    expect(parseManifest(manifest(raw()))?.[0]?.country).toBe('India');
+    expect(parseManifest(manifest(raw({ country: '  ' })))?.[0]?.country).toBe('India');
+  });
+  it('is kept when the manifest names one', () => {
+    expect(parseManifest(manifest(raw({ country: 'Nepal' })))?.[0]?.country).toBe('Nepal');
+  });
+});
+
+describe('groupByCountry', () => {
+  const r = (id: string, name: string, country: string) => ({ ...(parseManifest(manifest(raw({ id, name, country })))![0]) });
+  const list = [r('kerala', 'Kerala', 'India'), r('goa', 'Goa', 'India'), r('pokhara', 'Pokhara', 'Nepal'), r('assam', 'Assam', 'India')];
+  it('makes one group per country, A to Z, and lists the regions on the phone first, then by name', () => {
+    const groups = groupByCountry(list, new Set(['kerala']));
+    expect(groups.map((g) => g.country)).toEqual(['India', 'Nepal']);
+    expect(groups[0]!.regions.map((x) => x.id)).toEqual(['kerala', 'assam', 'goa']);
+  });
+  it('is empty when there are no regions', () => {
+    expect(groupByCountry([], new Set())).toEqual([]);
   });
 });

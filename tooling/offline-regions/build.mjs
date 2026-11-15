@@ -209,6 +209,7 @@ async function main() {
   const entry = {
     id: region.id,
     name: region.name,
+    country: region.country ?? 'India',
     bbox: region.bbox,
     version,
     map: { url: '', bytes: statSync(mapFile).size, sha256: await sha256(mapFile) },

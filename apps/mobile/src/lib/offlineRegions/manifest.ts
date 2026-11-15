@@ -2,7 +2,10 @@
 export type FileRef = { url: string; bytes: number; sha256: string };
 
 /** A region the rider can download: a map file and a search file, both published together under one version. */
-export type Region = { id: string; name: string; bbox: [number, number, number, number]; version: string; map: FileRef; search: FileRef };
+/** Manifests published before countries existed have none; every region in them is in India. */
+export const DEFAULT_COUNTRY = 'India';
+
+export type Region = { id: string; name: string; /** The country the region is listed under, so the screen can group by country. */ country: string; bbox: [number, number, number, number]; version: string; map: FileRef; search: FileRef };
 
 /** What is on the phone for a region. Kept apart from `Region` because the manifest may move on while the files stay. */
 export type Installed = { id: string; version: string; bbox: Region['bbox']; mapPath: string; searchPath: string };
@@ -34,7 +37,8 @@ function parseRegion(v: unknown): Region | null {
   if (!text(r.id) || !text(r.name) || !text(r.version) || !bbox || !map || !search) return null;
   // The id and version become file names under the regions folder, so nothing that could climb out of it gets through.
   if (!/^[a-z0-9-]+$/.test(r.id) || !/^[0-9A-Za-z.-]+$/.test(r.version) || r.version.includes('..')) return null;
-  return { id: r.id, name: r.name, bbox, version: r.version, map, search };
+  const country = text(r.country) && r.country.trim() ? r.country.trim().slice(0, 60) : DEFAULT_COUNTRY;
+  return { id: r.id, name: r.name, country, bbox, version: r.version, map, search };
 }
 
 /** Regions from the published manifest. Null when it is not a format we know; a single bad or repeated region is dropped so one slip does not hide the rest. */
@@ -60,4 +64,13 @@ export function updateAvailable(region: Region, installed: Installed | undefined
 /** What a full download costs the rider in data, map and search together. */
 export function regionTotalBytes(r: Region): number {
   return r.map.bytes + r.search.bytes;
+}
+
+/** The list as the screen shows it: one group per country (A to Z), and inside a group the regions on the phone first, then by name. */
+export function groupByCountry(regions: Region[], onPhone: ReadonlySet<string>): { country: string; regions: Region[] }[] {
+  const groups = new Map<string, Region[]>();
+  for (const r of regions) groups.set(r.country, [...(groups.get(r.country) ?? []), r]);
+  return [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([country, list]) => ({ country, regions: [...list].sort((a, b) => Number(onPhone.has(b.id)) - Number(onPhone.has(a.id)) || a.name.localeCompare(b.name)) }));
 }
