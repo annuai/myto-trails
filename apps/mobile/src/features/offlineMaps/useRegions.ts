@@ -40,8 +40,13 @@ export function useRegions() {
     void Promise.all([loadManifest().catch(() => [] as Region[]), listInstalled().catch(() => [] as Installed[])]).then(([list, mine]) => { if (live) { setRegions(list); setInstalled(mine); setLoading(false); join(list); } });
     return () => { live = false; };
   }, [join]);
-  // Coming back to a screen after a download finished elsewhere should show it.
-  useFocusEffect(useCallback(() => { void listInstalled().then(setInstalled).catch(() => undefined); }, []));
+  // Coming back to the screen shows what finished elsewhere and asks the server for the list again, so a new version appears as an update without closing the app.
+  useFocusEffect(useCallback(() => {
+    let live = true;
+    void listInstalled().then((m) => { if (live) setInstalled(m); }).catch(() => undefined);
+    void loadManifest().then((l) => { if (live && l.length) setRegions(l); }).catch(() => undefined);
+    return () => { live = false; };
+  }, []));
 
   const have = useMemo(() => new Map(installed.map((i) => [i.id, i])), [installed]);
 

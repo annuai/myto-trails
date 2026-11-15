@@ -208,8 +208,9 @@ async function upload({ region, version, files, entry, partial = false }) {
   });
   const base = env.R2_PUBLIC_BASE_URL.replace(/\/$/, '');
   // Keys carry the public/ prefix and so do the URLs: the media host maps the bucket root (r2-provider publicUrl()).
+  // no-cache on the manifest: without it a phone's HTTP stack may keep serving the old list for hours (its age is guessed from Last-Modified), so a new version would not show as an update.
   const put = (Key, Body, ContentType) =>
-    client.send(new PutObjectCommand({ Bucket: env.R2_BUCKET, Key: `public/${Key}`, Body, ContentType }));
+    client.send(new PutObjectCommand({ Bucket: env.R2_BUCKET, Key: `public/${Key}`, Body, ContentType, CacheControl: 'no-cache' }));
   const putFile = (Key, path) =>
     new Upload({
       client,

@@ -93,7 +93,8 @@ async function fetchManifestJson(): Promise<unknown> {
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), MANIFEST_TIMEOUT_MS);
   try {
-    const res = await fetch(MANIFEST_URL, { signal: abort.signal });
+    // Always ask the server: a cached copy of the list would hide a new version (the phone's HTTP stack guesses how long a file stays fresh).
+    const res = await fetch(`${MANIFEST_URL}?t=${Date.now()}`, { signal: abort.signal, headers: { 'Cache-Control': 'no-cache' } });
     if (!res.ok) throw new Error(`manifest ${res.status}`);
     return await res.json();
   } finally {
