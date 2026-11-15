@@ -14,6 +14,7 @@ vi.mock('@/api/standing', () => ({ setStandingOptIn: h.optIn, uploadSummaries: v
 vi.mock('@/api/useApi', () => ({ forgetProfile: vi.fn() }));
 vi.mock('@/lib/imageCache', () => ({ wipeImageCache: vi.fn(async () => undefined) }));
 vi.mock('@/store/submissionQueue', () => ({ useSubmissionQueue: { getState: () => ({ setItems: vi.fn() }) } }));
+vi.mock('@/store/myBike', () => ({ useMyBikeStore: { getState: () => ({ reset: vi.fn() }) } }));
 vi.mock('@/store/rides', () => ({ useRides: { getState: () => ({ rides: [] }) } }));
 vi.mock('@/store/auth', () => ({ useAuth: { getState: () => ({ token: 'tok', clear: vi.fn() }) } }));
 vi.mock('@/store/standingPref', async () => {
