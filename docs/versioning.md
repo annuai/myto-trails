@@ -35,7 +35,7 @@ Commit messages already follow Conventional Commits, and that is what drives the
 
 To choose the number yourself (for example the beta, or launch), add an empty commit to `main` with the footer `Release-As: 0.9.0` (or `1.0.0`); the release PR then proposes exactly that.
 
-`npm run check:versions` runs in CI and fails if any file drifts from `.release-please-manifest.json`. That includes the iOS `Info.plist` and the widget extension's own (`ios/ExpoWidgetsTarget/Info.plist`, which Apple requires to match the app), and the Android `versionName` in `android/app/build.gradle` (bumped through its `x-release-please-version` marker); the hand-made native projects do not read `app.json`.
+`npm run check:versions` runs in CI and fails if any file drifts from `.release-please-manifest.json`. That includes the iOS `Info.plist` and the widget extension's own (`ios/ExpoWidgetsTarget/Info.plist`, which Apple requires to match the app) and the widget target's `MARKETING_VERSION` in `project.pbxproj`, which overrides that plist in the built app (release-please cannot edit it, so bump it by hand when `check:versions` fails), and the Android `versionName` in `android/app/build.gradle` (bumped through its `x-release-please-version` marker); the hand-made native projects do not read `app.json`.
 
 ## Not handled by this
 

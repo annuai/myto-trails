@@ -21,3 +21,8 @@ export function plistVersion(plist: string): string | undefined {
 export function gradleVersion(gradle: string): string | undefined {
   return /versionName\s+"([^"]*)"/.exec(gradle)?.[1];
 }
+
+/** The widget extension's `MARKETING_VERSION` in the Xcode project (the build setting wins over its Info.plist): the only one that is not the template's `1.0`. */
+export function xcodeWidgetVersion(pbxproj: string): string | undefined {
+  return [...pbxproj.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map((m) => m[1]).find((v) => v !== '1.0');
+}
