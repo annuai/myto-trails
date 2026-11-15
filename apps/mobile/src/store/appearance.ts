@@ -15,6 +15,9 @@ type State = {
   /** Anonymous crash reports (no position, no contacts: see `scrubCrashEvent`). On unless the rider turns it off. */
   crashReports: boolean;
   setCrashReports: (on: boolean) => void;
+  /** Anonymous usage statistics (see `lib/analytics`). On unless the rider turns it off; change it through `setUsageStats` there. */
+  usageStats: boolean;
+  setUsageStats: (on: boolean) => void;
 };
 
 export const useAppearance = create<State>()(
@@ -24,7 +27,8 @@ export const useAppearance = create<State>()(
       haptics: true, setHaptics: (haptics) => set({ haptics }),
       speedTicks: true, setSpeedTicks: (speedTicks) => set({ speedTicks }),
       crashReports: true, setCrashReports: (crashReports) => set({ crashReports }),
+      usageStats: true, setUsageStats: (usageStats) => set({ usageStats }),
     }),
-    { name: 'myto-appearance', storage, partialize: (s) => ({ inverted: s.inverted, haptics: s.haptics, speedTicks: s.speedTicks, crashReports: s.crashReports }) },
+    { name: 'myto-appearance', storage, partialize: (s) => ({ inverted: s.inverted, haptics: s.haptics, speedTicks: s.speedTicks, crashReports: s.crashReports, usageStats: s.usageStats }) },
   ),
 );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Michroma } from "next/font/google";
 import { Suspense } from "react";
+import { Analytics } from "@/layout/Analytics";
 import { HeaderAccount } from "@/layout/HeaderAccount";
 import { FooterBanner } from "@/layout/FooterBanner";
 import { SiteFooter } from "@/layout/SiteFooter";
@@ -26,11 +27,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={null}>
           <NavProgress />
         </Suspense>
+        <Suspense fallback={null}>
+          <Analytics />
+        </Suspense>
         <SiteHeader
           account={
-            <Suspense fallback={null}>
-              <HeaderAccount />
-            </Suspense>
+            // data-ph-mask: session replay never shows the rider's name or email (lib/analytics).
+            <span data-ph-mask className="contents">
+              <Suspense fallback={null}>
+                <HeaderAccount />
+              </Suspense>
+            </span>
           }
         />
         <main className="container-wide w-full flex-1">{children}</main>

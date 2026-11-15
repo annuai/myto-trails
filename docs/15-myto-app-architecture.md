@@ -242,7 +242,7 @@ This app collects the most sensitive data the project has seen: movement, home a
 - **Location:** foreground and background permission asked only when the rider starts a ride, with the reason in plain words; store policies require a written justification and sometimes a video for background location.
 - **Retention:** raw tracks and recordings are kept until the rider deletes them or closes the account; an "erase everything" button is one tap and really erases.
 - **Encryption:** HTTPS everywhere, encryption at rest in the database and storage, secure storage for tokens. End-to-end encryption of personal data is possible later and is a trade-off (no server search, no recovery).
-- **Analytics and crash reports:** off until the rider agrees; no advertising identifiers.
+- **Analytics and crash reports:** anonymous, on by default with a switch for each under You, Others (decided 2026-11-15; see docs/11); no advertising identifiers.
 - **Documents:** insurance and licence files stay on the phone by default (expiry dates sync, the files do not).
 - **Safety claims:** the SOS and check-in features do not replace emergency services; the app must say so, and test them on real devices before promising anything.
 

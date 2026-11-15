@@ -1,5 +1,6 @@
 import { stopBackground } from './backgroundLocation';
 import { createFinisher } from './finishCore';
+import { track } from './analytics';
 import { journal } from './journalStore';
 import { syncMarks } from './markSync';
 import { syncStanding } from './standingSync';
@@ -34,5 +35,7 @@ export async function finishRide(): Promise<string | undefined> {
   const id = await finish();
   if (id && links) useRides.getState().linkRide(id, links);
   if (id) { syncMarks('ride-end'); void syncStanding(id); }
+  const ride = id ? useRides.getState().rides.find((r) => r.id === id) : undefined;
+  if (ride) track('ride_finished', { distanceKm: ride.distanceKm, durationMin: ride.durationSec / 60 });
   return id;
 }

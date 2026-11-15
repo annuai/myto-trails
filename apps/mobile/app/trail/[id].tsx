@@ -37,6 +37,7 @@ import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { space, media, radius } from '@/theme/tokens';
 import { nowMs } from '@/lib/clock';
+import { track } from '@/lib/analytics';
 
 const label = (s: string) => s.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
 const mb = (bytes: number) => `${Math.max(0.1, bytes / 1_000_000).toFixed(1)} MB`;
@@ -46,6 +47,7 @@ export default function TrailDetail() {
   const router = useRouter();
   const { landscape } = useLayout();
   const t = useTrail(slug);
+  useEffect(() => { if (slug) track('trail_viewed', { trail: slug }); }, [slug]);
   const token = useAuth((s) => s.token);
   const saved = useSaved();
   const { offline, downloading, download, removeDownload, planTrip } = useTrailStore();

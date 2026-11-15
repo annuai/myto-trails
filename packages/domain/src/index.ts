@@ -22,3 +22,4 @@ export * from "./leaderboard";
 export * from "./standing";
 export * from "./crashScrub";
 export * from "./sync";
+export * from "./analytics";

@@ -56,6 +56,7 @@ Copy `.env.example` to `apps/web/.env.local` and fill it in yourself. Never past
 | `R2_PUBLIC_BASE_URL` | Public URL of the bucket (custom domain or the r2.dev URL) for the `public/` prefix |
 | `CRON_SECRET` | Any random string of 32+ characters you generate; set in Vercel (Vercel Cron sends it as a Bearer token to `/api/cron/*`; the nightly `purge-retention` run also recomputes area cohorts) |
 | `SENTRY_DSN` | Optional. Sentry project address for server error reports (web). Unset means nothing is sent. Phone: `EXPO_PUBLIC_SENTRY_DSN`. Both are scrubbed of positions, emails and tokens first (`packages/domain/src/crashScrub.ts`); the phone has a "Crash reports" switch on the You tab |
+| `NEXT_PUBLIC_POSTHOG_KEY` | Optional. PostHog (EU) project key for usage statistics on the site; unset means nothing is sent. Phone: `EXPO_PUBLIC_POSTHOG_KEY` (release builds only). Scrubbed by `packages/domain/src/analytics.ts`; the phone has a "Usage statistics" switch under You, Others |
 | `APP_DOWNLOAD_URL` | Optional. The TestFlight or App Store page for the phone app (https). When set, the group invite page `/join/CODE` shows a "Get the Myto Moto app" button |
 
 ## Switching storage provider

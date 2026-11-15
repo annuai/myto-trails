@@ -36,6 +36,7 @@ Guiding rule: **the smallest architecture that can hold 5,000 trails and 500 con
 | Search | **PostgreSQL full-text + `pg_trgm` + PostGIS** | At ≤ 10⁴ trails, DB search is fast and keeps one source of truth | Algolia/Typesense/Meilisearch: extra service, sync complexity, cost; revisit only if facets over typo-tolerant text become slow |
 | Email | Transactional email provider (Resend/Postmark class) | Status notifications, sign-in links | — |
 | Errors/logging | Sentry + Vercel logs; DB slow-query logging | Standard | — |
+| Product analytics | PostHog Cloud EU (free tier) via the site's `/ingest` proxy; event allow-list and scrubbing in `packages/domain/src/analytics.ts` | Free, covers web and Expo; Aptabase too small, OpenPanel would need paid hosting | — |
 | CI/CD | GitHub Actions → Vercel previews per PR | Standard | — |
 | Testing | Vitest (units), Playwright (e2e, visual, a11y with axe), a handful of component tests | See doc 12 | — |
 

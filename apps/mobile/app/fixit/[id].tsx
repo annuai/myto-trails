@@ -20,6 +20,7 @@ import { syncMarks } from '@/lib/markSync';
 import { Screen } from '@/ui/Screen';
 import { TextButton } from '@/ui/TextButton';
 import { Text } from '@/ui/Text';
+import { track } from '@/lib/analytics';
 
 /**
  * One repair guide. It opens as a page to read: what it takes, when to stop, then every step. "Walk me through it" opens the same steps one at a time
@@ -31,6 +32,8 @@ export default function Guide() {
   const { c } = useTheme();
   const content = useFixitContent();
   const guide = content ? guideById(content, id) : undefined;
+  const guideId = guide ? id : undefined;
+  useEffect(() => { if (guideId) track('fix_it_opened', { guide: guideId }); }, [guideId]);
   const [walking, setWalking] = useState(false);
   const [i, setI] = useState(0);
   useEffect(() => {

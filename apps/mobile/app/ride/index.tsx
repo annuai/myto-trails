@@ -54,6 +54,7 @@ import { Columns } from '@/ui/Columns';
 import { Screen } from '@/ui/Screen';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import { track } from '@/lib/analytics';
 
 type Check = { label: string; status: Status; word: string; go?: string };
 
@@ -189,6 +190,7 @@ export default function RideReady() {
     const toPlace = !groupMode && chosen.key === 'place' && !!dest;
     if (toPlace) { useMyRoutes.getState().follow(undefined); useTrailStore.getState().cancelPlan(); useGuideTarget.getState().set(dest); }
     const ok = running || (await useRecorder.getState().start(source));
+    if (ok && !running) track('ride_started', { source });
     // The place chosen here is the ride's own now; the next visit to this page starts clean.
     if (ok && (!running || toPlace)) useRideDraft.getState().clear();
     router.replace(ok ? '/ride/live' : '/');
