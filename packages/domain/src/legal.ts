@@ -17,7 +17,7 @@ export const MADE_IN_INDIA = "Proudly made in India";
 export const DELETE_CONFIRMATION = "delete";
 export const LEGAL_SLUGS: readonly LegalSlug[] = ["about", "terms", "privacy"];
 
-const UPDATED = "13 November 2026";
+const UPDATED = "15 November 2026";
 const email: Part = { text: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` };
 const myto: Part = { text: "myto-moto", href: MYTO_URL };
 const p = (...parts: Part[]): Block => ({ p: parts });
@@ -169,6 +169,13 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
         ],
       },
       {
+        heading: "Usage statistics",
+        blocks: [
+          p("To learn which parts of Moto Trails are used, the website and the app count anonymous events: which page or screen was opened, that a ride was started or finished (its distance rounded to a kilometre and its length to five minutes), and which trail, region or Fix it guide was opened. They never include your name, email, rides, routes or location, and we do not look up where you are from your network address. The app uses a random number kept on your phone; the website keeps nothing on your device. You can turn this off in the app under You, Others."),
+          p("On the website we record how a small share of visits to public pages move around the page (scrolls, clicks and page changes) to find what is confusing. Anything typed, your name and email, maps and your approximate place are hidden in these recordings, and account, sign-in, contribution and shared-link pages are never recorded."),
+        ],
+      },
+      {
         heading: "Your country",
         blocks: [
           p("The website uses the country your network address appears to be in, as told to us by our host, to choose which country's trails to show first. We do not store it. You can change the country at any time, and your choice is kept in a cookie on your device. The app uses your phone's region, or your position if you allow it, for the same purpose, and keeps your choice on the phone."),
@@ -189,6 +196,7 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
             ["Supabase hosts our database."],
             ["Cloudflare R2 stores photos and GPX files."],
             ["Resend sends your sign-in email links."],
+            ["PostHog (in the EU) receives the anonymous usage statistics and website recordings described above."],
             ["OpenStreetMap supplies the map tiles and MapLibre's font server supplies map lettering. They see which map area your device asks for."],
           ),
           p("They handle data only to provide that service. We do not sell your data or use it for advertising."),
@@ -196,7 +204,7 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
       },
       {
         heading: "Cookies",
-        blocks: [p('The website uses three functional cookies: one keeps you signed in, one remembers "near me" for 30 minutes, and one remembers the country you chose for up to a year. There are no advertising or tracking cookies.')],
+        blocks: [p('The website uses three functional cookies: one keeps you signed in, one remembers "near me" for 30 minutes, and one remembers the country you chose for up to a year. There are no advertising or tracking cookies, and usage statistics use none.')],
       },
       {
         heading: "Your choices",

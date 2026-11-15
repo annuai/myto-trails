@@ -21,7 +21,7 @@ Theme: be shippable and honest. Exit gate: app on at least one store track (Test
 | F2 | Verify in-build work | In build | Know what actually works | Unverified features would be marketed | Run Shop discovery, achievements/Trailmarks/challenges, contribution mapping on device; cut or fix | The other agents' work | M | P0 | Checklist signed off; defects open |
 | F3 | Entitlement config in production | Built (unit-tested) | Prices and limits as configuration | Hard-coded limits block experiments | Configure limits (5/20/50) off by default; admin docs | None | S | P1 | A limit changes without a deploy |
 | F4 | Founding contributor programme | Planned | 50 to 100 contributors | Directory is thin | Invite list, Founding mark, ride-and-verify days (strategy 6.2) | F2 (contribution mapping) | M | P0 | Contributors with 1+ approved item; median days to moderate |
-| F5 | Measurement without tracking | Planned | Learn without ad identifiers | We do not know active riders | Consent-based, aggregate product analytics (`docs/15`: off until the rider agrees); define MAR | F1 | S | P1 | MAR defined and reported monthly |
+| F5 | Measurement without tracking | Built | Learn without ad identifiers | We do not know active riders | Anonymous PostHog analytics, on with an opt-out (docs/11); MAR = distinct app ids with `app_opened` in a calendar month | F1 | S | P1 | MAR defined and reported monthly |
 | F6 | Launch region coverage | Planned | Credible Bengaluru-radius directory | Riders find an empty app | 30+ approved trails in radius (assumption) | F4 | M | P1 | Approved trails in radius |
 
 Not now: new monetisation code beyond configuration.

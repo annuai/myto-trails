@@ -64,7 +64,7 @@ Likelihood (L) and impact (I): Low / Medium / High. Owner suggestions are placeh
 6. What is the budget envelope for hosting, maps and moderation tooling?
 7. Which states have specific off-road/motor vehicle rules that the access taxonomy must reflect (needs local legal input)?
 8. Is a landowner-facing process needed (e.g. a way for owners to claim a trail and set access)? Suggested for stage 2.
-9. What analytics and consent tooling does Myto currently use, and should the product follow it?
+9. ~~What analytics and consent tooling does Myto currently use?~~ Settled 2026-11-15: anonymous PostHog (EU), on by default with an opt-out, no cookies on the site (docs/11).
 10. Does the Myto brand allow the survey-blue accent and the tighter radii, and who signs off?
 11. Do you own `moto-trails.com`, and and do you want `mytotrails.com` and `myto-trails.com` as optional redirects?
 12. Which GPX features and file-size limits does Navi's viewer support? Can the Trails project test on a Navi unit?

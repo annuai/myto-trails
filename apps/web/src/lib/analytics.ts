@@ -12,6 +12,8 @@ import { ANALYTICS_EVENTS, replayAllowed, scrubAnalyticsProps, webPagePattern, t
 export const REPLAY_SAMPLE_RATE = 0.2;
 
 const URL_KEY = /(url|pathname|referrer)$/i;
+/** Props the SDK needs to deliver an event; without them PostHog drops it. */
+const SDK_KEYS = new Set(["token", "distinct_id"]);
 
 /** One URL or path as the server may see it: our own pages as route patterns, other sites as their origin only. */
 export function scrubUrl(value: string, siteOrigin: string): string {
@@ -33,7 +35,7 @@ export function scrubCapture(cr: CaptureResult | null, siteOrigin: string): Capt
   if (cr.event !== "$pageview" && !isOurs(cr.event)) return null;
   const kept: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(cr.properties ?? {})) {
-    if (k.startsWith("$")) kept[k] = typeof v === "string" && URL_KEY.test(k) ? scrubUrl(v, siteOrigin) : v;
+    if (k.startsWith("$") || SDK_KEYS.has(k)) kept[k] = typeof v === "string" && URL_KEY.test(k) ? scrubUrl(v, siteOrigin) : v;
   }
   const own = isOurs(cr.event) ? scrubAnalyticsProps(cr.event, cr.properties) : {};
   return { ...cr, properties: { ...kept, ...own, $geoip_disable: true }, $set: undefined, $set_once: undefined };
@@ -71,20 +73,19 @@ export function analyticsConfig(siteOrigin: string): Partial<PostHogConfig> {
 }
 
 let client: PostHog | null = null;
+let starting: Promise<boolean> | null = null;
 /** Decided once per page load, so a visit is either recorded throughout or not at all. */
 const sampled = typeof Math !== "undefined" && Math.random() < REPLAY_SAMPLE_RATE;
 
-export async function initAnalytics(key: string | undefined = process.env.NEXT_PUBLIC_POSTHOG_KEY): Promise<boolean> {
-  if (client) return true;
-  if (!key?.trim() || typeof window === "undefined") return false;
-  const { default: posthog } = await import("posthog-js");
-  posthog.init(key.trim(), analyticsConfig(window.location.origin));
-  client = posthog;
-  return true;
-}
-
-export function track(name: AnalyticsEventName, props?: Record<string, unknown>): void {
-  client?.capture(name, scrubAnalyticsProps(name, props));
+/** Starts once, however many times it is called (React runs effects twice in development). */
+export function initAnalytics(key: string | undefined = process.env.NEXT_PUBLIC_POSTHOG_KEY): Promise<boolean> {
+  if (!key?.trim() || typeof window === "undefined") return Promise.resolve(false);
+  starting ??= import("posthog-js").then(({ default: posthog }) => {
+    posthog.init(key.trim(), analyticsConfig(window.location.origin));
+    client = posthog;
+    return true;
+  });
+  return starting;
 }
 
 /** A page view by route pattern, and replay started or stopped for this page. */

@@ -33,6 +33,10 @@ describe("scrubCapture", () => {
     const out = scrubCapture(ev("trail_viewed", { trail: "spiti-loop", email: "a@b.co" }), SITE);
     expect(out?.properties).toEqual({ trail: "spiti-loop", $geoip_disable: true });
   });
+  it("keeps the token and anonymous id the SDK needs to deliver the event", () => {
+    const out = scrubCapture(ev("$pageview", { token: "phc_x", distinct_id: "anon-1", name: "Ravi" }), SITE);
+    expect(out?.properties).toEqual({ token: "phc_x", distinct_id: "anon-1", $geoip_disable: true });
+  });
   it("passes replay snapshots through", () => {
     const snap = ev("$snapshot", { $snapshot_data: [] });
     expect(scrubCapture(snap, SITE)).toBe(snap);

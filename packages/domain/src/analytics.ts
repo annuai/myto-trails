@@ -15,8 +15,6 @@ export const ANALYTICS_EVENTS = {
   trail_viewed: { trail: "slug" },
   fix_it_opened: { guide: "slug" },
   offline_region_downloaded: { region: "slug" },
-  sign_in_completed: {},
-  app_download_clicked: { store: ["ios", "android"] },
 } as const satisfies Record<string, Record<string, Kind>>;
 
 export type AnalyticsEventName = keyof typeof ANALYTICS_EVENTS;
@@ -53,7 +51,7 @@ const PUBLIC_SLUG = /^[a-z0-9][a-z0-9-]{0,79}$/;
 
 /** A website path as a route pattern: `/track/abc?x=1` becomes `/track/[id]`; public trail and region slugs are kept. */
 export function webPagePattern(pathname: string): string {
-  const segs = pathname.split(/[?#]/)[0].split("/").filter(Boolean);
+  const segs = (pathname.split(/[?#]/)[0] ?? "").split("/").filter(Boolean);
   const pub = PUBLIC_PREFIXES.has(segs[0] ?? "");
   return "/" + segs.map((s) => (STATIC_WORDS.has(s) || (pub && PUBLIC_SLUG.test(s)) ? s : "[id]")).join("/");
 }
@@ -68,6 +66,6 @@ export function screenPattern(segments: readonly string[]): string {
 export const REPLAY_BLOCKED_PREFIXES = ["account", "sign-in", "auth", "moderate", "track", "route", "join", "submit", "saved"] as const;
 
 export function replayAllowed(pathname: string): boolean {
-  const first = pathname.split(/[?#]/)[0].split("/").filter(Boolean)[0] ?? "";
+  const first = (pathname.split(/[?#]/)[0] ?? "").split("/").filter(Boolean)[0] ?? "";
   return !(REPLAY_BLOCKED_PREFIXES as readonly string[]).includes(first);
 }

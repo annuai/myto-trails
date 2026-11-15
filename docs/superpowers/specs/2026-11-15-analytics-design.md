@@ -18,13 +18,13 @@ Free tier only (PostHog Cloud ~1M events and 5k replays a month). DPDP-aligned. 
 - Umami / Vercel Analytics: web only.
 
 ## Decided with the user
-- **On by default, with an opt-out** ("Usage statistics" switch, You → Privacy, next to Crash reports). This replaces "off until the rider agrees" in docs/15.
+- **On by default, with an opt-out** ("Usage statistics" switch, You → Others, next to Crash reports). This replaces "off until the rider agrees" in docs/15.
 - **Session replay: web only, masked.** No replay in the app (screens show the rider's location and routes; it would also cost battery and data during rides).
 
 ## Design
 1. `packages/domain/src/analytics.ts`: an `AnalyticsEvent` union (name + allowed props) and `scrubAnalyticsProps`, which drops any prop not on the allow-list and rounds numbers (distance to 1 km, duration to 5 min). Unit tests.
    - App events: `app_opened`, `screen_viewed` (route pattern, e.g. `/trail/[id]`, never real ids), `ride_started`, `ride_finished` (rounded distance and duration), `trail_viewed`, `offline_region_downloaded` (country/region code), `fix_it_opened` (guide slug).
-   - Web events: `$pageview` (path with ids replaced by the route pattern), `trail_viewed`, `sign_in_completed`, `app_download_clicked`.
+   - Web events: `$pageview` only, with ids replaced by the route pattern. Trail slugs show in the pattern; the site has no store links yet and sign-in ends in a server redirect, so `/welcome` page views stand in for sign-ups.
 2. **Mobile** `apps/mobile/src/lib/analytics.ts` with `posthog-react-native`:
    - It runs only in a release build with `EXPO_PUBLIC_POSTHOG_KEY` set, the same way as `crashReporting.ts`.
    - An anonymous random ID, with no ad IDs, no automatic tap capture, no replay and no person profiles.

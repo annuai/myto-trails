@@ -48,9 +48,12 @@ export function SiteFooter() {
               <Image src="/brand/moto-trails-logo.svg" alt="Moto Trails" width={144} height={26} className="mb-5 h-auto w-36" unoptimized />
               <p className="max-w-[260px] text-sm leading-relaxed text-muted">A moderated directory of motorcycle trails: who may ride, how we know, and when it was last checked.</p>
             </div>
-            <Suspense fallback={<FooterClock place={null} />}>
-              <FooterLocation />
-            </Suspense>
+            {/* The place name is the visitor's approximate city, so session replay masks it (lib/analytics). */}
+            <span data-ph-mask className="contents">
+              <Suspense fallback={<FooterClock place={null} />}>
+                <FooterLocation />
+              </Suspense>
+            </span>
           </div>
 
           <nav aria-label="Footer" className="mb-14 grid grid-cols-2 gap-x-8 gap-y-10 border-t border-black/[0.07] pt-12 md:grid-cols-3">
