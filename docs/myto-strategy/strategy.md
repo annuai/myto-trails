@@ -23,7 +23,7 @@ It is a lifestyle brand with a useful product, not a social network: riders cont
 
 Primary: touring and adventure riders in India who plan weekend and multi-day rides on 250 to 500 cc and larger bikes, ride in groups, and today stitch together a maps app, a chat group and spreadsheets. Secondary: club road captains and ride organisers (the buyers of group-ride capacity); trail contributors (the supply side). Participants in a group ride **never pay**.
 
-What we do not claim: market size, rider counts, or willingness to pay. None is measured. The first job of the year is to measure them (see roadmap, Foundation).
+What we do not claim: market size, rider counts, or willingness to pay. None is measured. The first job of the year is to measure them (see roadmap, Phase 2 club beta).
 
 ## 3. Positioning and competitors
 
@@ -101,7 +101,7 @@ Field-guide editorial, in the existing visual direction (`docs/08`, "Survey shee
 
 | Risk | Why it matters | Mitigation |
 |---|---|---|
-| No store release yet | All store revenue is zero until a paid Apple account and review exist | Make this the Foundation gate; Android first is an option (APK exists, not a store build) |
+| No store release yet | All store revenue is zero until a paid Apple account and review exist | Phase 0 gate: Android first on Google Play; Apple in Phase 3 ([roadmap](product-roadmap.md)) |
 | Revenue small against even modest opex | The model shows product revenue alone does not cover costs in year one (see financial-assumptions) | Stay free-tier and founder-funded; treat year one as validation |
 | Commerce erodes trust | The moat is trust in access and condition | Hard separation rules (monetisation-model §Advertising) |
 | Store policy | Digital unlocks must use platform billing, with a fee | Plan on the 15% tier; see sources |
@@ -111,8 +111,8 @@ Field-guide editorial, in the existing visual direction (`docs/08`, "Survey shee
 
 ## 8. Owner decisions needed
 
-1. Android first on Google Play (no paid Apple account) or wait for Apple? Billing for either needs the corresponding account.
-2. Switch the group-ride free cap to 5 only when a purchase path exists (current plan) or earlier with a waitlist?
+1. Android first on Google Play (no paid Apple account) or wait for Apple? Billing for either needs the corresponding account. **Recommended (2026-11-14):** Android first; Apple at public launch ([roadmap](product-roadmap.md) Phase 0).
+2. Switch the group-ride free cap to 5 only when a purchase path exists (current plan) or earlier with a waitlist? **Recommended (2026-11-14):** keep 100 until retention is measured, never during the club beta, founding clubs grandfathered (roadmap Phase 4).
 3. Confirm Bengaluru-radius launch region once live trail counts are checked.
 4. Whether Shop revenue sits in the same entity and books as the app (affects GST and reporting).
 5. Revisit the `docs/15` "no advertising" line only if advertising moves out of Defer.

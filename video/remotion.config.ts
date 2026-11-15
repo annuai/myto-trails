@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { Config } from '@remotion/cli/config';
-import webpack from 'webpack';
+// Remotion's own webpack: a second copy (top-level node_modules/webpack) breaks the build with "parser.getLocation is not a function".
+import { webpack } from '@remotion/bundler';
 
 Config.setVideoImageFormat('jpeg');
 Config.setOverwriteOutput(true);
@@ -20,6 +21,11 @@ Config.overrideWebpackConfig((config) => ({
       react: path.resolve('node_modules/react'),
       'react-dom': path.resolve('node_modules/react-dom'),
     },
+  },
+  module: {
+    ...config.module,
+    // Some app dependencies ship ES modules that import without file extensions.
+    rules: [...(config.module?.rules ?? []), { test: /\.m?js$/, resolve: { fullySpecified: false } }],
   },
   plugins: [...(config.plugins ?? []), new webpack.DefinePlugin({ __DEV__: JSON.stringify(false) })],
 }));

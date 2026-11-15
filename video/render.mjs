@@ -2,6 +2,7 @@
 //   public/audio/voiceover.m4a   (run ./make-voiceover.sh)
 //   public/audio/music.mp3       (your licensed track)
 // Usage: node render.mjs [9x16|4x5|16x9 ...]   (default: all three)
+//        node render.mjs reel                  (the Instagram Reel and Story, out/reel-9x16.mp4)
 import { existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
@@ -9,5 +10,9 @@ const props = JSON.stringify({ voice: existsSync('public/audio/voiceover.m4a'), 
 const sizes = process.argv.slice(2).length ? process.argv.slice(2) : ['9x16', '4x5', '16x9'];
 console.log('props', props);
 for (const s of sizes) {
+  if (s === 'reel') {
+    execFileSync('npx', ['remotion', 'render', 'src/index.ts', 'Reel-9x16', 'out/reel-9x16.mp4', `--props=${JSON.stringify({ music: existsSync('public/audio/music.mp3') })}`, '--codec=h264', '--crf=18', '--audio-codec=aac'], { stdio: 'inherit' });
+    continue;
+  }
   execFileSync('npx', ['remotion', 'render', 'src/index.ts', `Promo-${s}`, `out/promo-${s}.mp4`, `--props=${props}`, '--codec=h264', '--crf=21', '--audio-codec=aac'], { stdio: 'inherit' });
 }
