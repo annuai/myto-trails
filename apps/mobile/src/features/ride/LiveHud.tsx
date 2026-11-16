@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Animated, Easing, LayoutAnimation, Platform, Pressable, ScrollView, UIManager, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Crown, Users, X } from 'lucide-react-native';
+import { Crown, Navigation, Users, X } from 'lucide-react-native';
 import type { Instruction } from '@/lib/guidance';
 import { ROLE_ICON } from '@/features/group/roleIcons';
 import { ROLE_LABEL } from '@/lib/eventCore';
@@ -18,6 +18,11 @@ import { IconButton } from '@/ui/IconButton';
 import { riderColor } from '@/ui/map/RiderPins';
 import { Text } from '@/ui/Text';
 import { TURN_ICON } from './turnIcons';
+
+/** Shown after "Stop guiding": one tap brings the directions back, so closing the card is never a dead end. */
+export function ResumeGuidance({ name, onPress }: { name?: string; onPress: () => void }) {
+  return <Button variant="soft" icon={Navigation} label={name ? `Directions to ${name}` : 'Resume directions'} onPress={onPress} />;
+}
 
 /**
  * The next manoeuvre, floating over the top of the map: a big arrow, the distance to it in large numbers, and what to do. A thin line

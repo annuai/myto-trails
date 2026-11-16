@@ -28,7 +28,7 @@ import { rejoinTarget, routeBearing, startReroute, stepReroute } from '@/lib/rer
 import { compassWord, prepareTrail, startGuide, stepGuide, type Guide } from '@/lib/trailGuide';
 import { WAYPOINT_KINDS, WAYPOINT_LABEL } from '@/lib/waypointKinds';
 import { RiderSheet } from '@/features/group/RiderSheet';
-import { GroupRail, StatsStrip, TurnCard } from '@/features/ride/LiveHud';
+import { GroupRail, ResumeGuidance, StatsStrip, TurnCard } from '@/features/ride/LiveHud';
 import { useSpeedTicks } from '@/features/ride/useSpeedTicks';
 import { useDirections } from '@/features/ride/useDirections';
 import { useVoiceGuidance } from '@/features/ride/useVoiceGuidance';
@@ -132,7 +132,10 @@ function LiveBody() {
   const target = rescueSpot ?? baseTarget;
   const regroup = useMemo(() => (live.regroup ? { lat: live.regroup.lat, lng: live.regroup.lng, name: live.regroup.note ?? undefined } : undefined), [live.regroup]);
   const destination = target ?? regroup;
-  const clearTarget = useGuideTarget.getState().clear;
+  const pauseTarget = useGuideTarget.getState().pause;
+  const paused = useGuideTarget((s) => s.paused);
+  // After "Stop guiding": a way back to the directions (nothing is guided to, and no rescue is on).
+  const resume = paused && !baseTarget && !rescue ? <ResumeGuidance name={paused.name} onPress={useGuideTarget.getState().resume} /> : null;
   const endRescue = useGuideTarget.getState().endRescue;
   // The direction of travel from the track: the raw material for the heading, which is steadied below.
   const course = useMemo(() => travelHeading(r.points), [r.points]);
@@ -345,7 +348,8 @@ function LiveBody() {
     <View style={{ flex: 1 }}>
       <OsmMap height="fill" radius={radius.card} follow pointer debug={mapDebug} covered={{ top: hudH ? hudH + space[3] : 0, bottom: footH && !quiet ? footH + space[3] : 0 }} onPicker={setPicking} {...mapData} />
       <View pointerEvents="box-none" onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); if (h > 0) setHudH(h); }} style={{ position: 'absolute', top: space[3], left: space[3], right: space[3] + size.compact + space[2], gap: space[2] }}>
-        {picking ? null : instruction ? <TurnCard instruction={instruction} compact={landscape} onStop={rescue ? endRescue : target ? clearTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}
+        {picking ? null : instruction ? <TurnCard instruction={instruction} compact={landscape} onStop={rescue ? endRescue : target ? pauseTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}
+        {picking ? null : resume}
         {picking ? null : leadCards}
         {picking ? null : status}
       </View>
@@ -416,7 +420,7 @@ function LiveBody() {
             <View pointerEvents="box-none" onLayout={(e) => { const w = Math.round(e.nativeEvent.layout.width); if (w > 0) setSideW(w); }} style={{ position: 'absolute', top: space[3], bottom: space[3], left: space[3], width: '46%', maxWidth: layout.barMax }}>
               {/* The column scrolls when its notices (lost signal, a lead question) make it taller than the screen, so the numbers are never pushed out of sight. It still spreads to the full height when it fits, and the map is still touched through its empty space. */}
               <ScrollView pointerEvents="box-none" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between', gap: space[2] }}>
-                <View pointerEvents="box-none" style={{ gap: space[2] }}>{picking ? null : instruction ? <TurnCard instruction={instruction} compact onStop={rescue ? endRescue : target ? clearTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}{picking ? null : leadCards}{picking ? null : status}</View>
+                <View pointerEvents="box-none" style={{ gap: space[2] }}>{picking ? null : instruction ? <TurnCard instruction={instruction} compact onStop={rescue ? endRescue : target ? pauseTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}{picking ? null : resume}{picking ? null : leadCards}{picking ? null : status}</View>
                 {quiet ? null : <View pointerEvents="box-none" style={{ gap: space[2] }}>{groupRail}{stats}</View>}
               </ScrollView>
             </View>
