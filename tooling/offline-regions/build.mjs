@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Offline region build pipeline (laptop only, run per region about monthly).
 //
-// Usage: node tooling/offline-regions/build.mjs <regionId> [--maxzoom 13] [--no-route] [--no-overture] [--search-only] [--upload]
+// Usage: node tooling/offline-regions/build.mjs <regionId> [--maxzoom 13] [--no-route] [--no-overture] [--search-only] [--route-only] [--upload]
 //
 // Required CLIs and files:
 //   osmium     osmium-tool (brew install osmium-tool)
@@ -17,7 +17,8 @@
 //              Karnataka took 2 minutes, 4 GB of memory and about 1.3 GB of free disk while building.
 //   python3 + duckdb  Overture Maps places (shops, fuel, food, stays, sights) added to the search file: `pip install duckdb`, or set
 //              PYTHON to an interpreter that has it. Needs the network (public S3). Skip with --no-overture. --search-only rebuilds
-//              just <id>.places.sqlite from the region's existing out/<id>.osm.pbf (no map, routing or upload).
+//              just <id>.places.sqlite from the region's existing out/<id>.osm.pbf (no map or routing). --route-only builds just the routing tiles from that file.
+//              With --upload either one publishes only its own file and keeps the region's other entries in the manifest.
 // For --upload also set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE_URL
 // (see .env.example). Uploads <id>.pmtiles, <id>.places.sqlite and <id>.route.tar.gz to public/regions/<id>/<version>/ and rewrites
 // the region's entry in public/regions/manifest.json (published URLs keep the public/ prefix: the media host maps the bucket root, as publicUrl() in apps/web/src/server/storage/r2-provider.ts does).
@@ -35,19 +36,20 @@ import { buildOvertureRow, buildRow, dedupeKey, dedupeKeys } from './places.ts';
 const here = dirname(fileURLToPath(import.meta.url));
 
 function parseArgs(argv) {
-  const args = { regionId: null, maxzoom: 13, upload: false, route: true, overture: true, searchOnly: false };
+  const args = { regionId: null, maxzoom: 13, upload: false, route: true, overture: true, searchOnly: false, routeOnly: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--upload') args.upload = true;
     else if (a === '--no-route') args.route = false;
     else if (a === '--no-overture') args.overture = false;
     else if (a === '--search-only') args.searchOnly = true;
+    else if (a === '--route-only') args.routeOnly = true;
     else if (a === '--maxzoom') args.maxzoom = Number(argv[++i]);
     else if (a.startsWith('--maxzoom=')) args.maxzoom = Number(a.split('=')[1]);
     else if (!a.startsWith('--') && !args.regionId) args.regionId = a;
     else throw new Error(`Unknown argument: ${a}`);
   }
-  if (!args.regionId) throw new Error('Usage: build.mjs <regionId> [--maxzoom 13] [--no-route] [--no-overture] [--search-only] [--upload]');
+  if (!args.regionId) throw new Error('Usage: build.mjs <regionId> [--maxzoom 13] [--no-route] [--no-overture] [--search-only] [--route-only] [--upload]');
   if (!Number.isInteger(args.maxzoom) || args.maxzoom < 1 || args.maxzoom > 15) throw new Error('--maxzoom must be 1..15');
   return args;
 }
@@ -241,7 +243,7 @@ async function upload({ region, version, files, entry, partial = false }) {
 }
 
 async function main() {
-  const { regionId, maxzoom, upload: doUpload, route: wantRoute, overture, searchOnly } = parseArgs(process.argv.slice(2));
+  const { regionId, maxzoom, upload: doUpload, route: wantRoute, overture, searchOnly, routeOnly } = parseArgs(process.argv.slice(2));
   const route = wantRoute && !searchOnly;
   const { regions } = JSON.parse(readFileSync(join(here, 'regions.json'), 'utf8'));
   const region = regions.find((r) => r.id === regionId);
@@ -251,12 +253,25 @@ async function main() {
   const jar = process.env.PLANETILER_JAR ? resolve(process.env.PLANETILER_JAR) : null;
   const outDir = resolve(process.env.OUT_DIR ?? join(here, 'out'));
   if (!existsSync(india)) throw new Error(`India extract not found at ${india} (set INDIA_PBF)`);
-  if (!searchOnly && (!jar || !existsSync(jar))) throw new Error('Set PLANETILER_JAR to the planetiler.jar path');
+  if (!searchOnly && !routeOnly && (!jar || !existsSync(jar))) throw new Error('Set PLANETILER_JAR to the planetiler.jar path');
   need('osmium');
-  if (!searchOnly) need('java', '-version');
+  if (!searchOnly && !routeOnly) need('java', '-version');
   const python = process.env.PYTHON ?? 'python3';
-  if (route) for (const tool of ['valhalla_build_config', 'valhalla_build_admins', 'valhalla_build_tiles', 'valhalla_build_extract']) need(tool, '--help');
+  if (route && !routeOnly) for (const tool of ['valhalla_build_config', 'valhalla_build_admins', 'valhalla_build_tiles', 'valhalla_build_extract']) need(tool, '--help');
   mkdirSync(outDir, { recursive: true });
+
+  if (routeOnly) {
+    const regionFile = join(outDir, `${region.id}.osm.pbf`);
+    if (!existsSync(regionFile)) throw new Error(`${regionFile} not found: build the region in full first`);
+    for (const tool of ['valhalla_build_config', 'valhalla_build_admins', 'valhalla_build_tiles', 'valhalla_build_extract']) need(tool, '--help');
+    const built = await buildRoute(outDir, region, regionFile);
+    console.log(JSON.stringify(built.ref, null, 2));
+    if (doUpload) {
+      const stamp = new Date().toISOString().slice(0, 16).replace('T', '.').replace(':', '');
+      await upload({ region, version: stamp, files: [{ key: 'route', name: `${region.id}.route.tar.gz`, path: built.file }], entry: { id: region.id, version: stamp, route: built.ref }, partial: true });
+    }
+    return;
+  }
 
   const version = new Date().toISOString().slice(0, 10);
   const regionPbf = join(outDir, `${region.id}.osm.pbf`);
@@ -271,7 +286,7 @@ async function main() {
   if (!searchOnly) runIn(outDir, 'java', ['-Xmx4g', '-jar', jar, `--osm-path=${regionPbf}`, `--output=${mapFile}`, `--maxzoom=${maxzoom}`, '--download', '--http-timeout=5m', '--http-retries=10', '--force']);
   // (c) places
   run('osmium', ['tags-filter', '--overwrite', '-o', placesPbf, regionPbf,
-    'nwr/place=city,town,village,hamlet,suburb,neighbourhood,county,district,region,state_district,locality,island', 'nwr/natural=peak,saddle,beach,water', 'nwr/tourism=attraction,viewpoint']);
+    'nwr/place=city,town,village,hamlet,suburb,neighbourhood,county,district,region,state_district,locality,island', 'nwr/natural=peak,saddle,beach,water', 'nwr/tourism=attraction,viewpoint', 'nwr/leisure=park,nature_reserve,garden', 'nwr/boundary=national_park']);
   run('osmium', ['export', '--overwrite', '-f', 'geojsonseq', '-o', placesJson, placesPbf]);
   let overtureFile = null;
   if (overture) {
