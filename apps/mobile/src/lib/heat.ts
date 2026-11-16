@@ -139,7 +139,7 @@ export function heatBounds(map: HeatMap): [number, number, number, number] | und
 export function heatLineFeatures(map?: HeatMap) {
   return {
     type: 'FeatureCollection' as const,
-    features: (map?.lines ?? []).map((l) => ({ type: 'Feature' as const, properties: { heat: l.heat }, geometry: { type: 'LineString' as const, coordinates: l.points.map((p) => [p.lng, p.lat] as [number, number]) } })),
+    features: (map?.lines ?? []).filter((l) => l.points.length >= 2).map((l) => ({ type: 'Feature' as const, properties: { heat: l.heat }, geometry: { type: 'LineString' as const, coordinates: l.points.map((p) => [p.lng, p.lat] as [number, number]) } })),
   };
 }
 

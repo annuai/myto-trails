@@ -22,4 +22,21 @@ describe('the guide target and a rescue', () => {
     expect(useGuideTarget.getState().to).toBeUndefined();
     expect(useGuideTarget.getState().rescue).toBeUndefined();
   });
+  it('stopping guidance keeps the place so it can be resumed, and a new place replaces it', () => {
+    const g = useGuideTarget.getState();
+    g.set({ lat: 12, lng: 77, name: 'Nandi Hills' });
+    useGuideTarget.getState().pause();
+    expect(useGuideTarget.getState().to).toBeUndefined();
+    expect(useGuideTarget.getState().paused?.name).toBe('Nandi Hills');
+    useGuideTarget.getState().resume();
+    expect(useGuideTarget.getState().to?.name).toBe('Nandi Hills');
+    expect(useGuideTarget.getState().paused).toBeUndefined();
+    useGuideTarget.getState().pause();
+    useGuideTarget.getState().set({ lat: 13, lng: 77, name: 'Cubbon Park' });
+    expect(useGuideTarget.getState().paused).toBeUndefined();
+  });
+  it('pausing with nothing to guide to changes nothing', () => {
+    useGuideTarget.getState().pause();
+    expect(useGuideTarget.getState().paused).toBeUndefined();
+  });
 });

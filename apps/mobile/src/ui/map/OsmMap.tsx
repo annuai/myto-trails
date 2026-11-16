@@ -16,12 +16,11 @@ import { heatLineLayout, heatPaints } from './heat.tokens';
 import { heatDotFeatures, heatLineFeatures } from '@/lib/heat';
 import { ROUTE_COLOR, TRACK_COLOR } from './style';
 import { useMapStyle } from '@/lib/offlineRegions/useMapStyle';
-import { trackFeature } from './geojson';
+import { lineFeature, trackFeature } from './geojson';
 import { useMapDark } from './useMapDark';
 import { useMapStart } from './useMapStart';
 import type { OsmMapProps } from './types';
 
-const line = (pts: LatLng[] = []) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'LineString' as const, coordinates: pts.map((p) => [p.lng, p.lat]) } });
 const points = (pts: LatLng[] = []) => ({ type: 'FeatureCollection' as const, features: pts.map((p) => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] } })) });
 const FIT_PADDING = { top: space[8], bottom: space[8], left: space[8], right: space[8] };
 const round = { 'line-cap': 'round', 'line-join': 'round' } as const;
@@ -61,8 +60,8 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
   const [following, setFollowing] = useState(true);
   const [openId, setOpenId] = useState<string>();
   // The map's data is rebuilt only when its input changes: handing the map a new object every second makes the phone re-send the whole track each time, which is slow and drains the battery on a long ride.
-  const routeData = useMemo(() => line(route), [route]);
-  const guideData = useMemo(() => line(guide), [guide]);
+  const routeData = useMemo(() => lineFeature(route), [route]);
+  const guideData = useMemo(() => lineFeature(guide), [guide]);
   const trackData = useMemo(() => trackFeature(track, trackBreaks), [track, trackBreaks]);
   const wptsData = useMemo(() => points(waypoints), [waypoints]);
   const heatLines = useMemo(() => heatLineFeatures(heat), [heat]);
