@@ -35,6 +35,8 @@ export function classifyPlace(tags: Record<string, string>): { kind: PlaceKind; 
   if (tags.natural === 'saddle') return { kind: 'pass', rank: 60 };
   if (tags.natural === 'peak') return { kind: 'peak', rank: 55 };
   if (tags.tourism === 'attraction' || tags.tourism === 'viewpoint') return { kind: 'landmark', rank: 40 };
+  // Named parks and reserves are what people search for (Cubbon Park, a national park); ranked above the businesses around them.
+  if (tags.leisure === 'park' || tags.leisure === 'nature_reserve' || tags.leisure === 'garden' || tags.boundary === 'national_park') return { kind: 'landmark', rank: 50 };
   // Every pond is `natural=water`; only ones with a wikidata or wikipedia tag are notable enough to search for.
   if ((tags.natural === 'beach' || tags.natural === 'water') && (tags.wikidata || tags.wikipedia)) return { kind: 'landmark', rank: 40 };
   return null;

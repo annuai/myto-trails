@@ -14,6 +14,10 @@ describe('classifyPlace', () => {
     expect(classifyPlace({ tourism: 'attraction' })).toEqual({ kind: 'landmark', rank: 40 });
     expect(classifyPlace({ tourism: 'viewpoint' })).toEqual({ kind: 'landmark', rank: 40 });
   });
+  it('ranks named parks and reserves above the businesses around them but below peaks', () => {
+    for (const leisure of ['park', 'nature_reserve', 'garden']) expect(classifyPlace({ leisure })).toEqual({ kind: 'landmark', rank: 50 });
+    expect(classifyPlace({ boundary: 'national_park' })).toEqual({ kind: 'landmark', rank: 50 });
+  });
   it('ranks suburbs, districts and localities', () => {
     for (const place of ['suburb', 'neighbourhood']) expect(classifyPlace({ place })).toEqual({ kind: 'suburb', rank: 35 });
     for (const place of ['county', 'district', 'region', 'state_district']) expect(classifyPlace({ place })).toEqual({ kind: 'district', rank: 70 });
