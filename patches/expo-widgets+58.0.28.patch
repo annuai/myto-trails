@@ -1,31 +1,5 @@
-diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
-index b0b6479..74587ae 100644
---- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
-+++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
-@@ -5,6 +5,7 @@ import android.content.Intent
- import android.net.Uri
- import androidx.glance.action.Action
- import androidx.glance.appwidget.action.actionSendBroadcast
-+import androidx.glance.appwidget.action.actionStartActivity
- import expo.modules.widgets.notifications.ExpoWidgetsNotificationReceiver
- 
- internal const val WIDGET_INTERACTION_ACTION = "expo.modules.widgets.ACTION_WIDGET_INTERACTION"
-@@ -27,6 +28,14 @@ internal data class WidgetInteraction(
- )
- 
- internal fun WidgetInteraction.toGlanceAction(context: Context): Action {
-+  // A target written "open:<url>" opens the app at that link straight from the press. Android does not let the app start
-+  // a screen later from the background, so the press itself has to carry it.
-+  if (target.startsWith("open:")) {
-+    val open = Intent(Intent.ACTION_VIEW, Uri.parse(target.removePrefix("open:")))
-+      .setPackage(context.packageName)
-+      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-+    return actionStartActivity(open)
-+  }
-   val intent = when (source) {
-     is InteractionSource.Widget -> Intent(WIDGET_INTERACTION_ACTION)
-       .setComponent(widgetProviderComponentName(context, source.name))
 diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
+index 3df9e4a..f6a34ce 100644
 --- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
 +++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
 @@ -83,6 +83,9 @@ import androidx.glance.layout.EmittableBox
@@ -75,3 +49,127 @@ diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widget
  }
  
  private fun ReadableMap.toPeekLazyColumn(converterContext: WidgetConverterContext, source: InteractionSource): EmittableLazyColumn {
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
+index b0b6479..74587ae 100644
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
+@@ -5,6 +5,7 @@ import android.content.Intent
+ import android.net.Uri
+ import androidx.glance.action.Action
+ import androidx.glance.appwidget.action.actionSendBroadcast
++import androidx.glance.appwidget.action.actionStartActivity
+ import expo.modules.widgets.notifications.ExpoWidgetsNotificationReceiver
+ 
+ internal const val WIDGET_INTERACTION_ACTION = "expo.modules.widgets.ACTION_WIDGET_INTERACTION"
+@@ -27,6 +28,14 @@ internal data class WidgetInteraction(
+ )
+ 
+ internal fun WidgetInteraction.toGlanceAction(context: Context): Action {
++  // A target written "open:<url>" opens the app at that link straight from the press. Android does not let the app start
++  // a screen later from the background, so the press itself has to carry it.
++  if (target.startsWith("open:")) {
++    val open = Intent(Intent.ACTION_VIEW, Uri.parse(target.removePrefix("open:")))
++      .setPackage(context.packageName)
++      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
++    return actionStartActivity(open)
++  }
+   val intent = when (source) {
+     is InteractionSource.Widget -> Intent(WIDGET_INTERACTION_ACTION)
+       .setComponent(widgetProviderComponentName(context, source.name))
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/CustomNotificationBuilder.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/CustomNotificationBuilder.kt
+index 82cabea..f83c5fd 100644
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/CustomNotificationBuilder.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/CustomNotificationBuilder.kt
+@@ -42,6 +42,9 @@ internal object CustomNotificationBuilder {
+     options.timeoutAfter?.let(builder::setTimeoutAfter)
+     resolveColor(context, options.color)?.let { builder.color = it }
+     contentIntent(context, state.tag, options.url)?.let(builder::setContentIntent)
++    // Android 13+ lets a swipe remove even an ongoing notification. A swipe sends this intent and the receiver posts the card again;
++    // the app's own cancel does not send it, so the card still goes when the app ends it.
++    if (options.ongoing) builder.setDeleteIntent(dismissIntent(context, state))
+     builder.addExtras(state.toExtras())
+ 
+     return builder.build()
+@@ -107,6 +110,15 @@ internal object CustomNotificationBuilder {
+     )
+   }
+ 
++  private fun dismissIntent(context: Context, state: CustomNotificationState): PendingIntent = PendingIntent.getBroadcast(
++    context,
++    state.tag.hashCode(),
++    Intent(context, ExpoWidgetsNotificationReceiver::class.java)
++      .setAction(ExpoWidgetsNotificationReceiver.DISMISSED_ACTION)
++      .putExtras(state.toExtras()),
++    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
++  )
++
+   @Suppress("DEPRECATION")
+   private fun applicationMetaData(context: Context): Bundle? {
+     return runCatching {
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/CustomNotificationState.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/CustomNotificationState.kt
+index f289f44..bf21108 100644
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/CustomNotificationState.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/CustomNotificationState.kt
+@@ -33,8 +33,9 @@ internal data class CustomNotificationState(
+ 
+     fun tag(name: String, id: String): String = "$TAG_PREFIX${Uri.encode(name)}:${Uri.encode(id)}"
+ 
+-    fun fromNotification(notification: Notification): CustomNotificationState? {
+-      val extras = notification.extras ?: return null
++    fun fromNotification(notification: Notification): CustomNotificationState? = notification.extras?.let(::fromExtras)
++
++    fun fromExtras(extras: Bundle): CustomNotificationState? {
+       val name = extras.getString(EXTRA_NAME) ?: return null
+       val id = extras.getString(EXTRA_ID) ?: return null
+       val props = extras.getString(EXTRA_PROPS)?.let { json ->
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/ExpoWidgetsNotificationReceiver.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/ExpoWidgetsNotificationReceiver.kt
+index 23d7ee1..587eeb0 100644
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/ExpoWidgetsNotificationReceiver.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/notifications/ExpoWidgetsNotificationReceiver.kt
+@@ -21,6 +21,10 @@ import kotlinx.coroutines.launch
+ 
+ class ExpoWidgetsNotificationReceiver : BroadcastReceiver() {
+   override fun onReceive(context: Context, intent: Intent) {
++    if (intent.action == DISMISSED_ACTION) {
++      repostAfterSwipe(context.applicationContext, intent)
++      return
++    }
+     if (intent.action != NOTIFICATION_INTERACTION_ACTION) {
+       return
+     }
+@@ -39,6 +43,21 @@ class ExpoWidgetsNotificationReceiver : BroadcastReceiver() {
+     }
+   }
+ 
++  private fun repostAfterSwipe(context: Context, intent: Intent) {
++    val state = intent.extras?.let(CustomNotificationState::fromExtras)?.takeIf { it.options.ongoing } ?: return
++    val pendingResult = goAsync()
++    scope.launch {
++      try {
++        runCatching { CustomNotifications.shared.post(context, state) }.onFailure { error ->
++          if (error is CancellationException) throw error
++          Log.e(TAG, "Custom notification '${state.id}' of '${state.name}' could not be re-posted after a swipe.", error)
++        }
++      } finally {
++        pendingResult.finish()
++      }
++    }
++  }
++
+   private suspend fun rerenderAfterPress(context: Context, name: String, notificationId: String, target: String) {
+     runCatching {
+       CustomNotifications.shared.update(context, name, notificationId) { active ->
+@@ -58,9 +77,10 @@ class ExpoWidgetsNotificationReceiver : BroadcastReceiver() {
+     }
+   }
+ 
+-  private companion object {
+-    const val TAG = "ExpoWidgets"
+-    val scope = CoroutineScope(
++  companion object {
++    const val DISMISSED_ACTION = "expo.modules.widgets.notification.DISMISSED"
++    private const val TAG = "ExpoWidgets"
++    private val scope = CoroutineScope(
+       Dispatchers.Default + SupervisorJob() + CoroutineName("expo.widgets.NotificationReceiverScope")
+     )
+   }
