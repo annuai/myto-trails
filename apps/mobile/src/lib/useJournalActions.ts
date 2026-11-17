@@ -56,15 +56,20 @@ export function useJournalActions(rideKey: number) {
     if (!film) return;
     // Without a baked picture (a browser cannot make one) the photo is kept plain, so no look is recorded.
     const plain = look.id === 'none' || !rendered;
-    if (film.entry) {
-      const e = film.entry;
-      await applyFilm(e.id, plain ? null : rendered);
-      useJournal.getState().patch(e.id, { look: plain ? undefined : look });
-    } else {
-      const p = await savePhoto(film.source, plain ? undefined : rendered);
-      add({ id: p.id, rideKey, at: Date.now(), kind: 'photo', width: p.width, height: p.height, ...(plain ? {} : { look }) });
+    try {
+      if (film.entry) {
+        const e = film.entry;
+        await applyFilm(e.id, plain ? null : rendered);
+        useJournal.getState().patch(e.id, { look: plain ? undefined : look });
+      } else {
+        const p = await savePhoto(film.source, plain ? undefined : rendered);
+        add({ id: p.id, rideKey, at: Date.now(), kind: 'photo', width: p.width, height: p.height, ...(plain ? {} : { look }) });
+      }
+      setFilm(null);
+    } catch {
+      setFilm(null);
+      setProblem('Could not save the photo.');
     }
-    setFilm(null);
   };
   /** Opens the Film step on a saved photo, from its original when there is one. Not offered when the original is gone (a restored backup). */
   const editFilm = (e: JournalEntry) => setFilm({ source: hasOriginal(e.id) ? originalUri(e.id) : mediaUri(e.id, 'photo'), entry: e });

@@ -51,7 +51,8 @@ export async function applyFilm(id: string, rendered: string | null): Promise<vo
     if (original.exists) { original.copy(picture, { overwrite: true }); original.delete(); }
     return;
   }
-  if (!original.exists) picture.copy(original, { overwrite: true });
+  // The picture can be gone (an entry whose file was lost); then there is no original to set aside and the new one just becomes the picture.
+  if (!original.exists && picture.exists) picture.copy(original, { overwrite: true });
   await put(rendered, picture);
 }
 
