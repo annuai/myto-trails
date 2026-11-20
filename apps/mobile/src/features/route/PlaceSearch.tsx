@@ -20,7 +20,7 @@ export const placeSub = (p: Place): string | undefined => [p.detail, p.farKm ? `
  * Search as you type, around the rider: `near` (the map or last stop being planned), else where the phone is, else Home. Far places are left out
  * unless nothing is nearby or the rider taps "Search everywhere". Picking a result hands it up and clears the box, ready for the next stop.
  */
-export function PlaceSearch({ near, onPick, label = 'Add a place' }: { near?: LatLng; onPick: (p: Place) => void; label?: string }) {
+export function PlaceSearch({ near, onPick, label = 'Add a place', disabled }: { near?: LatLng; onPick: (p: Place) => void; label?: string; /** Typing is not allowed now (the bike is moving): the box is shown but cannot be written in. */ disabled?: boolean }) {
   const fix = useLocation((s) => s.fix);
   const home = usePlaces((s) => s.home);
   const centre = searchCentre(near, fix, home);
@@ -50,7 +50,8 @@ export function PlaceSearch({ near, onPick, label = 'Add a place' }: { near?: La
 
   return (
     <>
-      <Field label={label} value={q} onChangeText={(t) => { setQ(t); setScope('nearby'); }} placeholder="Search a town, viewpoint or address" autoCorrect={false} returnKeyType="search" />
+      <Field label={label} value={q} onChangeText={(t) => { setQ(t); setScope('nearby'); }} placeholder="Search a town, viewpoint or address" autoCorrect={false} returnKeyType="search" editable={!disabled} />
+      {disabled ? <Text variant="label" tone="muted">Stop to search. You can still choose on the map.</Text> : null}
       {offline ? <Text variant="label" tone="stop">Search needs a connection. You can still tap the map to add points.</Text> : null}
       {found?.widened ? <Text variant="label" tone="muted">Nothing nearby, so this searched everywhere.</Text> : null}
       {found?.places.length ? (

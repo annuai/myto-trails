@@ -1,3 +1,4 @@
+import type { GroupRegroup } from '@/api/groups';
 import { isStale, type GroupRiderView, type RiderTile } from './groupCore';
 
 /**
@@ -61,12 +62,25 @@ const leaderOf = (rs: GroupRiderView[]) => rs.find((r) => r.role === 'leader');
  * What to tell the group when the lead has changed hands between two looks at it, or nothing. Everyone is told, so no rider is left wondering who
  * to follow. When the old leader has stopped reporting, it says they dropped off, not only who leads now.
  */
-export function leadNotice(before: GroupRiderView[], after: GroupRiderView[], meId: string | undefined, now: number): { title: string; body: string } | null {
+export function leadNotice(before: GroupRiderView[], after: GroupRiderView[], meId: string | undefined, now: number, regroup?: GroupRegroup | null): { title: string; body: string } | null {
   const was = leaderOf(before), is = leaderOf(after);
   if (!was || !is || was.id === is.id) return null;
-  if (is.id === meId) return { title: 'Group ride', body: 'You now lead the group.' };
+  if (is.id === meId) return { title: 'Group ride', body: `You now lead the group.${regroup === undefined ? '' : regroup ? ` The destination is ${regroup.note ?? 'a spot on the map'}, and you can change it.` : ' No destination is set, and you can set one.'}` };
   const gone = after.find((r) => r.id === was.id);
   return { title: 'Group ride', body: gone && isStale(gone, now) ? `${was.name} dropped off. ${is.name} now leads.` : `${is.name} now leads.` };
+}
+
+/** The role this phone has on the server, from its own entry in the riders: the phone's idea of who leads follows it, never the other way round. */
+export const roleFromRiders = (riders: GroupRiderView[], meId: string | undefined): 'leader' | 'member' | undefined => {
+  const me = meId ? riders.find((r) => r.id === meId) : undefined;
+  return me ? (me.role === 'leader' ? 'leader' : 'member') : undefined;
+};
+
+/** Whether the group's destination moved between two looks. The spot decides, not the name or who leads, so handing over the lead says nothing; a first look has nothing to compare. */
+export function destinationChange(before: GroupRegroup | null, after: GroupRegroup | null, hadLook: boolean): 'set' | 'cleared' | null {
+  if (!hadLook) return null;
+  if (!after) return before ? 'cleared' : null;
+  return !before || before.lat !== after.lat || before.lng !== after.lng ? 'set' : null;
 }
 
 /** The words for the three battery warnings, for the leader. */

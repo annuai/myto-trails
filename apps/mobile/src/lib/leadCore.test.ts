@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GroupRiderView, RiderTile } from './groupCore';
-import { batteryStep, inOrder, leadCandidates, leadNotice, suggestSuccessor, type BatteryStage } from './leadCore';
+import { batteryStep, destinationChange, inOrder, leadCandidates, leadNotice, roleFromRiders, suggestSuccessor, type BatteryStage } from './leadCore';
 
 describe('batteryStep', () => {
   const run = (levels: number[], charging = false) => {
@@ -70,5 +70,45 @@ describe('inOrder', () => {
   it('puts a rider who joined since at the end and drops one who has gone, and never lists you', () => {
     expect(inOrder([a, c, tile('me', { isMe: true })], ['b', 'a']).map((t) => t.id)).toEqual(['a', 'c']);
     expect(b).toBeTruthy();
+  });
+});
+
+describe('leadNotice with the destination', () => {
+  const now = Date.parse('2026-11-04T06:00:00Z');
+  const view = (id: string, role: string): GroupRiderView => ({ id, name: id.toUpperCase(), role, lat: 1, lng: 1, at: '2026-11-04T05:59:50Z', status: 'ok' });
+  const before = [view('a', 'leader'), view('b', 'member')], after = [view('a', 'member'), view('b', 'leader')];
+  it('tells the new leader what they now control', () => {
+    expect(leadNotice(before, after, 'b', now, { lat: 1, lng: 2, note: 'Hampi' })!.body).toBe('You now lead the group. The destination is Hampi, and you can change it.');
+    expect(leadNotice(before, after, 'b', now, { lat: 1, lng: 2, note: null })!.body).toBe('You now lead the group. The destination is a spot on the map, and you can change it.');
+    expect(leadNotice(before, after, 'b', now, null)!.body).toBe('You now lead the group. No destination is set, and you can set one.');
+  });
+  it('leaves the others\' notice alone', () => {
+    expect(leadNotice(before, after, 'c', now, { lat: 1, lng: 2, note: 'Hampi' })!.body).toBe('B now leads.');
+  });
+});
+
+describe('roleFromRiders', () => {
+  const rs: GroupRiderView[] = [{ id: 'a', name: 'A', role: 'leader', lat: null, lng: null, at: null, status: 'ok' }, { id: 'b', name: 'B', role: 'member', lat: null, lng: null, at: null, status: 'ok' }];
+  it('is this phone\'s own entry: gaining and losing the lead', () => {
+    expect(roleFromRiders(rs, 'a')).toBe('leader');
+    expect(roleFromRiders(rs, 'b')).toBe('member');
+  });
+  it('is unknown without me or without an entry', () => {
+    expect(roleFromRiders(rs, undefined)).toBeUndefined();
+    expect(roleFromRiders(rs, 'z')).toBeUndefined();
+  });
+});
+
+describe('destinationChange', () => {
+  const a = { lat: 12.1, lng: 76.2, note: 'Mysuru' }, b = { lat: 13, lng: 77, note: null };
+  it('says set when the point moves and cleared when it goes', () => {
+    expect(destinationChange(a, b, true)).toBe('set');
+    expect(destinationChange(null, b, true)).toBe('set');
+    expect(destinationChange(a, null, true)).toBe('cleared');
+  });
+  it('says nothing for the same spot (a hand-over, a renamed note), nothing set, or a first look', () => {
+    expect(destinationChange(a, { ...a, note: 'Elsewhere' }, true)).toBeNull();
+    expect(destinationChange(null, null, true)).toBeNull();
+    expect(destinationChange(null, b, false)).toBeNull();
   });
 });

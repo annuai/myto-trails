@@ -15,7 +15,10 @@ import { everyoneHomeText, justEveryoneHome, pollIntervalMs, signalChanges, sign
 import { buzz } from '@/lib/haptics';
 import { SIM_GROUP_ID } from '@/lib/groupSim';
 import { watchBattery } from '@/lib/battery';
-import { BATTERY_WORDS, batteryStep, leadNotice, type BatteryStage } from '@/lib/leadCore';
+import { BATTERY_WORDS, batteryStep, destinationChange, leadNotice, roleFromRiders, type BatteryStage } from '@/lib/leadCore';
+import { sayAloud } from '@/features/ride/sayAloud';
+import { useDestinationNotice } from '@/store/destinationNotice';
+import { useGuideTarget } from '@/store/guideTarget';
 import { useBattery } from '@/store/battery';
 import { useLead } from '@/store/lead';
 import { shareQueued } from '@/lib/osmShare';
@@ -163,11 +166,25 @@ export function CompanionHost() {
         const bat = useBattery.getState();
         const r = await syncGroupRide(token, group.id, { ...(p ? { lat: p.lat, lng: p.lng, at: iso(Date.now()) } : {}), status: live.myStatus, ...(bat.level !== null ? { battery: bat.level, charging: bat.charging } : {}) });
         const before = useCompanion.getState().live.riders;
+        const regroupBefore = useCompanion.getState().live.regroup;
         useCompanion.getState().setLive({ riders: r.riders, me: r.me, regroup: r.regroup, successor: r.successor ?? null, capacity: r.capacity, canTakeLead: !!r.canTakeLead, canTakeBack: !!r.canTakeBack, error: undefined });
         tellAboutSignals(signalChanges(before, r.riders, r.me));
         if (justEveryoneHome(before, r.riders)) { announce('group-home', "Everyone's home", everyoneHomeText(r.riders.length), "Everyone's home", '/'); buzz.confirm(); }
-        const lead = leadNotice(before, r.riders, r.me, Date.now());
+        // What this phone may do follows what the server says: whoever is passed the lead gets the destination control, whoever loses it loses it.
+        const role = roleFromRiders(r.riders, r.me);
+        if (role && useCompanion.getState().group?.role !== role) useCompanion.getState().setGroupRole(role);
+        const lead = leadNotice(before, r.riders, r.me, Date.now(), r.regroup);
         if (lead) tellAboutLead(lead);
+        // The leader moved or removed the destination: a rider following drops a place of their own and is told, so the group stays together.
+        const moved = destinationChange(regroupBefore, r.regroup, before.length > 0);
+        if (moved && role !== 'leader') {
+          const text = moved === 'set' ? `Leader changed the destination to ${r.regroup?.note ?? 'a spot on the map'}` : 'Leader removed the destination';
+          useGuideTarget.getState().dropPersonal();
+          useDestinationNotice.getState().show(text);
+          buzz.reroute();
+          sayAloud(text);
+          tellAboutLead({ title: 'Destination changed', body: text });
+        }
         const now = Date.now();
         const stretched = stretchAlert(r.riders, r.me, r.stretchKm ?? DEFAULT_STRETCH_KM, now);
         if (stretched && now - lastStretchAt >= STRETCH_REPEAT_MS) {
