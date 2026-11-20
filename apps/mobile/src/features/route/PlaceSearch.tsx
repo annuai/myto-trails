@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Globe, MapPin } from 'lucide-react-native';
+import { Crosshair, Globe, MapPin } from 'lucide-react-native';
+import { parseCoordinates } from '@/lib/parseCoordinates';
 import { searchPlaces, type Place, type PlaceResults } from '@/lib/placeSearch';
 import { searchCentre, type SearchScope } from '@/lib/placeScope';
 import type { LatLng } from '@/lib/geo';
@@ -32,11 +33,13 @@ export function PlaceSearch({ near, onPick, label = 'Add a place', disabled }: {
   const [busy, setBusy] = useState(false);
   const [offline, setOffline] = useState(false);
   const query = q.trim();
+  // Coordinates pasted from Google Maps are a place already: no search, one row to go there.
+  const pasted = parseCoordinates(query);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- starting a request: it has to mark itself as loading before the answer comes back
     setOffline(false);
-    if (query.length < MIN_CHARS) { setFound(undefined); setBusy(false); return; }
+    if (query.length < MIN_CHARS || parseCoordinates(query)) { setFound(undefined); setBusy(false); return; }
     setBusy(true);
     const ctl = new AbortController();
     const t = setTimeout(() => {
@@ -50,16 +53,22 @@ export function PlaceSearch({ near, onPick, label = 'Add a place', disabled }: {
 
   return (
     <>
-      <Field label={label} value={q} onChangeText={(t) => { setQ(t); setScope('nearby'); }} placeholder="Search a town, viewpoint or address" autoCorrect={false} returnKeyType="search" editable={!disabled} />
+      <Field label={label} value={q} onChangeText={(t) => { setQ(t); setScope('nearby'); }} placeholder="Search a place, or paste coordinates" autoCorrect={false} returnKeyType="search" editable={!disabled} />
       {disabled ? <Text variant="label" tone="muted">Stop to search. You can still choose on the map.</Text> : null}
       {offline ? <Text variant="label" tone="stop">Search needs a connection. You can still tap the map to add points.</Text> : null}
+      {pasted ? (
+        <ListCard>
+          <Row icon={Crosshair} label="Navigate to coordinates" sub={`${pasted.lat.toFixed(5)}, ${pasted.lng.toFixed(5)}`} chevron={false}
+            onPress={() => { onPick({ name: 'Pasted spot', detail: '', point: pasted }); setQ(''); setFound(undefined); setScope('nearby'); }} />
+        </ListCard>
+      ) : null}
       {found?.widened ? <Text variant="label" tone="muted">Nothing nearby, so this searched everywhere.</Text> : null}
       {found?.places.length ? (
         <ListCard>
           {found.places.map((p, i) => <Row key={`${p.name}-${i}`} icon={MapPin} label={p.name} sub={placeSub(p)} chevron={false} onPress={() => { onPick(p); setQ(''); setFound(undefined); setScope('nearby'); }} />)}
           {found.limited ? <Row icon={Globe} label="Search everywhere" sub="Not what you wanted? Look beyond this area." chevron={false} onPress={() => setScope('everywhere')} /> : null}
         </ListCard>
-      ) : found && !busy ? <Text variant="label" tone="muted">Nothing found for “{query}”. Try another spelling, or tap the map.</Text> : null}
+      ) : found && !busy && !pasted ? <Text variant="label" tone="muted">Nothing found for “{query}”. Try another spelling, or tap the map.</Text> : null}
     </>
   );
 }
