@@ -74,9 +74,13 @@ const rules: Rule[] = [
       returning id`),
   },
   {
-    // A deleted ride's track is already removed when the delete arrives; only the small tombstone row is left.
+    // A delete keeps the record and the ride's track for these 30 days (the recycle bin); now both go.
     name: "syncTombstones",
-    run: async (db, now) => count(await db`delete from sync_record where deleted_at < ${ago(now, RETENTION_DAYS.syncTombstone)} returning id`),
+    run: async (db, now, doomed) => {
+      const rows = await db`delete from sync_record where deleted_at < ${ago(now, RETENTION_DAYS.syncTombstone)} returning track_key`;
+      for (const r of rows) if (r.track_key) doomed.push({ bucket: "originals", key: r.track_key as string });
+      return rows.length;
+    },
   },
   {
     name: "syncDevices",

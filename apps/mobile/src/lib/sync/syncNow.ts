@@ -5,6 +5,13 @@ import { resetSync, useSync } from '@/store/sync';
 import { syncAdapters } from './adapters';
 import { runSync } from './runSync';
 import { scan } from './syncCore';
+import { useRides } from '@/store/rides';
+import { useTodos } from '@/store/todos';
+import { useTrips } from '@/store/trips';
+
+/** Every store sync reads. Until they have all been read from the phone, an empty one is not the real one, so nothing is compared or sent. */
+export const syncStores = [useSync, useRides, useTodos, useTrips, useAuth] as const;
+const loaded = () => syncStores.every((s) => s.persist.hasHydrated());
 
 let running = false;
 
@@ -22,7 +29,7 @@ export function syncErrorText(e: unknown): { text: string; blocked: 'scope' | nu
 /** One sync round. Does nothing when sync is off, nobody is signed in, or a round is already running. Never throws. */
 export async function syncNow(): Promise<void> {
   const token = useAuth.getState().token;
-  if (!token || running || !useSync.getState().enabled) return;
+  if (!token || running || !loaded() || !useSync.getState().enabled) return;
   running = true;
   try {
     await runSync({ api: syncApi(token), adapters: syncAdapters, get: () => useSync.getState(), set: (s) => useSync.setState(s), now: Date.now });
@@ -35,7 +42,7 @@ export async function syncNow(): Promise<void> {
 /** Looks for local changes without going to the network, so "waiting to sync" is right straight after an edit. */
 export function scanNow(): void {
   const s = useSync.getState();
-  if (s.enabled) useSync.setState(scan(s, syncAdapters, Date.now()));
+  if (s.enabled && loaded()) useSync.setState(scan(s, syncAdapters, Date.now()));
 }
 
 export async function enableSync(): Promise<void> {

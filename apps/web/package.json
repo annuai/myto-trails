@@ -24,6 +24,7 @@
     "db:start": "bash scripts/dev-db.sh start",
     "db:stop": "bash scripts/dev-db.sh stop",
     "db:reset": "bash scripts/dev-db.sh reset",
+    "sync:restore": "tsx --env-file-if-exists=.env.local scripts/sync-restore.mts",
     "db:purge:dry": "tsx --env-file-if-exists=.env.local scripts/db-purge.mts",
     "entitlement:grant": "tsx --env-file-if-exists=.env.local scripts/entitlement-grant.mts",
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/db-migrate.mts",

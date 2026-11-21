@@ -119,6 +119,21 @@ describe("passing the lead", () => {
     expect(await setRegroup(db.sql, { userId: g.asha, rideId: g.rideId, point, now })).toEqual({ ok: true });
   });
 
+  it("keeps the destination when the lead changes hands, for everyone, until the new leader sets another", async () => {
+    const g = await group();
+    const point = { lat: 12.9, lng: 77.5, note: "Nandi Hills" };
+    await setRegroup(db.sql, { userId: g.leader, rideId: g.rideId, point, now });
+    await passLead(db.sql, { userId: g.leader, rideId: g.rideId, rider: await g.idOf("Asha"), now });
+    const regroupFor = async (userId: string) => {
+      const r = await syncGroupRide(db.sql, { userId, rideId: g.rideId, now });
+      if (!("regroup" in r)) throw new Error(r.reason);
+      return r.regroup;
+    };
+    for (const userId of [g.leader, g.asha]) expect(await regroupFor(userId)).toEqual({ lat: 12.9, lng: 77.5, note: "Nandi Hills" });
+    await setRegroup(db.sql, { userId: g.asha, rideId: g.rideId, point: { lat: 13, lng: 77.6, note: "Cafe" }, now });
+    expect((await regroupFor(g.leader))?.note).toBe("Cafe");
+  });
+
   it("refuses anyone but the leader, the leader themselves, a rider not in the ride, and a bad id", async () => {
     const g = await group();
     const ben = await g.idOf("Ben");

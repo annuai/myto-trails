@@ -40,3 +40,19 @@ describe('the guide target and a rescue', () => {
     expect(useGuideTarget.getState().paused).toBeUndefined();
   });
 });
+
+describe('a personal place on a group ride', () => {
+  it('is dropped when the leader changes the destination, and a rescue stays', () => {
+    const g = useGuideTarget.getState();
+    g.set({ lat: 12, lng: 77, name: 'Fuel' });
+    useGuideTarget.getState().pause();
+    useGuideTarget.getState().set({ lat: 13, lng: 77, name: 'Cafe' });
+    useGuideTarget.getState().startRescue({ riderId: 'a', name: 'A', startStatus: 'help' });
+    expect(useGuideTarget.getState().to?.name).toBe('Cafe');
+    expect(useGuideTarget.getState().paused).toBeUndefined();
+    useGuideTarget.getState().dropPersonal();
+    expect(useGuideTarget.getState().to).toBeUndefined();
+    expect(useGuideTarget.getState().paused).toBeUndefined();
+    expect(useGuideTarget.getState().rescue?.name).toBe('A');
+  });
+});

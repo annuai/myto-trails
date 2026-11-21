@@ -7,7 +7,8 @@ import { isWeak, startGpsHealth, stepGpsHealth } from '@/lib/gpsHealth';
 import { shownSpeedKmh } from '@/lib/liveSpeed';
 import { AppState, Linking, Platform, Pressable, ScrollView, Share, Vibration, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Camera, Eye, EyeOff, Flag, Megaphone, Mic, Minus, Pause, PenLine, Play, Square, Siren, Users } from 'lucide-react-native';
+import { Camera, Eye, EyeOff, Flag, Megaphone, Mic, Minus, Pause, PenLine, Play, Search, Square, Siren, Users } from 'lucide-react-native';
+import { RideDestinationSheet } from '@/features/ride/RideDestinationSheet';
 import { CheckinSheet } from '@/features/CheckinSheet';
 import { DocumentsSheet } from '@/features/DocumentsSheet';
 import { Compass } from '@/ui/Compass';
@@ -38,6 +39,9 @@ import { fromDirections, fromTrail, type Instruction } from '@/lib/guidance';
 import { SIM_GROUP_ID, SIM_ROUTE } from '@/lib/groupSim';
 import { useSimRide } from '@/store/simRide';
 import { useGuideTarget } from '@/store/guideTarget';
+import { useDestinationNotice } from '@/store/destinationNotice';
+import { roadToward } from '@/lib/guideRoad';
+import { sayAloud } from '@/features/ride/sayAloud';
 import { LeadCards } from '@/features/group/LeadCards';
 import { LeaderExitSheet } from '@/features/group/LeaderExitSheet';
 import { BackupLeadSheet } from '@/features/group/BackupLeadSheet';
@@ -194,7 +198,7 @@ function LiveBody() {
   useEffect(() => { if (r.status === 'idle' && !stopping.current && !useAutoEndPrompt.getState().ending) router.replace('/'); }, [r.status, router, resumedAt]);
   const autoEnd = useAutoEndPrompt();
   // A place the rider asked to be guided to is for this ride only.
-  useEffect(() => () => { if (useRecorder.getState().status === 'idle') { useGuideTarget.getState().clear(); useSimRide.getState().clear(); useLead.getState().dismiss(); useLead.getState().closeBackup(); } }, []);
+  useEffect(() => () => { if (useRecorder.getState().status === 'idle') { useGuideTarget.getState().clear(); useDestinationNotice.getState().clear(); useSimRide.getState().clear(); useLead.getState().dismiss(); useLead.getState().closeBackup(); } }, []);
   // Heading to the start, then along the trail. Off the trail (only once on it, as lib/reroute decides): buzz, say so and guide back to a point ahead on it. Back on it: clear that.
   const trail = useMemo(() => (routeLine ? prepareTrail(routeLine) : undefined), [routeLine]);
   const guideState = useRef(startGuide);
@@ -206,20 +210,22 @@ function LiveBody() {
     guideState.current = g.state;
     setGuide(g.guide);
     if (g.state.phase === 'finished' && before !== 'finished') Vibration.vibrate([0, 300, 150, 300]);
+    if (before === 'to_start' && g.state.phase === 'on_trail') { buzz.confirm(); sayAloud('At the start. Following the trail.'); }
     if (g.state.phase !== 'on_trail') { follow.current = startReroute; prevSpot.current = last; setOff(false); setRejoinTo(undefined); return; }
     // Off the trail is decided by lib/reroute: how far is "off" follows the GPS and the speed, and the wrong way is noticed within seconds.
     const speedMps = r.speedKmh / 3.6;
     const step = stepReroute(follow.current, { now: Date.now(), distM: g.guide.offM, accM: fix?.accuracy ?? undefined, speedMps, headingDeg: course, routeDeg: routeBearing(trail.line, { segment: g.state.segment }), stepM: prevSpot.current ? haversine(prevSpot.current, last) : 0 });
     prevSpot.current = last;
     follow.current = step.state;
-    if (step.wentOff) { setOff(true); setRejoinTo(rejoinTarget(trail, g.guide.alongM, speedMps)); Vibration.vibrate([0, 400, 200, 400]); }
+    if (step.wentOff && !target) { setOff(true); setRejoinTo(rejoinTarget(trail, g.guide.alongM, speedMps)); Vibration.vibrate([0, 400, 200, 400]); }
     if (step.backOn) { setOff(false); setRejoinTo(undefined); }
   }, [last?.lat, last?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
   // What to tell the rider next. A route in hand is followed by its own bends; before its start, and with no route, the road to a place is asked for.
   const start = routeLine?.[0];
   const toStart = !!routeLine && guide?.phase === 'to_start';
-  const rejoining = !rescueSpot && !simRoad && !!routeLine && !toStart && !!rejoinTo;
-  const roadTo = rescueSpot ? rescueSpot : simRoad ? undefined : routeLine ? (toStart ? target ?? start : rejoinTo) : destination;
+  // A place the rider chose overrides the trail (it stays on the map); "Stop guiding" goes back to rejoining it.
+  const rejoining = !rescueSpot && !simRoad && !target && !!routeLine && !toStart && !!rejoinTo;
+  const roadTo = roadToward({ rescue: rescueSpot, target, sim: !!simRoad, trail: !!routeLine, toStart, start, rejoin: rejoinTo, regroup });
   const { directions, failed: roadFailed, rerouting, rerouted } = useDirections(lastSpot, roadTo, { motion: { accM: fix?.accuracy ?? undefined, speedMps: r.speedKmh / 3.6, headingDeg: course } });
   // One buzz for each new way found, and a longer one when the road is left (the trail's own monitor buzzes for the trail).
   useEffect(() => { if (rerouted > 0) buzz.reroute(); }, [rerouted]);
@@ -238,7 +244,7 @@ function LiveBody() {
     if (!spot) return undefined;
     if (simRoad && !rescueSpot) return fromDirections(simRoad.directions, spot, simRoad.name);
     if (roadTo) {
-      const eyebrow = rescueSpot ? `To ${rescueSpot.name}` : rejoining ? 'Back to the trail' : toStart ? 'To the start' : target ? target.name ?? 'Navigation' : 'Group destination';
+      const eyebrow = rescueSpot ? `To ${rescueSpot.name}` : target ? target.name ?? 'Navigation' : rejoining ? 'Back to the trail' : toStart ? 'To the start' : 'Group destination';
       if (directions) return { ...fromDirections(directions, spot, eyebrow), off: rerouting };
       return { kind: 'straight', distM: haversine(spot, roadTo), text: `Head ${compassWord(spot, roadTo)}${rejoining ? ' to rejoin the trail' : ''}. ${roadFailed ? 'The road service could not be reached' : 'Finding the road…'}`, eyebrow, remainingM: null, etaMin: null, off: false, arrived: false };
     }
@@ -248,9 +254,14 @@ function LiveBody() {
   // On reaching the rider, or when they say they are OK, the card asks whether to carry on: one tap goes back to the ride as it was.
   const helpResolved = !!rescue && !!rescueRider && rescue.startStatus !== 'ok' && rescueRider.status === 'ok';
   const helpPrompt = rescue && (instruction?.arrived || helpResolved) ? { text: helpResolved ? `${rescue.name} is OK now.` : `You have reached ${rescue.name}.`, action: 'Help given, continue the ride', onAction: endRescue } : undefined;
+  // The leader changed the group's destination: said under the card until the rider has seen it. A rescue's own question comes first.
+  const noticeText = useDestinationNotice((s) => s.text);
+  const noticePrompt = noticeText ? { text: noticeText, action: 'Got it', onAction: useDestinationNotice.getState().clear } : undefined;
+  const shownPrompt = helpPrompt ?? noticePrompt;
   const shareHere = () => Share.share({ message: sosMessage(last) });
 
   const [exitOpen, setExitOpen] = useState(false);
+  const [destOpen, setDestOpen] = useState(false);
   /** A leader whose group is still riding cannot just stop: they pass the lead on (and leave), or end the group for everyone. */
   const mustPassFirst = group?.role === 'leader' && live.riders.some((x) => x.id !== live.me);
   const stop = async () => { if (mustPassFirst) { setExitOpen(true); return; } await doStop(); };
@@ -342,13 +353,18 @@ function LiveBody() {
   // The map is the stage of the screen: the turn card floats over its top, and the group and the numbers sit under it.
   const mapData = { line: simRoad?.directions.line ?? routeLine, track: r.points, trackBreaks: breaks, position: spot, waypoints: r.waypoints, riderMarks, destination, guide: roadTo ? directions?.line : undefined, heading, arrowHeading, glideMs: smooth.glideMs };
   // On the map's top right corner, where the turn card and the numbers it controls are.
-  const quietBtn = <View style={{ position: 'absolute', top: space[3], right: space[3] }}><IconButton size={size.compact} icon={quiet ? Eye : EyeOff} label={quiet ? 'Show ride and group details' : 'Hide ride and group details'} onPress={() => setQuiet(!quiet)} /></View>;
+  const quietBtn = (
+    <View style={{ position: 'absolute', top: space[3], right: space[3], gap: space[2] }}>
+      <IconButton size={size.compact} icon={quiet ? Eye : EyeOff} label={quiet ? 'Show ride and group details' : 'Hide ride and group details'} onPress={() => setQuiet(!quiet)} />
+      <IconButton size={size.compact} icon={Search} label="Set or change destination" onPress={() => setDestOpen(true)} />
+    </View>
+  );
   const stage = (
     // The map takes all the height between the header and the buttons: the turn card floats over its top edge, the group and the numbers over its bottom edge.
     <View style={{ flex: 1 }}>
       <OsmMap height="fill" radius={radius.card} follow pointer debug={mapDebug} covered={{ top: hudH ? hudH + space[3] : 0, bottom: footH && !quiet ? footH + space[3] : 0 }} onPicker={setPicking} {...mapData} />
       <View pointerEvents="box-none" onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); if (h > 0) setHudH(h); }} style={{ position: 'absolute', top: space[3], left: space[3], right: space[3] + size.compact + space[2], gap: space[2] }}>
-        {picking ? null : instruction ? <TurnCard instruction={instruction} compact={landscape} onStop={rescue ? endRescue : target ? pauseTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}
+        {picking ? null : instruction ? <TurnCard instruction={instruction} compact={landscape} onStop={rescue ? endRescue : target ? pauseTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={shownPrompt} /> : null}
         {picking ? null : resume}
         {picking ? null : leadCards}
         {picking ? null : status}
@@ -374,6 +390,7 @@ function LiveBody() {
 
   return (
     <Screen scroll={false} footer={landscape ? undefined : actions(88, size.button)} overlay={<>
+      <RideDestinationSheet open={destOpen} onClose={() => setDestOpen(false)} near={last} />
       <ReportSheet open={reportOpen} onClose={() => setReportOpen(false)} at={last} />
       <LeaderExitSheet open={exitOpen} tiles={tiles} successorId={live.successor} onClose={() => setExitOpen(false)} onGone={() => { setExitOpen(false); void doStop(); }} />
       <BackupLeadSheet open={backupOpen && group?.role === 'leader' && others.length > 0} tiles={tiles} successorId={live.successor} onClose={() => useLead.getState().closeBackup()} />
@@ -420,7 +437,7 @@ function LiveBody() {
             <View pointerEvents="box-none" onLayout={(e) => { const w = Math.round(e.nativeEvent.layout.width); if (w > 0) setSideW(w); }} style={{ position: 'absolute', top: space[3], bottom: space[3], left: space[3], width: '46%', maxWidth: layout.barMax }}>
               {/* The column scrolls when its notices (lost signal, a lead question) make it taller than the screen, so the numbers are never pushed out of sight. It still spreads to the full height when it fits, and the map is still touched through its empty space. */}
               <ScrollView pointerEvents="box-none" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between', gap: space[2] }}>
-                <View pointerEvents="box-none" style={{ gap: space[2] }}>{picking ? null : instruction ? <TurnCard instruction={instruction} compact onStop={rescue ? endRescue : target ? pauseTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={helpPrompt} /> : null}{picking ? null : resume}{picking ? null : leadCards}{picking ? null : status}</View>
+                <View pointerEvents="box-none" style={{ gap: space[2] }}>{picking ? null : instruction ? <TurnCard instruction={instruction} compact onStop={rescue ? endRescue : target ? pauseTarget : undefined} stopLabel={rescue ? 'Continue the ride' : undefined} prompt={shownPrompt} /> : null}{picking ? null : resume}{picking ? null : leadCards}{picking ? null : status}</View>
                 {quiet ? null : <View pointerEvents="box-none" style={{ gap: space[2] }}>{groupRail}{stats}</View>}
               </ScrollView>
             </View>

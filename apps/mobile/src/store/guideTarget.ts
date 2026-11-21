@@ -14,12 +14,13 @@ export type Rescue = { riderId: string; name: string; /** What they had signalle
  */
 export const useGuideTarget = create<{
   to?: Place; rescue?: Rescue; paused?: Place;
-  set: (to: Place) => void; clear: () => void; pause: () => void; resume: () => void;
+  set: (to: Place) => void; clear: () => void; pause: () => void; resume: () => void; /** The rider's own place goes, the rider being helped stays: the leader of the group changed the destination, so the group's comes back. */ dropPersonal: () => void;
   startRescue: (r: Rescue) => void; endRescue: () => void;
 }>((set) => ({
   set: (to) => set({ to, paused: undefined }),
   clear: () => set({ to: undefined, rescue: undefined, paused: undefined }),
   pause: () => set((s) => (s.to ? { to: undefined, paused: s.to } : {})),
+  dropPersonal: () => set({ to: undefined, paused: undefined }),
   resume: () => set((s) => (s.paused ? { to: s.paused, paused: undefined } : {})),
   startRescue: (rescue) => set({ rescue }),
   endRescue: () => set({ rescue: undefined }),

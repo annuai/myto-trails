@@ -165,4 +165,33 @@ describe('two phones', () => {
     expect(b.rides.get('r1')!.points).toHaveLength(8);
     expect(decodeTrack(s.recs.get('ride:r1')!.track!).points).toHaveLength(8);
   });
+
+  it('holds back a bulk delete: an empty ride store is not the rider deleting every ride', () => {
+    const now = { t: 1_000_000 }; const a = phone('phone-aaaaaaaa', now);
+    for (let n = 0; n < 8; n++) a.editRide(`r${n}`, { name: `Ride ${n}` });
+    let st = scan(a.state, a.adapters, now.t);
+    const baseline = Object.fromEntries(Object.keys(st.dirty).map((k) => [k, { hash: hashOf({ name: 'x' }), serverUpdatedAt: 1 }]));
+    st = { ...st, baseline, dirty: {} };
+    a.rides.clear(); // the store has not loaded yet
+    const after = scan(st, a.adapters, now.t + 1);
+    expect(Object.values(after.dirty).some((d) => d.deleted)).toBe(false);
+    expect(after.held).toBe(8);
+  });
+
+  it('still sends a normal delete of one ride', () => {
+    const now = { t: 1_000_000 }; const a = phone('phone-aaaaaaaa', now);
+    for (let n = 0; n < 8; n++) a.editRide(`r${n}`, { name: `Ride ${n}` });
+    let st = scan(a.state, a.adapters, now.t);
+    st = { ...st, baseline: Object.fromEntries([...a.rides.values()].map((r) => [`ride:${r.id}`, { hash: hashOf(r.data), serverUpdatedAt: 1 }])), dirty: {} };
+    a.rides.delete('r3');
+    const after = scan(st, a.adapters, now.t + 1);
+    expect(after.dirty['ride:r3']?.deleted).toBe(true);
+    expect(after.held).toBe(0);
+  });
+
+  it('never sends an empty ride record, which could overwrite a real one', () => {
+    const now = { t: 1_000_000 }; const a = phone('phone-aaaaaaaa', now);
+    a.rides.set('r1', { id: 'r1', updatedAt: now.t, data: {} });
+    expect(scan(a.state, a.adapters, now.t).dirty['ride:r1']).toBeUndefined();
+  });
 });

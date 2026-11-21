@@ -98,7 +98,6 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
           {leader ? (
             <>
               <ListCard><Row icon={MapPin} label="Destination" value={live.regroup ? live.regroup.note ?? 'A spot on the map' : 'Not set'} onPress={() => setDestOpen(true)} /></ListCard>
-              {live.regroup ? <Button variant="soft" label="Remove the destination" onPress={() => void pin(null)} /> : null}
             </>
           ) : live.regroup ? <Text variant="label" tone="muted">{`Group destination: ${live.regroup.note ?? 'a spot on the map'}. Everyone sees the road to it.`}</Text> : null}
           {leader && tiles.some((t) => !t.isMe) ? <Button icon={LogOut} label="Pass the lead and leave" disabled={busy} onPress={() => setExit('pick')} /> : null}
@@ -109,7 +108,7 @@ export function GroupSheet({ open, onClose, position, defaultName, onRider }: { 
       {problem ? <Text variant="label" tone="stop">{problem}</Text> : null}
       </>)}
     </Sheet>
-    <DestinationSheet open={open && destOpen} onClose={() => setDestOpen(false)} near={position} current={live.regroup ?? undefined} onSet={async (p, name) => { await pin(p, name); }} />
+    <DestinationSheet open={open && destOpen} onClose={() => setDestOpen(false)} near={position} current={live.regroup ?? undefined} onSet={async (p, name) => { await pin(p, name); }} onClear={() => void pin(null)} title="Group destination" />
     {picked && !onRider ? <RiderSheet tile={picked} me={position} canNavigate={canNavigate} onClose={() => setPickedId(undefined)} /> : null}
     </>
   );
