@@ -52,7 +52,7 @@ All keyed by `(user_id, id)` where `id` is the id the phone already uses (`rideI
 
 ## Never believe a mass delete
 
-A scan treats a synced item missing from its store as deleted, and every phone drops a ride the server calls deleted. A store that has not finished loading looks empty, so on 2026-11-20 one phone sent 49 deletes at launch. Now sync waits until every store is loaded (`SyncHost`, `syncNow`), and `scan` holds back a delete of 5 or more items that is over half of a kind (`held`, never sent). An empty record is never sent, and the server answers one as stale (the phone then takes the server's copy), so an empty sync cannot overwrite a real ride.
+A scan treats a synced item missing from its store as deleted, and every phone drops a ride the server calls deleted. A store that has not finished loading looks empty, so on 2026-11-20 one phone sent 49 deletes at launch. Now sync waits until every store is loaded (`SyncHost`, `syncNow`), and `scan` holds back a delete of 5 or more items that is over half of a kind (`held`, never sent). An empty record is never sent, and the server answers one as stale (the phone then takes the server's copy), so an empty sync cannot overwrite a real ride. A ride new to this phone's sync (for example restored from a backup) is sent dated now, not the day it was ridden: the delete waiting on the server is newer than the ride, and an older record loses to it and is removed again.
 
 ## Retention
 
