@@ -194,4 +194,16 @@ describe('two phones', () => {
     a.rides.set('r1', { id: 'r1', updatedAt: now.t, data: {} });
     expect(scan(a.state, a.adapters, now.t).dirty['ride:r1']).toBeUndefined();
   });
+
+  it('a ride put back by an import survives the delete that is waiting on the server', async () => {
+    const now = { t: 1_000_000 }; const s = server(now); const a = phone('dev-aaaa-0001', now); const b = phone('dev-bbbb-0002', now);
+    a.editRide('r1', { name: 'Old ride' }, pts(5));
+    await sync(a, s, now); await sync(b, s, now);
+    now.t += 1000; a.rides.delete('r1'); await sync(a, s, now); await sync(b, s, now);
+    expect(b.rides.has('r1')).toBe(false);
+    now.t += 1000; a.rides.set('r1', { id: 'r1', updatedAt: 500, data: { name: 'Old ride' }, points: pts(5) }); // an import: dated the day it was ridden
+    await sync(a, s, now); await sync(b, s, now); await sync(a, s, now);
+    expect(a.rides.get('r1')?.data.name).toBe('Old ride');
+    expect(b.rides.get('r1')?.data.name).toBe('Old ride');
+  });
 });

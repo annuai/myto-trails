@@ -83,7 +83,10 @@ export function scan(state: SyncState, adapters: Adapter[], now: number): SyncSt
       const base = state.baseline[key];
       if (!base || base.hash !== hashOf(item.data)) {
         const earlier = dirty[key]?.updatedAt ?? 0;
-        dirty[key] = { updatedAt: Math.max(item.updatedAt ?? now, earlier), deleted: false };
+        // A ride the server has never had from this phone is sent as of now, not as of the day it was ridden: one brought back by an import
+        // has a delete waiting on the server that is newer than its ride date, and an older record loses to it and is deleted again.
+        const when = !base && a.kind === 'ride' ? now : (item.updatedAt ?? now);
+        dirty[key] = { updatedAt: Math.max(when, earlier), deleted: false };
       } else if (dirty[key] && !dirty[key]!.deleted) delete dirty[key]; // edited and put back: nothing to send
     }
   }
