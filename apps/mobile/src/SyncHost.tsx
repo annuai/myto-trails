@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
-import { scanNow, syncNow } from '@/lib/sync/syncNow';
+import { whenHydrated } from '@/lib/whenHydrated';
+import { scanNow, syncNow, syncStores } from '@/lib/sync/syncNow';
 import { useAuth } from '@/store/auth';
 import { useRides } from '@/store/rides';
 import { useSync } from '@/store/sync';
@@ -16,6 +17,15 @@ const EVERY_MS = 5 * 60_000;
  */
 export function SyncHost() {
   useEffect(() => {
+    let stop = () => {};
+    // Nothing runs before every store has been read from the phone: a ride list that has not loaded yet looks like deleted rides.
+    const cancelWait = whenHydrated(syncStores, () => { stop = start(); });
+    return () => { cancelWait(); stop(); };
+  }, []);
+  return null;
+}
+
+function start(): () => void {
     void syncNow();
     const timer = setInterval(() => void syncNow(), EVERY_MS);
     const app = AppState.addEventListener('change', (s) => { if (s === 'active') void syncNow(); });
@@ -28,6 +38,4 @@ export function SyncHost() {
     };
     const unsubs = [useRides.subscribe(edited), useTodos.subscribe(edited), useTrips.subscribe(edited), useAuth.subscribe((s, p) => { if (s.token && !p.token) void syncNow(); })];
     return () => { clearInterval(timer); clearTimeout(quiet); app.remove(); unsubs.forEach((u) => u()); };
-  }, []);
-  return null;
 }

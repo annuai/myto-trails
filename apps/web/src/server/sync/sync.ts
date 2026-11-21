@@ -22,7 +22,6 @@ const ms = (d: Date) => d.getTime();
 
 /** Applies a phone's queued changes. One transaction, and the rider's rows are locked first, so two pushes cannot both pass the ride limit. */
 export async function pushChanges(sql: Sql, storage: StorageProvider, i: { userId: string; deviceId: string; changes: SyncChange[] }): Promise<PushResult> {
-  const removeKeys: string[] = [];
   const result = await sql.begin(async (tx): Promise<PushResult> => {
     await tx`select id from app_user where id = ${i.userId} for update`;
     await tx`insert into sync_device (user_id, device_id) values (${i.userId}, ${i.deviceId}) on conflict (user_id, device_id) do nothing`;
@@ -38,6 +37,10 @@ export async function pushChanges(sql: Sql, storage: StorageProvider, i: { userI
       const ref = { kind: c.kind, id: c.id };
 
       if (decision === "stale") { out.stale.push(ref); continue; }
+
+      // An empty record never replaces a real one (a phone whose store had not loaded sends these). It is answered as stale, so the
+      // phone drops it and pulls the server's copy; a record that does not exist yet is simply not worth keeping.
+      if (!c.deleted && Object.keys(c.data).length === 0) { if (row) out.stale.push(ref); continue; }
 
       // A new live ride (or one coming back from a delete, or a fork) counts toward the limit.
       const addsRide = c.kind === "ride" && !c.deleted && (decision === "fork" || !row || row.deleted_at !== null);
@@ -58,22 +61,19 @@ export async function pushChanges(sql: Sql, storage: StorageProvider, i: { userI
 
       if (addsRide) rideCount += 1;
       if (c.kind === "ride" && c.deleted && row && row.deleted_at === null) rideCount -= 1;
-      // A deleted ride's points are gone with it; only the small tombstone stays.
-      if (c.deleted && row?.track_key) removeKeys.push(row.track_key);
+      // A delete is a 30-day recycle bin, not an erase: the record and the ride's points stay until the nightly purge drops the tombstone
+      // (retention/purge.ts), so a delete that was a mistake can be undone (scripts/sync-restore.mts).
       await tx`
         insert into sync_record (user_id, kind, id, data, updated_at, origin_device, deleted_at)
         values (${i.userId}, ${c.kind}, ${c.id}, ${tx.json(c.deleted ? ({} as never) : (c.data as never))}, ${c.updatedAt}, ${i.deviceId}, ${c.deleted ? c.updatedAt : null})
         on conflict (user_id, kind, id) do update set
-          data = excluded.data, updated_at = excluded.updated_at, origin_device = excluded.origin_device, synced_at = clock_timestamp(),
-          deleted_at = excluded.deleted_at,
-          track_key = case when excluded.deleted_at is null then sync_record.track_key else null end,
-          track_bytes = case when excluded.deleted_at is null then sync_record.track_bytes else 0 end`;
+          data = case when excluded.deleted_at is null then excluded.data else sync_record.data end,
+          updated_at = excluded.updated_at, origin_device = excluded.origin_device, synced_at = clock_timestamp(),
+          deleted_at = excluded.deleted_at`;
       out.accepted.push(ref);
     }
     return out;
   });
-  // Files go after the commit: a failure leaves an unreachable object, never a record pointing at nothing.
-  await Promise.allSettled(removeKeys.map((k) => storage.remove("originals", k)));
   return result;
 }
 
@@ -93,7 +93,7 @@ export async function pullChanges(sql: Sql, i: { userId: string; deviceId: strin
     on conflict (user_id, device_id) do update set last_pull_at = now()`;
   const last = page.at(-1);
   return {
-    changes: page.map((r) => ({ kind: r.kind, id: r.id, data: r.data, updatedAt: r.updated_at.toISOString(), deleted: r.deleted_at !== null, hasTrack: r.track_key !== null })),
+    changes: page.map((r) => ({ kind: r.kind, id: r.id, data: r.deleted_at !== null ? {} : r.data, updatedAt: r.updated_at.toISOString(), deleted: r.deleted_at !== null, hasTrack: r.track_key !== null })),
     // With nothing new, hand back the old cursor so an idle phone does not move it forward past a slow commit.
     cursor: (last ? last.synced_at : (i.since ?? new Date(0))).toISOString(),
     more,
@@ -110,7 +110,7 @@ export async function putTrack(sql: Sql, storage: StorageProvider, i: { userId: 
     await tx`select id from app_user where id = ${i.userId} for update`;
     const [row] = await tx<{ track_key: string | null; track_bytes: number }[]>`select track_key, track_bytes from sync_record where user_id = ${i.userId} and kind = 'ride' and id = ${i.rideId} and deleted_at is null`;
     if (!row) return "no_such_ride" as const;
-    const [{ total }] = await tx<{ total: number }[]>`select coalesce(sum(track_bytes), 0)::bigint::float8 as total from sync_record where user_id = ${i.userId}`;
+    const [{ total }] = await tx<{ total: number }[]>`select coalesce(sum(track_bytes), 0)::bigint::float8 as total from sync_record where user_id = ${i.userId} and deleted_at is null`;
     if (total - row.track_bytes + i.bytes.byteLength > SYNC_LIMITS.maxTrackTotalBytes) return "over_quota" as const;
     // Write the object before pointing the row at it, inside the lock, so a row never names a missing file.
     await storage.put("originals", key, i.bytes, "application/octet-stream");
@@ -131,7 +131,7 @@ export async function getTrack(sql: Db, storage: StorageProvider, i: { userId: s
 export type SyncUsage = { rides: number; trackBytes: number; maxRides: number; maxTrackBytes: number };
 export async function getUsage(sql: Db, userId: string): Promise<SyncUsage> {
   const [r] = await sql<{ rides: number; bytes: number }[]>`
-    select count(*) filter (where kind = 'ride' and deleted_at is null)::int as rides, coalesce(sum(track_bytes), 0)::bigint::float8 as bytes
+    select count(*) filter (where kind = 'ride' and deleted_at is null)::int as rides, coalesce(sum(track_bytes) filter (where deleted_at is null), 0)::bigint::float8 as bytes
     from sync_record where user_id = ${userId}`;
   return { rides: r?.rides ?? 0, trackBytes: Number(r?.bytes ?? 0), maxRides: SYNC_LIMITS.maxRides, maxTrackBytes: SYNC_LIMITS.maxTrackTotalBytes };
 }

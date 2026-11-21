@@ -50,9 +50,13 @@ All keyed by `(user_id, id)` where `id` is the id the phone already uses (`rideI
 - Supabase free is 500 MB of database. At 200 KB per ride that is 2,500 rides in total across all riders, which is small: tracks belong in object storage (R2), not Postgres. Hence the pointer design above.
 - Set a per-rider quota (suggest 100 rides or 50 MB, whichever first) and say so in the app.
 
+## Never believe a mass delete
+
+A scan treats a synced item missing from its store as deleted, and every phone drops a ride the server calls deleted. A store that has not finished loading looks empty, so on 2026-11-20 one phone sent 49 deletes at launch. Now sync waits until every store is loaded (`SyncHost`, `syncNow`), and `scan` holds back a delete of 5 or more items that is over half of a kind (`held`, never sent). An empty record is never sent, and the server answers one as stale (the phone then takes the server's copy), so an empty sync cannot overwrite a real ride.
+
 ## Retention
 
-Soft-deleted rows purged after 30 days; `sync_device` rows after 90 days idle; everything for a rider removed by the existing account deletion (extend `account/delete.ts`).
+A delete is a 30-day recycle bin: the row's data and the ride's R2 track are kept until the nightly purge drops the tombstone (`purge.ts`), and `npm run sync:restore` undoes it. Tombstones do not count toward the rider's quota. Soft-deleted rows purged after 30 days; `sync_device` rows after 90 days idle; everything for a rider removed by the existing account deletion (extend `account/delete.ts`).
 
 ## Not decided
 

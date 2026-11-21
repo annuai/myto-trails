@@ -42,7 +42,12 @@ export type SyncState = {
   blocked: 'quota' | 'scope' | null;
   /** Items too large to sync (a record is at most 16 KB). */
   skipped: number;
+  /** Deletes the last scan refused to send because they looked like a store that had not loaded, not a rider's choice. */
+  held?: number;
 };
+
+/** A scan that finds this many synced items gone at once, and more than half of that kind, holds the deletes back. */
+export const MASS_DELETE_MIN = 5;
 
 export const initialState = (deviceId: string): SyncState => ({ enabled: false, deviceId, cursor: null, baseline: {}, dirty: {}, tracksPending: [], fullPull: false, lastSyncedAt: null, lastError: null, blocked: null, skipped: 0 });
 
@@ -73,6 +78,7 @@ export function scan(state: SyncState, adapters: Adapter[], now: number): SyncSt
     for (const item of a.list()) {
       const key = keyOf(a.kind, item.id);
       seen.add(key);
+      if (Object.keys(item.data).length === 0) { delete dirty[key]; continue; } // an empty record is never sent: it could overwrite a real one
       if (tooBig(item.data)) { skipped += 1; delete dirty[key]; continue; }
       const base = state.baseline[key];
       if (!base || base.hash !== hashOf(item.data)) {
@@ -82,13 +88,23 @@ export function scan(state: SyncState, adapters: Adapter[], now: number): SyncSt
     }
   }
   const kinds = new Set(adapters.map((a) => a.kind));
+  // An empty or half-loaded store (the app reads its saved rides slowly at launch) looks exactly like "the rider deleted everything",
+  // and the server then erases the rides on every phone. A bulk delete is never believed: it is held and shown, not sent.
+  const gone: Record<string, Key[]> = {}; const total: Record<string, number> = {};
   for (const key of Object.keys(state.baseline)) {
-    if (seen.has(key) || !kinds.has(splitKey(key).kind)) continue;
-    dirty[key] = { updatedAt: dirty[key]?.updatedAt ?? now, deleted: true };
+    const kind = splitKey(key).kind;
+    if (!kinds.has(kind)) continue;
+    total[kind] = (total[kind] ?? 0) + 1;
+    if (!seen.has(key)) (gone[kind] ??= []).push(key);
+  }
+  let held = 0;
+  for (const [kind, keys] of Object.entries(gone)) {
+    if (keys.length >= MASS_DELETE_MIN && keys.length * 2 > total[kind]!) { held += keys.length; for (const k of keys) if (dirty[k]?.deleted) delete dirty[k]; continue; }
+    for (const key of keys) dirty[key] = { updatedAt: dirty[key]?.updatedAt ?? now, deleted: true };
   }
   // Created and deleted before it ever reached the server: nothing to tell it.
   for (const key of Object.keys(dirty)) if (!seen.has(key) && !state.baseline[key]) delete dirty[key];
-  return { ...state, dirty, skipped };
+  return { ...state, dirty, skipped, held };
 }
 
 export type OutChange = { kind: SyncKind; id: string; data?: Record<string, unknown>; updatedAt: string; baseUpdatedAt: string | null; deleted?: true };
