@@ -1,3 +1,5 @@
+// The shape of a trail import file, checked with zod.
+
 import {
   ACCESS_BASES, ACCESS_CLASSES, CONDITION_REASONS, DIFFICULTIES, EVIDENCE_KINDS, HAZARDS, OPERATIONAL_STATUSES,
   RESTRICTIONS, ROUTE_SHAPES, SENSITIVITIES, SUITABILITIES, TERRAINS, VERIFICATION_LEVELS, isValidSlug,
@@ -56,6 +58,7 @@ const video = z.object({
   durationS: z.number().int().min(1).max(600),
 });
 
+/** Every field a trail import may have, with the rules on each. */
 export const TrailImportSchema = z
   .object({
     slug: z.string().refine(isValidSlug, "must be a lowercase kebab-case slug up to 80 characters").optional(),
@@ -108,4 +111,5 @@ export const TrailImportSchema = z
     }
   });
 
+/** A trail import that passed the schema. */
 export type TrailImport = z.infer<typeof TrailImportSchema>;

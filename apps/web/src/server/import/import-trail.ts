@@ -1,3 +1,5 @@
+// Importing a trail from a validated import file into the database.
+
 import { resolveMediaUrl } from "./media-url";
 import { createHash, randomUUID } from "node:crypto";
 import { slugify } from "@moto-trails/domain";
@@ -7,6 +9,7 @@ import { ingestGpx, insertRoute } from "../gpx/ingest";
 import type { StorageProvider } from "../storage";
 import { TrailImportSchema } from "./schema";
 
+/** Why an import was stopped: the file was invalid, broke a rule, or the trail already exists. */
 export class ImportError extends Error {
   constructor(
     message: string,

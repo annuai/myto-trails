@@ -1,5 +1,6 @@
 /** The rules for entitlements as pure functions, so they can be tested without a database. The SQL in entitlements.ts only applies what these decide. */
 export type EntitlementKind = "large_ride_pass" | "organiser";
+/** Where a purchase stands. */
 export type EntitlementStatus = "pending" | "active" | "failed" | "cancelled" | "refunded";
 
 /** A provider-neutral billing event. Whichever store or gateway is used later maps its own notifications onto this. */
@@ -13,6 +14,7 @@ export type BillingEvent = {
   endsAt?: Date | null;
 };
 
+/** Why a purchase request is not valid. */
 export type Invalid = "invalid_kind" | "needs_ride" | "not_ride_leader" | "needs_end_date" | "end_in_past" | "bad_event";
 
 const STATUS_OF: Record<BillingEvent["type"], EntitlementStatus> = { paid: "active", failed: "failed", cancelled: "cancelled", refunded: "refunded" };
@@ -30,6 +32,7 @@ export function validateEntitlement(i: { userId: string; kind: string; rideId?: 
   return "invalid_kind";
 }
 
+/** What a billing event does: add a row, change one, or nothing. */
 export type Decision = { action: "insert"; status: EntitlementStatus } | { action: "update"; status: EntitlementStatus } | { action: "noop" };
 
 /**

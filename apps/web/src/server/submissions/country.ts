@@ -1,6 +1,7 @@
 import type { Sql, TransactionSql } from "postgres";
 import { countryAt, type LatLon } from "../db/boundaries";
 
+/** The country if it accepts trails, otherwise why it does not. */
 export type OpenCountryResult =
   | { ok: true; countryId: string; iso2: string }
   | { ok: false; error: "country_not_open"; iso2: string; countryName: string; message: string }

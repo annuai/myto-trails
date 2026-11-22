@@ -1,3 +1,5 @@
+// Building a trail's GPX download for a rider, if the trail may be downloaded and the rider is not over the rate limit.
+
 import { canDownloadGpx, isValidSlug } from "@moto-trails/domain";
 import type { Sql } from "postgres";
 import { getSql, withPublicRole } from "../db/client";
@@ -6,6 +8,7 @@ import type { StorageProvider } from "../storage";
 import { parseGpx } from "./parse";
 import { writeGpx } from "./write";
 
+/** The file with its name, or the reason there is none. */
 export type GpxExportResult =
   | { ok: true; filename: string; xml: string }
   | { ok: false; reason: "rate_limited" | "not_found" | "no_gpx" | "sensitive_area" | "access_not_allowed" | "permanently_closed" | "not_published" | "unavailable" };

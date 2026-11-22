@@ -1,8 +1,14 @@
+// Checks an uploaded image and makes its WebP and AVIF sizes and a tiny placeholder. Rejects files that are not images, have an unsupported
+// format, or have too many pixels.
+
 import { IMAGE_MAX_MEGAPIXELS } from "@moto-trails/domain";
 import sharp, { type Metadata } from "sharp";
 
+/** One resized copy of an image. */
 export type ImageVariant = { format: "webp" | "avif"; width: number; height: number; bytes: Uint8Array };
+/** Why an image was refused. */
 export type ImageError = "not_image" | "unsupported_format" | "too_many_pixels" | "corrupt";
+/** The copies and a placeholder, or why not. */
 export type ImageResult =
   | { ok: true; width: number; height: number; variants: ImageVariant[]; placeholder: string }
   | { ok: false; error: ImageError; message: string };

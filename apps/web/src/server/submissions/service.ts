@@ -1,3 +1,5 @@
+// A trail submission's life for the rider: starting a draft, saving each step, attaching the route, and submitting for review.
+
 import { slugify } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
 import { checkOpenCountry } from "./country";
@@ -9,7 +11,9 @@ const SUBMISSIONS_PER_DAY = 5;
 const MAX_DRAFT_BYTES = 50_000;
 const EDITABLE = ["draft", "changes_requested"];
 
+/** An existing trail that looks like the one being submitted, by route or by name. */
 export type Duplicate = { slug: string; name: string; similarity: number; reason: "route" | "name" };
+/** The numbers shown for an attached route. */
 export type RoutePreview = {
   distanceKm: number;
   elevGainM: number | null;
@@ -19,6 +23,7 @@ export type RoutePreview = {
   line: [number, number][];
   start: { lat: number; lon: number };
 };
+/** A submission as its author sees it. */
 export type SubmissionView = {
   id: string;
   status: string;
@@ -56,6 +61,7 @@ const splitData = (data: Record<string, unknown>) => {
   return { validated: validated as Partial<SubmissionData>, drafts: _drafts ?? {} };
 };
 
+/** Starts a draft. The phone's own id makes it safe to retry: the same id returns the same draft. */
 export async function createDraft(sql: Sql, i: { userId: string; clientId: string }): Promise<{ ok: true; id: string } | { ok: false; reason: "invalid" | "too_many_drafts" }> {
   if (!UUID.test(i.clientId)) return { ok: false, reason: "invalid" };
   const [existing] = await sql`select id from submission where user_id = ${i.userId} and client_id = ${i.clientId}`;
@@ -106,11 +112,13 @@ const view = async (sql: Sql, row: Row): Promise<SubmissionView> => {
   };
 };
 
+/** One of the rider's own submissions, or null. */
 export async function getMine(sql: Sql, userId: string, id: string): Promise<SubmissionView | null> {
   const row = await loadRow(sql, userId, id);
   return row ? view(sql, row) : null;
 }
 
+/** The rider's submissions. */
 export async function listMine(sql: Sql, userId: string): Promise<{ id: string; status: string; title: string | null; trailSlug: string | null; updatedAt: string }[]> {
   const rows = await sql`
     select s.id, s.status, s.updated_at, t.slug,
@@ -151,6 +159,7 @@ async function refreshDuplicates(tx: TransactionSql, row: Row, data: Record<stri
   return found;
 }
 
+/** Saved, or why not, or the errors in what was sent. */
 export type SaveStepResult = { ok: true } | { ok: false; reason: "not_found" | "locked" | "too_large" | "invalid" } | { ok: false; errors: Record<string, string> };
 
 /**
@@ -207,6 +216,7 @@ async function photosOwned(tx: TransactionSql, userId: string, ids: string[], cu
   return rows.length === ids.length;
 }
 
+/** Attaches a processed route upload to a draft and lists trails that look like it. */
 export async function attachRoute(
   sql: Sql,
   i: { userId: string; id: string; uploadId: string },
@@ -233,6 +243,7 @@ export async function photoPreviews(sql: Sql, userId: string, ids: string[]): Pr
   return Object.fromEntries(rows.map((r) => [r.id as string, (r.variants as Record<string, string>)["400"] ?? Object.values(r.variants as Record<string, string>)[0] ?? ""]));
 }
 
+/** The states of the open countries, for the form's picker. */
 export async function listStates(sql: Sql): Promise<{ slug: string; name: string }[]> {
   const rows = await sql`
     select s.slug, s.name from region s join region c on c.id = s.parent_id and c.enabled
@@ -240,6 +251,7 @@ export async function listStates(sql: Sql): Promise<{ slug: string; name: string
   return rows.map((r) => ({ slug: r.slug as string, name: r.name as string }));
 }
 
+/** Deletes a draft. Only a draft can be discarded. */
 export async function discardDraft(sql: Sql, i: { userId: string; id: string }): Promise<{ ok: true } | { ok: false; reason: "not_found" | "locked" }> {
   const row = await loadRow(sql, i.userId, i.id);
   if (!row) return { ok: false, reason: "not_found" };
@@ -248,6 +260,7 @@ export async function discardDraft(sql: Sql, i: { userId: string; id: string }):
   return { ok: true };
 }
 
+/** Sent for review with the trail's slug, or why not. */
 export type SubmitResult =
   | { ok: true; slug: string }
   | { ok: false; reason: "not_found" | "locked" | "rate_limited" | "photo_unavailable" }

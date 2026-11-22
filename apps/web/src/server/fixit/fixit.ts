@@ -53,6 +53,7 @@ export async function getFixitContent(sql: Sql): Promise<FixitContent> {
   };
 }
 
+/** What an import of Fix it content added, and any problems found. */
 export type ImportResult = { sections: number; guides: number; steps: number; tools: number; checks: number; art: number; problems: string[] };
 
 /**

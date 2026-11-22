@@ -1,3 +1,5 @@
+// Creates throwaway databases for the database tests.
+
 import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import postgres, { type Sql } from "postgres";
@@ -6,6 +8,7 @@ import { withPublicRole } from "../db/client";
 
 const MIGRATIONS_DIR = fileURLToPath(new URL("../../../db/migrations", import.meta.url));
 
+/** A throwaway database: its address, a connection to it, and a way to drop it. */
 export type TestDatabase = { url: string; sql: Sql; drop(): Promise<void> };
 
 /** Creates an isolated database on TEST_ADMIN_URL (default: the local dev cluster) and applies the migrations. */

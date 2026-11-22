@@ -1,5 +1,8 @@
+// Trail data for tests.
+
 import type { Sql } from "postgres";
 
+/** The fields of a trail used to seed a test database. */
 export type TrailFixture = {
   slug: string;
   name: string;

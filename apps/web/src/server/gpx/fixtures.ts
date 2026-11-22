@@ -1,3 +1,6 @@
+// Builders for GPX text used by tests.
+
+/** A track point for a test. */
 export type P = { lat: number; lon: number; ele?: number; /** milliseconds since the epoch */ time?: number };
 
 /** A straight track heading north from (lat, lon), `n` points about 111 m apart. */
@@ -6,6 +9,7 @@ export function line(n: number, start = { lat: 11.6, lon: 76.1 }, o: { step?: nu
   return Array.from({ length: n }, (_, i) => ({ lat: start.lat + i * step, lon: start.lon, ele: o.ele?.(i), time: o.time?.(i) }));
 }
 
+/** GPX text for a list of points, with optional extra XML. */
 export function makeGpx(points: P[], extra = ""): string {
   const pts = points
     .map((p) => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele !== undefined ? `<ele>${p.ele}</ele>` : ""}${p.time !== undefined ? `<time>${new Date(p.time).toISOString()}</time>` : ""}</trkpt>`)

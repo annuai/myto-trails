@@ -4,6 +4,7 @@ import type { Sql } from "postgres";
 /** A day never holds more than this many different product slugs, so a caller cannot grow the table by inventing names. */
 const MAX_SLUGS_PER_DAY = 100;
 
+/** A tap through to the shop: the product and the place in the app. */
 export type ShopClick = { slug: string; surface: ShopSurface };
 
 /** Checks what the phone sent: a product slug and where in the app it was tapped. Null when it is neither. */

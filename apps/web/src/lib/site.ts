@@ -1,5 +1,8 @@
+// The site's own address, from the environment.
+
 type SiteEnv = { SITE_URL?: string; NODE_ENV?: string; VERCEL_ENV?: string; VERCEL_URL?: string };
 
+/** The site's base address: SITE_URL, else the Vercel preview address. Production without SITE_URL is an error. */
 export function getSiteUrl(env: SiteEnv): string {
   const raw = env.SITE_URL?.trim() || (env.VERCEL_URL && env.VERCEL_ENV !== "production" ? `https://${env.VERCEL_URL.trim()}` : undefined);
   if (!raw) {

@@ -3,6 +3,7 @@ import type { Sql, TransactionSql } from "postgres";
 
 type Db = Sql | TransactionSql;
 
+/** A coarse summary of one ride sent by a rider who opted in: the day, distance, time and a one-degree cell, never the route. */
 export type RideSummaryInput = { ref: string; day: string; distanceKm: number; durationSec: number; cell: string; bikeClass?: string };
 
 /**

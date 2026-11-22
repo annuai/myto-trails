@@ -1,5 +1,6 @@
 import type { Sql } from "postgres";
 
+/** A country as the site lists it: open for trails, or coming soon. */
 export type CountryDto = { iso2: string; name: string; slug: string; enabled: boolean; comingSoon: boolean };
 
 const EMAIL = /^[^@\s]+@[^@\s]+$/;
@@ -11,6 +12,7 @@ export async function listCountries(sql: Sql): Promise<CountryDto[]> {
   return rows.map((r) => ({ iso2: r.iso2 as string, name: r.name as string, slug: r.slug as string, enabled: r.enabled as boolean, comingSoon: !r.enabled }));
 }
 
+/** A saved wish to be told when the country opens, or why not. */
 export type InterestResult = { ok: true } | { ok: false; reason: "invalid" | "not_found" | "already_open" | "rate_limited" };
 
 /**

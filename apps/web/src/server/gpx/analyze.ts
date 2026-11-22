@@ -1,9 +1,14 @@
+// Measures a GPX track and refuses one that is not a believable ride: too few or too many points, impossible coordinates, a jump, or too
+// long.
+
 import { createHash } from "node:crypto";
 import { haversineKm } from "@moto-trails/domain";
 import type { TrackPoint } from "./parse";
 
+/** A latitude and longitude in degrees. */
 export type LatLon = { lat: number; lon: number };
 
+/** What was measured on a track: point count, distance, start point and more. */
 export type TrackAnalysis = {
   pointCount: number;
   distanceKm: number;
@@ -17,7 +22,9 @@ export type TrackAnalysis = {
   fingerprint: string;
 };
 
+/** Why a track was refused. */
 export type AnalyzeError = "no_track_points" | "too_many_points" | "too_few_points" | "invalid_coordinates" | "teleport" | "too_long";
+/** The measurements, or the reason and a message for the rider. */
 export type AnalyzeResult = { ok: true; analysis: TrackAnalysis } | { ok: false; error: AnalyzeError; message: string };
 
 const MIN_POINTS = 50;
@@ -104,6 +111,7 @@ function gainLoss(smoothed: number[]): { gainM: number; lossM: number } {
   return { gainM: gain, lossM: loss };
 }
 
+/** Joins the segments, drops repeated points, checks the track and measures it. */
 export function analyzeTrack(segments: TrackPoint[][]): AnalyzeResult {
   // Join the segments and drop consecutive duplicates.
   const points: TrackPoint[] = [];

@@ -1,5 +1,6 @@
 import type { LatLon } from "./analyze";
 
+/** A position with an optional elevation. */
 export type GpxPoint = LatLon & { ele?: number };
 
 const INVALID_XML_CHARS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f￾￿]/g;

@@ -1,3 +1,5 @@
+// File storage on the local disk, for development, with signed addresses.
+
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
@@ -10,7 +12,9 @@ type Payload =
   | { op: "put"; b: StorageBucket; k: string; ct: string; n: number; e: number }
   | { op: "get"; b: StorageBucket; k: string; e: number; f?: string };
 
+/** Stored, or the status and reason it was refused. */
 export type PutResult = { ok: true } | { ok: false; status: 400 | 403 | 413; reason: string };
+/** The file with its type, or the status and reason. */
 export type GetResult =
   | { ok: true; body: Uint8Array; contentType: string; contentDisposition: string | null }
   | { ok: false; status: 400 | 403 | 404; reason: string };

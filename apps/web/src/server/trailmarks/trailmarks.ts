@@ -1,3 +1,5 @@
+// Trailmarks in the database: awarding points for contributions, a rider's own total, challenges and leaderboards.
+
 import { CHALLENGES, challengeProgress, rideChallengeEvents, decideAward, parseLeaderboardMetric, rankRiders, TRAILMARK_ACTIONS, TRAILMARK_RULES, TRAILMARKS_NOTE, trailmarkTotal } from "@moto-trails/domain";
 import type { AwardDecision, ChallengeEvent, ChallengeProgress, ContributionState, LeaderboardEntry, LeaderboardMetric, LeaderboardScope, ProgressSnapshot, TrailmarkAction } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
@@ -6,6 +8,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY = 86_400_000;
 type Db = Sql | TransactionSql;
 
+/** What an award needs: who, for what action, and which record it is for. */
 export type AwardInput = {
   userId: string;
   action: TrailmarkAction;
@@ -57,6 +60,7 @@ export async function awardInTransaction(tx: TransactionSql, i: AwardInput): Pro
 const VERIFIED = ["trail_report", "condition_confirmed", "correction"];
 const HELPFUL = ["trail_photos", "place_contribution", "condition_confirmed", "correction"];
 
+/** A rider's Trailmarks total and their recent awards. */
 export type MyTrailmarks = {
   total: number;
   note: string;
@@ -122,7 +126,9 @@ export async function setLeaderboardOptIn(sql: Sql, i: { userId: string; optIn: 
   return { ok: true };
 }
 
+/** A leaderboard request as it arrives: the metric and an optional scope. */
 export type LeaderboardQuery = { metric: unknown; scope?: unknown; scopeId?: unknown };
+/** The ranked riders, or why the request was refused. */
 export type LeaderboardResult =
   | { ok: true; metric: LeaderboardMetric; scope: LeaderboardScope; entries: LeaderboardEntry[] }
   | { ok: false; reason: "refused" | "unknown_metric" | "bad_scope" | "scope_unavailable" };

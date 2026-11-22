@@ -17,6 +17,7 @@ export function buildObjectKey(i: { kind: ObjectKind; ownerId: string; objectId:
   return `${i.kind}/${i.ownerId}/${i.objectId}.${i.ext}`;
 }
 
+/** Refuses a storage key that is empty, too long or has an empty or relative path segment, so a key can never reach outside its bucket. */
 export function assertSafeKey(key: string): void {
   if (key.length === 0 || key.length > MAX_KEY_LENGTH) throw new InvalidKeyError("Key length is out of range");
   for (const part of key.split("/")) {
@@ -25,6 +26,7 @@ export function assertSafeKey(key: string): void {
   }
 }
 
+/** Refuses a signed-address lifetime that is not a whole number of seconds from 30 to 3600. */
 export function assertExpiry(seconds: number): void {
   if (!Number.isInteger(seconds) || seconds < 30 || seconds > 3600) {
     throw new InvalidExpiryError("expiresInSeconds must be an integer from 30 to 3600");

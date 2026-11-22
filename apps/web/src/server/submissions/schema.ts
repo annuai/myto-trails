@@ -1,6 +1,9 @@
+// What a trail submission asks in each of its six steps, and the checks on each. Messages are written for the rider.
+
 import { ACCESS_BASES, CARRY_ITEMS, ACCESS_CLASSES, DIFFICULTIES, EVIDENCE_KINDS, HAZARDS, RESTRICTIONS, ROUTE_SHAPES, SUITABILITIES, TERRAINS, isValidSlug } from "@moto-trails/domain";
 import { z } from "zod";
 
+/** The most photos on a submission. */
 export const MAX_PHOTOS = 8;
 const MAX_EVIDENCE = 10;
 const CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g;
@@ -93,11 +96,15 @@ const review = z.object({
 });
 
 const SCHEMAS = { 1: basics, 2: route, 3: details, 4: access, 5: photos, 6: review } as const;
+/** The name each step's data is stored under. */
 export const STEP_KEYS = { 1: "basics", 2: "route", 3: "details", 4: "access", 5: "photos", 6: "review" } as const;
 export type Step = keyof typeof SCHEMAS;
+/** The step numbers in order. */
 export const STEPS = [1, 2, 3, 4, 5, 6] as const;
+/** The title of each step. */
 export const STEP_FIELDS: Record<Step, string> = { 1: "Basics", 2: "Route", 3: "Terrain and difficulty", 4: "Access", 5: "Photos", 6: "Safety and review" };
 
+/** A whole submission: the data of every step. */
 export type SubmissionData = {
   basics: z.output<typeof basics>;
   route: z.output<typeof route>;
@@ -107,6 +114,7 @@ export type SubmissionData = {
   review: z.output<typeof review>;
 };
 
+/** A step's cleaned values, or the errors by field. */
 export type StepResult<S extends Step> = { ok: true; value: z.output<(typeof SCHEMAS)[S]> } | { ok: false; errors: Record<string, string> };
 
 /** Validates one step's input. Unknown keys are dropped; errors are keyed by field and written for the rider. */
@@ -121,6 +129,7 @@ export function validateStep<S extends Step>(step: S, input: unknown): StepResul
   return { ok: false, errors };
 }
 
+/** The whole submission, or the steps that fail. */
 export type ValidateAllResult = { ok: true; value: SubmissionData } | { ok: false; steps: Step[] };
 
 /** Re-validates every step from stored draft data; nothing stored is trusted. */

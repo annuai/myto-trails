@@ -1,3 +1,6 @@
+// Cuts the first and last stretch off a recorded track, for one that starts or ends at someone's home or another private place.
+
+/** A point on a track. */
 export type TrimPoint = { lat: number; lon: number; ele?: number };
 
 const R = 6371;

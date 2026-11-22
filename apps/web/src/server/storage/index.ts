@@ -1,3 +1,5 @@
+// Chooses the file storage for the environment.
+
 import { loadServerEnv, type StorageConfig } from "../env";
 import { MemoryStorageProvider } from "./memory-provider";
 import { LocalStorageProvider } from "./local-provider";
@@ -9,6 +11,7 @@ export * from "./types";
 export { buildObjectKey, assertSafeKey, assertExpiry } from "./keys";
 export { verifyUpload } from "./verify-upload";
 
+/** The storage provider the configuration asks for. */
 export function createStorage(config: StorageConfig): StorageProvider {
   switch (config.provider) {
     case "memory":

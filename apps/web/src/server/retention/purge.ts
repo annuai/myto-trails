@@ -163,6 +163,7 @@ const rules: Rule[] = [
   },
 ];
 
+/** How many rows of each kind were purged, how many files were removed, and which steps failed. */
 export type PurgeResult = { purged: Record<string, number>; filesRemoved: number; failed: string[] };
 
 class DryRun extends Error {}

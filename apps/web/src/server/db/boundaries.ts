@@ -3,7 +3,9 @@ import type { Sql, TransactionSql } from "postgres";
 type Db = Sql | TransactionSql;
 
 type Ring = number[][];
+/** A country outline as a polygon or several, with its ISO code. */
 export type BoundaryFeature = { iso2: string; geometry: { type: "Polygon"; coordinates: Ring[] } | { type: "MultiPolygon"; coordinates: Ring[][] } };
+/** A latitude and longitude in degrees. */
 export type LatLon = { lat: number; lon: number };
 
 /** Idempotently stores country outlines. A feature whose ISO code has no `region` row is skipped. */
