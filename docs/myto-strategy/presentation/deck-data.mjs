@@ -5,9 +5,17 @@ import { dirname, join } from "node:path";
 import { runAll, SCENARIOS, SHARED, RAISE, inr, inrShort, MONTHS } from "../model.mjs";
 
 export const here = dirname(fileURLToPath(import.meta.url));
-// DECK=pitch builds the 10-slide investor version (deck-pitch.md) from the same layouts, model and assets.
-export const DECK = process.env.DECK === "pitch" ? "pitch" : "strategy";
-const md = readFileSync(join(here, DECK === "pitch" ? "deck-pitch.md" : "deck-content.md"), "utf8");
+// DECK=pitch (investor pitch) and DECK=grant (grant application, one slide per form question) reuse the same layouts, model and assets.
+const DECKS = {
+  strategy: { src: "deck-content.md", html: "index.html", out: "myto-strategy-deck", title: "Myto strategy deck" },
+  pitch: { src: "deck-pitch.md", html: "index-pitch.html", out: "myto-pitch-deck", title: "Myto investor pitch" },
+  grant: { src: "deck-grant.md", html: "index-grant.html", out: "myto-grant-deck", title: "Myto grant application" },
+};
+// An unknown DECK would silently build the strategy deck under the wrong name, so it fails instead.
+if (process.env.DECK && !DECKS[process.env.DECK]) throw new Error(`Unknown DECK "${process.env.DECK}" (use ${Object.keys(DECKS).join(", ")})`);
+export const DECK = process.env.DECK || "strategy";
+export const DECK_CFG = DECKS[DECK];
+const md = readFileSync(join(here, DECK_CFG.src), "utf8");
 export const model = runAll();
 // Largest cumulative loss over the year, as a positive number: the cash a scenario needs before founder and team pay.
 for (const r of Object.values(model.scenarios)) { let a = 0, lo = 0; for (const x of r.rows) { a += x.net; lo = Math.min(lo, a); } r.peakDeficit = -lo; }

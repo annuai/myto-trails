@@ -49,6 +49,10 @@ Changing a number: edit `model.mjs`, then `deck:build`. Changing words: edit `de
 
 `deck-pitch.md` is the founder's pre-seed pitch: same layouts, model and assets, selected with `DECK=pitch`. `npm run pitch:build` writes `index-pitch.html`, `pitch:pdf` and `pitch:pptx` write `exports/myto-pitch-deck.*`. Arc: a three-chapter origin story (Ladakh, Bengaluru weekends, the group ride), then problem, Rider OS, product, market, why now, model, metrics, built so far, competition, app-to-brand vision, ask. Unlike the strategy deck it states cited market figures (Royal Enfield FY25, Crisil, CareEdge, Lok Sabha Ladakh data) and the raise, built bottom-up in `model.mjs` (`RAISE_INPUTS`; ₹1.2 Cr for 18 months, placeholders `{{raise.ask|cr}}`, `raise.teamPct`, `raise.burn`). Pitch-only layouts: `story` (keys `chapter:`, `imgpos:`), `demo` (video slot: `video: file.mp4` in `assets/video/`) and `ask`. Michroma draws `~` like a minus, so no tilde in display-font values. The PPTX was checked through a Keynote export (charts render only in PowerPoint).
 
+## Grant application (14 slides)
+
+`deck-grant.md` answers a grant form's 12 questions, one slide per question in the form's order (the kicker names it), reusing the pitch's layouts; no new layouts. `npm run grant:build`, `grant:pdf`, `grant:pptx` write `index-grant.html` and `exports/myto-grant-deck.*`. Slides cannot hold the 300-word brief or the long versions, so the paste-ready written answers, with word counts, live in `grant-answers.md`. Decks are registered in `DECKS` in `deck-data.mjs` (mirrored in `export-pdf.js`). Q09 and Q12 impact is intended, not measured; set the ask to the grant's limit before sending.
+
 ## Viewing
 
 Keys: Right, Down, Space, PageDown next; Left, Up, PageUp previous; Home, End; type a number then Enter to jump; `g` or `o` overview grid; `p` or `f` presentation mode (full screen, controls hidden until the mouse moves); Esc leaves overview or presentation. The URL hash holds the slide (`#12`). Transitions are a 240 ms fade and are removed under reduced-motion.

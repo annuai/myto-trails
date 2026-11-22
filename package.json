@@ -24,7 +24,10 @@
     "deck:pptx": "node docs/myto-strategy/presentation/build-pptx.mjs",
     "pitch:build": "DECK=pitch node docs/myto-strategy/presentation/build.mjs",
     "pitch:pdf": "DECK=pitch node docs/myto-strategy/presentation/export-pdf.js",
-    "pitch:pptx": "DECK=pitch node docs/myto-strategy/presentation/build-pptx.mjs"
+    "pitch:pptx": "DECK=pitch node docs/myto-strategy/presentation/build-pptx.mjs",
+    "grant:build": "DECK=grant node docs/myto-strategy/presentation/build.mjs",
+    "grant:pdf": "DECK=grant node docs/myto-strategy/presentation/export-pdf.js",
+    "grant:pptx": "DECK=grant node docs/myto-strategy/presentation/build-pptx.mjs"
   },
   "devDependencies": {
     "patch-package": "^8.0.1",
