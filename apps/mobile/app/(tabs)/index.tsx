@@ -1,3 +1,5 @@
+// The home tab: the next ride, reminders, and a ride left behind by a crash offered back.
+
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';

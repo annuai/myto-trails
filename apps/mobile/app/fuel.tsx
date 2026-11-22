@@ -1,3 +1,5 @@
+// Fuel economy and price settings, and what each ride cost.
+
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';

@@ -1,3 +1,5 @@
+// One finished ride: its story, journal and sharing, with rename, add to a trip and delete.
+
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';

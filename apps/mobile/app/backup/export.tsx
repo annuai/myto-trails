@@ -1,3 +1,5 @@
+// Makes an encrypted backup of the rider's data, protected by a passphrase only they know.
+
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Share2 } from 'lucide-react-native';

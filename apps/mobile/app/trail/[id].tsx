@@ -1,3 +1,5 @@
+// One trail: its details, access, map and the ways to save it offline, plan it or ride it.
+
 import { useEffect, useMemo, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';

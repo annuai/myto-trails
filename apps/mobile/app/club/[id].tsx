@@ -1,3 +1,5 @@
+// One club: its members, posts, ride plans and join requests.
+
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
