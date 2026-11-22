@@ -1,5 +1,11 @@
+// The fixed vocabularies of the trail data model. The forms, the search filters and the submission and import checks use these lists; the
+// database repeats the same values in its own check constraints (apps/web/db/migrations), so a new value is added in both places.
+
+/** Who may ride a trail: open to all, by permission, not at all, or restricted. */
 export const ACCESS_CLASSES = ["public", "permission_required", "private_no_access", "restricted", "unknown"] as const;
+/** Whether the trail can be ridden today. */
 export const OPERATIONAL_STATUSES = ["open", "temporarily_closed", "permanently_closed", "seasonal", "unknown"] as const;
+/** How far a trail's information has been checked, from an official source down to unverified. */
 export const VERIFICATION_LEVELS = ["officially_verified", "moderator_verified", "community_reported", "unverified"] as const;
 
 export type AccessClass = (typeof ACCESS_CLASSES)[number];
@@ -10,7 +16,9 @@ export const DIFFICULTIES = ["easy", "moderate", "hard", "expert"] as const;
 export const TERRAINS = ["dirt", "gravel", "mud", "sand", "rock", "forest_track", "mountain_road", "riverbed", "mixed"] as const;
 export const SUITABILITIES = ["adventure_tourer", "dual_sport", "enduro", "scrambler", "small_displacement", "any"] as const;
 export const ROUTE_SHAPES = ["loop", "out_and_back", "point_to_point"] as const;
+/** How carefully a trail's location is handled: restricted geometry is never shown or offered for download. */
 export const SENSITIVITIES = ["standard", "sensitive", "restricted_geometry"] as const;
+/** Where a trail is in review, from draft to archived. */
 export const LIFECYCLES = ["draft", "in_review", "published", "unpublished", "archived"] as const;
 export const CONDITION_REASONS = ["weather", "landslide", "construction", "private_closure", "regulatory", "unknown", "other"] as const;
 export const HAZARDS = [
@@ -23,6 +31,7 @@ export const HAZARDS = [
   "no_fuel",
   "low_branches",
 ] as const;
+/** What the access claim rests on, from an official notice down to map data only. */
 export const ACCESS_BASES = ["official_notice", "owner_confirmed", "authority_confirmed", "rider_observed", "map_data", "none"] as const;
 export const EVIDENCE_KINDS = ["official_document", "written_confirmation", "signage_photo", "url", "call_note", "other"] as const;
 export const RESTRICTIONS = ["forest_dept", "protected_area", "private_estate", "seasonal_ban", "permit", "no_motor_vehicles", "local_ordinance", "public_land_closure"] as const;

@@ -6,9 +6,11 @@ import { CONFIRMATIONS_TO_VERIFY, type ContributionState } from "./contribution"
  */
 export const TRAILMARKS_NOTE = "Trailmarks are a thank-you for helping the map, not money or crypto. They can't be bought, sold or cashed out.";
 
+/** What earns Trailmarks. */
 export const TRAILMARK_ACTIONS = ["new_trail", "trail_photos", "trail_report", "condition_confirmed", "place_contribution", "correction"] as const;
 export type TrailmarkAction = (typeof TRAILMARK_ACTIONS)[number];
 
+/** How much one action is worth and how often it can be rewarded. */
 export type TrailmarkRule = { points: number; /** Most awards of this kind in any 24 hours. */ dailyCap: number; label: string };
 
 /** Configurable in one place: change a number here, not the code that awards. */
@@ -21,6 +23,9 @@ export const TRAILMARK_RULES: Record<TrailmarkAction, TrailmarkRule> = {
   correction: { points: 15, dailyCap: 5, label: "Correction of inaccurate information" },
 };
 
+/**
+ * Everything needed to decide an award: the action, where the contribution stands, who confirmed it and the rider's awards so far today.
+ */
 export type AwardRequest = {
   action: TrailmarkAction;
   /** Where the contribution stands after moderation or verification. Only Approved earns anything. */
@@ -35,6 +40,7 @@ export type AwardRequest = {
   alreadyAwarded: boolean;
 };
 
+/** An award with its points, or the reason there is none. */
 export type AwardDecision = { award: true; points: number } | { award: false; reason: "not_approved" | "self_confirmed" | "not_enough_confirmations" | "daily_cap" | "already_awarded" };
 
 /**
@@ -51,6 +57,7 @@ export function decideAward(r: AwardRequest, rules: Record<TrailmarkAction, Trai
   return { award: true, points: rules[r.action].points };
 }
 
+/** One entry in a rider's Trailmarks ledger. */
 export type TrailmarkEvent = { action: TrailmarkAction; points: number; awardedAt: Date };
 
 /** Running total of a ledger. */

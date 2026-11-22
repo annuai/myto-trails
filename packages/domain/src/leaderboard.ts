@@ -5,11 +5,13 @@
 export const LEADERBOARD_METRICS = ["verified_contributions", "new_discoveries", "exploration_diversity", "helpful_contributions", "challenge_participation"] as const;
 export type LeaderboardMetric = (typeof LEADERBOARD_METRICS)[number];
 
+/** How far a leaderboard reaches: all of India, a state, a district or one collection. */
 export const LEADERBOARD_SCOPES = ["india", "state", "district", "collection"] as const;
 export type LeaderboardScope = (typeof LEADERBOARD_SCOPES)[number];
 
 const REFUSED = /speed|fast|distance|km|mile|top[_ -]?speed|lap|time|streak|elevation|climb/i;
 
+/** A metric name understood, or refused (speed and distance are never ranked) or unknown. */
 export type MetricParse = { ok: true; metric: LeaderboardMetric } | { ok: false; reason: "refused" | "unknown" };
 
 /** A ranking by speed or distance is refused outright (not merely unknown), so the API can say why. */
@@ -21,8 +23,10 @@ export function parseLeaderboardMetric(raw: unknown): MetricParse {
 
 /** One rider's counts as the server has them, before ranking. `optedIn` is the rider's own choice and defaults to false. */
 export type RankableRider = { publicName: string; publicId: string; optedIn: boolean; counts: Record<LeaderboardMetric, number> };
+/** One row of a leaderboard. */
 export type LeaderboardEntry = { rank: number; name: string; id: string; value: number };
 
+/** How many riders a leaderboard shows. */
 export const LEADERBOARD_SIZE = 20;
 
 /** Opted-in riders with a non-zero count, highest first, ties sharing a rank and ordered by name so the order is stable. */

@@ -1,5 +1,8 @@
+// Regions (states and districts) and when a region page is worth showing.
+
 import { slugify } from "./slug";
 
+/** A region page is indexed by search engines only once it has at least three published trails; before that it would be thin content. */
 export function isRegionIndexable(publishedTrailCount: number): boolean {
   return publishedTrailCount >= 3;
 }
@@ -16,6 +19,7 @@ const UT_NAMES = [
   "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
 ];
 
+/** The states and union territories, with the slug used in their page address. */
 export const INDIA_STATES: { name: string; slug: string; kind: "state" | "ut" }[] = [
   ...STATE_NAMES.map((name) => ({ name, slug: slugify(name), kind: "state" as const })),
   ...UT_NAMES.map((name) => ({ name, slug: slugify(name), kind: "ut" as const })),

@@ -1,9 +1,16 @@
+// Who may download a trail's GPX track.
+
 import type { AccessClass, Lifecycle, OperationalStatus, Sensitivity } from "./enums";
 
+/** Allowed, or refused with the reason, so the page can say why. */
 export type GpxDecision =
   | { allowed: true }
   | { allowed: false; reason: "not_published" | "no_gpx" | "sensitive_area" | "access_not_allowed" | "permanently_closed" };
 
+/**
+ * A GPX is offered only for a published trail that has a file, a standard-sensitivity location, public or by-permission access, and is not
+ * permanently closed.
+ */
 export function canDownloadGpx(t: {
   lifecycle: Lifecycle;
   accessClass: AccessClass;

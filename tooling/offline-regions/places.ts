@@ -1,6 +1,10 @@
 // Pure place classification and row building for the offline region search file.
 export type PlaceKind = 'city' | 'town' | 'village' | 'hamlet' | 'suburb' | 'district' | 'pass' | 'peak' | 'landmark' | 'fuel' | 'stay' | 'food' | 'health' | 'transport' | 'repair' | 'bank' | 'police';
 
+/**
+ * One searchable place in a region's offline search file. `alt` holds extra words a search can match (other-script names for a mapped
+ * place, the kind's words for a business); `detail` is the locality or district and the state, shown under the name.
+ */
 export interface PlaceRow {
   name: string;
   alt: string;
@@ -29,6 +33,10 @@ const PLACE_RANKS: Record<string, { kind: PlaceKind; rank: number }> = {
 /** English, Kannada and the other main Indian scripts, plus the generic alternative name. */
 const ALT_NAME_KEYS = ['name:en', 'name:kn', 'alt_name', ...['ml', 'hi', 'ta', 'te', 'bn', 'mr', 'gu', 'pa', 'or', 'as', 'ur'].map((l) => `name:${l}`)];
 
+/**
+ * What kind of place an OpenStreetMap feature is and how high it ranks in search (bigger settlements first), or null when it is not worth
+ * searching for.
+ */
 export function classifyPlace(tags: Record<string, string>): { kind: PlaceKind; rank: number } | null {
   const place = tags.place && PLACE_RANKS[tags.place];
   if (place) return { ...place };
@@ -42,6 +50,7 @@ export function classifyPlace(tags: Record<string, string>): { kind: PlaceKind; 
   return null;
 }
 
+/** Builds the search row for an OpenStreetMap feature, or null when it has no name or is not a place worth listing. */
 export function buildRow(tags: Record<string, string>, lat: number, lng: number, stateName: string): PlaceRow | null {
   const name = tags.name?.trim();
   if (!name) return null;
@@ -113,6 +122,10 @@ const KIND_WORDS: Partial<Record<PlaceKind, string>> = {
   food: 'restaurant food cafe eat',
 };
 
+/**
+ * Builds the search row for an Overture Maps place, or null when it has no usable name or position, is closed, has too low a confidence, or
+ * is in a category the search does not list.
+ */
 export function buildOvertureRow(p: OverturePlace, stateName: string): PlaceRow | null {
   const name = p.name?.trim();
   if (!name || !Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return null;

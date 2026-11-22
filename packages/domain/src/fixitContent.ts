@@ -26,6 +26,7 @@ export const FIXIT_TOOLS: FixitTool[] = [
   { id: "fuel-bottle", name: "One litre of fuel in a metal bottle", why: "Enough to reach the next pump if the tank runs dry.", kit: "remote" },
 ];
 
+/** The pre-ride check, in the order a rider walks round the bike. */
 export const FIXIT_CHECKS: FixitCheckItem[] = [
   { id: "tyres", label: "Tyres", how: "Look for thorns, cuts or bulges. Press: do they feel firm? Compare with your manual’s pressure if unsure.", guides: ["flat-tyre-tubeless", "flat-tyre-tube"] },
   { id: "brakes", label: "Brakes", how: "Squeeze the front lever and press the rear pedal. Both should feel firm, not spongy, and stop the bike rolling.", guides: ["brakes-soft"] },
@@ -48,6 +49,7 @@ export const FIXIT_SECTIONS: FixitSection[] = [
   { id: "after-a-fall", title: "After a fall", cover: "bike-down/hero" },
 ];
 
+/** Every repair guide. This is the source the database is seeded from. */
 export const FIXIT_GUIDES: FixitGuide[] = [
   {
     id: "flat-tyre-tubeless", section: "tyres", title: "Flat tyre (tubeless)", summary: "Plug a thorn or nail hole so you can ride to a tyre shop.",

@@ -1,3 +1,6 @@
+// Unit tests of the website: jsdom and React Testing Library. Tests that need a real database (`*.db.test.ts`) are left to
+// vitest.db.config.ts.
+
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
 import { configDefaults, defineConfig } from "vitest/config";

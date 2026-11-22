@@ -11,6 +11,7 @@ const RAD = Math.PI / 180;
 const H0 = -0.833 * RAD;
 const OBLIQUITY = 23.4397 * RAD;
 
+/** Sunrise and sunset as milliseconds since the epoch. */
 export type SunTimes = { sunriseMs: number; sunsetMs: number };
 
 /**

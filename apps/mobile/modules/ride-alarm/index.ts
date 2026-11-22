@@ -2,6 +2,7 @@ import { requireOptionalNativeModule } from 'expo';
 
 /** One ring as the phone's alarm code keeps it (see src/lib/alarm/ladder.ts). */
 export type NativeAlarmStep = { id: string; group: string; index: number; fireAt: number; title: string; body: string; snooze: boolean; route: string };
+/** Whether the rider has allowed alarms: granted, denied, or not asked yet. */
 export type AlarmAuthorization = 'granted' | 'denied' | 'undetermined';
 
 type Native = {

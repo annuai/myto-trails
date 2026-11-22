@@ -2,6 +2,7 @@
 export const SYNC_KINDS = ["ride", "trip", "todo", "moment"] as const;
 export type SyncKind = (typeof SYNC_KINDS)[number];
 
+/** The size and count limits of sync, applied by the server and respected by the phone. */
 export const SYNC_LIMITS = {
   /** Changes in one push. The API's 64 KB body cap is the tighter limit for rides with many waypoints. */
   maxChanges: 200,
@@ -17,7 +18,9 @@ export const SYNC_LIMITS = {
   tombstoneDays: 30,
 } as const;
 
+/** What the server already holds for a record. */
 export type SyncStored = { updatedAt: number; originDevice: string; deleted: boolean };
+/** A change arriving from a phone, with the version of the record it was edited from. */
 export type SyncIncoming = { updatedAt: number; deviceId: string; baseUpdatedAt: number | null; deleted: boolean };
 /**
  * insert: nothing stored yet. overwrite: the newer edit wins. stale: the stored copy is newer (or the same); the phone should pull.
@@ -25,6 +28,10 @@ export type SyncIncoming = { updatedAt: number; deviceId: string; baseUpdatedAt:
  */
 export type SyncDecision = "insert" | "overwrite" | "stale" | "fork";
 
+/**
+ * Decides what the server does with an incoming change: insert it, overwrite, call it stale, or keep both as a fork. Rules are in
+ * docs/sync-design.md.
+ */
 export function decideSync(kind: SyncKind, stored: SyncStored | null, incoming: SyncIncoming): SyncDecision {
   if (!stored) return "insert";
   // The same phone writing again (a retry, or a later edit of its own record) only ever moves forward.
@@ -38,7 +45,9 @@ export function decideSync(kind: SyncKind, stored: SyncStored | null, incoming: 
 }
 
 const ID = /^[A-Za-z0-9._~-]{1,80}$/;
+/** True when the value is a well-formed record id. */
 export const isSyncId = (v: unknown): v is string => typeof v === "string" && ID.test(v);
+/** True when the value is one of the kinds that sync. */
 export const isSyncKind = (v: unknown): v is SyncKind => typeof v === "string" && (SYNC_KINDS as readonly string[]).includes(v);
 
 /** The id of the second copy of a ride kept after a two-phone edit. Stable, so a retried push does not create a third. */

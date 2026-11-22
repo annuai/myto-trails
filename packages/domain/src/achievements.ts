@@ -4,6 +4,7 @@
  */
 export const ACHIEVEMENT_CATEGORIES = ["exploration", "community", "contribution", "personal"] as const;
 export type AchievementCategory = (typeof ACHIEVEMENT_CATEGORIES)[number];
+/** The heading each badge category is shown under. */
 export const CATEGORY_TITLES: Record<AchievementCategory, string> = { exploration: "Exploration", community: "Community", contribution: "Contribution", personal: "Personal" };
 
 /** What a snapshot can hold, and who knows it: `phone` metrics come from the rider's own device, `server` ones from the Trailmarks ledger and the rider's saved history. */
@@ -21,11 +22,13 @@ export type Metric = keyof typeof METRICS;
 /** A metric left out of the snapshot is unknown (offline, signed out), which is different from zero. */
 export type ProgressSnapshot = Partial<Record<Metric, number>>;
 
+/** How a badge is earned: a metric reaching a threshold, or a rule that cannot be computed yet. */
 export type Criteria =
   | { type: "threshold"; metric: Metric; atLeast: number }
   /** Cannot be computed honestly from data that exists yet. The badge stays locked and says what it is waiting for. */
   | { type: "needs"; needs: string };
 
+/** One badge as data: what it is called, how it is earned, and what to say while it is locked. */
 export type AchievementDef = {
   id: string;
   category: AchievementCategory;
@@ -37,6 +40,7 @@ export type AchievementDef = {
   lockedHint?: string;
 };
 
+/** Every badge. Adding a row here adds a badge everywhere, with no other code change. */
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: "explorer", category: "exploration", title: "Explorer", hint: "Ride 10 different trails.", criteria: { type: "threshold", metric: "trailsRiddenDistinct", atLeast: 10 } },
   { id: "weekend-wanderer", category: "exploration", title: "Weekend Wanderer", hint: "Ride on 5 different weekends. They do not have to be in a row.", criteria: { type: "threshold", metric: "weekendsRidden", atLeast: 5 } },
@@ -48,9 +52,12 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: "community-rider", category: "community", title: "Community Rider", hint: "Help the map 10 times: confirmations, photos, places, corrections.", criteria: { type: "threshold", metric: "helpfulContributions", atLeast: 10 } },
 ];
 
+/** earned: done. in_progress: some progress. locked: none yet. needs_data: waiting on data that is not collected yet. */
 export type AchievementState = "earned" | "in_progress" | "locked" | "needs_data";
+/** A badge evaluated against one rider's snapshot: its state, the numbers behind it and the line to show. */
 export type AchievementStatus = { def: AchievementDef; state: AchievementState; current: number; target: number; fraction: number; hint: string };
 
+/** Works out one badge's state from a progress snapshot. A metric missing from the snapshot reads as unknown, not zero. */
 export function evaluate(def: AchievementDef, snap: ProgressSnapshot): AchievementStatus {
   const c = def.criteria;
   if (c.type === "needs") return { def, state: "needs_data", current: 0, target: 0, fraction: 0, hint: def.lockedHint ?? "Not counted yet." };
@@ -64,6 +71,7 @@ export function evaluate(def: AchievementDef, snap: ProgressSnapshot): Achieveme
   return { def, state: earned ? "earned" : current > 0 ? "in_progress" : "locked", current: Math.min(current, c.atLeast), target: c.atLeast, fraction: Math.min(1, current / c.atLeast), hint: def.hint };
 }
 
+/** Evaluates every badge (or the given list) against one snapshot. */
 export const evaluateAll = (snap: ProgressSnapshot, defs: readonly AchievementDef[] = ACHIEVEMENTS) => defs.map((d) => evaluate(d, snap));
 
 /** Statuses grouped by category, in the order of ACHIEVEMENT_CATEGORIES; empty categories are left out. */

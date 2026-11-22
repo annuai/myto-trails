@@ -19,6 +19,7 @@ export const inkFillCream: InkFill = { colors: ["#f2ede8", "#e6eeee", "#d3e6ec",
 /** The colour for places that cannot show a gradient (a map pin's icon, behind a full-screen photo, a share image's backing). Keep it the first colour of `inkFillBlack`. */
 export const inkSolid = "#13161c";
 
+/** Every colour the phone app uses, by role (surface, text, border, status). */
 export type Palette = {
   paper: string; card: string; raised: string;
   /** The fill of a text box that sits on a card (the card colour would vanish into it). */
@@ -51,6 +52,7 @@ export type Palette = {
   gradient: readonly [string, string, string];
 };
 
+/** The light palette. */
 export const light: Palette = {
   paper: "#f2ede8", card: "#fbf9f6", raised: "#f2f0ec", field: "#efe9e1", ink: "#1a1a1a", muted: "#6b6560", line: "rgba(0,0,0,0.10)",
   accent: "#1f4a6b", accentInk: "#ffffff", accentSubtle: "#e3ebf1",
@@ -61,6 +63,7 @@ export const light: Palette = {
   gradient: ["#f8f4ef", "#f2ede8", "#e7ebee"],
 };
 
+/** The dark palette, used at night and in ride mode. */
 export const dark: Palette = {
   paper: "#121211", card: "#1c1c1a", raised: "#242422", field: "#2a2a27", ink: "#f2ede8", muted: "#a8a29b", line: "rgba(255,255,255,0.14)",
   accent: "#8fbbdc", accentInk: "#121211", accentSubtle: "#223644",
@@ -71,6 +74,7 @@ export const dark: Palette = {
   gradient: ["#1b1b19", "#121211", "#0f1317"],
 };
 
+/** Four soft tints (sand, sage, clay, sky), kept outside the two palettes. */
 export const tints = { sand: "#e8dccb", sage: "#cfe0c8", clay: "#efcfc2", sky: "#cfdde8" } as const;
 
 /** Colours that do not change with the theme. */

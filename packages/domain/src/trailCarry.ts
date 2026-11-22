@@ -5,6 +5,7 @@ export const CARRY_ITEMS = [
 ] as const;
 export type CarryItem = (typeof CARRY_ITEMS)[number];
 
+/** The label shown for each item on a trail's carry list. */
 export const CARRY_ITEM_LABEL: Record<CarryItem, string> = {
   puncture_kit: "Puncture repair kit",
   tyre_inflator: "Tyre inflator",

@@ -1,3 +1,4 @@
+/** What a rider can report about a trail. */
 export const REPORT_TYPES = ["closure", "wrong_access", "wrong_location", "unsafe_info", "duplicate", "inaccurate_gpx", "environmental", "other"] as const;
 export type ReportType = (typeof REPORT_TYPES)[number];
 
@@ -9,10 +10,12 @@ export function reportPriority(type: ReportType): "normal" | "high" {
 const MIN_DETAILS = 20;
 const MAX_DETAILS = 2000;
 
+/** A report accepted with its cleaned values, or refused with a message. */
 export type ReportValidation =
   | { ok: true; value: { type: ReportType; details: string } }
   | { ok: false; errors: { type?: string; details?: string } };
 
+/** Checks a report's type and details, trimming the text, before it is saved. */
 export function validateReport(input: { type?: unknown; details?: unknown }): ReportValidation {
   const errors: { type?: string; details?: string } = {};
   const type = typeof input.type === "string" && (REPORT_TYPES as readonly string[]).includes(input.type) ? (input.type as ReportType) : undefined;

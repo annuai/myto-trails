@@ -26,6 +26,10 @@ function inCondition(expr: string): string | null {
 
 const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
+/**
+ * Every size, spacing, radius, opacity, layer or colour-function value written as a literal instead of a token, as the matched text.
+ * Comments are ignored; 0 and 1 are allowed.
+ */
 export function findHardcodedSizes(source: string): string[] {
   const code = stripComments(source);
   const numeric = (code.match(NUMERIC) ?? []).filter((m) => !/:\s*-?(?:0|1)(?:\.0+)?$/.test(m));

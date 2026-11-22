@@ -3,18 +3,26 @@
 
 /** Text, or text that links somewhere. */
 export type Part = string | { text: string; href: string };
+/** A paragraph, or a bulleted list, made of parts (plain text or a link). */
 export type Block = { p: Part[] } | { ul: Part[][] };
+/** A run of blocks under an optional heading. */
 export type Section = { heading?: string; blocks: Block[] };
+/** The legal pages the site has. */
 export type LegalSlug = "about" | "terms" | "privacy";
+/** A legal page: its title, the date it was last changed, whether it is still a draft awaiting legal review, and its sections. */
 export type LegalDoc = { slug: LegalSlug; title: string; updated: string; /** Draft text waits for a lawyer's review. */ draft: boolean; sections: Section[] };
 
+/** Where riders write to us. */
 export const CONTACT_EMAIL = "clubmyto@gmail.com";
 /** The community Discord, where riders suggest improvements. */
 export const DISCORD_URL = "https://discord.gg/DsC3nW46";
+/** The address of the Myto shop. */
 export const MYTO_URL = "https://myto-moto.com";
+/** The line about where the app is made, shown with the site footer. */
 export const MADE_IN_INDIA = "Proudly made in India";
 /** The word a person types to confirm deleting their account, on the website and in the app. */
 export const DELETE_CONFIRMATION = "delete";
+/** The legal pages in the order they are listed. */
 export const LEGAL_SLUGS: readonly LegalSlug[] = ["about", "terms", "privacy"];
 
 const UPDATED = "15 November 2026";
@@ -23,6 +31,7 @@ const myto: Part = { text: "myto-moto", href: MYTO_URL };
 const p = (...parts: Part[]): Block => ({ p: parts });
 const ul = (...items: Part[][]): Block => ({ ul: items });
 
+/** The text of every legal page. */
 export const legalDocs: Record<LegalSlug, LegalDoc> = {
   about: {
     slug: "about",
@@ -231,6 +240,7 @@ export const legalDocs: Record<LegalSlug, LegalDoc> = {
   },
 };
 
+/** Finds a legal page by slug, or undefined for a slug that is not one. */
 export function getLegalDoc(slug: string): LegalDoc | undefined {
   return (LEGAL_SLUGS as readonly string[]).includes(slug) ? legalDocs[slug as LegalSlug] : undefined;
 }
