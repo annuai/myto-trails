@@ -10,5 +10,9 @@ export type KnownData = {
   profile: { licence?: unknown; vehicle?: unknown; contacts: unknown[] };
 };
 
+/**
+ * True when the phone already holds something that is the rider's own: a real ride, a trip, a to-do they added, a licence, a vehicle or a
+ * contact.
+ */
 export const isReturningRider = (d: KnownData): boolean =>
   d.rides.some((r) => !r.sample) || d.trips.length > 0 || d.todos.some((t) => !t.id.startsWith('seed-')) || !!d.profile.licence || !!d.profile.vehicle || d.profile.contacts.length > 0;

@@ -138,6 +138,7 @@ export const SCREEN_CELLS: Record<'cmyk' | 'mono', number> = { cmyk: 120, mono: 
 /** Grain is about one and a half pixels on a 1600 px picture. */
 const GRAIN_PER_LONG_SIDE = 1 / 1050;
 
+/** The values the film shader takes for a look at its strength. */
 export function shaderUniforms(look: FilmLook): FilmUniforms {
   const p = lookParams(look.id, look.intensity);
   const m = p.matrix;

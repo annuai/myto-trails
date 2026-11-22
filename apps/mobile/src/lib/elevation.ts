@@ -1,5 +1,8 @@
+// Climb and descent of a track.
+
 import { haversine, type LatLng } from './geo';
 
+/** Total gain and loss, the lowest and highest points, and the height at samples along the distance. */
 export type ElevationProfile = { gainM: number; lossM: number; minM: number; maxM: number; /** Distance in km from the start, and height in metres. */ samples: { d: number; e: number }[] };
 
 /** A rise or fall smaller than this is GPS and barometer noise, not climbing. */

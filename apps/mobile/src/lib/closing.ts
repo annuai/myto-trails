@@ -42,6 +42,7 @@ export function prepareClosing(points: LatLng[], breaks: number[] = [], waypoint
   return { points: pts, breaks: brk, along, totalM: total, waypointAt };
 }
 
+/** One frame of the closing animation: the inked track so far, its head, and the waypoints it has passed. */
 export type ClosingFrame = {
   /** The inked part of the track so far, ending at the head. */
   track: LatLng[];

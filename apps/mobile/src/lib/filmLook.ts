@@ -6,10 +6,13 @@
 
 /** A 4 by 5 colour matrix in row-major order (R, G, B, A rows; the fifth column is an offset in 0..1), as SVG's feColorMatrix wants it. */
 export type Matrix = readonly number[];
+/** A colour as red, green and blue. */
 export type Rgb = readonly [number, number, number];
 
+/** The colour matrix that changes nothing. */
 export const IDENTITY: Matrix = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
 
+/** The names of the film looks. */
 export type LookId = 'none' | 'vivid' | 'colour-negative' | 'faded-slide' | 'mist' | 'mono' | 'noir' | 'sepia' | 'cross-process' | 'disposable' | 'halftone' | 'newsprint';
 /** How a look's dot screen is printed: `cmyk` is four rotated colour screens, `mono` a single black screen at 45 degrees. */
 export type Screen = 'cmyk' | 'mono';
@@ -19,9 +22,12 @@ export type Screen = 'cmyk' | 'mono';
  * a real halftone screen; `leak` a light leak from the left edge. The GPU shader (lib/film/filmShader) reads all of them.
  */
 export type Look = { id: LookId; label: string; matrix: Matrix; grain: number; vignette: number; dots?: number; curve?: number; shadow?: Rgb; highlight?: Rgb; split?: number; screen?: Screen; leak?: number };
+/** A look and how strongly it is applied. */
 export type FilmLook = { id: LookId; intensity: number };
 
+/** How strongly a look is applied until the rider changes it. */
 export const DEFAULT_INTENSITY = 0.7;
+/** Keeps a strength between 0 and 1; anything that is not a number becomes the default. */
 export const clampIntensity = (n: number) => (Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : DEFAULT_INTENSITY);
 
 const LUMA = [0.2126, 0.7152, 0.0722] as const;
@@ -63,6 +69,7 @@ const monoMix = (w: Rgb, contrast: number): Matrix => {
   return [...row(off), ...row(off), ...row(off), 0, 0, 0, 1, 0];
 };
 
+/** Every film look. */
 export const LOOKS: readonly Look[] = [
   { id: 'none', label: 'None', matrix: IDENTITY, grain: 0, vignette: 0 },
   // Clean and punchy for sunlit trails: contrast, colour and a touch of clarity, no stylisation.
@@ -98,10 +105,12 @@ export function swipeStep(dx: number, dy: number, minDistance: number): 1 | -1 |
   return dx < 0 ? 1 : -1;
 }
 
+/** A look by name, or the first look in the list for an unknown name. */
 export const lookById = (id: string): Look => LOOKS.find((l) => l.id === id) ?? LOOKS[0];
 
 const lerp = (a: Matrix, b: Matrix, t: number): Matrix => a.map((v, i) => v + (b[i] - v) * t);
 
+/** A look's settings at one strength. */
 export type LookParams = { /** The rest of the look scaled by strength: curve, split toning, screen, leak. */ curve: number; shadow: Rgb; highlight: Rgb; split: number; screen?: Screen; leak: number; matrix: Matrix; /** Grain opacity, 0 to 0.5. */ grain: number; /** Vignette opacity at the corners, 0 to 0.4. */ vignette: number; /** Dot screen opacity, 0 to 0.6. */ dots: number; /** True when the picture is left exactly as it was. */ neutral: boolean };
 
 /** What to draw for a look at an intensity (0 to 1): the matrix blended with "no change", and grain and vignette scaled the same way. */

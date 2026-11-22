@@ -2,6 +2,7 @@ import { BackupError, CURRENT_VERSION, type BackupPayload } from './format';
 
 /** `migrations[n]` turns a version n payload into a version n + 1 payload. Add one with every format change. */
 export type Migrations = Record<number, (payload: any) => any>;
+/** One step for each format version that changed in a way old files cannot meet. */
 export const migrations: Migrations = {
   // 1 to 2: the ride journal was added.
   1: (p) => ({ ...p, journal: [], journalFiles: {} }),
@@ -9,6 +10,7 @@ export const migrations: Migrations = {
   2: (p) => p,
 };
 
+/** Brings a backup's data from an older version up to the current one, a step at a time. */
 export function migrate(payload: unknown, from: number, to = CURRENT_VERSION, steps: Migrations = migrations): BackupPayload {
   if (from > to) throw new BackupError('newer-version');
   let data = payload;

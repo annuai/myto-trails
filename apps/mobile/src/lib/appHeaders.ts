@@ -6,4 +6,5 @@
  */
 import { version } from '../../package.json';
 
+/** Headers the app sends with its web requests, so servers can tell the app and its version. */
 export const APP_HEADERS = { 'User-Agent': `MytoMoto/${version} (motorcycle trails app; https://moto-trails.com)` } as const;

@@ -4,6 +4,7 @@ export const AUTO_PAUSE_MS = 5 * 60_000;
 export const RESUME_GRACE_MS = 30_000;
 
 export type AutoPauseState = { stoppedSince: number | null; /** When the ride paused itself; null when it did not (or the rider took over). */ pausedAt: number | null };
+/** The state at the start of a ride: not stopped, not paused. */
 export const startAutoPause: AutoPauseState = { stoppedSince: null, pausedAt: null };
 
 /**

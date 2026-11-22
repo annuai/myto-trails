@@ -12,6 +12,7 @@ import { useAppearance } from '@/store/appearance';
  */
 const isDevBuild = () => typeof __DEV__ !== 'undefined' && __DEV__;
 
+/** Starts crash reporting when a Sentry address is set and this is not a development build. Returns whether it started. */
 export function startCrashReporting(dsn: string | undefined = process.env.EXPO_PUBLIC_SENTRY_DSN, dev: boolean = isDevBuild()): boolean {
   if (dev || !dsn?.trim()) return false;
   Sentry.init({

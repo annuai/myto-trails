@@ -1,8 +1,12 @@
+// The rider's documents (licence, insurance and the like) turned into what the screens show, with whether each is valid, running out,
+// expired or missing.
+
 import { daysUntil, formatDate } from './dates';
 import type { DocKind } from './localMedia/types';
 
 type Licence = { number: string; validTill?: string };
 type Vehicle = { regNo: string; engineNo?: string; chassisNo?: string; rcValidTill?: string; insurer?: string; policyNo?: string; insuranceValidTill?: string; pucValidTill?: string };
+/** A document: its kind, a label, a line of detail and when it runs out. */
 export type DocEntry = { kind: DocKind; label: string; detail: string; validTill?: string };
 
 /** The papers the rider has filled in, in the order a traffic stop asks for them. Papers they never added are left out. */
@@ -18,7 +22,9 @@ export function documentEntries(licence?: Licence, vehicle?: Vehicle): DocEntry[
 /** Papers whose date has passed. Nothing else about the papers is raised before a ride: a missing or valid paper is the rider's business. */
 export const expiredEntries = (entries: DocEntry[], today?: string): DocEntry[] => entries.filter((e) => e.validTill && daysUntil(e.validTill, today) < 0);
 
+/** valid, running out soon, expired or missing. */
 export type PaperState = 'valid' | 'soon' | 'expired' | 'missing';
+/** A document with its state and the days left when it is running out. */
 export type Paper = { kind: DocKind; label: string; state: PaperState; /** Days left when it runs out within SOON_DAYS. */ daysLeft?: number; detail: string; validTill?: string };
 /** A paper this close to its date is flagged. */
 export const SOON_DAYS = 30;
@@ -47,6 +53,7 @@ export function papersSummary(papers: Paper[]): { status: 'caution' | 'stop'; wo
   return undefined;
 }
 
+/** A document's validity as a status word and a tone. */
 export type Validity = { status: 'good' | 'caution' | 'stop' | 'unknown'; word: string };
 
 /**

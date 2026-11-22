@@ -1,5 +1,8 @@
+// The map drawn behind the route on a share card, made of a few OpenStreetMap tiles.
+
 import type { LatLng } from './geo';
 
+/** The size of a map tile in pixels. */
 export const TILE = 256;
 /** OpenStreetMap's tile server allows light use with attribution: a handful of tiles for one picture the rider asked for. */
 export const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -8,10 +11,13 @@ export const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
  * own; Android's image loader sends a generic client string, so every tile came back as the block notice. Name the app ourselves.
  */
 export const TILE_HEADERS = { 'User-Agent': 'MytoMoto/0.10 (ride share card; https://moto-trails.com)' };
+/** The credit the tile licence requires on the card. */
 export const ATTRIBUTION = '© OpenStreetMap contributors';
 const MIN_ZOOM = 2, MAX_ZOOM = 16, FILL = 0.78;
 
+/** One tile: its address and where it sits in the map box. */
 export type MapTile = { url: string; /** Where the tile sits in the map box, in pixels. */ left: number; top: number };
+/** The zoom, the tiles and the route in the map box's pixels. */
 export type CardMapLayout = { zoom: number; tiles: MapTile[]; /** The route in pixels of the map box. */ points: { x: number; y: number }[] };
 
 const worldX = (lng: number, z: number) => ((lng + 180) / 360) * TILE * 2 ** z;
@@ -69,4 +75,5 @@ export function layoutAreaMap(center: LatLng, box: { width: number; height: numb
 
 /** The rectangle on the card where the map goes, in card pixels. The card's padding is the same on every side. */
 export const CARD_PAD = 88;
+/** The part of a card the map fills. */
 export const mapBoxOf = (card: { width: number; height: number }) => ({ x: CARD_PAD, y: card.height * 0.2, width: card.width - CARD_PAD * 2, height: Math.min(card.width - CARD_PAD * 2, card.height * 0.46) });

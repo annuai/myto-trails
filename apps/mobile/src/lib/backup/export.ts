@@ -4,9 +4,11 @@ import { MAGIC, writeFrame, type ByteWriter } from './stream';
 
 /** Where the backup finds a document photo or a journal file: whether it exists, and its content as base64. */
 export type PhotoSource = { has: (id: string) => boolean; read: (id: string) => Promise<string> };
+/** What the backup needs from the journal: whether a photo or voice note exists and how to read it. */
 export type JournalSource = { has: (id: string, kind: 'photo' | 'voice') => boolean; read: (id: string, kind: 'photo' | 'voice') => Promise<string> };
 
 const utf8 = (s: string) => new TextEncoder().encode(s);
+/** The context text bound to a record: format, version, creation time and position in the file. */
 export const recordAad = (createdAt: string, index: number) => `${FORMAT}|${CURRENT_VERSION}|${createdAt}|${index}`;
 const SALT_BYTES = 16;
 const toB64 = (b: Uint8Array) => { let s = ''; for (const x of b) s += String.fromCharCode(x); return btoa(s); };

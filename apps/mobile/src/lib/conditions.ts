@@ -1,5 +1,8 @@
+// Road-condition reports from the phone, kept in an outbox until they are sent.
+
 import { uid } from './id';
 
+/** What the road is like. */
 export type ConditionKind = 'clear' | 'muddy' | 'blocked' | 'washed_out' | 'closed';
 
 /** One-tap choices, in the order the report sheet shows them. */
@@ -11,8 +14,11 @@ export const CONDITION_CHOICES: { kind: ConditionKind; label: string }[] = [
   { kind: 'closed', label: 'Closed' },
 ];
 
+/** A report as the rider made it: trail, kind, note, time and place. */
 export type ReportDraft = { slug: string; kind: ConditionKind; note?: string; at: string; lat?: number; lng?: number; mediaId?: string };
+/** A report waiting to be sent, with its id and retry count. The id lets the server ignore a repeat. */
 export type OutboxItem = ReportDraft & { /** Sent with every attempt: the server keeps one report per id, so a retry never doubles it. */ clientId: string; tries: number; /** Do not try again before this time (ms). */ nextAt: number };
+/** The reports waiting to be sent. */
 export type Outbox = OutboxItem[];
 
 /** The outbox keeps the newest 50 reports; a rider offline for long enough to pass that has bigger problems. */
@@ -20,12 +26,14 @@ export const OUTBOX_CAP = 50;
 const BACKOFF_BASE_MS = 30_000;
 const BACKOFF_MAX_MS = 60 * 60_000;
 
+/** Adds a report to the outbox. */
 export const enqueue = (box: Outbox, draft: ReportDraft, now: number, clientId: string = uid()): Outbox =>
   [...box, { ...draft, clientId, tries: 0, nextAt: now }].slice(-OUTBOX_CAP);
 
 /** Reports due to be sent now, oldest first. */
 export const nextBatch = (box: Outbox, now: number, size: number = 5): OutboxItem[] => box.filter((i) => i.nextAt <= now).slice(0, size);
 
+/** Removes a report once the server has it. */
 export const markSent = (box: Outbox, clientId: string): Outbox => box.filter((i) => i.clientId !== clientId);
 
 /** A failed attempt waits 30 s, then 1 min, 2 min and so on up to an hour. `permanent` (the server said no) drops the report. */

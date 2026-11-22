@@ -16,6 +16,7 @@ const key = (passphrase: string, salt: Uint8Array) => scryptAsync(utf8(passphras
 /** Derives the key once per file; a streamed backup seals every record with it. */
 export const deriveKey = key;
 
+/** `n` random bytes. */
 export async function randomBytes(n: number): Promise<Uint8Array> {
   if (globalThis.crypto?.getRandomValues) return globalThis.crypto.getRandomValues(new Uint8Array(n));
   const { getRandomBytes } = await import('expo-crypto');
@@ -53,6 +54,10 @@ export async function sealRecord(k: Uint8Array, plain: Uint8Array, aadText: stri
   return out;
 }
 
+/**
+ * Decrypts one framed record with the key and checks it against its context text (`aadText`), so a record cannot be moved to another place
+ * in the file.
+ */
 export function openRecord(k: Uint8Array, framed: Uint8Array, aadText: string): Uint8Array {
   if (framed.length < NONCE_BYTES) throw new BackupError('corrupt');
   try {

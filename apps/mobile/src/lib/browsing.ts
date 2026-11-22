@@ -20,4 +20,5 @@ export function notOpenCountry(home: string | null, countries: Country[]): Count
 export const countryQuery = (browsing: string | null): Record<string, string> => (browsing ? { country: browsing } : {});
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+/** True for text that looks like an email address and is at most 254 characters. */
 export const validEmail = (text: string): boolean => text.trim().length <= 254 && EMAIL.test(text.trim());

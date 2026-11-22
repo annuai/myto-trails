@@ -1,7 +1,12 @@
+// The data on the emergency card: the rider's details and contacts, ready to draw.
+
 import type { Contact, Licence, Medical, Vehicle } from '@/store/profile';
 
+/** One line of the card, and whether the rider filled it in. */
 export type CardFact = { label: string; value: string; /** False when the rider has not filled it in, so the card can show it quietly. */ set: boolean };
+/** An emergency contact, and whether it is the main one. */
 export type CardContact = { name: string; phone: string; relation: string; primary: boolean };
+/** Everything the card shows. */
 export type EmergencyCardData = { name: string; facts: CardFact[]; notes: string | null; bike: string | null; contacts: CardContact[] };
 
 const NOT_SET = 'Not set';

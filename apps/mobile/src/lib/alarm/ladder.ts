@@ -4,6 +4,7 @@
  * Pure and tested; see docs/superpowers/specs/2026-11-15-ride-alarms.md.
  */
 
+/** The lead times (minutes before the goal) offered to the rider. */
 export const LEAD_CHOICES = [15, 30] as const;
 /** A custom lead: 5 minutes to 3 hours, in steps of 5. */
 export const CUSTOM_LEAD = { min: 5, max: 180, step: 5, default: 45 } as const;
@@ -37,8 +38,10 @@ export type RideContext = {
   packLeft?: number;
 };
 
+/** What the ride is aimed at: a sunrise, a sunset or its start, and when. */
 export type Goal = { kind: 'sunrise' | 'sunset' | 'start'; at: number };
 
+/** One ring of the run: when it fires, what it says and whether it can be snoozed. */
 export type AlarmStep = {
   id: string;
   group: string;
@@ -64,6 +67,7 @@ export function pickGoal(c: RideContext, choice: GoalChoice): Goal {
   return start;
 }
 
+/** The screen a ring opens, for an alarm group. */
 export const alarmRoute = (group: string) => `/alarm/${encodeURIComponent(group)}`;
 
 /** The context lines for the first ring: the sun, the weather, the pack list. */

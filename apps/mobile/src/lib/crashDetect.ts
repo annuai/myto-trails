@@ -9,24 +9,35 @@ export type CrashEvidence =
   | { k: 'window'; t: number; peak: number; stepHz: number }
   | { k: 'tick'; t: number };
 
+/** What the detector remembers: recent speeds and an impact waiting to be confirmed. */
 export type CrashState = {
   /** Recent GPS speeds, newest last. */
   speeds: { t: number; kmh: number }[];
   /** An impact that is waiting to be confirmed. `stopped` once the bike has been seen stopping dead. */
   suspect?: { t: number; stopped: boolean };
 };
+/** The state before anything has been seen. */
 export const initialCrash: CrashState = { speeds: [] };
 
+/** Speed at or above which the rider counts as riding fast, for the default (mixed) setting. */
 export const MOVING_KMH = 25;
+/** An impact of this size or more counts as hard, for the default (mixed) setting. */
 export const IMPACT_G = 4;
 /** Road reacts to smaller impacts at lower speeds; off-road shrugs off the knocks of rough trails. */
 export const ROAD_IMPACT_G = 3;
+/** The riding-fast speed for the road setting. */
 export const ROAD_MOVING_KMH = 20;
+/** The hard-impact size for the off-road setting. */
 export const OFFROAD_IMPACT_G = 6;
+/** The riding-fast speed for the off-road setting. */
 export const OFFROAD_MOVING_KMH = 30;
+/** Below this speed the bike counts as stopped. */
 export const STOPPED_KMH = 8;
+/** At or above this speed after an impact, the rider counts as riding on. */
 export const RIDING_KMH = 15;
+/** How sensitive detection is: for road riding, mixed, or off-road. */
 export type CrashPreset = 'road' | 'mixed' | 'offroad';
+/** The presets in the order they are offered. */
 export const CRASH_PRESETS: CrashPreset[] = ['road', 'mixed', 'offroad'];
 const TUNING: Record<CrashPreset, { impactG: number; movingKmh: number }> = {
   road: { impactG: ROAD_IMPACT_G, movingKmh: ROAD_MOVING_KMH },

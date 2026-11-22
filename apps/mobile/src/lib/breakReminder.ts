@@ -2,12 +2,16 @@
 export const BREAK_AFTER_MS = 2 * 3_600_000;
 /** What the rider can choose in Notifications: minutes of riding before a break reminder. 0 is off. */
 export const BREAK_CHOICES = [0, 60, 90, 120, 180] as const;
+/** The break reminder interval used until the rider chooses another, in minutes. */
 export const DEFAULT_BREAK_MIN = 120;
+/** A reminder interval in words, like `2 hours`, or `Off` for 0. */
 export const breakLabel = (min: number) => (min === 0 ? 'Off' : min === 60 ? '1 hour' : min === 90 ? '1½ hours' : `${min / 60} hours`);
 /** A stop (or a pause) this long counts as a break and starts the count again; a traffic light or a photo does not. */
 export const BREAK_COUNTS_MS = 10 * 60_000;
 
+/** The state of the break watch: when riding began, when the current stop began and when the next reminder is due. */
 export type BreakState = { /** When the ride count began, null while there is no ride or just after a break. */ ridingSince: number | null; /** When the current stop began; null while moving. */ stoppedSince: number | null; /** The next reminder is due at this time. */ nextAt: number | null };
+/** The state at the start of a ride. */
 export const startBreak: BreakState = { ridingSince: null, stoppedSince: null, nextAt: null };
 
 /**

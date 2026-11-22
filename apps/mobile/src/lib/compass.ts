@@ -23,6 +23,7 @@ export function turnTo(from: number, to: number): number {
   return from + delta;
 }
 
+/** A reading on three axes. */
 export type Vec3 = { x: number; y: number; z: number };
 
 /**

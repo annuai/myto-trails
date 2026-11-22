@@ -1,5 +1,8 @@
+// Reading and writing a backup as a stream of framed pieces, so a large backup never sits in memory.
+
 import { BackupError } from './format';
 
+/** Anything bytes can be written to. */
 export interface ByteWriter { write(bytes: Uint8Array): Promise<void> }
 /** Reads up to `n` bytes; fewer (or none) only at the end of the file. */
 export interface ByteReader { read(n: number): Promise<Uint8Array> }
@@ -9,6 +12,7 @@ export const MAGIC = new TextEncoder().encode('MYTO3\n');
 /** A record larger than this is a damaged file, not a photo. */
 const MAX_FRAME = 256 * 1024 * 1024;
 
+/** Writes one piece, preceded by its length. */
 export async function writeFrame(out: ByteWriter, payload: Uint8Array) {
   const head = new Uint8Array(4);
   new DataView(head.buffer).setUint32(0, payload.length);
@@ -17,6 +21,7 @@ export async function writeFrame(out: ByteWriter, payload: Uint8Array) {
   await out.write(frame);
 }
 
+/** Reads exactly `n` bytes, or fails when the file ends early. */
 export async function readExact(r: ByteReader, n: number): Promise<Uint8Array> {
   const out = new Uint8Array(n);
   let got = 0;
