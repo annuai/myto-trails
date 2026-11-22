@@ -1,5 +1,8 @@
+// A ride being set up before it starts.
+
 import { create } from 'zustand';
 
+/** A place picked for the ride: position and name. */
 export type DraftPlace = { lat: number; lng: number; name: string };
 
 /**

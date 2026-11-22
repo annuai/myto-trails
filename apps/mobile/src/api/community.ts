@@ -5,31 +5,38 @@ import { forgetComments, forgetProfile } from './useApi';
 // Every club and comment action the app can take. Each one forgets what it made stale, so the screen that asked reloads fresh.
 type Id = { token: string; clubId: string };
 
+/** Starts a club. */
 export async function createClub(token: string, b: { name: string; description: string; womenOnly: boolean }) {
   const r = await api<{ clubId: string }>('/clubs', { method: 'POST', token, body: b });
   forgetProfile();
   return r.clubId;
 }
+/** Asks to join a club, with a phone number and a message. */
 export async function requestJoin({ token, clubId }: Id, b: { phone: string; message: string }) {
   await api(`/clubs/${clubId}/join`, { method: 'POST', token, body: b });
   forgetProfile();
 }
+/** Takes back a request to join. */
 export async function withdrawJoin({ token, clubId }: Id) {
   await api(`/clubs/${clubId}/join`, { method: 'DELETE', token });
   forgetProfile();
 }
+/** An admin accepts or declines a join request. */
 export async function decideRequest({ token, clubId }: Id, requestId: string, decision: 'accept' | 'decline') {
   await api(`/clubs/${clubId}/requests/${requestId}`, { method: 'POST', token, body: { decision } });
   forgetProfile();
 }
+/** Leaves a club. */
 export async function leaveClub({ token, clubId }: Id) {
   await api(`/clubs/${clubId}/leave`, { method: 'POST', token });
   forgetProfile();
 }
+/** An admin removes a member, by their handle. */
 export async function removeMember({ token, clubId }: Id, handle: string) {
   await api(`/clubs/${clubId}/members/${handle}`, { method: 'DELETE', token });
   forgetProfile();
 }
+/** An admin makes a member an admin, or an admin a member. */
 export async function setMemberRole({ token, clubId }: Id, handle: string, role: 'admin' | 'member') {
   await api(`/clubs/${clubId}/members/${handle}/role`, { method: 'PUT', token, body: { role } });
   forgetProfile();
@@ -39,10 +46,12 @@ export async function postToClub({ token, clubId }: Id, b: { body: string; paren
   await api(`/clubs/${clubId}/posts`, { method: 'POST', token, body: b });
   forgetProfile();
 }
+/** Answers a ride plan with going or maybe; null takes the answer back. */
 export async function respondToRide(token: string, postId: string, response: 'going' | 'maybe' | null) {
   await api(`/club-posts/${postId}/response`, { method: 'PUT', token, body: { response } });
   forgetProfile();
 }
+/** Deletes a club post. */
 export async function removePost(token: string, postId: string) {
   await api(`/club-posts/${postId}`, { method: 'DELETE', token });
   forgetProfile();
@@ -54,14 +63,17 @@ export async function postComment(token: string, slug: string, b: { body: string
   forgetComments(slug);
   return r.status;
 }
+/** Edits the rider's own trail comment. */
 export async function editComment(token: string, slug: string, id: string, body: string) {
   await api(`/comments/${id}`, { method: 'PATCH', token, body: { body } });
   forgetComments(slug);
 }
+/** Deletes the rider's own trail comment. */
 export async function deleteComment(token: string, slug: string, id: string) {
   await api(`/comments/${id}`, { method: 'DELETE', token });
   forgetComments(slug);
 }
+/** Reports a comment to the moderators, with a reason. */
 export async function reportComment(token: string, id: string, reason: string) {
   await api(`/comments/${id}/reports`, { method: 'POST', token, body: { reason } });
 }

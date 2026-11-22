@@ -17,6 +17,7 @@ type State = {
   wipe: () => void;
 };
 
+/** The marks the rider has earned, and how many services they have marked done. */
 export const useMarks = create<State>()(
   persist(
     (set, get) => ({

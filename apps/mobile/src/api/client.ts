@@ -1,5 +1,8 @@
+// The app's one way of calling the website's API: adds the base address, the token and a timeout, and turns failures into ApiFailure.
+
 import { API_BASE } from './config';
 
+/** A failed call, with the HTTP status and the error code the API sent (status 0 when the server could not be reached). */
 export class ApiFailure extends Error {
   constructor(readonly status: number, readonly code: string, message: string, readonly fields?: Record<string, string>) { super(message); }
 }

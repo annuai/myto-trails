@@ -8,6 +8,7 @@ type State = {
   next: () => void;
 };
 
+/** The marks waiting to be stamped on screen. */
 export const useMarkToast = create<State>()((set) => ({
   queue: [],
   push: (ids) => set((s) => ({ queue: [...s.queue, ...ids.filter((i) => !s.queue.includes(i))] })),

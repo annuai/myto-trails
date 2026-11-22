@@ -19,6 +19,7 @@ type State = {
   next: () => string;
 };
 
+/** The pull-down quotes: which are left in this round, the last one shown, and the lines downloaded for offline use. */
 export const useQuotes = create<State>()(
   persist(
     (set, get) => ({

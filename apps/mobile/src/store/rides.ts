@@ -1,3 +1,5 @@
+// The rides recorded on the phone.
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { uid } from '@/lib/id';
@@ -8,6 +10,7 @@ import { withoutSampleRide } from '@/lib/sim';
 import type { WaypointKind } from '@/lib/waypointKinds';
 import { storage } from './persist';
 
+/** A named stop on a ride. */
 export type Waypoint = { name: string; lat: number; lng: number; kind?: WaypointKind };
 export type SubmissionState = { /** `queued`: waiting for a signal. `failed`: the site refused it, see `error`. */ status: 'submitted' | 'queued' | 'failed'; error?: string; at: number; trailName: string; slug: string; clientId: string; /** What the moderators did with it, as last fetched. */ outcome?: { status: string; feedback?: string; checkedAt: number } };
 
@@ -35,6 +38,7 @@ type State = {
   setOutcome: (id: string, outcome: { status: string; feedback?: string }) => void;
 };
 
+/** The rides store. */
 export const useRides = create<State>()(
   persist(
     (set) => ({
@@ -64,4 +68,5 @@ export const useRides = create<State>()(
   ),
 );
 
+/** The total distance of the rider's real rides, leaving out the sample ones. */
 export const totalKm = (rides: Ride[]) => rides.filter((r) => !r.sample).reduce((n, r) => n + r.distanceKm, 0);

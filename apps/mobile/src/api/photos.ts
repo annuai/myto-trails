@@ -1,3 +1,5 @@
+// Sending photos to a club: ask for upload addresses, upload each copy, then finish the post.
+
 import { FileSystemUploadType, uploadAsync } from 'expo-file-system/legacy';
 import type { AlbumPhoto, ClubFeed, PostReaction } from './types';
 import { ApiFailure, api } from './client';
@@ -6,6 +8,7 @@ import { forgetProfile } from './useApi';
 import { PHOTO_KINDS, type PhotoSize } from '@/lib/photoSizes';
 
 type Target = { url: string; method: 'PUT'; headers: Record<string, string> };
+/** The answer to asking to post photos: an id and where to send each copy. */
 export type PhotoIntent = { assetId: string; uploads: Record<PhotoSize, Target> };
 
 /** Step one: say how big each copy is, and get an address for each to send to. */
@@ -29,6 +32,7 @@ export async function postPhotos(token: string, clubId: string, b: { body: strin
   return r.postId;
 }
 
+/** The copies made of every photo. */
 export const PHOTO_COPY_KINDS = PHOTO_KINDS;
 
 /** One reaction per person: a new one replaces the old, null takes it back. */

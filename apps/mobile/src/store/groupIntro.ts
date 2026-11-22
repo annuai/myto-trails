@@ -9,6 +9,7 @@ type State = {
   markSeen: () => void;
 };
 
+/** Whether the 'Ride together' explainer has been seen. */
 export const useGroupIntro = create<State>()(
   persist(
     (set) => ({ seen: false, markSeen: () => set({ seen: true }) }),

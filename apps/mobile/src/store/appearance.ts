@@ -20,6 +20,7 @@ type State = {
   setUsageStats: (on: boolean) => void;
 };
 
+/** The appearance choices: inverted colours and haptics. */
 export const useAppearance = create<State>()(
   persist(
     (set) => ({

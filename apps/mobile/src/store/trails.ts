@@ -1,3 +1,5 @@
+// Trails saved for offline use and the next planned trip.
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api } from '@/api/client';
@@ -6,6 +8,7 @@ import type { RouteDto, TrailDetail } from '@/api/types';
 import type { Status } from '@/ui/Chip';
 import { storage } from './persist';
 
+/** A trail kept for offline use: its details, route, when it was saved and its size. */
 export type Offline = { detail: TrailDetail; route: RouteDto | null; savedAt: number; bytes: number };
 export type NextTrip = { slug: string; name: string; status: Status; statusLabel: string; date?: string; /** The date as YYYY-MM-DD, which reminders are built from. `date` is the label shown on the dash. */ iso?: string };
 

@@ -1,3 +1,5 @@
+// React hooks that load data from the API and keep it fresh.
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '@/lib/geo';
 import { ApiFailure, api } from './client';
@@ -12,6 +14,7 @@ import { homeCountry, useRegion } from '@/store/region';
 import { fetchCountries, FALLBACK_COUNTRIES, type Country } from './countries';
 import { useTrailStore } from '@/store/trails';
 
+/** A loading result: the data, an error message, whether it is loading, and a way to reload. */
 export type Async<T> = { data?: T; error?: string; loading: boolean; reload: () => void };
 
 // Signing out forgets the account's cached screens.
@@ -54,6 +57,7 @@ export function useBrowsingCountry(): string | null {
   return resolveBrowsing({ home, countries, detected: fix ? countryAt(fix.lat, fix.lng) : null });
 }
 
+/** Trail search results for a search text. */
 export function useTrailSearch(q: string): Async<SearchResult> {
   const params = new URLSearchParams(countryQuery(useBrowsingCountry()));
   if (q.trim()) params.set('q', q.trim());
@@ -73,11 +77,13 @@ export function useTrail(slug: string): Async<{ detail: TrailDetail; route: Rout
   return { ...r, fromOffline: false };
 }
 
+/** The rider's saved trails. */
 export function useSaved(): Async<SavedItem[]> {
   const token = useAuth((s) => s.token);
   return useFetch(token ? 'saved' : null, async (signal) => (await api<{ items: SavedItem[] }>('/me/saved', { token, signal })).items);
 }
 
+/** Saves or unsaves a trail. */
 export async function setSaved(slug: string, saved: boolean, token: string) {
   await api(`/me/saved/${slug}`, { method: saved ? 'PUT' : 'DELETE', token });
   cacheDelete('saved');
@@ -153,6 +159,7 @@ export function useClubs(text: string) {
   return { mine, others: { ...others, hasMore: others.cursor !== null, loadMore }, /** The words the lists are showing results for, which trail what was typed by the pause. */ searched: q, reload };
 }
 
+/** One club's details. */
 export function useClub(id: string): Async<ClubDetail> {
   const token = useAuth((s) => s.token);
   return useFetch(token ? `club:${id}` : null, (signal) => api<ClubDetail>(`/clubs/${id}`, { token, signal }));
@@ -219,6 +226,7 @@ export function useBikeModels(o: { q: string; make: string | null; category: str
   return useFetch(`bikes:${params}`, (signal) => api<BikeModelPage>(`/bikes?${params}`, { signal }));
 }
 
+/** The bike makes for the picker. */
 export function useBikeMakes(): Async<BikeMakeList['items']> {
   return useFetch('bikes:makes', async (signal) => (await api<BikeMakeList>('/bikes/makes', { signal })).items);
 }

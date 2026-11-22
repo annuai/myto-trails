@@ -1,6 +1,10 @@
+// Home and work, saved as places.
+
 import type { StateCreator } from 'zustand';
 
+/** A saved place: its position, label and when it was set. */
 export type SavedPlace = { lat: number; lng: number; label: string; setAt: number };
+/** Home or work. */
 export type PlaceKind = 'home' | 'work';
 
 /** Home and Work as the rider saved them. Kept on the phone only, never sent to the server. */
