@@ -38,7 +38,7 @@ export type TrailFeature = {
   properties: { slug: string; name: string; place: string; shape: MarkerShape; access: string };
 };
 
-/** The points as a GeoJSON feature collection. A point with no position is left out. */
+/** The points as a GeoJSON feature collection. A point without a valid latitude and longitude is left out. */
 export function toFeatureCollection(points: MapPoint[]): { type: "FeatureCollection"; features: TrailFeature[] } {
   const features: TrailFeature[] = [];
   for (const p of points) {
