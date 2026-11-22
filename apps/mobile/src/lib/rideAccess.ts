@@ -1,3 +1,4 @@
+/** How much location access the phone has given: always, only while open, denied, or not yet known. */
 export type RideAccessState = 'always' | 'foreground' | 'denied' | 'unknown';
 
 /**

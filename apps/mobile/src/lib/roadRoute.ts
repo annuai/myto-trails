@@ -1,3 +1,5 @@
+// Planning a route along real roads.
+
 import { pathLength, type LatLng } from './geo';
 import { PLAN_KMH, simplify, type PlannedRoute } from './routePlan';
 import { route, type Directions, type RoutePrefs } from './routing';
@@ -16,6 +18,7 @@ export function chunkStops<T>(stops: T[], max = MAX_STOPS_PER_REQUEST): T[][] {
   return runs;
 }
 
+/** The planned routes: the best first, then alternatives. */
 export type RoadPlan = {
   /** The best route first, then any alternatives (offered only between two stops). */
   routes: PlannedRoute[];

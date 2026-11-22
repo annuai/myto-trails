@@ -1,9 +1,13 @@
+// A ride's story in time order: start, stops, waypoints, notes, voice notes, photos and finish.
+
 import { haversine } from './geo';
 import type { LatLng } from './geo';
 import type { JournalEntry } from './journalEntries';
 import type { Waypoint } from '@/store/rides';
 
+/** What a timeline event is. */
 export type TimelineKind = 'start' | 'finish' | 'break' | 'wait' | 'waypoint' | 'note' | 'voice' | 'photo';
+/** One event with its time, place and text. */
 export type TimelineEvent = { key: string; kind: TimelineKind; at: number; lat?: number; lng?: number; text?: string; entryId?: string; /** How long a stop lasted. */ durationSec?: number };
 
 /** A stop at least this long is shown on its own row as a long wait; shorter ones only count towards the total. */
@@ -17,7 +21,9 @@ type TimelineRide = { id: string; startedAt: number; durationSec: number; paused
 
 const RANK: Record<TimelineKind, number> = { start: 0, break: 1, wait: 1, waypoint: 1, note: 1, voice: 1, photo: 1, finish: 2 };
 
+/** A stop on the ride: when, where and how long. */
 export type Wait = { at: number; lat: number; lng: number; durationSec: number };
+/** The stops of a ride with how many were long and their total time. */
 export type WaitSummary = { waits: Wait[]; count: number; longCount: number; totalSec: number };
 
 /**

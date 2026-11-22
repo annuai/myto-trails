@@ -1,3 +1,5 @@
+// The web build cannot save map tiles: downloading fails, nothing is ever held, and deleting does nothing.
+
 import type { LatLng } from './geo';
 
 /** The browser has no offline map store. */

@@ -1,3 +1,5 @@
+// The web build has no ride notifications, so these do nothing.
+
 import type { RideActionId, RideCategory, RideNotice } from './rideActions';
 
 /** The browser build has no phone notifications. */

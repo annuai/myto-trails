@@ -34,6 +34,7 @@ const content = (n: Shown): Notifications.NotificationContentInput => (n.alarm
   ? { title: n.title, body: n.body, data: { route: n.route, alarmGroup: n.alarm.group }, sound: 'default', categoryIdentifier: n.alarm.snooze ? 'ride-alarm' : 'ride-alarm-last', interruptionLevel: 'timeSensitive' }
   : { title: n.title, body: n.body, data: { route: n.route }, ...(n.loud ? { sound: 'default' } : {}) });
 
+/** The phone's notifications: asking permission, scheduling and cancelling reminders, and reporting taps. */
 export const notifier: Notifier = {
   async permission(): Promise<Permission> {
     const p = await Notifications.getPermissionsAsync();

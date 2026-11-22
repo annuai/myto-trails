@@ -1,3 +1,5 @@
+// Cutting the private ends and places off a track before it is shared.
+
 import { haversine, nearPlacesRange, trimEnds, trimNearPlaces, type LatLng } from './geo';
 import { buildGpx } from './gpx';
 

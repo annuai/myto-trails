@@ -19,6 +19,10 @@ type Native = { route(tilesPath: string, requestJson: string): Promise<string> }
 /** How long the list of installed regions is trusted before it is read from disk again; a download or delete resets it at once. */
 const INSTALLED_TTL_MS = 60_000;
 
+/**
+ * A router that works out roads on the phone from the installed regions. It asks `native` and remembers the installed list for a short
+ * time.
+ */
 export function makeLocalRouter(native: Native, listInstalled: () => Promise<Installed[]>, now: () => number = Date.now): { router: LocalRouter; forget: () => void } {
   let cached: { at: number; list: Promise<Installed[]> } | undefined;
   const installed = () => {

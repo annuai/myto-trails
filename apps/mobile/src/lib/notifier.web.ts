@@ -11,6 +11,8 @@ export const notifier: Notifier = {
   openSettings: () => {},
 };
 
+/** The web has no notifications to tap: always null. */
 export const useTappedRoute = (): { route: string; key: string; id: string } | null => null;
 
+/** The web has no alarm rings to answer: always null. */
 export const useAlarmResponse = (): { group: string; action: 'up' | 'tap' | 'snooze'; key: string } | null => null;

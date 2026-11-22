@@ -35,6 +35,7 @@ export async function showRideNotice(id: string, n: RideNotice & { category?: Ri
   });
 }
 
+/** Removes a ride notification. */
 export async function clearRideNotice(id: string): Promise<void> {
   await Notifications.dismissNotificationAsync(id);
 }

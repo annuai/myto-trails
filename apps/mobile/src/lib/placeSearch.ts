@@ -1,8 +1,11 @@
+// Searching for a place by name, offline first and online as well.
+
 import { APP_HEADERS } from './appHeaders';
 import type { LatLng } from './geo';
 import { combine } from './offlineRegions/searchIndex';
 import { boxAround, kmFrom, NEARBY_KM, withinKm, type SearchScope } from './placeScope';
 
+/** A place found: its name, where it is, its position and how far it is from the search start. */
 export type Place = { name: string; /** Where it is, e.g. "Mysuru, Karnataka, India". */ detail: string; point: LatLng; /** How far from the search centre, set only for a place beyond "nearby". */ farKm?: number };
 
 /** What a search found, and how it was limited. `limited`: only nearby was searched, so a wider search could find more. `widened`: nothing was nearby, so the whole world was searched instead. */

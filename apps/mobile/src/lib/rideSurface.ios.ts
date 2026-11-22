@@ -1,3 +1,5 @@
+// The ride shown as an iOS Live Activity.
+
 import type { LiveActivity } from 'expo-widgets';
 import RideActivity from '@/features/rideSurface/RideActivity.tokens';
 import type { RideSurfaceProps } from './rideActions';
@@ -23,6 +25,7 @@ export async function showRideSurface(p: RideSurfaceProps): Promise<boolean> {
   }
 }
 
+/** Ends the ride's Live Activity. */
 export async function clearRideSurface(): Promise<void> {
   const all = new Set([existing(), ...RideActivity.getInstances()]);
   current = undefined;

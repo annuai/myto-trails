@@ -3,6 +3,7 @@ import { pathLength, type LatLng } from './geo';
 /** Average speed used for a rough estimate on mixed roads and trails. */
 export const PLAN_KMH = 35;
 
+/** A planned route: its points, distance and estimated time. */
 export type PlannedRoute = { points: LatLng[]; distanceKm: number; etaMin: number };
 
 /** A route from the points a rider tapped on the map, joined by straight lines. The estimate is rough on purpose. */

@@ -1,3 +1,5 @@
+// The ride shown on Android's lock screen and notification shade.
+
 import * as Notifications from 'expo-notifications';
 import { AndroidImportance, AndroidNotificationVisibility } from 'expo-notifications';
 import RideCard from '@/features/rideSurface/RideCard.tokens';
@@ -29,6 +31,7 @@ export async function showRideSurface(p: RideSurfaceProps): Promise<boolean> {
   }
 }
 
+/** Removes the ride from the lock screen. */
 export async function clearRideSurface(): Promise<void> {
   const live = await RideCard.get(ID).catch(() => null);
   await live?.cancel().catch(() => undefined);

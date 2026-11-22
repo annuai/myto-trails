@@ -1,3 +1,5 @@
+// What goes on a ride share card: its formats, the stats it can show and the model the card is drawn from.
+
 import { trimNearPlaces, type LatLng } from './geo';
 import { elevationM, distanceKm, durationParts, speedKmh, type Quantity } from './units';
 import { forSharing, PLACE_TRIM_M } from './privacy';
@@ -5,16 +7,23 @@ import { cardTokens } from './rideCard.tokens';
 import { simplifyTo } from './routePlan';
 import { deviceLocale } from './locale';
 
+/** The card shapes: story, post or square. */
 export type CardFormat = 'story' | 'post' | 'square';
+/** The pixel size of each card format. */
 export const CARD_SIZE: Record<CardFormat, { width: number; height: number }> = cardTokens.size;
 
+/** A figure a card can show. */
 export type CardStat = 'distance' | 'time' | 'topSpeed' | 'waypoints' | 'elevation';
+/** The figures shown until the rider chooses. */
 export const DEFAULT_STATS: CardStat[] = ['distance', 'time', 'topSpeed'];
+/** The most figures on one card. */
 export const MAX_CARD_STATS = 4;
 const ROUTE_POINTS = 200;
 
+/** A ride as the card needs it: name, time, distance, speed and route. */
 export type CardRide = { name: string; startedAt: number; distanceKm: number; durationSec: number; maxKmh: number; waypoints: number; points: LatLng[]; elevationGainM?: number };
 
+/** Everything a card is drawn from. */
 export type CardModel = {
   format: CardFormat; width: number; height: number;
   title: string; date: string;

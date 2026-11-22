@@ -8,17 +8,20 @@ const files = new Map<string, string>();
 const staged = new Map<string, string>();
 const key = (id: string, kind: MediaKind) => `${kind}:${id}`;
 
+/** Keeps a photo (and its rendered version, if any) in memory and returns its id and size. */
 export async function savePhoto(sourceUri: string, rendered?: string): Promise<{ id: string; width: number; height: number }> {
   const id = uid();
   files.set(key(id, 'photo'), rendered ?? sourceUri);
   if (rendered) files.set(`original:${id}`, sourceUri);
   return { id, ...photoTokens.size };
 }
+/** Keeps a voice note in memory under the given id. */
 export async function saveVoice(sourceUri: string, id: string): Promise<void> { files.set(key(id, 'voice'), sourceUri); }
 /** The address of a stored file, or empty when there is none. */
 export const mediaUri = (id: string, kind: MediaKind) => files.get(key(id, kind)) ?? '';
 /** True when the file is held. */
 export const hasMedia = (id: string, kind: MediaKind) => files.has(key(id, kind));
+/** A held file's content as base64 text. */
 export const readBase64 = async (id: string, kind: MediaKind) => {
   const uri = files.get(key(id, kind));
   if (!uri) throw new Error('missing');
@@ -34,6 +37,7 @@ export const removeAllMedia = () => { files.clear(); staged.clear(); };
 export async function stageMedia(id: string, kind: MediaKind, base64: string) { staged.set(key(id, kind), `data:${kind === 'photo' ? 'image/jpeg' : 'audio/mp4'};base64,${base64}`); }
 /** Throws away staged files. */
 export const discardStaged = () => staged.clear();
+/** Makes the staged files the real ones, either replacing what is held or merging with it. `rollback` puts back what was there before. */
 export function commitStaged(mode: 'replace' | 'merge'): { finalize: () => void; rollback: () => void } {
   const before = new Map(files);
   if (mode === 'replace') files.clear();
@@ -46,6 +50,7 @@ export function commitStaged(mode: 'replace' | 'merge'): { finalize: () => void;
 export const originalUri = (id: string) => files.get(`original:${id}`) ?? '';
 /** True when a photo's original is held. */
 export const hasOriginal = (id: string) => files.has(`original:${id}`);
+/** Replaces a photo with its film-look version, or restores the original when given null. */
 export async function applyFilm(id: string, rendered: string | null): Promise<void> {
   const original = files.get(`original:${id}`);
   if (rendered === null) { if (original) { files.set(key(id, 'photo'), original); files.delete(`original:${id}`); } return; }

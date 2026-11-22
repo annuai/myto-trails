@@ -23,6 +23,7 @@ export function chunkLine(line: LatLng[], maxKm: number = CHUNK_KM): LatLng[][] 
 const OVERPASS = 'https://overpass-api.de/api/interpreter';
 const dedupe = (stations: FuelStation[]) => { const seen = new Set<string>(); return stations.filter((s) => { const k = `${s.lat.toFixed(4)},${s.lng.toFixed(4)}`; if (seen.has(k)) return false; seen.add(k); return true; }); };
 
+/** What the pre-ride check found: the fuel gaps, the forecast days and whether the route is too long to check. */
 export type RouteCheck = { fuel: FuelGaps | null; days: DayForecast[]; tooLong: boolean };
 
 /** Fuel stops along a route (OpenStreetMap, through Overpass) and the next days' weather where it starts. Either part may be missing. */

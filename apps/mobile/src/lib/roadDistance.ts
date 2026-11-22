@@ -19,6 +19,10 @@ export function parseTable(body: unknown, count: number): (number | null)[] | un
   return row.slice(1).map((m) => (typeof m === 'number' ? m / 1000 : null));
 }
 
+/**
+ * Road distances in kilometres from one place to several, with null for any that could not be worked out. Undefined when the service could
+ * not be reached.
+ */
 export async function roadDistancesKm(from: LatLng, to: LatLng[], signal?: AbortSignal): Promise<(number | null)[] | undefined> {
   if (!to.length) return [];
   for (const host of [OSRM, OSRM_BACKUP]) {

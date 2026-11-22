@@ -1,3 +1,5 @@
+// Where the ride is shown outside the app. The default (web) build has none, so these do nothing.
+
 import type { RideActionId, RideSurfaceProps } from './rideActions';
 
 /**

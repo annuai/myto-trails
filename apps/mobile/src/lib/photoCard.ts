@@ -1,13 +1,18 @@
+// Where the ride overlay sits on a photo share card, and how a pinch or drag changes it.
+
 import { CARD_PAD } from './cardMap';
 import { photoLayout } from './photoCard.tokens';
 import type { CardModel } from './rideCard';
 
+/** Whether the stats sit in a bar or in a corner. */
 export type PhotoLayout = 'bar' | 'corner';
+/** Light or dark ink for the overlay, chosen to read on the photo. */
 export type OverlayInk = 'light' | 'dark';
 /** x, y = the overlay's centre as fractions of the picture's width and height. */
 export type Placement = { x: number; y: number; scale: number };
 type Size = { width: number; height: number };
 
+/** How small and how large the overlay can be made. */
 export const PLACEMENT_LIMITS = { minScale: 0.6, maxScale: 2.2 } as const;
 
 const { pictureWidth: PICTURE_WIDTH, corner: CORNER } = photoLayout;
@@ -51,6 +56,7 @@ export function dragPlacement(p: Placement, dx: number, dy: number, box: Size, c
   return clampPlacement({ ...p, x: p.x + dx / card.width, y: p.y + dy / card.height }, box, card);
 }
 
+/** The overlay's placement after a pinch of the given factor, kept inside the card. */
 export function pinchPlacement(start: Placement, factor: number, box: Size, card: Size): Placement {
   return clampPlacement({ ...start, scale: start.scale * factor }, box, card);
 }
