@@ -1,3 +1,5 @@
+// A small status label with a symbol, so the status never relies on colour.
+
 import { View } from 'react-native';
 import { AlertTriangle, Check, CircleHelp, X, type LucideIcon } from 'lucide-react-native';
 import { buzz } from '@/lib/haptics';
@@ -8,6 +10,7 @@ import { InkFill } from './InkFill';
 import { ScalePressable } from './motion';
 
 import { space, radius, size } from '@/theme/tokens';
+/** good, caution, stop or unknown. */
 export type Status = 'good' | 'caution' | 'stop' | 'unknown';
 const glyph: Record<Status, LucideIcon> = { good: Check, caution: AlertTriangle, stop: X, unknown: CircleHelp };
 

@@ -11,6 +11,7 @@ export const PROFILE_OPTIONS: Record<RecordingProfile, { accuracy: Location.Accu
   idle: { accuracy: Location.Accuracy.Balanced, timeInterval: 10_000 },
 };
 
+/** Below this battery level the recording switches to the battery-saving profile. */
 export const SAVER_BELOW_PCT = 20;
 /** While navigating, saver only from this low. */
 export const SAVER_ALWAYS_BELOW_PCT = 10;

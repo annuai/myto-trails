@@ -1,3 +1,5 @@
+// Search suggestions for the search box: trails, places and regions that start with the typed text, cached for a day.
+
 import { PUBLIC_DAY_CACHE_CONTROL } from "@/server/api/cache";
 import { getSql, withPublicRole } from "@/server/db/client";
 import { suggest } from "@/server/queries/search.sql";

@@ -16,7 +16,9 @@ export const OSM_API = process.env.EXPO_PUBLIC_OSM_API ?? 'https://api.openstree
 /** The id of this app's registration on openstreetmap.org (Settings, OAuth 2 applications). Without it nothing can be shared. */
 export const OSM_CLIENT_ID = process.env.EXPO_PUBLIC_OSM_CLIENT_ID ?? '';
 export const OSM_REDIRECT = 'myto://osm';
+/** The one permission asked of OpenStreetMap: to upload GPS traces. */
 export const OSM_SCOPE = 'write_gpx';
+/** True when this build has an OpenStreetMap client id, so sharing can work. */
 export const osmConfigured = (): boolean => OSM_CLIENT_ID.length > 0;
 
 /** How much is cut off each end of a shared ride, so a home or workplace is never published. */
@@ -28,6 +30,7 @@ export const OSM_MIN_POINTS = 20;
 /** "Anonymous, in order, with times": mappers can follow the path, and nothing says whose it is. */
 export const OSM_VISIBILITY = 'trackable';
 
+/** A ride as it is offered for sharing to OpenStreetMap. */
 export type ShareableRide = { id: string; distanceKm: number; points: LatLng[]; breaks?: number[]; sample?: boolean };
 
 /** Rides worth sharing: recorded on a phone's GPS (not simulated, not imported), long enough, and not the old sample. */
@@ -65,6 +68,7 @@ export const randomToken = (bytes: Uint8Array): string => base64url(bytes);
 /** The PKCE challenge for a verifier: its SHA-256, base64url. */
 export const challengeFor = (verifier: string): string => base64url(sha256(new TextEncoder().encode(verifier)));
 
+/** The address the rider opens to allow sharing, with the PKCE challenge and state. */
 export function authorizeUrl(p: { challenge: string; state: string; clientId?: string }): string {
   const q = new URLSearchParams({ response_type: 'code', client_id: p.clientId ?? OSM_CLIENT_ID, redirect_uri: OSM_REDIRECT, scope: OSM_SCOPE, code_challenge: p.challenge, code_challenge_method: 'S256', state: p.state });
   return `${OSM_SITE}/oauth2/authorize?${q}`;
@@ -79,6 +83,7 @@ export function codeFromRedirect(url: string, state: string): { code: string } |
   return code ? { code } : { error: 'OpenStreetMap sent no code.' };
 }
 
+/** The request body that exchanges the returned code for a token, with the PKCE verifier. */
 export const tokenBody = (code: string, verifier: string, clientId: string = OSM_CLIENT_ID): string =>
   new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: OSM_REDIRECT, client_id: clientId, code_verifier: verifier }).toString();
 

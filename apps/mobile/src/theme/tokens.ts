@@ -4,9 +4,11 @@ import { dark, fixed, inkFillBlack, inkFillCream, inkSolid, light, tints, type I
 
 export { dark, fixed, inkFillBlack, inkFillCream, inkSolid, light, tints };
 export type { InkFill, Palette };
+/** The colour roles text and icons can take. */
 export type Tone = 'ink' | 'muted' | 'accent' | 'good' | 'caution' | 'stop' | 'unknown' | 'onInk';
 export type Tint = keyof typeof tints;
 
+/** The spacing scale, in points. */
 export const space = { half: 2, 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 12: 48 } as const;
 /** The vertical rhythm of a page, in one place so every page matches: under the page title, between sections, and under a section heading. */
 export const rhythm = { afterTitle: space[6], betweenSections: space[8], afterHeading: space[3] } as const;
@@ -62,12 +64,14 @@ export const motion = {
   rollTickGap: 60,
 } as const;
 
+/** The font families. */
 export const font = {
   regular: 'Geist_400Regular', medium: 'Geist_500Medium', semibold: 'Geist_600SemiBold',
   display: 'Michroma_400Regular',
   mono: 'GeistMono_400Regular', monoMedium: 'GeistMono_500Medium',
 } as const;
 
+/** The text styles. */
 export const type = {
   // Michroma for large titles, as on the website. It is wide and has one weight, so the sizes are smaller than Geist's.
   hero: { fontFamily: font.display, fontSize: 26, lineHeight: 34, letterSpacing: -0.2 },

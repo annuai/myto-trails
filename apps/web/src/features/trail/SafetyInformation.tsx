@@ -1,6 +1,7 @@
 import type { Hazard } from "@moto-trails/domain";
 import { hazardLabel } from "./labels";
 
+/** The hazards and safety notes of a trail. Nothing when there are none. */
 export function SafetyInformation({ hazards, safetyNotes }: { hazards: Hazard[] | string[]; safetyNotes: string | null }) {
   if (hazards.length === 0 && !safetyNotes) return null;
   return (

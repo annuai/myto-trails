@@ -1,3 +1,5 @@
+// The backup file's format: its envelope, version, passphrase rules, errors and base64 helpers.
+
 import type { Todo } from '../todos';
 import type { DocPhoto } from '../localMedia/types';
 import type { JournalEntry } from '../journalEntries';
@@ -8,13 +10,16 @@ import type { Trip } from '@/store/trips';
 import type { Contact, Licence, Medical, Vehicle } from '@/store/profile';
 import type { PlaceKind, SavedPlace } from '@/store/placesCore';
 
+/** The format name written into every backup. */
 export const FORMAT = 'myto-backup';
 /**
  * New optional keys in `Snapshot` are added without a bump (older files simply lack them). Bump, with a `migrate` step, only for a
  * change old files cannot meet: the stream reader (import.ts) refuses any version but this one, so a bump makes older files unimportable.
  */
 export const CURRENT_VERSION = 3;
+/** The shortest passphrase accepted. */
 export const MIN_PASSPHRASE_LENGTH = 10;
+/** The file extension of a backup. */
 export const FILE_EXTENSION = 'myto';
 
 /** What the file says about itself in the clear. Everything else is inside `ciphertext`. */
@@ -50,6 +55,7 @@ export type BackupFile = { kind: 'doc' | 'photo' | 'voice'; id: string; b64: str
 /** A backup opened for reading: its data in full, and its files one at a time so they never all sit in memory. */
 export type OpenedBackup = { meta: Snapshot; files: () => AsyncGenerator<BackupFile> };
 
+/** Why a backup could not be made or opened. */
 export type BackupErrorCode = 'not-a-backup' | 'newer-version' | 'wrong-passphrase' | 'corrupt' | 'apply-failed' | 'weak-passphrase' | 'unreadable-file';
 
 const messages: Record<BackupErrorCode, string> = {
@@ -62,14 +68,17 @@ const messages: Record<BackupErrorCode, string> = {
   'weak-passphrase': `Use a passphrase of at least ${MIN_PASSPHRASE_LENGTH} characters.`,
 };
 
+/** An error with a code and a message written for the rider. */
 export class BackupError extends Error {
   constructor(readonly code: BackupErrorCode) { super(messages[code]); this.name = 'BackupError'; }
 }
 
+/** The file name for a backup made at a given time. */
 export function backupFileName(now: Date) {
   return `myto-backup-${now.toISOString().slice(0, 10)}.${FILE_EXTENSION}`;
 }
 
+/** Reads the clear part of a backup file. Refuses text that is not a backup, or one made by a newer app version. */
 export function parseEnvelope(text: string): Envelope {
   let raw: unknown;
   try { raw = JSON.parse(text); } catch { throw new BackupError('not-a-backup'); }
@@ -84,6 +93,7 @@ const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 const B64_BITS = 6;
 const BYTE_BITS = 8;
 
+/** Bytes as base64 text. */
 export function toBase64(bytes: Uint8Array): string {
   let out = '';
   for (let i = 0; i < bytes.length; i += 3) {
@@ -93,6 +103,7 @@ export function toBase64(bytes: Uint8Array): string {
   return out;
 }
 
+/** Base64 text back to bytes. */
 export function fromBase64(text: string): Uint8Array {
   const clean = text.replace(/=+$/, '');
   const out = new Uint8Array(Math.floor((clean.length * B64_BITS) / BYTE_BITS));

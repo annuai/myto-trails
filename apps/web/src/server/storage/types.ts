@@ -1,8 +1,11 @@
+/** The buckets: quarantine holds files not yet checked, public holds what the site serves, and originals holds the kept originals. */
 export const STORAGE_BUCKETS = ["quarantine", "originals", "public"] as const;
 export type StorageBucket = (typeof STORAGE_BUCKETS)[number];
 
+/** Where and how a client sends a file. */
 export type UploadTarget = { url: string; method: "PUT"; headers: Record<string, string> };
 
+/** What every storage backend offers, such as signed upload addresses and reading files. */
 export interface StorageProvider {
   readonly name: "memory" | "local" | "r2" | "supabase";
   /** Signed URL the client PUTs the file to. Callers must still run verifyUpload afterwards. */
@@ -29,6 +32,7 @@ export interface StorageProvider {
   publicUrl(key: string): string;
 }
 
+/** A storage key that is not safe. */
 export class InvalidKeyError extends Error {
   constructor(message: string) {
     super(message);
@@ -36,6 +40,7 @@ export class InvalidKeyError extends Error {
   }
 }
 
+/** A signed-address lifetime outside the allowed range. */
 export class InvalidExpiryError extends Error {
   constructor(message: string) {
     super(message);

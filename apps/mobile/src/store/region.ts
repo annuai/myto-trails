@@ -17,6 +17,7 @@ type State = {
   wipe: () => void;
 };
 
+/** Where the rider lives and their choice of kilometres or miles. */
 export const useRegion = create<State>()(
   persist(
     (set) => ({
@@ -33,7 +34,9 @@ export const useRegion = create<State>()(
 /** The home country in use: the rider's choice, else the phone's region. It sets the currency and which country's trails and clubs the lists show, not the distance unit. */
 export const homeCountry = (s: Pick<State, 'home'>): string | null => s.home ?? deviceRegion();
 export const effectiveUnit = (s: Pick<State, 'unit'>): DistanceUnit => s.unit ?? 'km';
+/** The rider's home country code, or null. */
 export const useHomeCountry = (): string | null => useRegion(homeCountry);
+/** The distance unit in force. */
 export const useDistanceUnit = (): DistanceUnit => useRegion(effectiveUnit);
 /** The currency amounts are shown in, or null when we do not know one for the home country. */
 export const useCurrency = (): string | null => currencyFor(useHomeCountry());

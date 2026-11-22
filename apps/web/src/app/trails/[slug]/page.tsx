@@ -1,3 +1,5 @@
+// A trail's page: its details, the save button, rider reports, comments and who has ridden it.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";

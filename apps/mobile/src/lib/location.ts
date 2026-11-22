@@ -1,7 +1,10 @@
+// Reading the phone's location.
+
 import { Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { PROFILE_OPTIONS, type RecordingProfile } from './recordingProfile';
 
+/** A position reading: place, time, and where available elevation, speed and accuracy. */
 export type Fix = { lat: number; lng: number; t: number; ele?: number; speed?: number | null; accuracy?: number };
 
 /**

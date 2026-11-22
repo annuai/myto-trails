@@ -1,5 +1,10 @@
+// The browser side of an upload: ask for an address, send the file, then ask the server how it went.
+
+/** What can be uploaded. */
 export type UploadKind = "gpx" | "image";
+/** Where an upload stands, with the route or media it became and any similar routes. */
 export type UploadOutcome = { status: string; kind?: UploadKind; routeId?: string; mediaId?: string; similar?: { routeId: string; similarity: number }[]; rejectMessage?: string };
+/** The finished upload, or a message to show. */
 export type UploadResult = { ok: true; uploadId: string; outcome: UploadOutcome } | { ok: false; message: string };
 
 const NETWORK = "We couldn't reach the server. Check your connection and try again.";

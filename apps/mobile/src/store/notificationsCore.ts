@@ -11,6 +11,7 @@ const MAX_INBOX = 100;
 const defaults = (): Prefs => ({ todos: true, trips: true, paused: true, tripLeadMin: REMIND_BEFORE_MIN, showDetails: false, groupSignals: true, breakEveryMin: DEFAULT_BREAK_MIN, daylightAlert: true, habit: true, check: true, pillion: true });
 const toItem = (r: Reminder, at: number): InboxItem => ({ id: r.id, title: r.title, body: r.body, route: r.route, kind: r.kind, at, read: false });
 
+/** The notification choices, the reminders scheduled and the inbox. */
 export type NotificationsState = {
   prefs: Prefs;
   /** The reminders the app has scheduled and not yet shown. They are what the history is filled from. */
@@ -45,6 +46,7 @@ const merge = (inbox: InboxItem[], add: InboxItem[]) => {
   return [...add.filter((i) => !have.has(i.id)), ...inbox].sort((a, b) => b.at - a.at).slice(0, MAX_INBOX);
 };
 
+/** The store's actions and starting state, separate from persistence so they can be tested. */
 export const notificationsSlice = (): StateCreator<NotificationsState> => (set) => ({
   prefs: defaults(), scheduled: [], inbox: [], kmNotified: {}, asked: false,
   setPref: (key, value) => set((s) => ({ prefs: { ...s.prefs, [key]: value } })),

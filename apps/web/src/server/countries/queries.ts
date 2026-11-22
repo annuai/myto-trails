@@ -10,6 +10,7 @@ export async function getCountries(): Promise<CountryDto[]> {
   return withPublicRole(getSql(), (tx) => listCountries(tx));
 }
 
+/** A country by the slug in its page address, or null. */
 export async function getCountryBySlug(slug: string): Promise<CountryDto | null> {
   return (await getCountries()).find((c) => c.slug === slug) ?? null;
 }

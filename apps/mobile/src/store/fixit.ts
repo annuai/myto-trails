@@ -1,7 +1,10 @@
+// What the rider has done in the Fix it guides: the last pre-ride check and how often they fixed each thing.
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { storage } from './persist';
 
+/** A pre-ride check: when, and which items needed fixing. */
 export type PreRideCheck = { at: number; /** Check item ids the rider said need fixing. */ flagged: string[] };
 
 type State = {
@@ -15,6 +18,7 @@ type State = {
   wipe: () => void;
 };
 
+/** The Fix it store. */
 export const useFixit = create<State>()(
   persist(
     (set) => ({
@@ -27,4 +31,5 @@ export const useFixit = create<State>()(
   ),
 );
 
+/** How many fixes the rider has made in total. */
 export const totalFixed = (fixed: Record<string, number>) => Object.values(fixed).reduce((n, v) => n + v, 0);

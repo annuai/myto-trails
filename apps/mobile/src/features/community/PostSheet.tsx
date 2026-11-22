@@ -1,3 +1,5 @@
+// The sheet for writing a club post or ride plan, with photos.
+
 import { useEffect, useState } from 'react';
 import { Image, Pressable, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,6 +21,7 @@ import { radius } from '@/theme/tokens';
 import { Icon } from '@/ui/Icon';
 import { photoPost } from './photos.tokens';
 
+/** What the sheet hands back: the text, an optional ride time and place, and the chosen photos. */
 export type NewPost = { body: string; rideAt?: string; place?: string; /** The chosen photos, as the phone's own file addresses. A post with photos is never a ride plan. */ photos?: string[] };
 const DEFAULT_START = 6 * 60 + 30;
 

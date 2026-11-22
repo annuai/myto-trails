@@ -8,6 +8,10 @@ export const DARK_BUFFER_MIN = 30;
 export const ALERT_BEFORE_MIN = 45;
 const MIN = 60_000;
 
+/**
+ * How a ride fits the daylight: when it would end if started now, how much would be after dark, and the latest start that still ends before
+ * sunset.
+ */
 export type DaylightAdvice = {
   sunsetMs: number;
   /** About how long the ride takes at a steady pace. */
@@ -51,4 +55,5 @@ export async function fetchSunsetMs(lat: number, lng: number, fetcher: typeof fe
   } catch { return undefined; }
 }
 
+/** The sunset time as a clock time. */
 export const sunsetClock = clock;

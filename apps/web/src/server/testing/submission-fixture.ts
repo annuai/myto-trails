@@ -5,6 +5,7 @@ import { attachRoute, createDraft, saveStep, submit } from "../submissions/servi
 
 let n = 0;
 
+/** Creates a user for a test, optionally a moderator or admin. */
 export async function makeUser(sql: Sql, o: { name?: string; role?: "moderator" | "admin" } = {}): Promise<string> {
   const [u] = await sql`insert into app_user (email, display_name) values (${`fx${++n}-${crypto.randomUUID().slice(0, 6)}@example.test`}, ${o.name ?? "Rider Ravi"}) returning id`;
   if (o.role) {

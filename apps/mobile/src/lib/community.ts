@@ -11,6 +11,7 @@ const ist = (iso: string) => new Date(new Date(iso).getTime() + IST_MIN * 60_000
 /** A ride's start as the instant the server expects: a date ('YYYY-MM-DD') and minutes after midnight, India time. */
 export const rideAtISO = (date: string, minutes: number) => `${date}T${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}:00+05:30`;
 
+/** Minutes since midnight as a 12-hour clock time. */
 export const clockLabel = (minutes: number) => {
   const h = Math.floor(minutes / 60);
   return `${h % 12 || 12}:${pad(minutes % 60)} ${h < 12 ? 'AM' : 'PM'}`;
@@ -27,10 +28,13 @@ export function formatPosted(iso: string, now: Date = new Date()): string {
   return d.getUTCFullYear() === ist(now.toISOString()).getUTCFullYear() ? day : `${day} ${d.getUTCFullYear()}`;
 }
 
+/** The tags a trail comment can have, the same as on the website. */
 export const COMMENT_TAGS = ['gate_closed', 'water_high', 'blocked', 'good_condition', 'tip'] as const satisfies readonly CommentTag[];
+/** The words shown for each comment tag. */
 export const TAG_LABEL: Record<CommentTag, string> = { gate_closed: 'Gate closed', water_high: 'Water high', blocked: 'Trail blocked', good_condition: 'Good condition', tip: 'Tip' };
 /** The server lets riders edit a comment for ten minutes. */
 export const COMMENT_EDIT_MS = 10 * 60_000;
+/** True while a comment is still within the time its author may edit it. */
 export const canEditComment = (createdAt: string, now: number = Date.now()) => now - new Date(createdAt).getTime() <= COMMENT_EDIT_MS;
 
 /** Club posts and trail comments may not carry web addresses; the server enforces it, this saves a round trip. */

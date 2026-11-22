@@ -4,6 +4,7 @@ import type { AlarmSetting } from '@/lib/alarm/plan';
 /** A record of getting up is kept this long, so a re-sync never rings a ride again; then it is dropped. */
 const WOKE_KEEP_MS = 10 * 86_400_000;
 
+/** The ride alarm settings and what has woken. */
 export type AlarmsState = {
   /** By setting key (`trip:<id>`, `event:<id>`). */
   settings: Record<string, AlarmSetting>;
@@ -17,6 +18,7 @@ export type AlarmsState = {
   reset: () => void;
 };
 
+/** The store's actions and starting state, separate from persistence so they can be tested. */
 export const alarmsSlice = (): StateCreator<AlarmsState> => (set) => ({
   settings: {},
   woke: {},

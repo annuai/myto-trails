@@ -12,6 +12,7 @@ import type { TrailSummaryDto } from "./types";
 /* eslint-disable @typescript-eslint/no-explicit-any -- rows come back from raw SQL untyped and are mapped to typed DTOs */
 type Row = Record<string, any>;
 
+/** A search result: a trail summary with its public position and, for a position search, its distance from the starting point. */
 export type SearchItem = TrailSummaryDto & {
   /** Public location only (the approximate point for sensitive trails). */
   lon: number | null;
@@ -20,8 +21,10 @@ export type SearchItem = TrailSummaryDto & {
   travel: { oneWayMin: number; roundTripMin: number } | null;
 };
 
+/** Where a distance search started: a named place or the rider's own point. */
 export type SearchOrigin = { kind: "place"; slug: string; name: string } | { kind: "point" };
 
+/** One page of search results with the total and the paging numbers. */
 export type SearchResult = {
   items: SearchItem[];
   total: number;
@@ -31,12 +34,14 @@ export type SearchResult = {
   unknownPlace?: true;
 };
 
+/** A searchable place: its name, state and position. */
 export type PlaceDto = { slug: string; name: string; stateName: string; lat: number; lon: number };
 
 const CONTROL = /[\u0000-\u001f\u007f]/g;
 const clean = (q: string) => q.replace(CONTROL, " ").trim().slice(0, 100);
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
+/** A place by slug, or null when the slug is malformed or unknown. */
 export async function findPlace(sql: Sql, slug: string): Promise<PlaceDto | null> {
   if (!isValidSlug(slug)) return null;
   const [r] = (await sql`select slug, name, state_name, lat, lon from public_places where slug = ${slug}`) as Row[];
@@ -90,6 +95,7 @@ async function buildFilter(sql: Sql, p: SearchParams, opts: { point?: { lat: num
   return { origin, originGeog, where, q };
 }
 
+/** Filtered, sorted and paged trail search. Text is cleaned first and every value is a bound parameter. */
 export async function searchTrails(
   sql: Sql,
   p: SearchParams,
@@ -138,12 +144,14 @@ export async function searchTrails(
   return { items: await attachCovers(sql, items), total, page: p.page, pageSize: PAGE_SIZE, origin };
 }
 
+/** What the search box offers while typing: trails, places and regions. */
 export type Suggestions = {
   trails: { slug: string; name: string; place: string }[];
   places: { slug: string; name: string; state: string }[];
   regions: { slug: string; name: string; countrySlug: string }[];
 };
 
+/** Matches a few trails, places and regions that start with what the rider has typed. */
 export async function suggest(sql: Sql, rawQuery: string): Promise<Suggestions> {
   const q = clean(rawQuery);
   if (!q) return { trails: [], places: [], regions: [] };
@@ -167,6 +175,7 @@ export async function suggest(sql: Sql, rawQuery: string): Promise<Suggestions> 
   };
 }
 
+/** The most points the map is sent for one search. */
 export const MAP_POINT_CAP = 500;
 
 /** Public points for every match (no paging), for the map. Sensitive trails contribute only their public point. */

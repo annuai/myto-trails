@@ -1,3 +1,5 @@
+// Where an upload stands (waiting, processing, ready, rejected), for the signed-in rider who made it.
+
 import { getCurrentUser } from "@/server/auth/session";
 import { getSql } from "@/server/db/client";
 import { getUploadStatus } from "@/server/uploads/service";

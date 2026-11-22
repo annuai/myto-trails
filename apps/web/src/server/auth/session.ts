@@ -1,3 +1,5 @@
+// The signed-in user for a request, read from the session cookie, and the guard that sends visitors to sign in.
+
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { redirect } from "next/navigation";
@@ -8,6 +10,7 @@ import { createEmailSender, type EmailSender } from "./email";
 import { SESSION_COOKIE } from "./session-cookie";
 
 let sender: EmailSender | undefined;
+/** The email sender for this server, created once from the environment. */
 export function getEmailSender(): EmailSender {
   sender ??= createEmailSender(loadServerEnv(process.env).email);
   return sender;

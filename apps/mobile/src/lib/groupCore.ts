@@ -1,7 +1,11 @@
+// The rules of a group ride on the phone: statuses, polling, changes in the group, and what each rider's tile shows.
+
 import { haversine } from './geo';
 import { shortDistanceM, withUnit } from './units';
 
+/** What a rider can signal: all good, wait up, fuel stop, break or needs help. */
 export type GroupStatus = 'ok' | 'wait_up' | 'fuel' | 'break' | 'help';
+/** A job in the group. */
 export type RiderTitle = 'captain' | 'marshal' | 'medic' | 'sweep';
 /** `titles` are the jobs the leader gave this rider, any number together. An older server sends only `eventRole`, the one job an event gave them. */
 export type GroupRiderView = { id: string; name: string; role: string; eventRole?: RiderTitle | null; titles?: RiderTitle[]; lat: number | null; lng: number | null; /** ISO instant of the last position, null when none. */ at: string | null; status: GroupStatus; /** The rider told the group they got home. They stay on the list, with no position. */ home?: boolean };
@@ -9,6 +13,7 @@ export type GroupRiderView = { id: string; name: string; role: string; eventRole
 /** A rider whose last position is older than this is shown as "not seen". */
 export const STALE_MS = 2 * 60_000;
 
+/** The words shown for each status. */
 export const STATUS_LABEL: Record<GroupStatus, string> = { ok: 'All good', wait_up: 'Wait up', fuel: 'Fuel stop', break: 'Break', help: 'Needs help' };
 
 /** The titles a rider holds, from the list the leader set or else the one job an event gave them. */
@@ -53,6 +58,7 @@ export function distanceToLeaderM(riders: GroupRiderView[], meId: string): numbe
 export const POLL_MOVING_MS = 20_000;
 /** A group bigger than this polls more slowly. */
 export const BIG_GROUP = 30;
+/** How often to ask the server for the group: every 20 s while riding, slower when stopped or in the background, quickly when someone needs help, and slower again for a big group. */
 export function pollIntervalMs(s: { moving: boolean; anyHelp: boolean; backgrounded?: boolean; /** How many riders are in the group. */ riders?: number }): number {
   const big = (s.riders ?? 0) > BIG_GROUP;
   if (s.anyHelp) return big ? 10_000 : 5_000;
@@ -60,6 +66,7 @@ export function pollIntervalMs(s: { moving: boolean; anyHelp: boolean; backgroun
   return (s.moving ? POLL_MOVING_MS : 30_000) * (big ? 1.5 : 1);
 }
 
+/** A rider whose status changed, from one to another. */
 export type SignalChange = { rider: GroupRiderView; from: GroupStatus; to: GroupStatus };
 
 /**
@@ -92,6 +99,7 @@ export function signalNotice(c: SignalChange): { title: string; body: string } |
   return { title: c.to === 'help' ? 'Group ride: help needed' : 'Group ride', body };
 }
 
+/** What a rider's tile shows: name, colour, status and position. */
 export type RiderTile = { /** Told the group they got home. */ home?: boolean; id: string; name: string; /** Which of the group's colours this rider is. */ slot: number; isMe: boolean; role: string; /** The jobs this rider holds, any number. */ titles: RiderTitle[]; status: GroupStatus; /** The same in metres, for ordering; null without both positions. */ distanceM: number | null; /** "350 m" or "1.2 km" (miles and feet in miles mode) from you; null without both positions. */ distance: string | null; /** "just now", "40 s ago", "3 min ago", or "not seen yet". */ seen: string; stale: boolean; position: { lat: number; lng: number } | null };
 
 const distanceText = (m: number) => withUnit(shortDistanceM(m));

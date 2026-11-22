@@ -1,5 +1,6 @@
 import type { StorageBucket, StorageProvider } from "./types";
 
+/** An upload that matches what was promised, or how it did not: missing, too large, a different size, or a type that is not allowed. */
 export type VerifyResult = { ok: true } | { ok: false; reason: "missing" | "too_large" | "size_mismatch" | "type_not_allowed" };
 
 const baseType = (contentType: string) => contentType.split(";")[0]!.trim().toLowerCase();

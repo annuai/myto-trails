@@ -1,3 +1,5 @@
+// A moderator's review of one submitted trail, with the decision form. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";

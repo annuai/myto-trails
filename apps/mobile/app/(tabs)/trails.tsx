@@ -1,3 +1,5 @@
+// The Trails tab: trails nearest the rider with their distances, and the saved trails.
+
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';

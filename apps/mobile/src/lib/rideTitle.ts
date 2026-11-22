@@ -7,6 +7,7 @@ import type { Habit } from './habit';
  */
 export const TITLE_MAX = 32;
 
+/** What the greeting is chosen from: the time and day, how many rides the rider has, any planned ride and their commute pattern. */
 export type TitleContext = {
   now: Date;
   /** The rider's usual ride times (see findHabits). */
@@ -37,6 +38,7 @@ function commute(c: TitleContext): { morning: boolean } | undefined {
   return h ? { morning: h.startMin < 12 * MIN } : undefined;
 }
 
+/** The question shown above the start button, chosen from the context: 'Off to the office?', 'Chasing the sunrise?', 'Ready for your first ride?' and the like. */
 export function rideTitle(c: TitleContext): string {
   const day = c.now.getDay(), hour = c.now.getHours();
   if (c.rides === 0) return 'Ready for your first ride?';

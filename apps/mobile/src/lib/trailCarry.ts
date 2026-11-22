@@ -1,9 +1,15 @@
+// What to carry on a trail, and the limits on the notes a rider can add.
+
 import type { CarryItem, WomenSafe } from '@moto-trails/domain';
 import type { Status } from '@/ui/Chip';
 
+/** The least water a rider can enter, in litres. */
 export const WATER_MIN = 0.5;
+/** The most water a rider can enter, in litres. */
 export const WATER_MAX = 20;
+/** The longest note on what to carry. */
 export const CARRY_NOTES_MAX = 300;
+/** The longest note about the best time to arrive. */
 export const ARRIVAL_NOTE_MAX = 200;
 const WATER_PROBLEM = `Water is between ${WATER_MIN} and ${WATER_MAX} litres.`;
 

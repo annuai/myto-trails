@@ -6,6 +6,7 @@ export type Country = { iso2: string; name: string; slug: string; enabled: boole
 /** What the app assumes before (or without) an answer from the server: India is open, nothing else is. */
 export const FALLBACK_COUNTRIES: Country[] = [{ iso2: 'IN', name: 'India', slug: 'india', enabled: true, comingSoon: false }];
 
+/** The countries the site lists, with whether each is open. */
 export const fetchCountries = async (signal?: AbortSignal): Promise<Country[]> => (await api<{ countries: Country[] }>('/countries', { signal })).countries;
 
 /** "Tell me once when it opens." Sends the email and nothing else; the server keeps it only to send that one message. */

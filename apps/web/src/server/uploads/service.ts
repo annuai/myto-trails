@@ -1,3 +1,6 @@
+// Uploads in two steps: the client asks for a signed address and sends the file straight to storage, then asks the server to check it.
+// Nothing is trusted until it has been checked.
+
 import { createHash, randomUUID } from "node:crypto";
 import type { Sql } from "postgres";
 import { GPX_MAX_BYTES, IMAGE_MAX_BYTES } from "@moto-trails/domain";
@@ -6,6 +9,7 @@ import { checkOpenCountry } from "../submissions/country";
 import { processImage } from "../media/image";
 import { buildObjectKey, verifyUpload, type StorageProvider, type UploadTarget } from "../storage";
 
+/** What can be uploaded: a GPX file or an image. */
 export type UploadKind = "gpx" | "image";
 
 const GPX_TYPES = ["application/gpx+xml", "application/xml", "text/xml", "application/octet-stream"];
@@ -16,6 +20,7 @@ const UPLOAD_URL_SECONDS = 900;
 
 const baseType = (t: string) => t.split(";")[0]!.trim().toLowerCase();
 
+/** An address to send the file to, or why not. */
 export type RequestUploadResult =
   | { ok: true; uploadId: string; target: UploadTarget; contentType: string }
   | { ok: false; reason: "invalid" | "rate_limited" };
@@ -44,6 +49,7 @@ export async function requestUpload(
   return { ok: true, uploadId, target, contentType };
 }
 
+/** Where an upload stands: waiting, being processed, ready, rejected or removed. */
 export type UploadOutcome = {
   status: "not_found" | "pending" | "processing" | "ready" | "rejected" | "removed";
   kind?: UploadKind;
@@ -195,4 +201,5 @@ async function processImageUpload(sql: Sql, storage: StorageProvider, put: PutFn
   return { status: "ready", kind: "image", mediaId };
 }
 
+/** The SHA-256 of some bytes as hex. */
 export const sha256Hex = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");

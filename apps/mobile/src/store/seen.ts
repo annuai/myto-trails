@@ -11,6 +11,7 @@ type State = {
   remember: (id: string, value: number) => void;
 };
 
+/** The moments that have already played, and the last figure shown for things that count up. */
 export const useSeen = create<State>()(
   persist(
     (set) => ({

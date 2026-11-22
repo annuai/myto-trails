@@ -1,6 +1,7 @@
 /** How many riders a group ride holds, and what the organiser can buy to raise it. Everything here is configuration, not law. */
 export type Plan = "free" | "large_ride_pass" | "organiser";
 
+/** How many riders a group ride may hold on each plan, and what the paid plans cost (for display only). */
 export type CapacityConfig = {
   limits: Record<Plan, number>;
   /** In paise, shown to the organiser only. The amount charged is whatever the billing provider says. */
@@ -18,6 +19,7 @@ const positive = (v: string | undefined, fallback: number) => {
   return Number.isInteger(n) && n > 0 ? n : fallback;
 };
 
+/** The capacity settings, read from the environment with defaults for anything unset or invalid. */
 export function capacityConfig(env: Record<string, string | undefined> = process.env): CapacityConfig {
   const d = DEFAULT_CAPACITY;
   return {
@@ -33,6 +35,7 @@ export function capacityConfig(env: Record<string, string | undefined> = process
   };
 }
 
+/** A purchase that raises a group ride's limit: a pass for one ride, or an organiser subscription. */
 export type EntitlementRow = { kind: "large_ride_pass" | "organiser"; rideId: string | null; status: string; startsAt: Date; endsAt: Date | null };
 
 const live = (e: EntitlementRow, now: Date) => e.status === "active" && e.startsAt <= now && (e.endsAt === null || e.endsAt > now);

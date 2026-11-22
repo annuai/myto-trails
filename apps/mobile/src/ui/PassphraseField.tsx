@@ -17,4 +17,5 @@ export function PassphraseField({ label = 'Passphrase', value, onChange, hint, e
   );
 }
 
+/** The hint shown under a backup passphrase field. */
 export const passphraseHint = `At least ${MIN_PASSPHRASE_LENGTH} characters. A few ordinary words work well.`;

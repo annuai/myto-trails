@@ -1,6 +1,9 @@
+// API route that counts taps from the app through to the shop.
+
 import { recordShopClick, parseShopClick } from "../shop/clicks";
 import { ApiError, fail, type RouteDef } from "./http";
 
+/** The shop route, registered by the router in routes.ts. */
 export const shopRoutes: RouteDef[] = [
   {
     method: "POST", path: "/shop-clicks", access: "public", summary: "Count one tap from the app through to the shop (body: product, the product's slug; surface home|shop|trip). Only a daily total per product is kept: no rider, device or location. Rate limited per address",

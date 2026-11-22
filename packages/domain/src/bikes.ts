@@ -1,5 +1,6 @@
 import type { BikeImageVariants } from "./api";
 
+/** The kinds of bike the catalogue is sorted into. */
 export const BIKE_CATEGORIES = ["commuter", "retro", "cruiser", "adventure", "scrambler", "naked", "sport", "touring", "offroad", "scooter", "electric"] as const;
 export type BikeCategory = (typeof BIKE_CATEGORIES)[number];
 

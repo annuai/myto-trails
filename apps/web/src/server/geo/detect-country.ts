@@ -4,12 +4,14 @@ export function detectCountry(h: { get(name: string): string | null }): string |
   return code && /^[A-Za-z]{2}$/.test(code) ? code.toUpperCase() : null;
 }
 
+/** The cookie that remembers the country a visitor chose. */
 export const COUNTRY_COOKIE = "mt_country";
 const ISO = /^[A-Z]{2}$/;
 
 /** A country the visitor chose, as stored in the cookie. */
 export const parseCountryCookie = (v: string | undefined | null): string | null => (v && ISO.test(v.toUpperCase()) && v.length === 2 ? v.toUpperCase() : null);
 
+/** The country to filter lists by and how it was decided: chosen by the visitor, detected from their request, or none. */
 export type BrowsingCountry = {
   /** The country to filter lists by; null shows every open country. */
   iso2: string | null;

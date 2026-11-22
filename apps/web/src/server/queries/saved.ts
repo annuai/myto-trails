@@ -10,6 +10,7 @@ import type { TrailSummaryDto } from "./types";
 /* eslint-disable @typescript-eslint/no-explicit-any -- rows come back from raw SQL untyped and are mapped to typed DTOs */
 type Row = Record<string, any>;
 
+/** A saved trail with when it was saved and what changed since the rider last looked. */
 export type SavedItem = {
   trail: TrailSummaryDto | null;
   addedAt: string;
@@ -24,6 +25,7 @@ async function defaultCollectionId(sql: Sql, userId: string): Promise<string> {
   return row!.id as string;
 }
 
+/** Adds a published trail to the rider's saved list. A trail that does not exist or is not published reads as not found. */
 export async function saveTrail(sql: Sql, userId: string, slug: string, now: Date): Promise<{ saved: true } | { saved: false; reason: "not_found" }> {
   if (!isValidSlug(slug)) return { saved: false, reason: "not_found" };
   const trail = await queryTrailBySlug(sql, slug, now);
@@ -36,6 +38,7 @@ export async function saveTrail(sql: Sql, userId: string, slug: string, now: Dat
   return { saved: true };
 }
 
+/** Removes a trail from the rider's saved list, by slug. */
 export async function unsaveTrail(sql: Sql, userId: string, slug: string): Promise<void> {
   if (!isValidSlug(slug)) return;
   await sql`
@@ -43,12 +46,14 @@ export async function unsaveTrail(sql: Sql, userId: string, slug: string): Promi
     where ci.collection_id = c.id and c.user_id = ${userId} and ci.trail_id = t.id and t.slug = ${slug}`;
 }
 
+/** Removes a trail from the rider's saved list, by id. Works for a trail that is no longer published. */
 export async function unsaveTrailById(sql: Sql, userId: string, trailId: string): Promise<void> {
   await sql`
     delete from collection_item ci using collection c
     where ci.collection_id = c.id and c.user_id = ${userId} and ci.trail_id = ${trailId}`;
 }
 
+/** Whether the rider has saved the trail. */
 export async function isSaved(sql: Sql, userId: string, slug: string): Promise<boolean> {
   if (!isValidSlug(slug)) return false;
   const rows = await sql`
@@ -57,6 +62,7 @@ export async function isSaved(sql: Sql, userId: string, slug: string): Promise<b
   return rows.length > 0;
 }
 
+/** The rider's saved trails with what changed on each since they last looked. */
 export async function listSaved(sql: Sql, userId: string, now: Date): Promise<SavedItem[]> {
   const items = (await sql`
     select ci.trail_id, ci.added_at, ci.last_seen_state

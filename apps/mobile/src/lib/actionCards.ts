@@ -1,4 +1,8 @@
+// Action cards: a suggestion of what to do next, of kind ride, check, journal or to-do.
+
+/** What a card is about. */
 export type CardKind = 'ride' | 'check' | 'journal' | 'todo';
+/** A card: its kind, a title and a line of detail. */
 export type ActionCard = { kind: CardKind; title: string; detail: string };
 
 const MIN_MS = 60_000;

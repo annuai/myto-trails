@@ -1,8 +1,11 @@
+// Reads and checks the server's environment variables, so a missing or wrong setting is reported clearly.
+
 import { z } from "zod";
 import { getSiteUrl } from "@/lib/site";
 
 type Source = Record<string, string | undefined>;
 
+/** Where files are kept: in memory (tests), on disk (development), or in a bucket. */
 export type StorageConfig =
   | { provider: "memory" }
   | { provider: "local"; rootDir: string; secret: string }
@@ -16,8 +19,10 @@ export type StorageConfig =
     }
   | { provider: "supabase"; url: string; serviceRoleKey: string; bucketPrefix: string };
 
+/** How email is sent: printed to the console, or through Resend. */
 export type EmailConfig = { provider: "console" } | { provider: "resend"; apiKey: string; from: string };
 
+/** The checked server settings. */
 export type ServerEnv = {
   siteUrl: string;
   storage: StorageConfig;
@@ -110,6 +115,7 @@ function loadEmail(source: Source): EmailConfig {
   return { provider: "resend", apiKey: v.RESEND_API_KEY!, from: v.EMAIL_FROM! };
 }
 
+/** Checks the environment and returns the settings. In production a missing database address is an error. */
 export function loadServerEnv(source: Source): ServerEnv {
   const siteUrl = getSiteUrl(source);
   const storage = loadStorage(source);
@@ -134,6 +140,7 @@ export function getDatabaseUrl(source: Source): string {
   return url;
 }
 
+/** The few settings that are safe to send to the browser. */
 export function getPublicEnv(source: Source): { siteUrl: string; supabaseUrl?: string; supabaseAnonKey?: string } {
   return {
     siteUrl: getSiteUrl(source),

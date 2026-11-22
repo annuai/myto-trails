@@ -2,6 +2,7 @@ import { formatDate } from "@/lib/format";
 import type { TrailDetailDto } from "@/server/queries/types";
 import { restrictionLabel } from "./labels";
 
+/** The access section of a trail: who may ride it, the restrictions, how it was verified and how many sources back it. */
 export function AccessDetails({ trail }: { trail: TrailDetailDto }) {
   const sources =
     trail.evidenceCount === 0 ? "No sources recorded" : `${trail.evidenceCount} ${trail.evidenceCount === 1 ? "source" : "sources"}`;

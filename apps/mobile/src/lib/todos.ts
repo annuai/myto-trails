@@ -1,7 +1,11 @@
+// To-dos and when each falls due.
+
 import { addDays, addMonths, daysUntil, formatDate, todayISO } from './dates';
 import { roundedDistanceKm, withUnit } from './units';
 
+/** document, service, pack or other. */
 export type TodoCategory = 'document' | 'service' | 'pack' | 'other';
+/** A to-do: what it is, when or at what distance it falls due, and whether it is done. */
 export type Todo = {
   id: string; title: string; category: TodoCategory; kind: 'date' | 'service'; done: boolean;
   due?: string; source?: string; updatedAt?: number;
@@ -11,6 +15,7 @@ export type Todo = {
   everyKm?: number; everyMonths?: number; lastDate?: string; lastKm?: number;
 };
 
+/** Where a to-do stands: ok, due soon, overdue or done, with the words to show. */
 export type Due = { state: 'ok' | 'soon' | 'overdue' | 'done'; text: string; sortKey: number };
 
 /**
@@ -36,6 +41,7 @@ export function dueInfo(t: Todo, appKm: number, today: string = todayISO()): Due
   return { state: near ? 'soon' : 'ok', text: `Due in ${parts.join(' or ')}`, sortKey: days };
 }
 
+/** True when a to-do is overdue or due soon. */
 export const isDueSoon = (d: Due) => d.state === 'overdue' || d.state === 'soon';
 export { addDays };
 

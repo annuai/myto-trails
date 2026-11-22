@@ -1,8 +1,11 @@
+// Writing a ride or route as a GPX file.
+
 import type { LatLng } from './geo';
 import { segmentsOf } from './track';
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+/** GPX text for a track, with its waypoints and the points where the track breaks. */
 export function buildGpx(name: string, points: LatLng[], waypoints: { name: string; lat: number; lng: number; kind?: string }[] = [], breaks?: number[]): string {
   const wpts = waypoints.map((w) => `  <wpt lat="${w.lat.toFixed(6)}" lon="${w.lng.toFixed(6)}"><name>${esc(w.name)}</name>${w.kind ? `<type>${esc(w.kind)}</type>` : ''}</wpt>`).join('\n');
   const trkpt = (p: LatLng) => {

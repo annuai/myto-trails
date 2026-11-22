@@ -1,4 +1,5 @@
 "use server";
+// Server action that sends the sign-in link by email.
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";

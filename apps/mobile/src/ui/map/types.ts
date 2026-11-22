@@ -1,7 +1,10 @@
+// The props of the map component, shared by the phone and web versions.
+
 import type { LatLng } from '@/lib/geo';
 import type { HeatMap } from '@/lib/heat';
 import type { RiderMark } from '@/lib/riderClusters';
 
+/** Everything the map can be given: a route, a track, a position, a heat map and rider marks. */
 export type OsmMapProps = {
   /** A height in points, or 'fill' to take all the room the parent leaves. */
   height: number | 'fill';

@@ -16,6 +16,7 @@ type State = {
   syncSource: (source: string, title: string, due: string | undefined) => void;
 };
 
+/** The rider's to-dos. */
 export const useTodos = create<State>()(
   persist(
     (set) => ({

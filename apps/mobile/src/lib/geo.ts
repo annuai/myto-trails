@@ -1,5 +1,9 @@
+// Points on the earth and distances between them.
+
+/** A position, with optional time, elevation and accuracy. */
 export type LatLng = { lat: number; lng: number; t?: number; ele?: number; /** Horizontal accuracy in metres, when the phone reports it. */ acc?: number; speed?: number | null };
 
+/** The distance in metres between two positions. */
 export function haversine(a: LatLng, b: LatLng): number {
   const R = 6_371_000, rad = Math.PI / 180;
   const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
@@ -22,6 +26,7 @@ export function travelHeading(points: LatLng[], minM = 15): number | undefined {
   return undefined;
 }
 
+/** The length in metres of a path through the points. */
 export function pathLength(points: LatLng[]): number {
   let m = 0;
   for (let i = 1; i < points.length; i++) m += haversine(points[i - 1], points[i]);

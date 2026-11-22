@@ -1,6 +1,9 @@
+// The shapes of what the website's API sends, as the app reads them.
+
 import type { LatLng } from '@/lib/geo';
 import type { TrailCarry, WomenSafe } from '@moto-trails/domain';
 
+/** A trail's cover picture: its sizes and alt text. */
 export type Cover = { variants: Record<string, string>; altText: string; width: number; height: number };
 export type TrailSummary = {
   id: string; slug: string; name: string; summary: string; nearestTown: string;
@@ -9,6 +12,7 @@ export type TrailSummary = {
   accessClass: string; condition: string; verification: { level: string; needsRecheck: boolean }; verifiedAt: string | null;
   isSample: boolean; updatedAt: string; lon: number; lat: number; distanceFromKm: number | null; cover: Cover | null;
 };
+/** A trail photo. */
 export type Media = { role: string; position: number; caption: string | null; altText: string; credit: string | null; variants: Record<string, string>; width: number; height: number };
 export type TrailDetail = TrailSummary & {
   /** Photos, cover first. Missing on copies saved before the API sent them. */
@@ -22,8 +26,11 @@ export type TrailDetail = TrailSummary & {
   /** Women-safe marks, for the viewer who asked. Absent on older saved copies. */
   womenSafe?: WomenSafe;
 };
+/** A trail's route figures. */
 export type RouteDto = { distanceKm: number; elevGainM: number; elevLossM: number; minElevM: number; maxElevM: number; pointCount: number; profile: { d: number; e: number }[]; line: [number, number][] };
+/** One page of trail search results. */
 export type SearchResult = { items: TrailSummary[]; total: number; page: number; pageSize: number };
+/** A saved trail, or a note that it is no longer available. */
 export type SavedItem = { addedAt: string; trail: TrailSummary | null; unavailableId?: string };
 
 /** The API sends [longitude, latitude]; the app uses {lat, lng}. */

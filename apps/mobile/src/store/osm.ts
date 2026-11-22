@@ -25,6 +25,7 @@ type State = {
   settle: (rideId: string, sent: boolean) => void;
 };
 
+/** Whether the rider shares rides to OpenStreetMap, whether they were asked, and whether they are signed in. */
 export const useOsm = create<State>()(
   persist(
     (set) => ({

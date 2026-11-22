@@ -37,6 +37,7 @@ export async function hasTiles(slug: string): Promise<boolean> {
   return (await OfflineManager.getPacks()).some((p) => slugOf(p.metadata) === slug);
 }
 
+/** Deletes the saved map tiles of a trail. */
 export async function deleteTiles(slug: string): Promise<void> {
   for (const p of await OfflineManager.getPacks()) if (slugOf(p.metadata) === slug) await OfflineManager.deletePack(p.id);
 }

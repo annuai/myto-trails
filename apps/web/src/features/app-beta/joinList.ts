@@ -1,5 +1,6 @@
 import { getWaitlistUrl } from "@/lib/site";
 
+/** The result of joining the app list: a success with the email, or an error message. */
 export type JoinState = { error: string | null; success: boolean; email?: string };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

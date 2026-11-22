@@ -6,6 +6,9 @@ import { parsePhoneInput } from "./phone";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * A rider's standing for community use: whether they have confirmed the 18+ and licence declaration, and their profile and privacy choices.
+ */
 export type MemberState = { confirmed: boolean; displayName: string; profilePublic: boolean; isWoman: boolean; gender: Gender | null; bio: string | null; publicId: string };
 
 /** An active account that has made the 18+ and driving-licence declaration. Every community action checks this. */
@@ -15,6 +18,7 @@ export async function isMember(sql: Sql | TransactionSql, userId: string): Promi
   return Boolean(row);
 }
 
+/** Reads a rider's MemberState. Null for an unknown id. */
 export async function getMemberState(sql: Sql, userId: string): Promise<MemberState | null> {
   if (!UUID.test(userId)) return null;
   const [u] = await sql`select adult_confirmed_at, display_name, profile_public, is_woman, gender, bio, public_id from app_user where id = ${userId} and status = 'active'`;
@@ -53,6 +57,10 @@ export async function completeWelcome(
   return rows.length ? { ok: true } : { ok: false, reason: "not_found" };
 }
 
+/**
+ * Saves a rider's profile choices: public or private, gender, bio and phone. A bio cannot be over 300 characters or contain a link; a phone
+ * must be valid.
+ */
 export async function updateMemberPrivacy(
   sql: Sql,
   i: { userId: string; profilePublic: boolean; gender: Gender | null; bio: string | null; phone?: string | null },
@@ -69,6 +77,7 @@ export async function updateMemberPrivacy(
   return { ok: true };
 }
 
+/** A rider's public page: their name, bio and the trails they have ridden. */
 export type RiderProfile = { name: string; bio: string | null; trails: { slug: string; name: string; month: string | null }[] };
 
 /** A public rider's page, for declared members. Private riders and unknown handles look identical (null). */

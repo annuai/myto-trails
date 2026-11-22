@@ -1,3 +1,5 @@
+// Shown for a trail that does not exist or is not published.
+
 import Link from "next/link";
 
 export default function TrailNotFound() {

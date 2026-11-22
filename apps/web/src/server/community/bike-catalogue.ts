@@ -3,8 +3,10 @@ import { BIKE_CATEGORIES, isValidSlug, slugify, type BikeCategory } from "@moto-
 /** The WebP widths stored in R2 as bike/<slug>-<width>.webp. */
 export const BIKE_IMAGE_WIDTHS = [400, 800, 1200] as const;
 
+/** One bike model as the catalogue import reads it. */
 export type CatalogueRow = { slug: string; make: string; model: string; category: BikeCategory; engineCc: number | null; yearFrom: number | null; yearTo: number | null };
 
+/** True when the value is one of the catalogue's bike categories. */
 export const isBikeCategory = (v: unknown): v is BikeCategory => typeof v === "string" && (BIKE_CATEGORIES as readonly string[]).includes(v);
 
 /** The slug is the stable key and the image file name, so it must be a lowercase kebab slug. */

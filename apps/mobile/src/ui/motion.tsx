@@ -15,8 +15,11 @@ export function useReducedMotion(): boolean {
   return reduced;
 }
 
+/** The standard easing curve, the same as the website's. */
 export const EASE = Easing.bezier(...motion.ease.standard); // the same curve as the website
+/** The easing curve for things arriving. */
 export const ARRIVE = Easing.bezier(...motion.ease.arrive);
+/** The easing curve for things leaving. */
 export const EXIT = Easing.bezier(...motion.ease.exit);
 
 /** Fade and rise into place on mount. `delay` staggers a list. */

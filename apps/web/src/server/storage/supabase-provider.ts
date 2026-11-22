@@ -1,3 +1,5 @@
+// File storage in a Supabase bucket.
+
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { StorageConfig } from "../env";
 import { assertExpiry, assertSafeKey, sanitizeDownloadFilename } from "./keys";

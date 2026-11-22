@@ -1,9 +1,15 @@
+// Reads GPX text into tracks and waypoints. Declarations (DOCTYPE, ENTITY) are refused outright, for safety.
+
 import { XMLParser } from "fast-xml-parser";
 
+/** A point on a track, with optional elevation and time. */
 export type TrackPoint = { lat: number; lon: number; ele?: number; time?: number };
+/** A named point. */
 export type Waypoint = { lat: number; lon: number; name: string };
 
+/** Why GPX text could not be read. */
 export type ParseError = "doctype_not_allowed" | "not_gpx" | "no_track_points" | "invalid_coordinates" | "too_complex";
+/** The tracks and waypoints, or why not. */
 export type ParseResult =
   | { ok: true; tracks: TrackPoint[][]; waypoints: Waypoint[]; name?: string }
   | { ok: false; error: ParseError };
@@ -64,6 +70,7 @@ function offEarth(node: unknown): boolean {
   return lat !== undefined && lon !== undefined && (Math.abs(lat) > 90 || Math.abs(lon) > 180);
 }
 
+/** Parses GPX text. Empty text, text without a gpx element, and anything with a DOCTYPE or ENTITY are refused before parsing. */
 export function parseGpx(xml: string): ParseResult {
   if (typeof xml !== "string" || xml.trim() === "") return { ok: false, error: "not_gpx" };
   if (/<!\s*(DOCTYPE|ENTITY)/i.test(xml)) return { ok: false, error: "doctype_not_allowed" };

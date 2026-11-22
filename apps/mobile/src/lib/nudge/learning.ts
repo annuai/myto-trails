@@ -1,6 +1,9 @@
+// Learning from past nudges: whether each was followed by a ride.
+
 import { DAY } from './time';
 import type { NudgeHistory, NudgeType, NudgeWorld } from './types';
 
+/** A past nudge and whether it turned out well. */
 export type Resolved = { id: string; type: NudgeType; fireAt: number; good: boolean };
 
 /** A nudge is judged a day after it was shown: good if it was opened, or the rider went for a ride in the day after it. */
@@ -10,6 +13,7 @@ const DORMANT_AFTER_IGNORED = 4;
 const DORMANT_FOR_MS = 21 * DAY;
 const FATIGUE_AFTER_IGNORED = 3;
 
+/** Matches the nudges that were sent with the rides that followed. */
 export function resolveHistory(history: NudgeHistory[], rides: NudgeWorld['rides'], now: number): Resolved[] {
   return history
     .filter((h) => h.fireAt <= now - JUDGE_AFTER_MS)

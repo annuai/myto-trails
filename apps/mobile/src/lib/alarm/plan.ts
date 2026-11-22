@@ -23,6 +23,10 @@ export type AlarmDay = { iso: string; rainPct: number; maxC: number; minC?: numb
 
 type TripLike = { id: string; name: string; startDate?: string; startTime?: number; days?: unknown[]; startedAt?: number; endedAt?: number };
 
+/**
+ * Everything the alarm planner reads: the time, the alarm settings, the trips, open pack to-dos, the forecast and where the sun is worked
+ * out.
+ */
 export type AlarmWorld = {
   now: number;
   settings: AlarmSetting[];

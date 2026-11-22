@@ -1,8 +1,11 @@
+// Takes an uploaded GPX from untrusted text to a checked, measured track and a clean copy of the file.
+
 import type { TransactionSql } from "postgres";
 import { analyzeTrack, type TrackAnalysis } from "./analyze";
 import { parseGpx, type ParseError, type Waypoint } from "./parse";
 import { writeGpx } from "./write";
 
+/** What to tell the rider for each way a GPX can fail to parse. */
 export const PARSE_MESSAGES: Record<ParseError, string> = {
   doctype_not_allowed: "This file contains declarations that are not allowed in a GPX file, so it was refused for safety.",
   not_gpx: "This does not look like a GPX file.",
@@ -11,6 +14,7 @@ export const PARSE_MESSAGES: Record<ParseError, string> = {
   too_complex: "This file is too large or too deeply nested to process.",
 };
 
+/** A track that passed: its measurements and its line without consecutive repeats. */
 export type Ingested = {
   analysis: TrackAnalysis;
   /** The full line without consecutive repeats. */
@@ -19,6 +23,7 @@ export type Ingested = {
   /** Our own plain GPX 1.1 rewrite of the track; this is what is kept for export. */
   cleanGpx: string;
 };
+/** The accepted track, or a code and a message. */
 export type IngestResult = ({ ok: true } & Ingested) | { ok: false; code: string; message: string };
 
 /** Parses, validates and measures an untrusted GPX, and writes the sanitised copy. Pure: no storage, no database. */

@@ -8,6 +8,7 @@ type State = {
   finish: () => void;
 };
 
+/** Whether the welcome flow has been finished. */
 export const useOnboarding = create<State>()(
   persist(
     (set) => ({ done: false, finish: () => set({ done: true }) }),

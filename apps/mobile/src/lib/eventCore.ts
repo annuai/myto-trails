@@ -7,10 +7,14 @@ const HOUR_MS = 3_600_000;
 const OPENS_BEFORE_MS = HOUR_MS;
 const CLOSES_AFTER_MS = 6 * HOUR_MS;
 
+/** The jobs a rider can hold on a ride event. */
 export const ROLES: EventRole[] = ['captain', 'marshal', 'medic', 'sweep'];
+/** The words shown for each job. */
 export const ROLE_LABEL: Record<EventRole, string> = { captain: 'Captain', marshal: 'Marshal', medic: 'Medic', sweep: 'Sweep' };
+/** The words shown for a job. */
 export const roleLabel = (r: EventRole): string => ROLE_LABEL[r];
 
+/** Whether check-in can be offered, or why not: too early, closed, too far, or no good position. */
 export type CheckInState = 'yes' | 'early' | 'closed' | 'far' | 'no_fix';
 
 /** Whether the phone should offer "Check in?": inside the time window, with a fix good enough to tell, and inside the radius. */
@@ -37,6 +41,7 @@ export function stretchAlert(riders: GroupRiderView[], meId: string, stretchKm: 
   return far.length ? { names: far.map((r) => r.name) } : null;
 }
 
+/** The one thing the event page offers first. */
 export type PrimaryAction = 'join_ride' | 'check_in' | 'going' | 'none';
 
 /** The one thing the event page offers first. Check-in wins over replying once the rider is at the meeting point. */

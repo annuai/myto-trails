@@ -18,6 +18,7 @@ type State = {
   wipe: () => void;
 };
 
+/** The routes the rider drew or imported, and the one the next ride follows. */
 export const useMyRoutes = create<State>()(
   persist(
     (set) => ({

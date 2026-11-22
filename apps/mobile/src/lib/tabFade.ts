@@ -18,6 +18,7 @@ export function fadeTarget({ y, prevY, maxY, current }: { y: number; prevY: numb
   return current;
 }
 
+/** True when a touch ended close enough to where it began to count as a tap, not a drag. */
 export function isTap(start: { x: number; y: number }, end: { x: number; y: number }): boolean {
   return Math.hypot(end.x - start.x, end.y - start.y) < TAP_SLOP;
 }

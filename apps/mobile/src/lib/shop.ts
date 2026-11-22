@@ -1,3 +1,5 @@
+// Reading the shop's product list: finding a product, and the collections with their products.
+
 import { SHOP_BASE, SHOP_CATEGORIES, SHOP_COLLECTIONS, SHOP_HOST, SHOP_PRODUCTS, type ShopCategoryId, type ShopProduct } from '@/data/shop';
 import type { ShopSurface } from '@moto-trails/domain';
 
@@ -6,6 +8,7 @@ export type { ShopSurface };
 /** Real products only: a sample entry is for checking layouts and is never listed. */
 export const listedProducts = (products: readonly ShopProduct[] = SHOP_PRODUCTS): ShopProduct[] => products.filter((p) => !p.sample);
 
+/** A listed product by its slug, or undefined. */
 export const productBySlug = (slug: string | undefined, products: readonly ShopProduct[] = SHOP_PRODUCTS) => listedProducts(products).find((p) => p.slug === slug);
 
 /** Categories that have something in them, in the order the shop shows them. */
@@ -14,6 +17,7 @@ export function categoriesWithProducts(products: readonly ShopProduct[] = SHOP_P
   return SHOP_CATEGORIES.map((c) => ({ ...c, products: real.filter((p) => p.categories.includes(c.id)) })).filter((c) => c.products.length > 0);
 }
 
+/** The collections, each with its listed products. */
 export function collectionsWithProducts(products: readonly ShopProduct[] = SHOP_PRODUCTS, collections = SHOP_COLLECTIONS) {
   const real = listedProducts(products);
   return collections.map((c) => ({ ...c, products: c.slugs.flatMap((s) => real.find((p) => p.slug === s) ?? []) })).filter((c) => c.products.length > 0);

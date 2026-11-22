@@ -15,6 +15,7 @@ import { hasAnalyticsClient, setAnalyticsClient, track } from './analytics';
  */
 const isDevBuild = () => typeof __DEV__ !== 'undefined' && __DEV__;
 
+/** Starts usage statistics when a PostHog key is set and this is not a development build. Returns whether it started. */
 export function startAnalytics(key: string | undefined = process.env.EXPO_PUBLIC_POSTHOG_KEY, dev: boolean = isDevBuild()): boolean {
   if (hasAnalyticsClient()) return true;
   if (dev || Platform.OS === 'web' || !key?.trim()) return false;

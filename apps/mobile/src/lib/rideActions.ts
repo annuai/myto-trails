@@ -2,6 +2,7 @@ import { distanceKm } from './units';
 /** The buttons on the ride notification, and what the notification says. No phone code here, so it is tested on its own (see rideNotification.ts). */
 export type RideActionId = 'ride.pause' | 'ride.resume' | 'ride.help' | 'ride.undo-help' | 'crash.ok';
 export type RideAction = { id: RideActionId; label: string; /** Red on iOS. */ destructive?: boolean; /** Pressing it brings the app to the front. */ opensApp?: boolean };
+/** The sets of buttons a ride notification can carry. */
 export type RideCategory = 'ride' | 'ride-paused' | 'ride-group' | 'ride-group-paused' | 'help-sent' | 'crash';
 
 const PAUSE: RideAction = { id: 'ride.pause', label: 'Pause' };
@@ -22,10 +23,14 @@ export const CATEGORIES: Record<RideCategory, RideAction[]> = {
   crash: [CRASH_OK],
 };
 
+/** The id of the ongoing ride notification. */
 export const RIDE_NOTICE_ID = 'ride-controls';
+/** The id of the 'help sent' notification. */
 export const HELP_NOTICE_ID = 'help-sent';
+/** The id of the crash alert notification. */
 export const CRASH_NOTICE_ID = 'crash-alert';
 
+/** A notification's title, text and button set. */
 export type RideNotice = { title: string; body: string; category?: RideCategory };
 
 /** What the ride notification shows now: it follows whether the ride is paused and whether it is a group ride. */
@@ -40,6 +45,7 @@ export function rideNotice(i: { paused: boolean; group: boolean }): RideNotice &
 export const helpSentNotice: RideNotice & { category: RideCategory } = { category: 'help-sent', title: 'Help sent to your group', body: 'Tap Undo if you pressed it by mistake.' };
 export const helpUndoneNotice: RideNotice = { title: 'Help cancelled', body: 'Your group sees you as all good.' };
 
+/** True when the id is one of the ride notification's buttons. */
 export const isRideAction = (id: string): id is RideActionId => Object.values(CATEGORIES).some((as) => as.some((a) => a.id === id));
 
 /** The countdown after a crash is detected, and what it says once nobody answered. The detector is lib/crashDetect. */

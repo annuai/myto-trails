@@ -1,5 +1,6 @@
 import { monthLabel } from "./labels";
 
+/** A strip of the twelve months with the best ones marked. Nothing when none are given. */
 export function SeasonStrip({ bestMonths }: { bestMonths: number[] }) {
   if (bestMonths.length === 0) return null;
   return (

@@ -2,6 +2,7 @@
 export const MINUTE_STEP = 5;
 export const HOURS = Array.from({ length: 12 }, (_, i) => `${i + 1}`);
 export const MINUTES = Array.from({ length: 60 / MINUTE_STEP }, (_, i) => String(i * MINUTE_STEP).padStart(2, '0'));
+/** The AM and PM choices of the time wheel. */
 export const PERIODS = ['AM', 'PM'];
 
 /** The wheel positions (indices into the three lists) for a time. A minute off the step rounds to the nearest. */

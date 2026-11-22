@@ -10,7 +10,9 @@ import { pointAt, prepareTrail, type TrailLine } from './trailGuide';
  * comes out. This phone is Annuai, who made the group and leads it; Pranab, Jithin and Abha are played from a script.
  */
 export const SIM_GROUP_ID = 'sim-group';
+/** The id of the simulated rider. */
 export const SIM_ME = 'sim-me';
+/** The name of the simulated rider. */
 export const SIM_ME_NAME = 'Annuai';
 /** Speed along the built-in test loop: about 40 km/h. */
 export const SIM_SPEED_MPS = 11;
@@ -31,6 +33,7 @@ export const SIM_ROUTE: LatLng[] = CORNERS.slice(1).reduce<LatLng[]>((line, c, i
   for (let k = line.length ? 1 : 0; k <= steps; k++) line.push(toLatLng([a[0] + ((c[0] - a[0]) * k) / steps, a[1] + ((c[1] - a[1]) * k) / steps]));
   return line;
 }, []);
+/** The simulated route, prepared for following. */
 export const SIM_TRAIL: TrailLine = prepareTrail(SIM_ROUTE);
 
 /** Where the group meets: the end of the road, named. */
@@ -51,6 +54,7 @@ export function alongAt(r: Pick<Scripted, 'offsetM' | 'pace' | 'stop'>, s: numbe
 
 /** The simulated phone's own distance along the road `s` seconds into the ride, riding it start to end. */
 export const simMeAlong = (s: number, trail: TrailLine = SIM_TRAIL, speed: number = SIM_SPEED_MPS): number => Math.min(trail.totalM, s * speed);
+/** Where the simulated rider is after `s` seconds, at a steady speed along the trail. */
 export const simMePoint = (s: number, trail: TrailLine = SIM_TRAIL, speed: number = SIM_SPEED_MPS): LatLng => pointAt(trail, simMeAlong(s, trail, speed));
 
 const statusAt = (r: Scripted, s: number): GroupStatus => r.signals?.find((x) => s >= x.from && s < x.to)?.status ?? 'ok';

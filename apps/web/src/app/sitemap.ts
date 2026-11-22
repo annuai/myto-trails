@@ -1,3 +1,5 @@
+// sitemap.xml, built from the published trails and regions.
+
 import type { MetadataRoute } from "next";
 import { getSiteUrl } from "@/lib/site";
 import { getSitemapEntries } from "@/server/queries/trails";

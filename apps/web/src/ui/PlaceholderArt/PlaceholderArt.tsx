@@ -8,12 +8,14 @@ const PALETTES = [
   ["var(--art-6-sky)", "var(--art-6-far)", "var(--art-6-mid)", "var(--art-6-near)"],
 ];
 
+/** Four colours chosen from a slug, so the same trail always gets the same picture. */
 export function paletteFor(slug: string): string[] {
   let h = 0;
   for (const c of slug) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return PALETTES[h % PALETTES.length]!;
 }
 
+/** A landscape drawn in a trail's colours, for a trail with no photo. */
 export function PlaceholderArt({ slug, className = "" }: { slug: string; className?: string }) {
   const [sky, far, mid, near] = paletteFor(slug);
   return (

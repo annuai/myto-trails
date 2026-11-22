@@ -1,8 +1,11 @@
+// The web build cannot apply film looks, so this does nothing.
+
 import { Image } from 'react-native';
 import type { FilmLook } from '../filmLook';
 
 /** The browser has no Skia: a filmed photo is only made in the phone app. */
 export const filmEffect = null;
+/** Not available on the web. */
 export async function bakeFilm(_source: string, _look: FilmLook, _longSide: number, _quality: number): Promise<string> {
   throw new Error('Film pictures are made in the phone app.');
 }

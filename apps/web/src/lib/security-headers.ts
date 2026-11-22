@@ -1,3 +1,6 @@
+// The security headers pages are sent with, including the Content-Security-Policy, which is built from the map style and public asset
+// addresses.
+
 type Options = { dev: boolean; mapStyleUrl?: string; publicAssetBase?: string };
 
 const OSM_TILES = "https://tile.openstreetmap.org";
@@ -38,6 +41,7 @@ export function buildCsp(o: Options): string {
   ].join("; ");
 }
 
+/** The headers to send: the Content-Security-Policy, no content-type sniffing, and the rest. */
 export function securityHeaders(o: Options & { production: boolean }): { key: string; value: string }[] {
   return [
     { key: "Content-Security-Policy", value: buildCsp(o) },

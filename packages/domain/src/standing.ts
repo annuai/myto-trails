@@ -1,9 +1,11 @@
 // Standing: where a rider sits against a cohort. Never ranks speed; never
 // shows a percentile for a cohort smaller than MIN_COHORT.
 
+/** What a rider's standing can be measured on. Never speed. */
 export const STANDING_METRICS = ["distance_km", "rides", "longest_ride_km"] as const;
 export type StandingMetric = (typeof STANDING_METRICS)[number];
 
+/** A standing is shown only against at least this many riders, so no one can be picked out of a small group. */
 export const MIN_COHORT = 20;
 
 // Not the leaderboard's regex: that one also refuses "distance", which standing allows.
@@ -15,6 +17,7 @@ const isRefused = (raw: string) =>
     .split(/[^a-z]+/)
     .some((t) => REFUSED_TOKENS.has(t));
 
+/** Reads a metric name from a request: valid, refused (a speed-like word) or unknown. */
 export function parseStandingMetric(
   raw: unknown,
 ): { ok: true; metric: StandingMetric } | { ok: false; reason: "refused" | "unknown" } {
@@ -56,6 +59,7 @@ export function cellOf(lat: number, lng: number): string {
   return `${Math.floor(lat)}:${Math.floor(lng)}`;
 }
 
+/** The wording for where a rider sits: the top 10%, 25%, half, or otherwise 'riding along'. Never a rank. */
 export function bandOf(percent: number): string {
   if (percent >= 90) return "top 10%";
   if (percent >= 75) return "top 25%";

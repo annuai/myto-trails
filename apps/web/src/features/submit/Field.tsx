@@ -1,5 +1,8 @@
+// Form building blocks for the submit-a-trail steps.
+
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 
+/** The style of a text input. */
 export const inputClass = "min-h-12 w-full rounded-lg border border-foreground/40 bg-background px-3";
 
 /** A labelled field with an optional hint and error, wired together for screen readers. */
@@ -30,6 +33,7 @@ export function Choices({ legend, hint, error, children }: { legend: string; hin
   );
 }
 
+/** A checkbox or radio with its label. */
 export function Choice({ type, name, value, label, defaultChecked }: { type: "checkbox" | "radio"; name: string; value: string; label: string; defaultChecked?: boolean }) {
   return (
     <label className="inline-flex min-h-11 items-center gap-2">

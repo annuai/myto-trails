@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { StepFields, type StepContext } from "./StepFields";
 
+/** What the step form holds: errors by field, the typed values, a message, whether it saved, and the steps that still fail. */
 export type WizardState = { errors?: Record<string, string>; values?: Record<string, unknown>; message?: string; saved?: boolean; steps?: number[] };
 
 /**

@@ -18,6 +18,7 @@ export function rideMessage(now: Date, timeZone: string = IST): { text: string; 
     : { text: "Time for the next ride", night: false };
 }
 
+/** The time of day in a time zone, like `07:05:09 PM`. */
 export function formatClock(now: Date, timeZone: string = IST): string {
   return new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true, timeZone })
     .format(now)

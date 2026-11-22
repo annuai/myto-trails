@@ -1,3 +1,5 @@
+// The setting for how often the app suggests a ride.
+
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { notifier } from '@/lib/notifier';
@@ -12,6 +14,7 @@ import { SectionTitle } from '@/ui/Header';
 import { ListCard, Row } from '@/ui/ListCard';
 import { Text } from '@/ui/Text';
 
+/** The nudge levels offered, each with a label and a line explaining it. */
 export const LEVELS: { level: NudgeLevel; label: string; line: string }[] = [
   { level: 'off', label: 'Off', line: 'No ride nudges.' },
   { level: 'occasional', label: 'Occasional', line: 'About one a week at most, when there is a good reason.' },

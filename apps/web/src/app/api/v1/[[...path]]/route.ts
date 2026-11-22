@@ -1,3 +1,5 @@
+// The public API (version 1): every method is passed to the router in server/api, which finds the route.
+
 import { dispatch } from "@/server/api/http";
 import { routes } from "@/server/api/routes";
 import { getSiteUrl } from "@/lib/site";

@@ -15,6 +15,7 @@ function rideItem(r: Ride): Item {
   return { id, updatedAt: updatedAt ?? r.startedAt + r.durationSec * 1000, data: clean(data) };
 }
 
+/** How sync reads and writes rides. Sample rides are not synced. */
 export const ridesAdapter: Adapter = {
   kind: 'ride',
   list: () => useRides.getState().rides.filter((r) => !r.sample).map(rideItem),
@@ -33,6 +34,7 @@ export const ridesAdapter: Adapter = {
 };
 
 const todoItem = (t: Todo): Item => { const { id, updatedAt, ...data } = t; return { id, updatedAt, data: clean(data) }; };
+/** How sync reads and writes to-dos. */
 export const todosAdapter: Adapter = {
   kind: 'todo',
   list: () => useTodos.getState().todos.map(todoItem),
@@ -45,6 +47,7 @@ export const todosAdapter: Adapter = {
 };
 
 const tripItem = (t: Trip): Item => { const { id, ...data } = t; return { id, data: clean(data) }; };
+/** How sync reads and writes trips. */
 export const tripsAdapter: Adapter = {
   kind: 'trip',
   list: () => useTrips.getState().trips.map(tripItem),

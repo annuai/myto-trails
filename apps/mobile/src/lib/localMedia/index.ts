@@ -6,7 +6,9 @@ import type { DocKind, DocPhoto, DocSide } from './types';
 
 export type { DocKind, DocPhoto, DocSide } from './types';
 
+/** A stored photo is scaled down so its long side is at most this many pixels. */
 export const MAX_LONG_SIDE = 1600;
+/** The quality stored photos are saved at. */
 export const JPEG_QUALITY = 0.8;
 
 const photoDir = () => new Directory(Paths.document, 'doc-photos');
@@ -28,10 +30,14 @@ export async function savePhoto(sourceUri: string, docKind: DocKind, side?: DocS
   return { id, docKind, side, width: out.width, height: out.height, addedAt: Date.now() };
 }
 
+/** The address of a stored photo. */
 export const photoUri = (id: string) => fileOf(photoDir(), id).uri;
+/** A stored photo's content as base64 text. */
 export const readPhotoBase64 = (id: string) => fileOf(photoDir(), id).base64();
+/** True when the photo exists. */
 export const hasPhoto = (id: string) => fileOf(photoDir(), id).exists;
 
+/** Deletes a stored photo. */
 export function deletePhoto(id: string) {
   const f = fileOf(photoDir(), id);
   if (f.exists) f.delete();
@@ -51,6 +57,7 @@ export async function stagePhoto(id: string, base64: string) {
   await f.write(base64, { encoding: 'base64' });
 }
 
+/** Throws away photos staged for a restore that was not completed. */
 export function discardStaged() { remove(stageDir()); }
 
 const oldDir = () => new Directory(Paths.document, 'doc-photos-old');

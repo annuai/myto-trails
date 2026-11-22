@@ -1,14 +1,18 @@
+// The rider's licence, vehicle, emergency contacts, medical details and document photos. They stay on the phone.
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { uid } from '@/lib/id';
 import type { DocKind, DocPhoto } from '@/lib/localMedia/types';
 import { storage } from './persist';
 
+/** A driving licence's holder, number, classes and validity. */
 export type Licence = { holder: string; number: string; classes: string[]; validTill?: string; rto?: string; updatedAt?: number };
 export type Vehicle = {
   regNo: string; model: string; ownerName: string; rcValidTill?: string; /** Optional, kept for easy reference. */ engineNo?: string; chassisNo?: string;
   insurer?: string; policyNo?: string; insuranceValidTill?: string; pucValidTill?: string; updatedAt?: number;
 };
+/** An emergency contact. */
 export type Contact = { id: string; name: string; phone: string; relation: string; primary: boolean; updatedAt?: number };
 /** `organDonor` is left unset until the rider answers, so a rider who never did is not shown as having said no. */
 export type Medical = { bloodGroup?: string; notes?: string; organDonor?: boolean; updatedAt?: number };
@@ -29,6 +33,7 @@ type State = {
   wipe: () => void;
 };
 
+/** The profile store. */
 export const useProfile = create<State>()(
   persist(
     (set, get) => ({

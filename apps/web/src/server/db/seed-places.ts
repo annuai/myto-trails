@@ -1,5 +1,6 @@
 import type { Sql } from "postgres";
 
+/** A searchable place to put in the database, with its alternative names. */
 export type PlaceSeed = {
   slug: string;
   name: string;

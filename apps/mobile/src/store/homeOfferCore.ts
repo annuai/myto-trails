@@ -9,6 +9,7 @@ export type HomeOfferState = {
   clear: () => void;
 };
 
+/** The store's actions and starting state, separate from persistence so they can be tested. */
 export const homeOfferSlice = (): StateCreator<HomeOfferState> => (set) => ({
   dismissals: [],
   dismiss: (now = Date.now()) => set((s) => ({ dismissals: [...s.dismissals, now].slice(-KEEP) })),

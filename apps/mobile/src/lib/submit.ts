@@ -1,3 +1,5 @@
+// Sending a recorded ride to the website as a trail submission.
+
 import { ApiFailure, api } from '@/api/client';
 import { SITE_BASE } from '@/api/config';
 import type { LatLng } from './geo';
@@ -6,6 +8,7 @@ import type { carryFields } from './trailCarry';
 import { photoStep, type SubmissionPhoto } from './submitPhotos';
 import { breaksOf, splitSegments } from './track';
 
+/** A ride as it is sent for review. */
 export type RideSubmission = {
   clientId: string; name: string; summary: string; state: string; district: string; nearestTown: string;
   difficulty: string; terrain: string[]; routeShape: string;
@@ -16,6 +19,7 @@ export type RideSubmission = {
   /** Photos already uploaded through the image pipeline, in the order to show. Each needs a description for people who cannot see it. */
   photos?: SubmissionPhoto[];
 };
+/** Called with each step as the submission is sent. */
 export type Progress = (step: string) => void;
 
 type Check = { status: string; rejectMessage?: string };

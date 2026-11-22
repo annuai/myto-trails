@@ -1,9 +1,12 @@
+// Smooths the rider's position and heading, so the arrow and the map move steadily between GPS fixes.
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { nowMs } from '@/lib/clock';
 import type { LatLng } from '@/lib/geo';
 import { glideMs, lookAheadM, matchToRoad, smoothHeading } from '@/lib/rideCamera';
 import { prepareTrail } from '@/lib/trailGuide';
 
+/** The smoothed position, heading and arrow, and how long to glide to the next one. */
 export type SmoothedRide = {
   position?: LatLng;
   /** The heading the map is turned to: steady. */

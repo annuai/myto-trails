@@ -14,6 +14,7 @@ Monorepo: `apps/web` (Next.js on Vercel), `apps/mobile` (Expo, "Myto Moto"), `pa
 
 ## Commands (repo root)
 `npm test` · `npm run lint` · `npm run typecheck` · `npm run check:tokens` · `npm run check:colors` · `npm run check:versions`
+Documentation-only pass: `node tooling/scripts/comment-only-check.mjs snapshot <file>` before, `compare <file>` after: it fails if any code (not just comments) changed.
 
 ## Conventions
 - Mobile styling: no raw spacing, colour or type values; use tokens (`apps/mobile/src/theme/tokens.ts`, `packages/tokens`, `*.tokens.ts`). Run `check:tokens` after UI work. See [docs/design-tokens.md](docs/design-tokens.md).

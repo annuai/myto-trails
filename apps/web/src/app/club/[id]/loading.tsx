@@ -1,3 +1,5 @@
+// Placeholder shown while a club page loads.
+
 import { LoadingScreen, Skeleton } from "@/ui/Skeleton/Skeleton";
 
 export default function ClubDetailLoading() {

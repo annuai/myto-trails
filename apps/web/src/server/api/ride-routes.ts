@@ -1,3 +1,5 @@
+// API routes for riding together and safely: solo check-ins, group rides, trail condition reports and shared routes.
+
 import { isValidSlug } from "@moto-trails/domain";
 import { arriveCheckin, extendCheckin, getMyCheckin, createCheckin, parseExpectedAt, parseNewCheckin, parsePosition, pingCheckin } from "../rides/checkins";
 import { confirmConditionReport, createConditionReport, listConditionReports } from "../rides/condition-reports";
@@ -48,6 +50,7 @@ const trailSlug = (c: Ctx) => {
   return s;
 };
 
+/** The ride routes, registered by the router in routes.ts. */
 export const rideRoutes: RouteDef[] = [
   {
     method: "POST", path: "/checkins", access: "write:submission", summary: "Tell someone if you have not arrived (body: expectedAt ISO within 7 days, contactName, contactEmail, rideName, shareLive, position, emergency). Returns the link to send them; shown once",

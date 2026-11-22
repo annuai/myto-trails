@@ -41,6 +41,9 @@ export function scrubCapture(cr: CaptureResult | null, siteOrigin: string): Capt
   return { ...cr, properties: { ...kept, ...own, $geoip_disable: true }, $set: undefined, $set_once: undefined };
 }
 
+/**
+ * The PostHog settings for the browser: events are sent through this site's own `/ingest` path, and the PostHog interface is the EU one.
+ */
 export function analyticsConfig(siteOrigin: string): Partial<PostHogConfig> {
   return {
     api_host: "/ingest",

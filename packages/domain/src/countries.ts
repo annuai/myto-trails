@@ -1,6 +1,10 @@
 // Countries as data. Only countries whose numbers and rules a person has checked belong in COUNTRY_CONFIGS;
 // every other country stays "coming soon" until it is added here and enabled in the database.
 
+/**
+ * What is different about one country: emergency numbers, dial code, currency, distance unit, time zone, and what it calls its
+ * administrative levels.
+ */
 export type CountryConfig = {
   iso2: string;
   name: string;
@@ -15,6 +19,7 @@ export type CountryConfig = {
   adminLabels: { level1: string; level2: string };
 };
 
+/** The countries the app knows, by ISO 3166-1 alpha-2 code. */
 export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
   IN: {
     iso2: "IN",
@@ -28,6 +33,7 @@ export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
   },
 };
 
+/** Looks a country up by code (any case). Null for an unknown or missing code. */
 export function countryConfig(iso2: string | null | undefined): CountryConfig | null {
   return iso2 ? COUNTRY_CONFIGS[iso2.toUpperCase()] ?? null : null;
 }

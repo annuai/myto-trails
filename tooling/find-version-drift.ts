@@ -1,5 +1,6 @@
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)?$/;
 
+/** True for a MAJOR.MINOR.PATCH version, with an optional pre-release suffix. */
 export function isSemver(v: string): boolean {
   return SEMVER.test(v);
 }

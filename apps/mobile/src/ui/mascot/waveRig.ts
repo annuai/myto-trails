@@ -34,6 +34,7 @@ export function buildWaveRig(): WaveRig {
   return { ...parsed, weights };
 }
 
+/** The wave at rest: no angle and no scaling. */
 export const restWave: WavePose = { deg: 0, scaleX: 1, scaleY: 1 };
 
 /** The pose `t` seconds in. It repeats every `seconds`, and the first and last moments of a repeat are the same pose. */

@@ -1,3 +1,5 @@
+// A district (or state) page listing its published trails, with its own metadata.
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TrailCard } from "@/features/discovery/TrailCard";

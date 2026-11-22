@@ -1,3 +1,6 @@
+// Photo posts in a club, in two steps: the phone asks for upload addresses and sends its copies, then the server reads each back, checks it
+// and publishes the post.
+
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import type { Sql } from "postgres";
@@ -18,6 +21,7 @@ export type { PhotoSize, Reaction, PhotoUrls };
 export const PHOTO_MAX_BYTES: Record<PhotoSize, number> = { thumb: 250_000, view: 900_000, full: 4_000_000 };
 /** How far past its nominal width a copy may run (the phone rounds), and the biggest picture accepted. */
 const WIDTH_SLACK = 1.1;
+/** The most photos in one post. */
 export const PHOTOS_PER_POST = 10;
 const UPLOAD_URL_SECONDS = 900;
 
@@ -29,6 +33,7 @@ async function memberOf(sql: Sql, userId: string, clubPublicId: string): Promise
   return (await roleIn(sql, club.id, userId)) ? { ok: true, clubId: club.id } : { ok: false, reason: "not_member" };
 }
 
+/** The answer to step one: an id for the photo and an address to send each of its copies to. */
 export type PhotoIntent = { assetId: string; uploads: Record<PhotoSize, { url: string; method: "PUT"; headers: Record<string, string> }> };
 
 /**
@@ -92,6 +97,7 @@ async function check(storage: StorageProvider, ownerId: string, assetId: string)
   }
 }
 
+/** Why a photo post was refused. */
 export type PhotoPostFail = { ok: false; reason: "not_member" | "not_found" | "invalid" | "rate_limited" | "bad_photo" };
 
 /**

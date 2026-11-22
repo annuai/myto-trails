@@ -1,7 +1,9 @@
 /** How long a ride must stand still, unpaused, before the app asks if the rider is all right. */
 export const STOP_PROMPT_MS = 10 * 60_000;
 
+/** When the current stop began, and whether the rider has already been asked during it. */
 export type PromptState = { /** When the current stop began; null while moving. */ stoppedSince: number | null; /** Asked already during this stop. */ asked: boolean };
+/** The state at the start of a ride: not stopped, not asked. */
 export const startPrompt: PromptState = { stoppedSince: null, asked: false };
 
 /**

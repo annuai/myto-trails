@@ -4,6 +4,7 @@ import type { JournalEntry, JournalKind } from '@/lib/journalEntries';
 /** What the store needs from the file side, so it can be tested without a phone. */
 export type JournalMediaOps = { remove: (id: string, kind: Exclude<JournalKind, 'note'>) => void; removeAll: () => void };
 
+/** The journal entries and the titles riders gave their journals. */
 export type JournalState = {
   entries: JournalEntry[];
   /** A title the rider gave a journal, by its key. Without one a journal is named after its ride, or its date. */

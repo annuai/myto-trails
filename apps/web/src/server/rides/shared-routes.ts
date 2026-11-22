@@ -1,3 +1,5 @@
+// Routes a member shares as a link: saved from the phone, read by anyone with the link, deleted by the owner.
+
 import { randomInt } from "node:crypto";
 import type { Sql } from "postgres";
 import { cleanBody, LINK } from "../community/comments";
@@ -6,22 +8,29 @@ import { writeGpx } from "../gpx/write";
 
 const ID_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
 const ID = /^[a-z2-9]{10}$/;
+/** The most points a shared route may have. */
 export const MAX_POINTS = 2000;
+/** The most waypoints a shared route may have. */
 export const MAX_WAYPOINTS = 50;
 const SHARES_PER_DAY = 20;
 const MAX_PER_USER = 50;
 
+/** A latitude and longitude. */
 export type SharedPoint = [lat: number, lng: number];
+/** A named stop on a shared route. */
 export type SharedWaypoint = { name: string; lat: number; lng: number };
+/** A shared route: its name, line, stops, length and climb. */
 export type SharedRoute = { name: string; points: SharedPoint[]; waypoints: SharedWaypoint[]; distanceKm: number; elevationGainM: number | null };
 
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const r5 = (n: number) => Math.round(n * 1e5) / 1e5;
 const strip = (v: unknown, max: number) => cleanBody(v).replace(new RegExp(LINK.source, "gi"), "").replace(/\s*\n\s*/g, " ").replace(/\s{2,}/g, " ").trim().slice(0, max);
 
+/** A random id for a share link. The random source can be replaced in tests. */
 export function newPublicId(rand: (n: number) => number = randomInt): string {
   return Array.from({ length: 10 }, () => ID_ALPHABET[rand(ID_ALPHABET.length)]).join("");
 }
+/** True when the text has the shape of a share link id. */
 export const isPublicId = (v: string) => ID.test(v);
 
 /** Checks and tidies what the phone sent: coordinates to 5 decimals, names without web addresses. Null when it is not a route. */
@@ -47,6 +56,7 @@ export function parseSharedRoute(b: Record<string, unknown>): SharedRoute | null
   return { name: strip(b.name, 80) || "Shared route", points, waypoints, distanceKm: Math.round(b.distanceKm * 10) / 10, elevationGainM: gain === null ? null : Math.round(gain) };
 }
 
+/** Saves a route to share. Only members may; limited per day and per rider. */
 export async function createSharedRoute(sql: Sql, i: { userId: string; route: SharedRoute }): Promise<{ ok: true; id: string } | { ok: false; reason: "not_member" | "rate_limited" | "too_many" }> {
   if (!(await isMember(sql, i.userId))) return { ok: false, reason: "not_member" };
   return sql.begin(async (tx) => {
@@ -66,18 +76,21 @@ export async function createSharedRoute(sql: Sql, i: { userId: string; route: Sh
   });
 }
 
+/** A shared route by its link id. Null when the id is malformed or unknown. */
 export async function getSharedRoute(sql: Sql, id: string): Promise<SharedRoute | null> {
   if (!ID.test(id)) return null;
   const [r] = await sql`select name, points, waypoints, distance_km, elevation_gain_m from shared_route where public_id = ${id}`;
   return r ? { name: r.name, points: r.points, waypoints: r.waypoints, distanceKm: Number(r.distance_km), elevationGainM: r.elevation_gain_m } : null;
 }
 
+/** Deletes a shared route if the rider owns it. True when something was deleted. */
 export async function deleteSharedRoute(sql: Sql, i: { userId: string; id: string }): Promise<boolean> {
   if (!ID.test(i.id)) return false;
   const rows = await sql`delete from shared_route where public_id = ${i.id} and owner_id = ${i.userId} returning public_id`;
   return rows.length > 0;
 }
 
+/** A shared route as a GPX file, with a link back to its page. */
 export function sharedRouteGpx(r: SharedRoute, link: string): string {
   return writeGpx({ name: r.name, link, points: r.points.map(([lat, lon]) => ({ lat, lon })), waypoints: r.waypoints.map((w) => ({ name: w.name, lat: w.lat, lon: w.lng })) });
 }

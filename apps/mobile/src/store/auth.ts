@@ -22,6 +22,7 @@ type State = {
   clear: () => void;
 };
 
+/** The signed-in rider's token and name. The token is kept in the Keychain or Keystore. */
 export const useAuth = create<State>()(
   persist(
     (set) => ({ token: null, user: null, setSession: (token, user) => set({ token, user }), clear: () => set({ token: null, user: null }) }),

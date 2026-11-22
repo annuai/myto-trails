@@ -7,6 +7,7 @@ export const canEnableAutoEnd = (home?: SavedPlace, work?: SavedPlace): boolean 
 /** The name saved for "Use my current location": no network lookup, so the kind's own name. */
 export const currentLocationLabel = (kind: PlaceKind): string => (kind === 'home' ? 'Home' : 'Work');
 
+/** Whether location use is allowed: granted, denied or not asked yet. */
 export type LocationPermission = 'granted' | 'denied' | 'undetermined';
 
 /** "Use my current location" is off only when the phone is known to refuse it; undetermined may still prompt on tap. */

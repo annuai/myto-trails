@@ -1,11 +1,17 @@
+// Time units and day helpers for ride nudges.
+
+/** One minute in milliseconds. */
 export const MIN = 60_000;
+/** One hour in milliseconds. */
 export const HOUR = 3_600_000;
+/** One day in milliseconds. */
 export const DAY = 86_400_000;
 
 /** Local midnight of the day `t` falls on. */
 export const dayStart = (t: number): number => { const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); };
 /** `days` calendar days after the day of `t`, at `h`:`m` local time (so a clock change never moves it). */
 export const at = (t: number, days: number, h: number, m = 0): number => { const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + days, h, m).getTime(); };
+/** A time as `YYYY-MM-DD` in the phone's time zone. */
 export const isoOf = (t: number): string => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 /** ISO year and week of `t`, as YYYY-Www. */
 export const isoWeekOf = (t: number): string => {
@@ -15,6 +21,9 @@ export const isoWeekOf = (t: number): string => {
   const week = Math.ceil(((u.getTime() - Date.UTC(u.getUTCFullYear(), 0, 1)) / DAY + 1) / 7);
   return `${u.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 };
+/** The day of the week of a time, 0 for Sunday. */
 export const weekdayOf = (t: number): number => new Date(t).getDay();
+/** Minutes since midnight of a time. */
 export const minuteOfDay = (t: number): number => { const d = new Date(t); return d.getHours() * 60 + d.getMinutes(); };
+/** True when two times fall on the same day. */
 export const sameDay = (a: number, b: number): boolean => dayStart(a) === dayStart(b);

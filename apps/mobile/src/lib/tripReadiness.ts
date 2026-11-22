@@ -1,6 +1,9 @@
+// Whether a trip is ready to ride: a list of checks.
+
 import type { Status } from '@/ui/Chip';
 import type { TripRoute } from './tripPlan';
 
+/** One check: its label, status, the word shown and where to go to fix it. */
 export type TripCheck = { label: string; status: Status; word: string; go?: string };
 
 /**

@@ -1,3 +1,5 @@
+// The devices connected to the rider's account, with a way to connect or revoke one. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DeviceForm } from "@/features/account/DeviceForm";

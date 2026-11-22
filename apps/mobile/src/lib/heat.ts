@@ -9,6 +9,7 @@ type HeatRide = { startedAt: number; distanceKm: number; points: LatLng[]; break
 export type HeatLine = { points: Pt[]; heat: number };
 /** A place ridden, for the soft glow under the lines, with the same 0 to 1 heat. */
 export type HeatDot = Pt & { heat: number };
+/** The lines and dots drawn on the heat map. */
 export type HeatMap = { lines: HeatLine[]; dots: HeatDot[] };
 
 /** A cell is 0.0006 degrees: about 65 m, wide enough that two rides of one road land in the same cell despite GPS wander. */
@@ -111,6 +112,7 @@ export function heatMap(rides: HeatRide[], cell = CELL_DEG, maxDots = MAX_DOTS):
   return { lines, dots };
 }
 
+/** How far back the heat map goes: all rides, this year or this quarter. */
 export type HeatRange = 'all' | 'year' | 'quarter';
 const DAY_MS = 86_400_000;
 

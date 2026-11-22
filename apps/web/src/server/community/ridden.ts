@@ -1,3 +1,5 @@
+// Marking trails as ridden: a rider's own mark (month, bike, note) and the summary shown on a trail page.
+
 import type { Sql } from "postgres";
 import { isValidSlug } from "@moto-trails/domain";
 import { withPublicRole } from "../db/client";
@@ -7,8 +9,11 @@ import { isMember } from "./members";
 const MONTH = /^(\d{4})-(0[1-9]|1[0-2])$/;
 const UNMARK_OK = { ok: true } as const;
 
+/** What a rider sends when marking a trail as ridden. */
 export type RiddenInput = { userId: string; slug: string; month?: string | null; bike?: string | null; note?: string | null; now: Date };
+/** A rider listed on a trail as having ridden it. */
 export type RiddenRider = { riderId: string; displayName: string; riddenMonth: string | null; bike: string | null; note: string | null };
+/** How many riders have ridden a trail, who is listed, and the viewer's own mark. */
 export type RiddenSummary = {
   count: number;
   lastRidden: string | null;
@@ -49,6 +54,7 @@ export async function markRidden(sql: Sql, i: RiddenInput): Promise<{ ok: true }
   return UNMARK_OK;
 }
 
+/** Removes the rider's own mark from a trail. Always succeeds. */
 export async function unmarkRidden(sql: Sql, i: { userId: string; slug: string }): Promise<{ ok: true }> {
   if (isValidSlug(i.slug)) {
     await sql`delete from trail_ridden r using trail t where r.trail_id = t.id and t.slug = ${i.slug} and r.user_id = ${i.userId}`;
@@ -82,6 +88,7 @@ export async function getRiddenSummary(sql: Sql, slug: string, viewerId: string 
   };
 }
 
+/** A trail in the rider's own ridden list. */
 export type MyRiddenTrail = { slug: string; name: string; riddenMonth: string | null; bike: string | null; markedAt: string };
 
 /** The trails a rider says they have ridden, newest mark first. Only trails that are still published. */

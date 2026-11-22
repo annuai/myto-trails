@@ -1,3 +1,5 @@
+// Adds a to-do, from a template or from scratch, with its due date.
+
 import { useState } from 'react';
 import { fromKm, toKm } from '@/lib/units';
 import { useDistanceUnit } from '@/store/region';

@@ -5,8 +5,11 @@ export const ARRIVE_RADIUS_M = 200;
 /** The rider must first have been this far away, or a check-in set at home would close the moment the ride starts there. */
 export const LEAVE_RADIUS_M = 1_000;
 
+/** The places an arrival is judged against: home and the end of the route. */
 export type ArriveTargets = { home?: LatLng; routeEnd?: LatLng };
+/** Whether the rider has left home, and left the route's end, since the check began. */
 export type ArriveState = { leftHome: boolean; leftEnd: boolean };
+/** The state at the start of a ride: nowhere left yet. */
 export const startArrive: ArriveState = { leftHome: false, leftEnd: false };
 
 /**

@@ -4,12 +4,18 @@ import { deviceLocale } from './locale';
 
 /** The rider's bike economy and the petrol price, from a date on. Changing either adds a new entry, so earlier rides keep the price they had. */
 export type FuelSetting = { from: string; kmPerLitre: number; pricePerLitre: number };
+/** A ride as the cost is worked out: its id, when it started and its distance. */
 export type CostRide = { id: string; startedAt: number; distanceKm: number; /** With the time, the cost allows for how fast the ride was on average. */ durationSec?: number; sample?: boolean };
+/** One ride with the litres it used and what that cost. */
 export type RideCostItem<R extends CostRide = CostRide> = { ride: R; litres: number; cost: number };
+/** The rides of a period with their total cost, litres and distance. */
 export type CostSummary<R extends CostRide = CostRide> = { items: RideCostItem<R>[]; totalCost: number; totalLitres: number; totalKm: number; count: number };
 
+/** The lowest fuel economy accepted when the rider sets one. */
 export const MIN_KM_PER_LITRE = 5;
+/** The highest fuel economy accepted. */
 export const MAX_KM_PER_LITRE = 150;
+/** The highest fuel price accepted. */
 export const MAX_PRICE_PER_LITRE = 1000;
 
 /** The setting in force on a date: the latest one that began on or before it, or the earliest one for a ride from before any were set. */
@@ -21,6 +27,7 @@ export function settingFor(history: FuelSetting[], date: string): FuelSetting | 
 /** Adds a setting from `from`, replacing one that already began that day (so correcting a typo does not leave two). */
 export const upsertSetting = (history: FuelSetting[], next: FuelSetting): FuelSetting[] => [...history.filter((s) => s.from !== next.from), next].sort((a, b) => a.from.localeCompare(b.from));
 
+/** The day a ride started, as `YYYY-MM-DD`. */
 export const rideDate = (ride: { startedAt: number }) => toISO(new Date(ride.startedAt));
 
 /** The average speed the rider's own mileage stands for: ordinary mixed riding. Rides faster or slower than this change the economy. */
@@ -31,6 +38,7 @@ export const REFERENCE_KMH = 45;
  * It is kept within 0.7 to 1.1 so a wrong guess cannot change a cost by much.
  */
 const SPEED_CURVE: ReadonlyArray<readonly [kmh: number, factor: number]> = [[10, 0.7], [20, 0.8], [30, 0.92], [45, 1], [60, 1.05], [80, 0.97], [100, 0.85], [120, 0.72]];
+/** How much a ride's average speed changes its fuel use. */
 export function speedFactor(avgKmh: number): number {
   const first = SPEED_CURVE[0]!, last = SPEED_CURVE[SPEED_CURVE.length - 1]!;
   if (!(avgKmh > first[0])) return first[1];
@@ -93,6 +101,7 @@ export const formatMoney = (n: number, currency: string | null, locale: string =
 };
 /** What the rider calls it: "gas" in the places that do, else "petrol". */
 export const fuelWord = (country: string | null | undefined): 'gas' | 'petrol' => (country && ['US', 'CA', 'PH'].includes(country.toUpperCase()) ? 'gas' : 'petrol');
+/** Litres as text with one decimal under 10, like `4.5 L`, and none above. */
 export const formatLitres = (n: number): string => `${n < 10 ? n.toFixed(1) : Math.round(n)} L`;
 
 /** A number typed into a field ("35", "104.5", "104,5"), or null when it is not a usable number. */
@@ -100,6 +109,7 @@ export const parseAmount = (text: string): number | null => {
   const n = Number(text.trim().replace(',', '.'));
   return Number.isFinite(n) && n > 0 ? n : null;
 };
+/** True when the fuel economy and price are both within the accepted range. */
 export const validSetting = (kmPerLitre: number | null, pricePerLitre: number | null): boolean =>
   kmPerLitre !== null && pricePerLitre !== null && kmPerLitre >= MIN_KM_PER_LITRE && kmPerLitre <= MAX_KM_PER_LITRE && pricePerLitre <= MAX_PRICE_PER_LITRE;
 
@@ -107,10 +117,12 @@ export const validSetting = (kmPerLitre: number | null, pricePerLitre: number | 
 export function monthRange(today: string): { from: string; to: string } {
   return { from: `${today.slice(0, 7)}-01`, to: today };
 }
+/** The whole of the month before the one the given day is in. */
 export function lastMonthRange(today: string): { from: string; to: string } {
   const y = +today.slice(0, 4), m = +today.slice(5, 7);
   const py = m === 1 ? y - 1 : y, pm = m === 1 ? 12 : m - 1;
   const pad = (n: number) => String(n).padStart(2, '0');
   return { from: `${py}-${pad(pm)}-01`, to: `${py}-${pad(pm)}-${pad(new Date(py, pm, 0).getDate())}` };
 }
+/** From the start of the year to the given day. */
 export const yearRange = (today: string): { from: string; to: string } => ({ from: `${today.slice(0, 4)}-01-01`, to: today });

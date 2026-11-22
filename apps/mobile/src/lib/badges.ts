@@ -23,9 +23,12 @@ export function weekendsRidden(rides: readonly MarkRide[]): number {
 /** What the phone itself can count. Server numbers (Trailmarks, trails ridden) are merged on top when they are known. */
 export const localSnapshot = (rides: readonly MarkRide[]): ProgressSnapshot => ({ weekendsRidden: weekendsRidden(rides) });
 
+/** The badges grouped by category, from the rider's rides and what the server knows. */
 export const badgeGroups = (rides: readonly MarkRide[], server: ProgressSnapshot | undefined) => byCategory(evaluateAll({ ...localSnapshot(rides), ...server }));
 
 /** Badges borrow the existing stamp glyphs: one per category, so a badge reads as a Mark and not as a second system. */
 const GLYPH: Record<AchievementCategory, MarkGlyph> = { exploration: 'route', community: 'riders', contribution: 'nut', personal: 'dial' };
+/** The title and glyph a badge is drawn with. */
 export const badgeStamp = (s: AchievementStatus) => ({ title: s.def.title, glyph: GLYPH[s.def.category] });
+/** How many badges there are. */
 export const BADGE_COUNT = ACHIEVEMENTS.length;

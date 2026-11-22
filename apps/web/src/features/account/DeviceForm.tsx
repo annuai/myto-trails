@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+/** The result of connecting a device: the new token (shown once) or an error. */
 export type DeviceState = { token?: string; error?: string };
 
 /** Creates a device token. The token is shown once, right here, and can't be shown again. */

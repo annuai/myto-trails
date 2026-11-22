@@ -1,3 +1,5 @@
+// The rider's emergency contacts: add, edit and remove.
+
 import { useState } from 'react';
 import { Linking, View } from 'react-native';
 import { Phone, Plus, Star, Trash2 } from 'lucide-react-native';

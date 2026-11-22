@@ -1,5 +1,9 @@
+// Weather for a ride and whether it is good to ride in.
+
 import { speedKmh, withUnit } from './units';
+/** A day's forecast: temperatures, rain, wind and snow. */
 export type DayForecast = { date: string; maxC: number; minC: number; rainMm: number; rainPct: number; windKmh: number; snowCm: number; /** When the sun rises and sets there that day, as instants. Missing when the answer has no times. */ sunriseMs?: number; sunsetMs?: number };
+/** How good a day is to ride, with the reasons. */
 export type Rideability = { level: 'good' | 'caution' | 'avoid'; reasons: string[] };
 
 /** Open-Meteo, which needs no key. `days` is how many days from today (1 to 16). */

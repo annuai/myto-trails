@@ -1,3 +1,5 @@
+// One step of the submit-a-trail form. Not indexed.
+
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Stepper } from "@/features/submit/Stepper";

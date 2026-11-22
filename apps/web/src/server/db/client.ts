@@ -3,6 +3,10 @@ import { getDatabaseUrl } from "../env";
 
 export type { Sql };
 
+/**
+ * Opens the database connection pool. Prepared statements are off so it works behind a transaction-mode pooler, and `next build` uses a
+ * single connection so it cannot use up a small pool.
+ */
 export function createSql(databaseUrl: string): Sql {
   // prepare:false keeps this compatible with transaction-mode connection poolers (Supabase pooler).
   // One connection while `next build` prerenders pages, so the build cannot use up a small pooler (Supabase session mode allows 15).

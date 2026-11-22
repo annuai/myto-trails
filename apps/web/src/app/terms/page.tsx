@@ -1,3 +1,5 @@
+// The Terms of use page.
+
 import type { Metadata } from "next";
 import { LegalDocument } from "@/features/legal/LegalDocument";
 

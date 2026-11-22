@@ -22,6 +22,7 @@ export function HeroCard({ eyebrow, title, children, action }: { eyebrow: string
   );
 }
 
+/** A bar that fills to `value` of `max`, with an accessibility label. */
 export function ProgressBar({ value, max, label }: { value: number; max: number; label: string }) {
   const pct = max ? Math.min(1, value / max) : 0;
   const w = useAnimatedValue(0);

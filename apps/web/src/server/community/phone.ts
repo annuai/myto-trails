@@ -24,4 +24,5 @@ export function parsePhoneInput(v: unknown): string | null | "invalid" {
   return normalizePhone(v) ?? "invalid";
 }
 
+/** What to tell a rider whose phone number is not valid. */
 export const PHONE_INVALID_MESSAGE = "Enter a valid phone number (for India, 10 digits), or leave it empty.";

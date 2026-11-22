@@ -1,3 +1,5 @@
+// API routes for ride events: listing, creating, answering, checking in, roles, starting, the cover picture and cancelling.
+
 import { cancelEvent, checkIn, createEvent, getEvent, joinEventRide, listEvents, markArrived, parseEventInput, respond, setEventCover, setRole, startEvent, type EventScope } from "../community/events";
 import { ApiError, fail, ok, type Ctx, type RouteDef } from "./http";
 
@@ -35,6 +37,7 @@ const EVENT: Reasons = {
 
 const SCOPES: readonly EventScope[] = ["discover", "club", "mine"];
 
+/** The ride-event routes, registered by the router in routes.ts. */
 export const eventRoutes: RouteDef[] = [
   {
     method: "GET", path: "/events", access: "token", summary: "Upcoming and live events (query: scope discover|club|mine, clubId for club, limit)",

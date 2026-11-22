@@ -5,6 +5,7 @@ export type FileRef = { url: string; bytes: number; sha256: string };
 /** Manifests published before countries existed have none; every region in them is in India. */
 export const DEFAULT_COUNTRY = 'India';
 
+/** An offline map region as the manifest lists it. */
 export type Region = { id: string; name: string; /** The country the region is listed under, so the screen can group by country. */ country: string; bbox: [number, number, number, number]; version: string; map: FileRef; search: FileRef; /** Valhalla routing tiles for directions with no signal, gzipped. Older regions have none. */ route?: RouteRef };
 /** The routing file is published gzipped and unpacked on the phone, so it has two sizes: the download and what it takes on disk. */
 export type RouteRef = FileRef & { unpackedBytes: number };

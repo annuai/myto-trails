@@ -1,8 +1,12 @@
+// Distance between two points on the earth.
+
+/** A point as degrees of latitude and longitude. */
 export type LatLon = { lat: number; lon: number };
 
 const EARTH_RADIUS_KM = 6371.0088;
 const toRad = (deg: number) => (deg * Math.PI) / 180;
 
+/** The great-circle distance in kilometres between two points. Accurate to well under 1% at trail scale. */
 export function haversineKm(a: LatLon, b: LatLon): number {
   const dLat = toRad(b.lat - a.lat);
   const dLon = toRad(b.lon - a.lon);

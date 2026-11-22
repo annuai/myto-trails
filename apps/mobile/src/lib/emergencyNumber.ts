@@ -1,6 +1,9 @@
+// The number to call in an emergency, for the country the rider is in.
+
 import { countryConfig } from '@moto-trails/domain';
 import { countryAt } from './countryBoundaries';
 
+/** The main number, the other lines beside it and the country they are for. */
 export type EmergencyNumber = {
   number: string;
   /** How it was chosen. The screen says so: a number must never look surer than it is. */

@@ -20,6 +20,7 @@ export function womenSafeCutoff(now: Date): Date {
 /** Only a declared member whose private gender is female may mark. */
 export const canMarkWomenSafe = (m: Pick<MemberState, "confirmed" | "gender"> | null): boolean => m !== null && m.confirmed && m.gender === "female";
 
+/** The women-safe count for a trail, whether it has reached the number that confirms it, and what the viewer may do. */
 export function summarizeWomenSafe(i: { count: number; mine: boolean; canMark: boolean }): WomenSafe {
   return { count: i.count, confirmed: i.count >= WOMEN_SAFE_CONFIRMED_AT, mine: i.mine, canMark: i.canMark };
 }
@@ -45,6 +46,7 @@ export async function markWomenSafe(
   return DONE;
 }
 
+/** Removes the rider's own women-safe mark from a trail. Always succeeds. */
 export async function unmarkWomenSafe(sql: Sql, i: { userId: string; slug: string }): Promise<{ ok: true }> {
   if (isValidSlug(i.slug)) {
     await sql`delete from trail_women_safe w using trail t where w.trail_id = t.id and t.slug = ${i.slug} and w.user_id = ${i.userId}`;

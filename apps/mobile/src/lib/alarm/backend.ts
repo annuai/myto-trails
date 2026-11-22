@@ -8,6 +8,7 @@ import type { AlarmStep } from './ladder';
  */
 export type AlarmBackend = 'native' | 'notifications';
 
+/** True when this phone has the native alarm code (Android, or iOS with AlarmKit). */
 export const nativeSupported = () => !!RideAlarmNative?.isSupported();
 
 let cached: AlarmBackend | undefined;
@@ -16,6 +17,7 @@ export async function alarmBackend(): Promise<AlarmBackend> {
   if (!RideAlarmNative?.isSupported()) return (cached = 'notifications');
   return (cached = (await RideAlarmNative.authorization()) === 'granted' ? 'native' : 'notifications');
 }
+/** The alarm backend found the last time it was asked, without asking again. */
 export const lastBackend = () => cached;
 
 /** Asks for alarms on iOS (AlarmKit's own prompt). Resolves the backend that will be used. */
@@ -32,6 +34,7 @@ export function androidGaps(): ('exact' | 'fullScreen')[] {
   if (RideAlarmNative.canUseFullScreen && !RideAlarmNative.canUseFullScreen()) gaps.push('fullScreen');
   return gaps;
 }
+/** Opens the Android settings screen for exact alarms or full-screen alarms, so the rider can allow what is missing. */
 export const openAndroidSetting = (gap: 'exact' | 'fullScreen') => (gap === 'exact' ? RideAlarmNative?.openExactAlarmSettings?.() : RideAlarmNative?.openFullScreenSettings?.());
 
 let sent: string | undefined;

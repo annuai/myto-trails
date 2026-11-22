@@ -23,6 +23,7 @@ export type Trip = {
   items?: ChecklistItem[];
 };
 
+/** What is needed to create a trip. */
 export type NewTrip = { name: string; startDate?: string; startTime?: number; dayCount?: number; route?: TripRoute };
 
 type State = {
@@ -49,6 +50,7 @@ type State = {
 
 const mapTrip = (id: string, f: (t: Trip) => Trip) => (s: State) => ({ trips: s.trips.map((t) => (t.id === id ? f(t) : t)) });
 
+/** The rider's trips. */
 export const useTrips = create<State>()(
   persist(
     (set, get) => ({

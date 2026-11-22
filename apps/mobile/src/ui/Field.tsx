@@ -1,3 +1,5 @@
+// A labelled text field with a hint and an error.
+
 import { useEffect, useState } from 'react';
 import { Animated, TextInput, View, type TextInputProps } from 'react-native';
 import { buzz } from '@/lib/haptics';
@@ -9,6 +11,7 @@ import { useAnimatedValue } from './useAnimatedValue';
 
 type Props = Omit<TextInputProps, 'style'> & { label: string; hint?: string; error?: string; /** Set when the box sits on a Card, so its fill differs from the card's. */ onCard?: boolean };
 
+/** The text input, with its label above and its hint or error below. */
 export function Field({ label, hint, error, multiline, onCard, ...rest }: Props) {
   const { c } = useTheme();
   const [focus, setFocus] = useState(false);

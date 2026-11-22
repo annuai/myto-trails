@@ -1,4 +1,5 @@
 "use server";
+// Server action that saves a report about a trail.
 
 import { validateReport } from "@moto-trails/domain";
 import { updateTag } from "next/cache";

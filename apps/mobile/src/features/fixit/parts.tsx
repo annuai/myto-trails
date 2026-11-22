@@ -1,3 +1,5 @@
+// Small pieces used by the Fix it screens.
+
 import { useEffect } from 'react';
 import { Animated, Image, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -18,6 +20,7 @@ import { fixit } from './fixit.tokens';
 
 const TONE: Record<Difficulty, Status> = { easy: 'good', moderate: 'caution', hard: 'stop' };
 const WORD: Record<Difficulty, string> = { easy: 'Easy', moderate: 'Moderate', hard: 'Hard' };
+/** The word for a guide's difficulty. */
 export const difficultyWord = (d: Difficulty) => WORD[d];
 
 /** A guide's picture, when one has been drawn. With none, nothing is drawn: the words carry the guide. */

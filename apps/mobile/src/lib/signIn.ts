@@ -72,6 +72,7 @@ export async function finishSignIn(code: string, state: string): Promise<string>
   return safeReturnPath(stored.next);
 }
 
+/** Signs the rider out on this phone. */
 export async function signOut(): Promise<void> {
   const token = useAuth.getState().token;
   await flushStandingBeforeLeave(token); // while the old token still works

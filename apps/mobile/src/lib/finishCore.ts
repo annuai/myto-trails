@@ -1,7 +1,10 @@
+// Finishing a ride: what has to happen, in order, when the rider ends it.
+
 import { buildRide } from './buildRide';
 import type { Journal } from './journal';
 import type { Ride } from '@/store/rides';
 
+/** What finishing needs from outside: the journal, stopping background recording, flushing and resetting the recorder. */
 export type FinishDeps = {
   journal: Journal;
   stopBackground: () => Promise<void>;

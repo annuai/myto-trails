@@ -28,6 +28,7 @@ type State = {
   wipe: () => void;
 };
 
+/** The story moments the rider has seen and the highest title they reached. */
 export const useStory = create<State>()(
   persist(
     (set, get) => ({

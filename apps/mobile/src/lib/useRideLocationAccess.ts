@@ -1,8 +1,11 @@
+// Hook that reads the phone's location access for riding and re-reads it when the app returns to the front.
+
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, Linking, Platform } from 'react-native';
 import { requestRideLocationAccess, rideLocationAccess } from './backgroundLocation';
 import { needsSettings } from './rideAccess';
 
+/** Always, only while the app is open, denied, or not yet known. */
 export type RideAccess = 'always' | 'foreground' | 'denied' | 'unknown';
 
 /**

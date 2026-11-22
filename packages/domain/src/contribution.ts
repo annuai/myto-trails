@@ -7,6 +7,7 @@ import { DAY_MS } from "./time";
 export const CONTRIBUTION_STATES = ["draft", "pending", "approved", "rejected", "disputed", "outdated"] as const;
 export type ContributionState = (typeof CONTRIBUTION_STATES)[number];
 
+/** Everything that can happen to a contribution; the state machine below says which are allowed from which state. */
 export const CONTRIBUTION_EVENTS = ["submit", "request_changes", "withdraw", "approve", "reject", "dispute", "resolve_dispute", "expire", "refresh"] as const;
 export type ContributionEvent = (typeof CONTRIBUTION_EVENTS)[number];
 
@@ -49,9 +50,14 @@ export const CONFIRMATIONS_TO_VERIFY = 2;
 /** Same two weeks as `FRESH_DAYS` in the server's condition reports. */
 export const CONDITION_FRESH_DAYS = 14;
 
+/** What is known about a road-condition report: whether it is hidden, how many riders confirmed or disputed it, and when it was made. */
 export type ConditionEvidence = { hidden: boolean; confirmations: number; disputes: number; reportedAt: Date };
 const isDisputed = (confirmations: number, disputes: number) => disputes >= CONFIRMATIONS_TO_VERIFY && disputes >= confirmations;
 
+/**
+ * Derives a condition report's state from its evidence, in this order: hidden is rejected, disputed beats everything else, one past its
+ * freshness window is outdated, and otherwise enough confirmations approve it and fewer leave it pending.
+ */
 export function stateOfConditionReport(e: ConditionEvidence, now: Date): ContributionState {
   if (e.hidden) return "rejected";
   if (isDisputed(e.confirmations, e.disputes)) return "disputed";
@@ -59,8 +65,10 @@ export function stateOfConditionReport(e: ConditionEvidence, now: Date): Contrib
   return e.confirmations >= CONFIRMATIONS_TO_VERIFY ? "approved" : "pending";
 }
 
+/** The badges that tell a reader how far to trust a piece of information. */
 export const TRUST_LABELS = ["community_reported", "recently_verified", "officially_confirmed", "outdated", "disputed"] as const;
 export type TrustLabel = (typeof TRUST_LABELS)[number];
+/** The words shown for each trust label. */
 export const TRUST_TEXT: Record<TrustLabel, string> = {
   community_reported: "Community reported",
   recently_verified: "Recently verified",
@@ -69,6 +77,10 @@ export const TRUST_TEXT: Record<TrustLabel, string> = {
   disputed: "Disputed",
 };
 
+/**
+ * What decides a trust label: who is behind the information, its state and counts, when it was reported and, for moderator and official
+ * facts, until when it stands.
+ */
 export type TrustInput = {
   /** Who is behind it. Only a moderator or an official source can ever be "Officially confirmed". */
   source: "rider" | "moderator" | "official";

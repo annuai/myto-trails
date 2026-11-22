@@ -1,3 +1,5 @@
+// Moderator handling of reports made against trails: the list and resolving one.
+
 import type { Sql } from "postgres";
 import { FORBIDDEN, getActor } from "./actor";
 import { audit, record } from "./audit";
@@ -8,8 +10,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const OUTCOMES = { accepted: "accepted", rejected: "rejected", needs_info: "needs_info", duplicate: "duplicate_of_report" } as const;
 export type ReportOutcome = keyof typeof OUTCOMES;
 
+/** A report in the moderation list, with its priority and status. */
 export type ReportItem = { reportId: string; trailSlug: string; trailName: string; type: string; details: string; priority: string; status: string; reporterName: string; createdAt: string };
 
+/** The open reports. Forbidden for anyone who is not a moderator. */
 export async function listReports(sql: Sql, actorId: string): Promise<{ ok: true; items: ReportItem[] } | typeof FORBIDDEN> {
   if (!(await getActor(sql, actorId))) return FORBIDDEN;
   const rows = await sql`
@@ -22,6 +26,7 @@ export async function listReports(sql: Sql, actorId: string): Promise<{ ok: true
   return { ok: true, items: rows.map((r) => ({ reportId: r.id, trailSlug: r.slug, trailName: r.name, type: r.type, details: r.details, priority: r.priority, status: r.status, reporterName: r.display_name, createdAt: (r.created_at as Date).toISOString() })) };
 }
 
+/** Resolves a report with an outcome and a note, optionally setting a condition, and says whom to notify. */
 export async function resolveReport(
   sql: Sql,
   i: { actorId: string; reportId: string; outcome: ReportOutcome; note: string; condition?: ConditionInput; now: Date },

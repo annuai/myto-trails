@@ -1,3 +1,5 @@
+// Deleting a rider's account: the confirmation word, the check on clubs the rider administers, and the removal of their data and files.
+
 import { DELETE_CONFIRMATION } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
 import type { StorageBucket, StorageProvider } from "../storage";
@@ -8,10 +10,12 @@ type Db = Sql | TransactionSql;
 
 export { DELETE_CONFIRMATION };
 
+/** True when the rider typed the confirmation word, in any case and with spaces around it. */
 export function isDeleteConfirmed(value: unknown): boolean {
   return typeof value === "string" && value.trim().toLowerCase() === DELETE_CONFIRMATION;
 }
 
+/** Deleted, or refused because of clubs the rider is an admin of (they are listed). */
 export type DeleteAccountResult = { ok: true } | { ok: false; reason: "club_admin"; clubs: string[] };
 
 /** The public files an uploaded image was converted to (`image/<upload id>-<width>.<format>`), from the widths recorded on its media row. */

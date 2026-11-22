@@ -7,9 +7,12 @@ import { todayISO } from './dates';
 export const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 /** Default years offered: this many back and ahead of this year, unless min or max say otherwise. */
 export const YEARS_BACK = 100;
+/** How many years ahead the year wheel goes. */
 export const YEARS_AHEAD = 5;
 
+/** The first and last year on the wheel. */
 export type YearBounds = { first: number; last: number };
+/** A day, month and year on the wheels. */
 export type WheelPlace = { day: number; month: number; year: number };
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -35,8 +38,11 @@ export function yearBounds(min?: string, max?: string, today: string = todayISO(
   return { first, last: Math.max(first, last) };
 }
 
+/** The day numbers of a month. */
 export const dayItems = (year: number, month: number): string[] => Array.from({ length: daysInMonth(year, month) }, (_, i) => `${i + 1}`);
+/** The month names. */
 export const monthItems = (): string[] => MONTH_NAMES;
+/** The years between the bounds. */
 export const yearItems = ({ first, last }: YearBounds): string[] => Array.from({ length: last - first + 1 }, (_, i) => `${first + i}`);
 
 /** Wheel positions for a date. A year outside the bounds sits at the nearest end. */

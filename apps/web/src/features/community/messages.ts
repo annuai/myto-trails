@@ -32,6 +32,7 @@ const MESSAGES: Record<string, { tone: "good" | "caution" | "stop"; text: string
   comment_not_member: { tone: "stop", text: "Please finish setting up your account first." },
 };
 
+/** The note for a result code, or null when there is none. */
 export function resultMessage(code: string | undefined) {
   return code ? MESSAGES[code] ?? null : null;
 }

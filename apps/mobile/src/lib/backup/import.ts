@@ -1,3 +1,5 @@
+// Reads a backup back into the phone, either replacing what is there or merging with it.
+
 import { decrypt, deriveKey, openRecord } from './crypto';
 import { recordAad } from './export';
 import { BackupError, CURRENT_VERSION, FORMAT, fromBase64, parseEnvelope, type BackupFile, type BackupPayload, type OpenedBackup, type Snapshot } from './format';
@@ -6,14 +8,17 @@ import { MAGIC, readExact, readFrame, type ByteReader } from './stream';
 
 export type { ByteReader } from './stream';
 
+/** Replace what is on the phone, or merge with it. */
 export type ImportMode = 'replace' | 'merge';
 /** A swap of files that is made but not final: `finalize` gives up the old files, `rollback` puts everything back. */
 export type Swap = { finalize: () => void; rollback: () => void };
+/** Where restored photos are written. */
 export type PhotoSink = {
   stage: (id: string, base64: string) => Promise<void>;
   commit: (mode: ImportMode) => Swap;
   discard: () => void;
 };
+/** Where restored journal files are written. */
 export type JournalSink = {
   stage: (kind: 'photo' | 'voice', id: string, base64: string) => Promise<void>;
   commit: (mode: ImportMode) => Swap;
@@ -119,7 +124,9 @@ export async function openBackupFile(reader: ByteReader, passphrase: string): Pr
   };
 }
 
+/** How many of each kind a backup holds. */
 export type Summary = { rides: number; todos: number; contacts: number; documents: number; photos: number; journalEntries: number };
+/** Counts what a snapshot holds. */
 export const summarize = (p: Snapshot): Summary => ({
   rides: p.rides.length, todos: p.todos.length, contacts: p.contacts.length,
   documents: (p.licence ? 1 : 0) + (p.vehicle ? 1 : 0), photos: p.photos.length, journalEntries: p.journal.length,
@@ -150,6 +157,7 @@ function mergePlaces(local: Snapshot['places'], incoming: Snapshot['places']): S
   return { home: home.home, work: work.work, endStrikes: { home: home.endStrikes.home, work: work.endStrikes.work } };
 }
 
+/** Combines what is on the phone with the backup: lists are merged by id, the newer licence, vehicle and medical details win, and a journal entry with the same id stays as the phone has it. */
 export function mergeSnapshots(local: Snapshot, incoming: Snapshot): Snapshot {
   const contacts = mergeById(local.contacts, incoming.contacts);
   // the primary contact is one of the contacts: keep exactly one

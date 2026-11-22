@@ -1,10 +1,16 @@
+// The rules of the profile form: lengths, gender choices, phone digits and the declaration.
+
 import type { MyProfile } from '@/api/types';
 import { hasLink } from './community';
 
+/** The shortest display name. */
 export const NAME_MIN = 2;
+/** The longest display name. */
 export const NAME_MAX = 40;
+/** The longest bio. */
 export const BIO_MAX = 300;
 
+/** The choices offered for gender, with their words. */
 export const GENDER_CHOICES: { value: MyProfile['gender']; label: string }[] = [
   { value: 'male', label: 'Male' },
   { value: 'female', label: 'Female' },
@@ -22,8 +28,11 @@ export function profileProblem({ name, bio }: { name: string; bio: string }): st
   return undefined;
 }
 
+/** The fewest digits in a phone number. */
 export const PHONE_MIN_DIGITS = 7;
+/** The most digits in a phone number. */
 export const PHONE_MAX_DIGITS = 15;
+/** The words of the 18+ and driving-licence declaration. */
 export const DECLARATION = 'I am 18 or older and hold a valid driving licence';
 
 /** A phone number as typed, without spaces, dashes, dots and brackets. A leading + stays. */

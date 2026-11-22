@@ -1,3 +1,5 @@
+// Restores a backup: opens the chosen file, then replaces or merges the phone's data.
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { FileUp } from 'lucide-react-native';

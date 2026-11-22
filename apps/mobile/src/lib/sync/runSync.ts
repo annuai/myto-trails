@@ -8,6 +8,7 @@ export type SyncApi = {
   putTrack(rideId: string, bytes: Uint8Array): Promise<'ok' | 'no_such_ride' | 'over_quota' | 'too_large'>;
   getTrack(rideId: string): Promise<Uint8Array | null>;
 };
+/** What one sync run needs: the API, the adapters, the sync state and the clock. */
 export type SyncDeps = { api: SyncApi; adapters: Adapter[]; get: () => SyncState; set: (s: SyncState) => void; now: () => number };
 
 /** A failure the rider can act on, with the state it leaves behind. */

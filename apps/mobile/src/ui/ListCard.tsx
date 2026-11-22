@@ -36,6 +36,7 @@ const NARROW_ROW = 340;
 /** Text scaled up this much or more needs the room too. */
 const LARGE_TEXT = 1.15;
 
+/** One row of a list card: a label, optional detail, value and chevron. */
 export function Row({ label, sub, value, right, icon, onPress, mono, chevron, tone = 'ink', wrapRight }: RowProps) {
   const { c } = useTheme();
   const { fontScale } = useWindowDimensions();

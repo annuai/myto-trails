@@ -27,13 +27,16 @@ const CREATES_PER_DAY = 5;
 const JOIN_TRIES_PER_HOUR = 20;
 /** A group ride ends 12 hours after the last activity, and never lives longer than 72 hours. */
 export const IDLE_MS = 12 * HOUR;
+/** A group ride ends this long after it was created, however active. */
 export const HARD_CAP_MS = 72 * HOUR;
 /** A rider not heard from for this long has no position on the map. */
 export const STALE_MS = 5 * 60_000;
 const WRITE_GAP_MS = 5_000;
+/** What a rider in a group ride can signal to the others. */
 export const STATUSES = ["ok", "wait_up", "fuel", "break", "help"] as const;
 export type RiderStatus = (typeof STATUSES)[number];
 
+/** A six-character join code from a fixed alphabet. The random source can be replaced in tests. */
 export function generateCode(rand: (n: number) => number = randomInt): string {
   return Array.from({ length: 6 }, () => CODE_ALPHABET[rand(CODE_ALPHABET.length)]).join("");
 }
@@ -44,7 +47,9 @@ export function normalizeCode(v: unknown): string | null {
   return new RegExp(`^[${CODE_ALPHABET}]{6}$`).test(c) ? c : null;
 }
 
+/** When a group ride ends: after a quiet spell, but never later than the hard cap. */
 export const expiresAt = (createdAt: Date, lastActivityAt: Date) => new Date(Math.min(lastActivityAt.getTime() + IDLE_MS, createdAt.getTime() + HARD_CAP_MS));
+/** True once a group ride has ended or run past its expiry. */
 export const isExpired = (g: { createdAt: Date; lastActivityAt: Date; endedAt: Date | null }, now: Date) => g.endedAt !== null || now.getTime() >= expiresAt(g.createdAt, g.lastActivityAt).getTime();
 /** A position is shown only while it is recent. */
 export const isFresh = (seenAt: Date | null, now: Date) => seenAt !== null && now.getTime() - seenAt.getTime() < STALE_MS;
@@ -59,6 +64,7 @@ const uniqueViolation = (e: unknown) => typeof e === "object" && e !== null && (
 
 type Fail<R extends string> = { ok: false; reason: R };
 
+/** Starts a group ride with the rider as leader and returns its join code. Only declared members may. */
 export async function createGroupRide(
   sql: Sql,
   i: { userId: string; name: string; clubId: string | null; now: Date },
@@ -126,6 +132,7 @@ async function wipe(sql: Sql | TransactionSql, rideId: string, now: Date) {
   await sql`update group_ride set regroup_lat = null, regroup_lng = null, regroup_note = null, ended_at = coalesce(ended_at, ${now}) where id = ${rideId}`;
 }
 
+/** Joins a group ride by its code. Refused when the code is unknown or the ride is full. */
 export async function joinGroupRide(
   sql: Sql,
   i: { userId: string; code: string; displayName: string; now: Date },
@@ -156,7 +163,9 @@ export async function joinGroupRide(
   });
 }
 
+/** One rider in a group ride as the others see them: role, event role and last status. */
 export type Rider = { id: string; name: string; role: "leader" | "member"; eventRole: "captain" | "marshal" | "medic" | "sweep" | null; /** The titles the rider holds, the leader's list or else the one an event gave them. */ titles: RiderTitle[]; lat: number | null; lng: number | null; at: string | null; status: RiderStatus; /** The rider told the group they got home. Such a rider stays on the list, with no position. */ home: boolean };
+/** What a phone gets on each sync: the riders, the regroup point, whether the ride ended, and who may take the lead. */
 export type SyncResult = {
   me: string; riders: Rider[]; regroup: { lat: number; lng: number; note: string | null } | null; ended: boolean; stretchKm: number;
   /** The leader's backup, shown to the leader only. */
@@ -235,6 +244,7 @@ async function leaderOf(sql: Sql, rideId: string, userId: string, now: Date): Pr
   return g.leaderId === userId ? g : { ok: false, reason: "not_leader" };
 }
 
+/** The leader sets or clears the regroup point. */
 export async function setRegroup(sql: Sql, i: { userId: string; rideId: string; point: { lat: unknown; lng: unknown; note?: unknown } | null; now: Date }): Promise<{ ok: true } | Fail<"not_found" | "not_leader" | "invalid">> {
   const g = await leaderOf(sql, i.rideId, i.userId, i.now);
   if ("ok" in g) return g;
@@ -407,6 +417,7 @@ export async function markHome(sql: Sql, i: { userId: string; rideId: string; no
   return rows.length ? { ok: true } : { ok: false, reason: "not_found" };
 }
 
+/** The leader ends the ride for everyone. */
 export async function endGroupRide(sql: Sql, i: { userId: string; rideId: string; now: Date }): Promise<{ ok: true } | Fail<"not_found" | "not_leader">> {
   const g = await leaderOf(sql, i.rideId, i.userId, i.now);
   if ("ok" in g) return g;

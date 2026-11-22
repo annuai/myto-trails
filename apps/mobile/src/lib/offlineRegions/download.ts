@@ -10,6 +10,7 @@ const MB = 1024 * 1024;
 /** What the index remembers per region. Paths are rebuilt from the folder each time, because the app folder's address can change after an update. */
 export type IndexEntry = { id: string; version: string; bbox: Region['bbox'] };
 
+/** The file operations the downloader needs, so it can be tested without a phone. */
 export type DownloadFs = {
   freeBytes(): Promise<number>;
   makeDir(dir: string): Promise<void>;
@@ -29,11 +30,15 @@ export type DownloadFs = {
   gunzip?(from: string, to: string): Promise<number>;
 };
 
+/** The file that lists the installed regions. */
 export const INDEX_FILE = 'index.json';
+/** The saved copy of the manifest, used when the phone is offline. */
 export const MANIFEST_CACHE_FILE = 'manifest.cache.json';
 
 const stem = (id: string, version: string) => `${id}.${version}`;
+/** Where a region's map file is stored. */
 export const mapPath = (dir: string, id: string, version: string) => `${dir}${stem(id, version)}.map`;
+/** Where a region's search file is stored. */
 export const searchPath = (dir: string, id: string, version: string) => `${dir}${stem(id, version)}.search`;
 /** Valhalla's tile extract is a plain tar; the extension is what the native engine expects to map. */
 export const routePath = (dir: string, id: string, version: string) => `${dir}${stem(id, version)}.route.tar`;
@@ -107,6 +112,7 @@ export function rangePlan(status: number, resumeFrom: number): RangePlan {
 
 const indexLock = createSerial();
 
+/** The message shown when a download fails its check. */
 export const DAMAGED = 'The download was damaged, try again';
 
 /**
@@ -194,6 +200,7 @@ async function writeIndex(fs: DownloadFs, dir: string, entries: IndexEntry[]): P
   await fs.move(tmp, `${dir}${INDEX_FILE}`);
 }
 
+/** The message shown when a region is deleted while it is still downloading. */
 export const STILL_DOWNLOADING = 'This map is still downloading. Wait for it to finish, then delete it.';
 
 /** A region cannot be deleted while its download runs: the download would put the files straight back. */
@@ -227,6 +234,7 @@ export async function filterInstalled(dir: string, entries: IndexEntry[], exists
   return out;
 }
 
+/** The regions installed on the phone, leaving out any whose files are missing. */
 export async function readInstalled(fs: DownloadFs, dir: string): Promise<Installed[]> {
   return filterInstalled(dir, await readIndex(fs, dir), async (p) => (await fs.size(p)) !== null);
 }

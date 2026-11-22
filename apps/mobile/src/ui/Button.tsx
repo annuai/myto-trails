@@ -17,6 +17,7 @@ type Props = {
   /** Set when a soft button sits on a Card, so its fill differs from the card's. */ onCard?: boolean;
 };
 
+/** The app's button, in several variants, with an optional icon and arrow. */
 export function Button({ label, onPress, variant = 'primary', icon, arrow, big, disabled, align, trailing, flex, onCard, accessibilityLabel }: Props) {
   const { c } = useTheme();
   const bg = { primary: undefined, accent: c.accent, soft: onCard ? c.raised : c.card, danger: onCard ? c.raised : c.card, emergency: fixed.stopFill }[variant];

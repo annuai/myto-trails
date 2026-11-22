@@ -9,6 +9,7 @@ export const BACK_ON_ROUTE_M = 60;
 /** How long they must stay away first, so a wide bend or a GPS blip does not raise an alert. */
 export const OFF_ROUTE_AFTER_MS = 20_000;
 
+/** Where the rider is relative to a route line: how far off, which segment and how far along. */
 export type RoutePosition = { distM: number; /** Index of the segment's first point. */ segment: number; /** Metres from the start of the line to the nearest point on it. */ alongM: number };
 
 /** The nearest point on a line to `p`: how far away it is and how far along the line it lies. Null for a line with no points. */
@@ -60,7 +61,9 @@ function dist(a: LatLng, b: LatLng) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+/** Whether the rider is off the route and since when. */
 export type FollowState = { off: boolean; /** When the rider first went beyond the limit, while they are still within the wait. */ farSince: number | null };
+/** The state at the start of a ride: on the route. */
 export const startFollow: FollowState = { off: false, farSince: null };
 
 /** One step of the monitor: off the line after more than 100 m for 20 s, back on it within 60 m. The ends of an alert are reported once. */

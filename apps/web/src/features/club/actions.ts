@@ -1,4 +1,6 @@
 "use server";
+// Server actions of the club pages. Each one needs a declared member, runs the matching club function and redirects back with a short note
+// (see messages.ts).
 
 import { redirect } from "next/navigation";
 import { getSiteUrl } from "@/lib/site";
@@ -20,6 +22,7 @@ async function member(next: string) {
 const clubPath = (id: string) => `/club/${encodeURIComponent(id)}`;
 const to = (id: string, code: string, hash = ""): never => redirect(`${clubPath(id)}?n=${encodeURIComponent(code)}${hash}`);
 
+/** Starts a club. */
 export async function createClubAction(formData: FormData): Promise<void> {
   const user = await member("/club");
   const r = await createClub(getSql(), { userId: user.id, name: text(formData, "name"), description: text(formData, "description"), womenOnly: formData.get("womenOnly") === "on", now: new Date() });
@@ -27,6 +30,7 @@ export async function createClubAction(formData: FormData): Promise<void> {
   redirect(`/club?n=create_${r.reason}`);
 }
 
+/** Asks to join a club. */
 export async function requestJoinAction(formData: FormData): Promise<void> {
   const id = text(formData, "clubId");
   const user = await member(clubPath(id));
@@ -39,6 +43,7 @@ export async function requestJoinAction(formData: FormData): Promise<void> {
   to(id, r.ok ? "requested" : `join_${r.reason}`);
 }
 
+/** Takes back a request to join. */
 export async function withdrawJoinAction(formData: FormData): Promise<void> {
   const id = text(formData, "clubId");
   const user = await member(clubPath(id));
@@ -46,6 +51,7 @@ export async function withdrawJoinAction(formData: FormData): Promise<void> {
   to(id, "withdrawn");
 }
 
+/** An admin accepts or declines a join request. */
 export async function decideJoinAction(formData: FormData): Promise<void> {
   const id = text(formData, "clubId");
   const user = await member(clubPath(id));
@@ -56,6 +62,7 @@ export async function decideJoinAction(formData: FormData): Promise<void> {
   to(id, r.ok ? (accept ? "accepted" : "declined") : `err_${r.reason}`, "#requests");
 }
 
+/** Leaves a club. */
 export async function leaveClubAction(formData: FormData): Promise<void> {
   const id = text(formData, "clubId");
   const user = await member(clubPath(id));
@@ -64,6 +71,7 @@ export async function leaveClubAction(formData: FormData): Promise<void> {
   to(id, `err_${r.reason}`);
 }
 
+/** An admin removes a member. */
 export async function removeMemberAction(formData: FormData): Promise<void> {
   const id = text(formData, "clubId");
   const user = await member(clubPath(id));
@@ -71,6 +79,7 @@ export async function removeMemberAction(formData: FormData): Promise<void> {
   to(id, r.ok ? "removed" : `err_${r.reason}`, "#members");
 }
 
+/** An admin changes a member's role. */
 export async function setRoleAction(formData: FormData): Promise<void> {
   const id = text(formData, "clubId");
   const user = await member(clubPath(id));
@@ -81,6 +90,7 @@ export async function setRoleAction(formData: FormData): Promise<void> {
 /** Ride times are typed as India time (IST, +05:30) in a date and time field. */
 const IST = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/;
 
+/** Posts to a club's feed, or replies to a post. */
 export async function postAction(formData: FormData): Promise<void> {
   const id = text(formData, "clubId");
   const user = await member(clubPath(id));
@@ -95,6 +105,7 @@ export async function postAction(formData: FormData): Promise<void> {
   to(id, r.ok ? "posted" : `post_${r.reason}`, "#feed");
 }
 
+/** Answers a ride plan with going or maybe. */
 export async function respondAction(formData: FormData): Promise<void> {
   const id = text(formData, "clubId");
   const user = await member(clubPath(id));
@@ -103,6 +114,7 @@ export async function respondAction(formData: FormData): Promise<void> {
   to(id, r.ok ? "responded" : `err_${r.reason}`, "#feed");
 }
 
+/** Hides a club post. */
 export async function hidePostAction(formData: FormData): Promise<void> {
   const id = text(formData, "clubId");
   const user = await member(clubPath(id));
@@ -110,6 +122,7 @@ export async function hidePostAction(formData: FormData): Promise<void> {
   to(id, r.ok ? "hidden" : `err_${r.reason}`, "#feed");
 }
 
+/** Sets a club's cover picture. */
 export async function setCoverAction(formData: FormData): Promise<void> {
   const id = text(formData, "clubId");
   const user = await member(clubPath(id));

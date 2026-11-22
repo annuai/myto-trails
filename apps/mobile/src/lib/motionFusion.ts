@@ -9,6 +9,7 @@ export type Activity = 'riding' | 'crawling' | 'stopped_brief' | 'stopped_parked
 /** What the phone's own activity recognition says, when it is allowed and available. */
 export type OsActivity = 'automotive' | 'walking' | 'stationary' | 'unknown';
 
+/** One reading fed to the detector: a GPS fix or an accelerometer window. */
 export type Evidence =
   | { k: 'gps'; t: number; lat: number; lng: number; /** metres per second; null or negative means no reading */ speed?: number | null; /** metres */ acc?: number }
   | { k: 'shake'; t: number; /** spread of the acceleration magnitude over a short window, in g */ vib: number; /** steps per second when the window shows a walking rhythm, else 0 */ stepHz: number }
@@ -16,6 +17,7 @@ export type Evidence =
   | { k: 'tick'; t: number };
 
 type Fix = { t: number; lat: number; lng: number; speed: number | null; acc: number };
+/** What the detector believes: the activity, how sure it is, since when, and the fixes it keeps. */
 export type Fusion = {
   state: Activity;
   /** 0 to 1: how much the evidence backs the state. Consumers act on a stop only above their own bar. */
@@ -29,6 +31,7 @@ export type Fusion = {
   /** when evidence last arrived, of any kind */
   lastAt: number;
 };
+/** The state before anything has been seen: unknown. */
 export const initialFusion: Fusion = { state: 'unknown', confidence: 0, since: 0, fixes: [], lastAt: 0 };
 
 // Evidence windows and freshness (ms).
@@ -159,6 +162,7 @@ export const isStoppedConfident = (s: Fusion, bar = 0.6) => stopped(s.state) && 
 /** Counts as riding for the break reminder: moving, or a short stop that has not become a break. */
 export const isRidingSession = (s: Fusion) => moving(s.state) || s.state === 'stopped_brief' || s.state === 'unknown';
 
+/** One accelerometer reading with its time. */
 export type Sample = { t: number; x: number; y: number; z: number };
 /**
  * Turns a window of raw accelerometer samples (g, any rate from about 8 Hz) into `vib` and `stepHz`: the spread of the magnitude, and

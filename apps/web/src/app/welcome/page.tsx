@@ -1,3 +1,5 @@
+// The first screen after the first sign-in: the 18+ and driving-licence declaration. Not indexed.
+
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { WelcomeForm } from "@/features/community/WelcomeForm";

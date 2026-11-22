@@ -5,13 +5,17 @@ import type { GroupRiderView, GroupStatus } from '@/lib/groupCore';
 // Group rides: a six-character code, one live map, a regroup pin (§4.2). Positions are ISO 8601 instants.
 export type { GroupStatus };
 export type GroupRide = { id: string; code: string; name: string; expiresAt: string };
+/** A group ride the rider is in. */
 export type JoinedGroup = { id: string; name: string; role: string };
+/** The regroup point and its note. */
 export type GroupRegroup = { lat: number; lng: number; note: string | null };
 /** The leader's view of the ride's size and what would raise it. Prices are in paise and are only what to show; the amount charged is the billing provider's. */
 export type GroupCapacity = { plan: 'free' | 'large_ride_pass' | 'organiser'; limit: number; used: number; upgrades: { plan: 'large_ride_pass' | 'organiser'; limit: number; pricePaise: number; per: 'ride' | 'month' }[] };
 export type GroupSync = { /** Sent to the leader only. */ capacity?: GroupCapacity; /** The leader's backup (a rider's id); sent to the leader only. */ successor?: string | null; /** The leader is out of contact and this rider may take the lead. */ canTakeLead?: boolean; /** The lead was taken from this rider while they were out of contact, and they may take it back. */ canTakeBack?: boolean; riders: GroupRiderView[]; regroup: GroupRegroup | null; ended: boolean; /** This rider's own handle in `riders`. */ me: string; /** Distance in km after which the leader is warned that the group is stretched. */ stretchKm?: number };
+/** What a phone sends on each group sync: its position, time, status and battery. */
 export type SyncBody = { lat?: number; lng?: number; at?: string; status?: GroupStatus; /** This phone's battery, 0 to 100, and whether it is charging: the server uses it to tell a dead phone from lost signal. */ battery?: number; charging?: boolean };
 
+/** Starts a group ride. */
 export const createGroupRide = (token: string, body: { name: string; clubId?: string }) => api<GroupRide>('/group-rides', { method: 'POST', token, body });
 /** The group ride a club's riders can join right now, or null. Club members only. */
 export const getClubGroupRide = (token: string, clubId: string) => api<{ ride: { id: string; name: string; code: string } | null }>(`/clubs/${clubId}/group-ride`, { token });

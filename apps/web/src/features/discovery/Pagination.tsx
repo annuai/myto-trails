@@ -6,6 +6,9 @@ const href = (params: SearchParams, page: number) => {
   return qs ? `/trails?${qs}` : "/trails";
 };
 
+/**
+ * Page links: previous, next, and the first, last and nearby page numbers, as plain links that keep the other search settings. Nothing when there is only one page.
+ */
 export function Pagination({ params, total }: { params: SearchParams; total: number }) {
   const pages = Math.ceil(total / PAGE_SIZE);
   if (pages <= 1) return null;

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 
+/** How a successful API response may be cached: `day` for public data that changes slowly, `none` for anything else. */
 export type CachePolicy = "day" | "none";
 
 /** Browsers and the app re-ask after 5 minutes; the CDN answers for 23 hours, then serves stale for one hour while it refreshes: 24 hours at the worst. */

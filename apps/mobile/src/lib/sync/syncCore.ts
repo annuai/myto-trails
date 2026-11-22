@@ -25,7 +25,9 @@ export type Adapter = {
   track?(id: string): Uint8Array | null;
 };
 
+/** What was last agreed with the server for a record: a hash, the server's time and whether this phone has the ride's points. */
 export type Baseline = { hash: string; serverUpdatedAt: number; /** This phone has the ride's points. */ track?: true };
+/** A record changed on this phone and not yet sent: when, and whether it was deleted. */
 export type Dirty = { updatedAt: number; deleted: boolean };
 export type SyncState = {
   enabled: boolean;
@@ -110,6 +112,7 @@ export function scan(state: SyncState, adapters: Adapter[], now: number): SyncSt
   return { ...state, dirty, skipped, held };
 }
 
+/** A change as it is sent to the server. */
 export type OutChange = { kind: SyncKind; id: string; data?: Record<string, unknown>; updatedAt: string; baseUpdatedAt: string | null; deleted?: true };
 export type Batch = { changes: OutChange[]; sent: Record<Key, { hash: string; updatedAt: number; deleted: boolean }> };
 /** The API accepts 64 KB a request; stay well under it. */
@@ -179,6 +182,7 @@ export function afterPush(state: SyncState, batch: Batch, result: PushResult, ad
   return { ...state, baseline, dirty, tracksPending: [...tracks], fullPull, blocked };
 }
 
+/** A change as the server sends it back. */
 export type Pulled = { kind: SyncKind; id: string; data: Record<string, unknown>; updatedAt: string; deleted: boolean; hasTrack: boolean };
 
 /** What to do with one pulled change, given this phone's state. */

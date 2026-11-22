@@ -1,3 +1,4 @@
+/** A start and an end date, either of which may be missing. */
 export type DateRange = { start?: string; end?: string };
 
 /**

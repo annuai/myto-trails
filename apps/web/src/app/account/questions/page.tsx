@@ -1,3 +1,5 @@
+// The questions the rider has received and sent, and the blocked riders. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";

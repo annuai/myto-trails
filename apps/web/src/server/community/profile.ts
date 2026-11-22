@@ -21,18 +21,21 @@ export async function ownsMedia(sql: Db, userId: string, mediaId: string): Promi
   return Boolean(m);
 }
 
+/** Sets or clears a rider's avatar. The picture must be one the rider uploaded. */
 export async function setAvatar(sql: Sql, i: { userId: string; mediaId: string | null }): Promise<{ ok: true } | { ok: false; reason: "invalid" }> {
   if (i.mediaId !== null && !(await ownsMedia(sql, i.userId, i.mediaId))) return { ok: false, reason: "invalid" };
   await sql`update app_user set avatar_media_id = ${i.mediaId} where id = ${i.userId}`;
   return { ok: true };
 }
 
+/** The address of a rider's avatar, or null when they have none. */
 export async function getAvatarUrl(sql: Db, userId: string): Promise<string | null> {
   if (!UUID.test(userId)) return null;
   const [r] = await sql`select m.variants from app_user u join media m on m.id = u.avatar_media_id where u.id = ${userId}`;
   return r ? pickVariant(r.variants, 200) : null;
 }
 
+/** A rider's bike, or null when they have not added one. */
 export async function getBike(sql: Db, userId: string): Promise<Bike | null> {
   if (!UUID.test(userId)) return null;
   const [r] = await sql`
@@ -65,6 +68,7 @@ export async function saveBike(
   return { ok: true };
 }
 
+/** Removes a rider's bike. */
 export async function removeBike(sql: Sql, userId: string): Promise<void> {
   if (UUID.test(userId)) await sql`delete from rider_bike where user_id = ${userId}`;
 }

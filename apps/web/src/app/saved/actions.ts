@@ -1,4 +1,5 @@
 "use server";
+// Server actions to save a trail, unsave it, and remove a saved trail from the saved list.
 
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/server/auth/session";

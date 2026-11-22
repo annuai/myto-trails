@@ -1,4 +1,7 @@
+// Grouping rides into trips by day.
+
 type TripRide = { startedAt: number; distanceKm: number; durationSec: number };
+/** One day of a trip with the rides that started on it. */
 export type TripDay<R extends TripRide> = { /** The day the rides started, on the rider's own clock (YYYY-MM-DD). */ date: string; rides: R[]; distanceKm: number; durationSec: number };
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -14,6 +17,7 @@ export function tripDays<R extends TripRide>(rides: R[]): TripDay<R>[] {
   return [...byDay].map(([date, list]) => ({ date, rides: list, distanceKm: +list.reduce((n, r) => n + r.distanceKm, 0).toFixed(1), durationSec: list.reduce((n, r) => n + r.durationSec, 0) }));
 }
 
+/** The number of days, total distance and total time of a trip's rides. */
 export function tripTotals(rides: TripRide[]): { days: number; distanceKm: number; durationSec: number } {
   return { days: tripDays(rides).length, distanceKm: +rides.reduce((n, r) => n + r.distanceKm, 0).toFixed(1), durationSec: rides.reduce((n, r) => n + r.durationSec, 0) };
 }

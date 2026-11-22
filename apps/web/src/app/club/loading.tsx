@@ -1,3 +1,5 @@
+// Placeholder shown while the clubs page loads.
+
 import { CardListSkeleton, LoadingScreen, Skeleton } from "@/ui/Skeleton/Skeleton";
 
 export default function ClubLoading() {

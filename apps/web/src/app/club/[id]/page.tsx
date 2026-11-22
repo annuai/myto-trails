@@ -1,3 +1,5 @@
+// One club: its members, posts, join requests and ride plans, for its members. Not indexed.
+
 import type { Metadata } from "next";
 import { DEFAULT_TIME_ZONE, formatWhen, zoneName } from "@/lib/time-zone";
 import Link from "next/link";

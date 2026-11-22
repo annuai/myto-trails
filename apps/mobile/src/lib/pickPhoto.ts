@@ -1,7 +1,11 @@
+// Picking a photo from the phone's library.
+
 import * as ImagePicker from 'expo-image-picker';
 import { CARD_SIZE, type CardFormat } from './rideCard';
 
+/** A chosen photo: where it is and its size. */
 export type PickedPhoto = { uri: string; width: number; height: number };
+/** The chosen photo, or why none: cancelled, permission denied or failed. */
 export type PickResult = { ok: true; photo: PickedPhoto } | { ok: false; reason: 'cancelled' | 'denied' | 'failed'; message: string };
 
 /**

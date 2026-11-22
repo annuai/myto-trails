@@ -1,3 +1,5 @@
+// The home page: hero, nearby and featured trails, regions, how access is shown, and the invitation to contribute.
+
 import { Suspense } from "react";
 import { AccessExplainer } from "@/features/home/AccessExplainer";
 import { AppBand } from "@/features/app-beta/AppBand";

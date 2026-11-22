@@ -1,5 +1,8 @@
+// Ready-made to-dos the rider can add, such as a service or a document renewal.
+
 import type { Todo } from '@/lib/todos';
 
+/** A to-do template: its title, a hint, its category and when it comes due (by date, or by distance for a service). */
 export type Template = { key: string; title: string; hint: string; category: Todo['category']; kind: 'date' | 'service'; everyKm?: number; everyMonths?: number };
 
 // Suggested intervals are starting points; the owner's manual wins. They are editable per item.

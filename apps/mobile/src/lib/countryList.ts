@@ -204,10 +204,12 @@ YE|Yemen|YER
 ZM|Zambia|ZMW
 ZW|Zimbabwe|USD`;
 
+/** A country's code, name and currency. */
 export type CountryEntry = { iso2: string; name: string; currency: string };
 
 /** Every country the table lists. */
 export const COUNTRIES: CountryEntry[] = TABLE.split('\n').map((line) => { const [iso2, name, currency] = line.split('|'); return { iso2: iso2!, name: name!, currency: currency! }; });
 
 const BY_CODE = new Map(COUNTRIES.map((c) => [c.iso2, c]));
+/** A country by its two-letter code, in any case. Undefined when unknown. */
 export const countryEntry = (iso2: string | null | undefined): CountryEntry | undefined => (iso2 ? BY_CODE.get(iso2.toUpperCase()) : undefined);

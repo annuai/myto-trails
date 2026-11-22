@@ -18,6 +18,7 @@ export const ANALYTICS_EVENTS = {
 } as const satisfies Record<string, Record<string, Kind>>;
 
 export type AnalyticsEventName = keyof typeof ANALYTICS_EVENTS;
+/** The properties an event can carry: short strings and numbers only, never free text. */
 export type AnalyticsProps = Record<string, string | number>;
 
 /** A public slug or route pattern: letters, digits, hyphens, underscores, slashes and brackets, at most 80 characters. No spaces, @, dots or commas. */
@@ -65,6 +66,7 @@ export function screenPattern(segments: readonly string[]): string {
 /** Website pages that are never recorded by session replay: accounts, sign-in, moderation, private links and contributions. */
 export const REPLAY_BLOCKED_PREFIXES = ["account", "sign-in", "auth", "moderate", "track", "route", "join", "submit", "saved"] as const;
 
+/** Whether session replay may record this page: false for the first path segment of any blocked prefix, such as account pages. */
 export function replayAllowed(pathname: string): boolean {
   const first = (pathname.split(/[?#]/)[0] ?? "").split("/").filter(Boolean)[0] ?? "";
   return !(REPLAY_BLOCKED_PREFIXES as readonly string[]).includes(first);

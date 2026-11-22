@@ -8,6 +8,7 @@ export function rupees(paise: number): string {
   return `₹${Number.isInteger(r) ? r : r.toFixed(2)}`;
 }
 
+/** The name of each plan that raises a group ride's size. */
 export const OPTION_TITLE: Record<Option['plan'], string> = { large_ride_pass: 'Large Ride Pass', organiser: 'Myto Organiser' };
 
 /** One line per option: the size it gives, the price and what it covers. Never says "buy": nothing can be bought until a billing provider is wired in. */

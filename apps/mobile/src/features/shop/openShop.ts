@@ -12,6 +12,7 @@ export function openProduct(product: ShopProduct, surface: ShopSurface) {
   void Linking.openURL(productUrl(product, surface)).catch(() => undefined);
 }
 
+/** Opens the shop's website, noting which place in the app it was opened from. */
 export function openShopSite(surface: ShopSurface) {
   void Linking.openURL(shopUrl(surface)).catch(() => undefined);
 }

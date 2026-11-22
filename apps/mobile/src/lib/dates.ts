@@ -1,26 +1,36 @@
 // Dates are plain 'YYYY-MM-DD' strings in local time, so they sort, compare and persist without time zones.
 const pad = (n: number) => String(n).padStart(2, '0');
+/** A date as `YYYY-MM-DD`. */
 export const toISO = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+/** A `YYYY-MM-DD` text as a date at local midnight. */
 export const fromISO = (iso: string) => new Date(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
+/** Today as `YYYY-MM-DD`. */
 export const todayISO = () => toISO(new Date());
 
+/** The date `n` days later (or earlier, if negative). */
 export function addDays(iso: string, n: number): string {
   const d = fromISO(iso); d.setDate(d.getDate() + n); return toISO(d);
 }
+/** The date `n` months later. */
 export function addMonths(iso: string, n: number): string {
   const d = fromISO(iso); const day = d.getDate();
   d.setDate(1); d.setMonth(d.getMonth() + n);
   const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
   d.setDate(Math.min(day, last)); return toISO(d);
 }
+/** Whole days from a starting date (today by default) to the date. */
 export function daysUntil(iso: string, from: string = todayISO()): number {
   return Math.round((fromISO(iso).getTime() - fromISO(from).getTime()) / 86_400_000);
 }
 
+/** Short month names. */
 export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+/** A date as `5 Nov 2026`. */
 export const formatDate = (iso: string) => `${+iso.slice(8, 10)} ${MONTHS[+iso.slice(5, 7) - 1]} ${iso.slice(0, 4)}`;
+/** A date as `5 Nov`. */
 export const formatShort = (iso: string) => `${+iso.slice(8, 10)} ${MONTHS[+iso.slice(5, 7) - 1]}`;
+/** A month and year as `November 2026`. */
 export const monthLabel = (y: number, m: number) => `${MONTHS_LONG[m]} ${y}`;
 
 /** Weeks (Monday first) of a month; null pads the ends. */
@@ -32,6 +42,7 @@ export function monthGrid(y: number, m: number): (string | null)[][] {
   return Array.from({ length: cells.length / 7 }, (_, i) => cells.slice(i * 7, i * 7 + 7));
 }
 
+/** A date in words: Today, Tomorrow, Yesterday, `3 days ago`, `in 12 days` (up to 45 days ahead), otherwise the date itself. */
 export function relativeDays(iso: string): string {
   const n = daysUntil(iso);
   if (n === 0) return 'Today';

@@ -33,12 +33,15 @@ export async function connectOsm(): Promise<{ ok: true } | { ok: false; error: s
   }
 }
 
+/** Forgets the saved OpenStreetMap token. */
 export const disconnectOsm = (): Promise<void> => vault.del();
+/** True when the rider has connected OpenStreetMap. */
 export const hasOsmToken = async (): Promise<boolean> => !!(await vault.get());
 
 /** 'sent'; 'auth' when the sign-in has lapsed or was withdrawn; 'refused' when OpenStreetMap will not take this trace; 'later' when it could not be reached. */
 export type UploadResult = 'sent' | 'auth' | 'refused' | 'later';
 
+/** Uploads a GPX trace to OpenStreetMap with the saved token. */
 export async function uploadTrace(gpx: string): Promise<UploadResult> {
   const token = await vault.get();
   if (!token) return 'auth';

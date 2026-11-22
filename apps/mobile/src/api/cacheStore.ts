@@ -4,6 +4,7 @@ export const FRESH_MS = 5 * 60 * 1000;
 type Entry = { data: unknown; at: number };
 const entries = new Map<string, Entry>();
 
+/** A saved answer and when it was saved, or undefined. */
 export function cacheGet<T>(key: string): { data: T; at: number } | undefined {
   return entries.get(key) as { data: T; at: number } | undefined;
 }
@@ -12,11 +13,13 @@ const listeners = new Set<() => void>();
 /** Called after every cacheSet, so something can save the cache. Returns a function that stops listening. */
 export function onCacheSet(fn: () => void): () => void { listeners.add(fn); return () => { listeners.delete(fn); }; }
 
+/** Saves an answer under a key. */
 export function cacheSet(key: string, data: unknown, now = Date.now()) {
   entries.set(key, { data, at: now });
   listeners.forEach((l) => l());
 }
 
+/** Every saved answer. */
 export const cacheEntries = (): [string, Entry][] => [...entries];
 
 /** Puts saved entries back at start-up, keeping whatever this session already fetched if it is newer. Does not tell listeners. */
@@ -24,10 +27,12 @@ export function cacheRestore(saved: [string, Entry][]) {
   for (const [k, e] of saved) { const have = entries.get(k); if (!have || have.at < e.at) entries.set(k, e); }
 }
 
+/** Forgets one saved answer. */
 export function cacheDelete(key: string) {
   entries.delete(key);
 }
 
+/** Forgets every saved answer whose key matches. */
 export function cacheDeleteWhere(match: (key: string) => boolean) {
   for (const k of [...entries.keys()]) if (match(k)) entries.delete(k);
 }

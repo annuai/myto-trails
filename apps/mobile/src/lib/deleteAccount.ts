@@ -1,6 +1,9 @@
+// The rule for confirming an account deletion in the app.
+
 import { DELETE_CONFIRMATION } from '@moto-trails/domain';
 import { ApiFailure } from '@/api/client';
 
+/** True once the rider has typed the confirmation word. */
 export function canConfirmDelete(typed: string): boolean {
   return typed.trim().toLowerCase() === DELETE_CONFIRMATION;
 }

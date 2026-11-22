@@ -20,6 +20,7 @@ export type VisitCtx = {
   trip?: { id: string; name: string; startDate?: string };
 };
 
+/** The visit to show next, with the key that identifies it and, for a trip visit, the trip. */
 export type Next = { id: VisitId; key: string; trip?: { id: string; name: string } };
 
 /** A finished ride stays worth a visit for a day. */

@@ -1,3 +1,5 @@
+// The sign-in form: an email address, no password. Not indexed.
+
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { SignInForm } from "@/features/account/SignInForm";

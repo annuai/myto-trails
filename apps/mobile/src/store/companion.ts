@@ -71,6 +71,7 @@ export function mergeCompanion(saved: unknown, current: State): State {
 
 const noLive: Live = { riders: [], regroup: null, myStatus: 'ok' };
 
+/** The safety check-in, the group ride, the waiting condition reports and the share card choices. */
 export const useCompanion = create<State>()(
   persist(
     (set) => ({

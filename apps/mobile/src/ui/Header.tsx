@@ -30,6 +30,7 @@ export function PageTitle({ children, sub, fit }: { children: string; sub?: stri
   );
 }
 
+/** A heading for a section, with an optional action and add button. */
 export function SectionTitle({ children, first, action, onAction, onAdd, addLabel = 'Add' }: { children: string; /** The first thing under the page title: the title's own gap is enough, so this heading adds none. */ first?: boolean; action?: string; onAction?: () => void; /** Shows a round + button at the end of the heading. */ onAdd?: () => void; addLabel?: string }) {
   return (
     <View style={{ marginTop: first ? 0 : rhythm.betweenSections, marginBottom: rhythm.afterHeading, flexDirection: 'row', alignItems: onAdd ? 'center' : 'baseline', justifyContent: 'space-between' }}>

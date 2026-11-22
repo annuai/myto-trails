@@ -1,3 +1,5 @@
+// The You tab: who the rider is, with the way into their journal, marks, documents, backup, fuel, notifications and other settings.
+
 import { useState } from 'react';
 import { Linking, Platform, Share, View } from 'react-native';
 import { useRouter } from 'expo-router';

@@ -14,8 +14,11 @@ export type MyTrailmarks = {
   leaderboardOptIn: boolean;
 };
 
+/** The rider's Trailmarks, badge progress and challenges. */
 export const getTrailmarks = (token: string, signal?: AbortSignal) => api<MyTrailmarks>('/me/trailmarks', { token, signal });
+/** Joins or leaves a challenge. */
 export const setChallengeJoined = (token: string, id: string, joined: boolean) => api<void>(`/me/challenges/${id}`, { method: joined ? 'PUT' : 'DELETE', token });
+/** Chooses whether the rider appears on leaderboards. */
 export const setLeaderboardOptIn = (token: string, optIn: boolean) => api<void>('/me/leaderboard-opt-in', { method: 'PUT', token, body: { optIn } });
 
 /** The rider's own Trailmarks and challenge progress. `data` stays undefined when signed out or offline: the screen then says what it is waiting for. */

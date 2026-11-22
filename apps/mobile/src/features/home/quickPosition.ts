@@ -6,6 +6,7 @@ import { create } from 'zustand';
 export const POSITION_EVERY_MS = 5 * 60_000;
 
 type Reading = { lat: number; lng: number; t: number };
+/** A quick position reading and when it was taken. Any part may be missing. */
 export type QuickPos = { lat?: number; lng?: number; at?: number };
 
 /** The last one-off reading, for `buildHomeWorld` and the hook to read. */

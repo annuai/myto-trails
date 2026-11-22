@@ -13,6 +13,10 @@ function key(): Buffer {
 
 const b64 = (b: Buffer) => b.toString("base64url");
 
+/**
+ * Encrypts a secret. The result is `v1.iv.tag.ciphertext` (base64url), with a fresh random iv each time, so the same text never encrypts
+ * the same way twice.
+ */
 export function encryptSecret(plaintext: string): string {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key(), iv);

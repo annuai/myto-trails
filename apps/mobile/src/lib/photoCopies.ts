@@ -1,8 +1,11 @@
+// Makes the copies of a photo that are sent to a club: a thumbnail, a view size and a full size.
+
 import { Directory, File, Paths } from 'expo-file-system';
 import { SaveFormat, manipulateAsync } from 'expo-image-manipulator';
 import { uid } from './id';
 import { fitLongSide, lowerQuality, PHOTO_KINDS, PHOTO_MAX_BYTES, PHOTO_QUALITY, PHOTO_SIZES, type PhotoSize } from './photoSizes';
 
+/** One copy: where it is on the phone and its size in bytes. */
 export type PhotoCopy = { uri: string; bytes: number };
 /** One photo ready to send: the three copies, and the size of the biggest. */
 export type PhotoCopies = { width: number; height: number; copies: Record<PhotoSize, PhotoCopy> };

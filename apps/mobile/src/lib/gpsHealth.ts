@@ -13,6 +13,7 @@ export const LOST_AFTER_MS = 20_000;
 export const STOPPED_LOST_AFTER_MS = 180_000;
 /** A silent GPS is asked for a position after this long, and again no more often than this. */
 export const PROBE_AFTER_MS = 8_000;
+/** How often the GPS is checked for fresh fixes. */
 export const PROBE_EVERY_MS = 8_000;
 /** A fix this recent counts as fresh. */
 export const FRESH_MS = 4_000;
@@ -21,7 +22,9 @@ export const CLEAR_AFTER_MS = 5_000;
 /** A fix less accurate than this is a weak signal, not a lost one. */
 export const WEAK_ACCURACY_M = 50;
 
+/** Whether the GPS has gone quiet, and when fixes came back while the warning is still showing. */
 export type GpsHealth = { lost: boolean; /** When the fixes became fresh again, while a warning is still up. */ freshSince: number | null };
+/** The state at the start of a ride: nothing lost. */
 export const startGpsHealth: GpsHealth = { lost: false, freshSince: null };
 
 /**

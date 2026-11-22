@@ -1,7 +1,13 @@
+// The words, tones and shapes for access, condition, verification and women-safe status. The shape and the word always say it, so colour is
+// never the only signal.
+
 import type { AccessClass, OperationalStatus, VerificationLevel } from "@moto-trails/domain";
 
+/** How a status should feel: good, caution, stop or unknown. */
 export type Tone = "good" | "caution" | "stop" | "unknown";
+/** The shape drawn with a status. */
 export type Glyph = "circle" | "triangle" | "square" | "diamond" | "open-circle" | "check";
+/** A label, a tone and a shape. */
 export type Status = { label: string; tone: Tone; glyph: Glyph };
 
 const access: Record<AccessClass, Status> = {
@@ -34,6 +40,7 @@ const womenSafe: Record<WomenSafeStatus, Status> = {
   reported: { label: "Reported safe by women riders", tone: "unknown", glyph: "open-circle" },
 };
 
+/** The label, tone and shape for a status of any kind. */
 export function statusFor(kind: "access", value: AccessClass): Status;
 export function statusFor(kind: "condition", value: OperationalStatus): Status;
 export function statusFor(kind: "verification", value: VerificationLevel): Status;

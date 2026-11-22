@@ -14,8 +14,10 @@ export const MIN_HEADING_MPS = 2;
 export const HEADING_DEADBAND_DEG = 6;
 /** How much of the way to a new heading is taken each step, and the fastest the heading may turn. */
 const HEADING_GAIN = 0.3;
+/** The fastest the map turns while following, in degrees a second. */
 export const MAX_TURN_DEG_PER_S = 60;
 
+/** An angle in degrees brought into 0 to 360. */
 export const norm = (deg: number): number => ((deg % 360) + 360) % 360;
 /** The shortest signed turn from `from` to `to`, in -180 to 180. */
 export const turnBetween = (from: number, to: number): number => ((((to - from) % 360) + 540) % 360) - 180;
@@ -23,6 +25,7 @@ export const turnBetween = (from: number, to: number): number => ((((to - from) 
 /** On a road the direction is the road's own, with no noise to smooth: it is followed quickly, so the map and arrow are not still facing the last straight when a corner comes. */
 const ROAD_GAIN = 0.85;
 const ROAD_DEADBAND_DEG = 1;
+/** The fastest the map turns while following a road, which can turn faster than a free heading. */
 export const ROAD_MAX_TURN_DEG_PER_S = 150;
 
 /**
@@ -49,6 +52,7 @@ export const RELEASE_M = 50;
 /** The direction of the road is read this far ahead of the rider, or further at speed (about a second and a bit of riding), so a corner is met facing into it. */
 export const lookAheadM = (speedMps: number): number => Math.max(15, Math.min(45, speedMps * 1.3));
 
+/** A position matched onto a road: the point, the road's heading there and the distance along it. */
 export type Matched = { point: LatLng; heading: number; alongM: number };
 
 /**

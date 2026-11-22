@@ -8,7 +8,9 @@ import { useAppearance } from '@/store/appearance';
 export type AnalyticsClient = { capture: (name: string, props: AnalyticsProps) => void; optIn: () => unknown; optOut: () => unknown };
 let client: AnalyticsClient | null = null;
 
+/** Sets (or clears) the client that events are sent to. */
 export const setAnalyticsClient = (c: AnalyticsClient | null) => { client = c; };
+/** True once usage statistics are running. */
 export const hasAnalyticsClient = () => client !== null;
 
 /** Sends one event when statistics are on. Props outside the event's allow-list are dropped. */

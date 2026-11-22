@@ -1,3 +1,5 @@
+// One to-do in a list, with its due state and its tick, remove and service-done actions.
+
 import { useState } from 'react';
 import { View } from 'react-native';
 import { RotateCcw, Trash2 } from 'lucide-react-native';
@@ -12,6 +14,7 @@ import { StatusChip } from '@/ui/Chip';
 import { space, size } from '@/theme/tokens';
 type Props = { todo: Todo; appKm: number; onToggle: () => void; onRemove: () => void; onServiceDone: () => void };
 
+/** A to-do row. `appKm` is the distance recorded so far, for service items that fall due by distance. */
 export function TodoRow({ todo, appKm, onToggle, onRemove, onServiceDone }: Props) {
   const due = dueInfo(todo, appKm);
   const service = todo.kind === 'service';

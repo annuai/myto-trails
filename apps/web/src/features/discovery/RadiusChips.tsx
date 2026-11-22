@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { RADIUS_OPTIONS, toSearchString, type SearchParams } from "./search-params";
 
+/** Links for the search radii, each keeping the other search settings. */
 export function RadiusChips({ params }: { params: SearchParams }) {
   return (
     <nav aria-label="Search radius" className="flex flex-wrap items-center gap-x-1">

@@ -15,6 +15,7 @@ export function LoadingScreen({ children, className = "" }: { children: ReactNod
   );
 }
 
+/** A grey stand-in for a trail card while it loads. */
 export function TrailCardSkeleton() {
   return (
     <div className="flex flex-col gap-4">
@@ -29,6 +30,7 @@ export function TrailCardSkeleton() {
   );
 }
 
+/** A grid of card stand-ins while a list loads. */
 export function CardListSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">

@@ -6,6 +6,7 @@ const href = (p: SearchParams, view: "list" | "map") => {
   return qs ? `/trails?${qs}` : "/trails";
 };
 
+/** Links to switch between the list and the map view. */
 export function ViewToggle({ params }: { params: SearchParams }) {
   const cls = "inline-flex min-h-11 items-center px-4";
   return (

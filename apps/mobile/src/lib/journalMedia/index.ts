@@ -3,6 +3,7 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { SaveFormat, manipulateAsync } from 'expo-image-manipulator';
 import { uid } from '../id';
 
+/** A journal file is a photo or a voice note. */
 export type MediaKind = 'photo' | 'voice';
 const EXT: Record<MediaKind, string> = { photo: 'jpg', voice: 'm4a' };
 const MAX_LONG_SIDE = 1600;
@@ -37,6 +38,7 @@ export async function savePhoto(sourceUri: string, rendered?: string): Promise<{
 
 /** The photo as it was before any film look, when one was applied. */
 export const originalUri = (id: string) => new File(dir(), originalName(id)).uri;
+/** True when the untouched original of a photo is kept. */
 export const hasOriginal = (id: string) => new File(dir(), originalName(id)).exists;
 
 /**
@@ -63,10 +65,14 @@ export async function saveVoice(sourceUri: string, id: string): Promise<void> {
   await new File(sourceUri).copy(target, { overwrite: true });
 }
 
+/** The address of a stored photo or voice note. */
 export const mediaUri = (id: string, kind: MediaKind) => new File(dir(), name(id, kind)).uri;
+/** True when the file exists. */
 export const hasMedia = (id: string, kind: MediaKind) => new File(dir(), name(id, kind)).exists;
+/** The file's content as base64 text. */
 export const readBase64 = (id: string, kind: MediaKind) => new File(dir(), name(id, kind)).base64();
 
+/** Deletes a stored photo or voice note. */
 export function removeMedia(id: string, kind: MediaKind) {
   const f = new File(dir(), name(id, kind));
   if (f.exists) f.delete();
@@ -84,6 +90,7 @@ export async function stageMedia(id: string, kind: MediaKind, base64: string) {
   await f.write(base64, { encoding: 'base64' });
 }
 
+/** Throws away files staged for a restore that was not completed. */
 export function discardStaged() { remove(stageDir()); }
 
 /**

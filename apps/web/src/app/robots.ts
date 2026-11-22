@@ -1,3 +1,5 @@
+// robots.txt, built from the site address.
+
 import type { MetadataRoute } from "next";
 import { getSiteUrl } from "@/lib/site";
 import { buildRobots } from "./sitemap-data";

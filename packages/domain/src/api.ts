@@ -11,6 +11,7 @@ export type Bike = { name: string; modelYear: number | null; photoUrl: string | 
 
 /** WebP widths of a catalogue image, keyed by width: { "400": url, "800": url, "1200": url }. */
 export type BikeImageVariants = Record<string, string>;
+/** A bike model in the catalogue. `image` is null until the model has a picture. */
 export type BikeModel = {
   id: string;
   slug: string;
@@ -25,8 +26,11 @@ export type BikeModel = {
   /** null when the model has no picture yet (only listed with ?all=1). */
   image: BikeImageVariants | null;
 };
+/** One page of bike models, with the paging numbers. */
 export type BikeModelPage = { items: BikeModel[]; page: number; pageSize: number; total: number };
+/** A manufacturer and how many models it has. */
 export type BikeMake = { slug: string; name: string; models: number };
+/** Every manufacturer, for the make picker. */
 export type BikeMakeList = { items: BikeMake[] };
 
 /** A club as one rider sees it: their role is null when they are not a member. */
@@ -40,10 +44,12 @@ export type ClubSummary = {
   requested: boolean;
   coverUrl: string | null;
 };
+/** A club as its member sees it: the summary plus the handle they use in it. */
 export type ClubView = ClubSummary & { myHandle: string };
 
 /** Only ever sent to members of the same club. */
 export type ClubMember = { handle: string; name: string; role: "admin" | "member"; avatarUrl: string | null; bike: Bike | null };
+/** A club's page: the club itself and its members, or null for someone who is not a member. */
 export type ClubDetail = { club: ClubView; members: ClubMember[] | null };
 
 /**
@@ -52,12 +58,14 @@ export type ClubDetail = { club: ClubView; members: ClubMember[] | null };
  * licence declaration has been made (until then community writes answer 403 not_member).
  */
 export type MyProfile = { displayName: string; public: boolean; bio: string | null; gender: "male" | "female" | "other" | null; phone: string | null; welcomeDone: boolean };
+/** The signed-in rider's own profile, with the scopes their device token holds. */
 export type MeProfile = { displayName: string; email: string; scopes: string[]; avatarUrl: string | null; bike: Bike | null; profile: MyProfile };
 
 /** A reply under a club post. */
 export type ClubReply = { id: string; authorName: string; body: string; createdAt: string; mine: boolean };
 /** A photo on a club post: three public copies (400, 1080 and 2048 pixels wide) and its main colour, shown while the thumbnail loads. */
 export type ClubPhoto = { id: string; width: number; height: number; colour: string | null; thumbUrl: string; viewUrl: string; fullUrl: string };
+/** The reactions a rider can leave on a club post. */
 export const POST_REACTIONS = ["like", "love", "fire", "laugh", "wow", "thanks"] as const;
 export type PostReaction = (typeof POST_REACTIONS)[number];
 /** A club post or ride plan. `at` and `place` are set on ride plans only. */
@@ -78,9 +86,13 @@ export type AlbumPhoto = ClubPhoto & { postId: string; authorName: string };
 /** Admins only. `phone` is null once its retention time has passed. */
 export type ClubJoinRequest = { id: string; name: string; phone: string | null; message: string | null; status: "pending" | "accepted" | "declined" | "withdrawn"; createdAt: string };
 
+/** A job a rider can hold on a ride event. */
 export type EventRole = "captain" | "marshal" | "medic" | "sweep";
+/** How a rider answered an event invitation. `waitlisted` means the event is full. */
 export type EventResponse = "going" | "maybe" | "declined" | "waitlisted";
+/** Why a rider said no, from a short fixed list. */
 export type DeclineReason = "work" | "bike" | "distance" | "other";
+/** Where a ride event stands: not started, under way, finished or called off. */
 export type EventStatus = "scheduled" | "live" | "ended" | "cancelled";
 /** A ride event in a list. `mine` is true for the host. */
 export type RideEvent = {
@@ -89,15 +101,18 @@ export type RideEvent = {
 };
 /** One reply on the roster. The host alone receives the roster, with reasons and notes. */
 export type RosterRow = { id: string; name: string; response: EventResponse; reason: DeclineReason | null; note: string | null; checkedIn: boolean; role: EventRole | null };
+/** A ride event with everything its page needs: place, counts, the viewer's own state, and the roster for those allowed to see it. */
 export type RideEventDetail = RideEvent & {
   description: string; lat: number; lng: number; radiusM: number; maybe: number; waitlisted: number; checkedInCount: number;
   checkedIn: boolean; myRole: EventRole | null; rideLive: boolean; roster: RosterRow[] | null;
 };
+/** What a host sends to create or change an event. */
 export type EventInput = {
   title: string; description?: string; startsAt: string; timeZone?: string; placeName: string; lat: number; lng: number; radiusM?: number;
   audience: "open" | "members"; capacity?: number | null; clubId?: string | null; /** A completed image upload by the host. */ coverMediaId?: string | null;
 };
 
+/** What a trail comment is about, so it can be filtered and shown with a label. */
 export type CommentTag = "gate_closed" | "water_high" | "blocked" | "good_condition" | "tip";
 /** A trail comment. `pending` comments are the viewer's own, waiting for a moderator. */
 export type TrailComment = {

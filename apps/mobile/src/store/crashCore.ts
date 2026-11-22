@@ -5,6 +5,7 @@ import { initialCrash, stepCrash, tuning, type CrashEvidence, type CrashPreset, 
 /** `countdown`: asking "Are you OK?". `alerted`: nobody answered and the alert went out. `test` runs the same screens and tells no one. */
 export type CrashPhase = 'idle' | 'countdown' | 'alerted';
 
+/** The crash detection settings and the alert in progress. */
 export type CrashStore = {
   /** Crash detection is opt-in. */
   enabled: boolean;
@@ -27,6 +28,7 @@ export type CrashStore = {
   resetDetector: () => void;
 };
 
+/** The store's actions and starting state, separate from persistence so they can be tested. */
 export const crashSlice = (): StateCreator<CrashStore> => (set, get) => ({
     enabled: false, preset: 'mixed', phase: 'idle', test: false, deadline: 0, detector: initialCrash,
     setEnabled: (enabled) => set({ enabled }),

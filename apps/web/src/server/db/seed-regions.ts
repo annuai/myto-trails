@@ -1,6 +1,7 @@
 import { COUNTRY_CONFIGS, INDIA_STATES, type CountryConfig } from "@moto-trails/domain";
 import type { Sql } from "postgres";
 
+/** A country to put in the database, with its settings and whether it accepts trails yet. */
 export type CountrySeed = {
   config: CountryConfig;
   slug: string;

@@ -1,3 +1,5 @@
+// The page about riding responsibly.
+
 import type { Metadata } from "next";
 import { LegalPage } from "@/features/legal/LegalPage";
 

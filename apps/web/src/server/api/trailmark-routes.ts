@@ -1,8 +1,11 @@
+// API routes for Trailmarks: a rider's points and progress, challenges, and the leaderboards they may opt into.
+
 import { getLeaderboard, getMyTrailmarks, setChallenge, setLeaderboardOptIn } from "../trailmarks/trailmarks";
 import { ApiError, fail, ok, type RouteDef } from "./http";
 
 const noContent = () => new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 
+/** Status and message for each reason a leaderboard request is refused. */
 export const LEADERBOARD_FAIL = {
   refused: [422, "Leaderboards rank contributions to the map, never speed or distance."],
   unknown_metric: [422, "Rank by verified_contributions, new_discoveries, exploration_diversity, helpful_contributions or challenge_participation."],
@@ -10,6 +13,7 @@ export const LEADERBOARD_FAIL = {
   scope_unavailable: [422, "That scope is not available for this ranking."],
 } as const;
 
+/** The Trailmarks routes, registered by the router in routes.ts. */
 export const trailmarkRoutes: RouteDef[] = [
   {
     method: "GET", path: "/me/trailmarks", access: "write:submission",

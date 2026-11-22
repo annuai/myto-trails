@@ -1,3 +1,5 @@
+// One of the rider's own contributions: where it stands and what the moderators said. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";

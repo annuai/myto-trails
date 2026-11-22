@@ -14,6 +14,7 @@ type State = {
   wipe: () => void;
 };
 
+/** The bike's fuel economy and the petrol price, each from a date. */
 export const useFuel = create<State>()(
   persist(
     (set) => ({

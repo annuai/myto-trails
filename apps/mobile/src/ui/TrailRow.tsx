@@ -1,3 +1,5 @@
+// A trail as a row in a list.
+
 import { Image, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, type Tint, space, media } from '@/theme/tokens';
@@ -8,12 +10,14 @@ import { StatusChip, type Status } from './Chip';
 import { Text } from './Text';
 import { ScalePressable } from './motion';
 
+/** What a row shows: name, distance, time, difficulty and status. */
 export type TrailLike = { id: string; name: string; km: number; time: string; difficulty: string; status: Status; statusLabel: string; seed: number; tint: Tint; cover?: string; coverAlt?: string };
 
 const Thumb = ({ trail, size }: { trail: TrailLike; size: number }) => trail.cover
   ? <Image source={{ uri: trail.cover }} accessibilityLabel={trail.coverAlt} style={{ width: size, height: size }} resizeMode="cover" />
   : <RouteArt seed={trail.seed} tint={trail.tint} height={size} width={size} />;
 
+/** A trail row that can be tapped. */
 export function TrailRow({ trail, onPress }: { trail: TrailLike; onPress: () => void }) {
   const { c } = useTheme();
   return (

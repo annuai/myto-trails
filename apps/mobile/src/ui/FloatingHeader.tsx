@@ -1,3 +1,5 @@
+// The header that floats over the screen with the notifications bell.
+
 import { Animated, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Bell } from 'lucide-react-native';
@@ -10,6 +12,7 @@ import { Logo } from './Logo';
 import { ScalePressable } from './motion';
 import { CONTENT_MAX } from './useLayout';
 
+/** The header's height. */
 export const HEADER_HEIGHT = 56;
 
 /**

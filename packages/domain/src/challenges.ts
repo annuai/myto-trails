@@ -15,6 +15,7 @@ export type ChallengeKind =
   /** A ride longer than the rider's own previous best. Never compared with anyone else. */
   | "longest_ride";
 
+/** One monthly challenge as data: what it asks and how progress is counted. */
 export type ChallengeDef = {
   id: string;
   title: string;
@@ -29,6 +30,7 @@ export type ChallengeDef = {
   needs?: string;
 };
 
+/** Every challenge a rider can join. */
 export const CHALLENGES: readonly ChallengeDef[] = [
   { id: "discover-3-district", title: "Discover 3 new trails in your district", blurb: "Ride three trails near home that you have not ridden before, this month.", kind: "new_trails", target: 3, scope: "district", monthly: true },
   { id: "verify-10", title: "10 trail verifications", blurb: "Help keep the map true: get ten reports, confirmations or corrections accepted.", kind: "verifications", target: 10, scope: "any", monthly: false },
@@ -41,10 +43,15 @@ export const CHALLENGES: readonly ChallengeDef[] = [
 /** One countable thing the rider did. The server supplies these, already moderated. */
 export type ChallengeEvent = { kind: ChallengeKind; at: Date; districtId?: string | null };
 
+/** A challenge as it stands for one rider: joined or not, locked, in progress or complete, with the numbers. */
 export type ChallengeProgress = { def: ChallengeDef; joined: boolean; state: "not_joined" | "locked" | "in_progress" | "complete"; current: number; target: number; fraction: number; hint: string };
 
 const sameMonth = (a: Date, b: Date) => a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth();
 
+/**
+ * Counts a rider's progress on a challenge from the events since they joined (the current month only, for a monthly one). Ride challenges
+ * stay locked until ride comparison is on.
+ */
 export function challengeProgress(
   def: ChallengeDef,
   i: { joinedAt: Date | null; events: readonly ChallengeEvent[]; districtId?: string | null; now: Date; rideOptIn?: boolean },

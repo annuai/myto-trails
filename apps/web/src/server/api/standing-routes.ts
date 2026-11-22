@@ -40,6 +40,7 @@ function parseRide(raw: unknown, now: Date): RideSummaryInput {
   return { ref: r.ref, day, distanceKm: r.distanceKm, durationSec: r.durationSec, cell: r.cell, ...(r.bikeClass !== undefined ? { bikeClass: r.bikeClass as string } : {}) };
 }
 
+/** Routes for a rider's standing against area cohorts: the opt-in, the coarse ride summaries and the cohort view. */
 export const standingRoutes: RouteDef[] = [
   {
     method: "PUT", path: "/me/standing-opt-in", access: "write:submission",

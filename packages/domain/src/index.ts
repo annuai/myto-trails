@@ -1,3 +1,5 @@
+// Public entry of the domain package: everything the web app, the phone app and the tools share, re-exported by topic.
+
 export * from "./limits";
 export * from "./enums";
 export * from "./verification";

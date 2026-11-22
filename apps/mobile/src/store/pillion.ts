@@ -33,6 +33,7 @@ type State = {
   wipe: () => void;
 };
 
+/** How the app has been opened, for the Pillion visits. */
 export const usePillion = create<State>()(
   persist(
     (set, get) => ({

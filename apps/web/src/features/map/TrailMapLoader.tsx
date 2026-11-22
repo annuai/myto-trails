@@ -9,6 +9,7 @@ const TrailMap = dynamic(() => import("./TrailMap").then((m) => m.TrailMap), {
   loading: () => <p className="border border-border p-6 text-muted">Loading map…</p>,
 });
 
+/** Loads the map only in the browser, so the map library is not part of the server render. */
 export function TrailMapLoader({ points }: { points: MapPoint[] }) {
   return <TrailMap points={points} />;
 }

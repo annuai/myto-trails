@@ -1,3 +1,6 @@
+// Moderator actions on a trail's access and condition: verifying access with evidence, unpublishing, setting the condition, and listing
+// what is due for a re-check.
+
 import { CONDITION_REASONS, EVIDENCE_KINDS, OPERATIONAL_STATUSES, type EvidenceKind } from "@moto-trails/domain";
 import type { Sql, TransactionSql } from "postgres";
 import { FORBIDDEN, canActIn, getActor, type Actor } from "./actor";
@@ -21,8 +24,13 @@ async function auditRevision(tx: Sql | TransactionSql, trailId: string): Promise
   return (r?.id as string | undefined) ?? null;
 }
 
+/** One piece of evidence for an access claim: its kind, a description and an optional address. */
 export type EvidenceInput = { kind: EvidenceKind; description: string; url?: string };
 
+/**
+ * Records that a moderator or an official source verified a trail's access, with evidence. Returns when the verification runs out, or says
+ * evidence or an authority is missing.
+ */
 export async function verifyAccess(
   sql: Sql,
   i: { actorId: string; trailId: string; level: "moderator_verified" | "officially_verified"; evidence?: EvidenceInput[]; authority?: string; validUntil?: string; note?: string; now: Date },
@@ -74,6 +82,7 @@ export async function verifyAccess(
   });
 }
 
+/** Takes a trail off the site, with a reason. Moderators only. */
 export async function unpublish(sql: Sql, i: { actorId: string; trailId: string; reason: string }): Promise<{ ok: true; slug: string } | Fail> {
   return sql.begin(async (tx) => {
     const actor = await getActor(tx, i.actorId);
@@ -114,6 +123,7 @@ export async function release(sql: Sql, i: { actorId: string; trailId: string; r
   });
 }
 
+/** A condition to set: the status, why, until when and a note. */
 export type ConditionInput = { status: (typeof OPERATIONAL_STATUSES)[number]; reason?: (typeof CONDITION_REASONS)[number]; expectedUntil?: string; note?: string };
 
 /** Validates and inserts a condition event inside an open transaction. Returns false when the input is invalid. */
@@ -128,6 +138,7 @@ export async function insertCondition(tx: TransactionSql, trailId: string, c: Co
   return true;
 }
 
+/** A moderator sets a trail's operational condition. */
 export async function setCondition(sql: Sql, i: { actorId: string; trailId: string; now: Date } & ConditionInput): Promise<{ ok: true; slug: string } | Fail> {
   return sql.begin(async (tx) => {
     const actor = await getActor(tx, i.actorId);
@@ -142,6 +153,7 @@ export async function setCondition(sql: Sql, i: { actorId: string; trailId: stri
   });
 }
 
+/** Records a condition change in the audit log against the trail's current revision. */
 export async function auditCondition(tx: TransactionSql, actor: Actor, trailId: string, status: string): Promise<void> {
   const rev = await auditRevision(tx, trailId);
   if (!rev) return;
@@ -149,6 +161,7 @@ export async function auditCondition(tx: TransactionSql, actor: Actor, trailId: 
   await audit(tx, actor, { action: "set_condition", entityType: "revision", entityId: rev, after: { status } });
 }
 
+/** A trail whose verified access is about to expire or has lapsed. */
 export type DueItem = { slug: string; name: string; accessClass: string; level: string; validUntil: string; overdue: boolean };
 
 /** Published trails whose verified access expires within `withinDays` or has already lapsed, soonest first. */
@@ -167,6 +180,7 @@ export async function listDueForRecheck(sql: Sql, actorId: string, now: Date, wi
   return { ok: true, items: rows.map((r) => ({ slug: r.slug, name: r.name, accessClass: r.access_class, level: r.level, validUntil: r.valid_until, overdue: r.valid_until <= today })) };
 }
 
+/** A trail no moderator has verified lately, with how long since it was last checked and how many rider reports it has. */
 export type RideItem = { slug: string; name: string; level: string; lastChecked: string | null; daysSince: number | null; riderReports: number };
 
 /**
@@ -193,11 +207,13 @@ export async function listNeedingRide(sql: Sql, actorId: string, now: Date, stal
   return { ok: true, items: rows.map((r) => ({ slug: r.slug, name: r.name, level: r.level, lastChecked: r.last_checked ?? null, daysSince: r.last_checked ? day(r.last_checked) : null, riderReports: r.rider_reports })) };
 }
 
+/** What a moderator sees about one trail: its access, verification, condition and permission contact. */
 export type TrailModerationView = {
   trailId: string; slug: string; name: string; lifecycle: string; accessClass: string; level: string; validUntil: string | null;
   condition: string; permissionContact: string | null; evidenceCount: number;
 };
 
+/** A trail's moderation view by slug. Forbidden for anyone who is not a moderator. */
 export async function getTrailForModeration(sql: Sql, actorId: string, slug: string): Promise<{ ok: true; trail: TrailModerationView } | typeof FORBIDDEN | { ok: false; reason: "not_found" }> {
   const actor = await getActor(sql, actorId);
   if (!actor) return FORBIDDEN;

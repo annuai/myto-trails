@@ -21,6 +21,7 @@ async function loadTrail(slug: string): Promise<TrailDetailDto | null> {
   return withPublicRole(getSql(), (tx) => queryTrailBySlug(tx, slug, new Date()));
 }
 
+/** A trail's page data. It is cached by slug but includes the current time, so it renders per request. */
 export async function getTrail(slug: string): Promise<TrailDetailDto | null> {
   if (!isValidSlug(slug)) return null;
   const trail = await loadTrail(slug);
@@ -36,6 +37,7 @@ async function loadTrailMedia(slug: string): Promise<MediaDto[]> {
   return withPublicRole(getSql(), (tx) => queryTrailMedia(tx, slug));
 }
 
+/** A trail's photos, cached. */
 export async function getTrailMedia(slug: string): Promise<MediaDto[]> {
   return isValidSlug(slug) ? loadTrailMedia(slug) : [];
 }
@@ -47,6 +49,7 @@ async function loadTrailVideos(slug: string): Promise<VideoDto[]> {
   return withPublicRole(getSql(), (tx) => queryTrailVideos(tx, slug));
 }
 
+/** A trail's videos, cached. */
 export async function getTrailVideos(slug: string): Promise<VideoDto[]> {
   return isValidSlug(slug) ? loadTrailVideos(slug) : [];
 }
@@ -58,6 +61,7 @@ async function loadTrailRoute(slug: string): Promise<RouteDto | null> {
   return withPublicRole(getSql(), (tx) => queryTrailRoute(tx, slug));
 }
 
+/** A trail's route, cached. */
 export async function getTrailRoute(slug: string): Promise<RouteDto | null> {
   return isValidSlug(slug) ? loadTrailRoute(slug) : null;
 }
@@ -69,6 +73,7 @@ async function loadTrailsInRegion(countrySlug: string, stateSlug: string, distri
   return withPublicRole(getSql(), (tx) => queryTrailsInRegion(tx, { countrySlug, stateSlug, districtSlug }, new Date()));
 }
 
+/** The trails of a state or district, cached, with their summaries filled in for the current time. */
 export async function getTrailsInRegion(countrySlug: string, stateSlug: string, districtSlug?: string): Promise<TrailSummaryDto[]> {
   if (!isValidSlug(countrySlug) || !isValidSlug(stateSlug) || (districtSlug !== undefined && !isValidSlug(districtSlug))) return [];
   const trails = await loadTrailsInRegion(countrySlug, stateSlug, districtSlug);
@@ -77,6 +82,7 @@ export async function getTrailsInRegion(countrySlug: string, stateSlug: string, 
   return trails.map((t) => applyNow(t, now));
 }
 
+/** The sitemap's trails and regions, cached for hours. Sample trails are left out in production. */
 export async function getSitemapEntries(): Promise<{ trails: { slug: string; updatedAt: string }[]; regions: { path: string }[] }> {
   "use cache";
   cacheTag("trails");
@@ -109,6 +115,7 @@ export async function getCachedSearch(p: SearchParams): Promise<SearchResult> {
   return withPublicRole(getSql(), (tx) => searchTrails(tx, p, new Date()));
 }
 
+/** The map's points for a search, cached for hours. */
 export async function getCachedMapPoints(p: SearchParams): Promise<MapPoint[]> {
   "use cache";
   cacheTag("trails");

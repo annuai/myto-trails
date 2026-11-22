@@ -6,7 +6,9 @@ import type { StorageProvider } from "../storage";
 
 type Db = Sql | TransactionSql;
 
+/** A change a phone pushes: which record, its data, when it was edited, the version it was edited from, and whether it was deleted. */
 export type SyncChange = { kind: SyncKind; id: string; data: Record<string, unknown>; updatedAt: Date; baseUpdatedAt: Date | null; deleted: boolean };
+/** What the server did with a push: which changes it accepted and which became a second copy of a ride. */
 export type PushResult = {
   accepted: { kind: SyncKind; id: string }[];
   /** A ride edited on two phones from the same start: the second was kept as `copyId`. */
@@ -16,6 +18,7 @@ export type PushResult = {
   /** Refused because the rider is at the ride limit. */
   overQuota: { kind: SyncKind; id: string }[];
 };
+/** A change the phone should take from the server. */
 export type PulledChange = { kind: SyncKind; id: string; data: Record<string, unknown>; updatedAt: string; deleted: boolean; hasTrack: boolean };
 
 const ms = (d: Date) => d.getTime();
@@ -100,6 +103,7 @@ export async function pullChanges(sql: Sql, i: { userId: string; deviceId: strin
   };
 }
 
+/** A stored track, or why not. */
 export type TrackResult = { ok: true } | { ok: false; reason: "no_such_ride" | "too_large" | "over_quota" };
 
 /** Stores a ride's compressed points. The record must already exist (the phone pushes it first). */
@@ -123,12 +127,15 @@ export async function putTrack(sql: Sql, storage: StorageProvider, i: { userId: 
   return { ok: true };
 }
 
+/** A ride's stored track, or null when there is none. */
 export async function getTrack(sql: Db, storage: StorageProvider, i: { userId: string; rideId: string }): Promise<Uint8Array | null> {
   const [row] = await sql<{ track_key: string | null }[]>`select track_key from sync_record where user_id = ${i.userId} and kind = 'ride' and id = ${i.rideId} and deleted_at is null`;
   return row?.track_key ? storage.get("originals", row.track_key) : null;
 }
 
+/** How much of the sync allowance a rider has used. */
 export type SyncUsage = { rides: number; trackBytes: number; maxRides: number; maxTrackBytes: number };
+/** The rider's synced ride count and track bytes, with the limits. */
 export async function getUsage(sql: Db, userId: string): Promise<SyncUsage> {
   const [r] = await sql<{ rides: number; bytes: number }[]>`
     select count(*) filter (where kind = 'ride' and deleted_at is null)::int as rides, coalesce(sum(track_bytes) filter (where deleted_at is null), 0)::bigint::float8 as bytes

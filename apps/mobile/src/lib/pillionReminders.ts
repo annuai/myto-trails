@@ -20,6 +20,7 @@ const at = (t: number): number => {
 
 type Ridden = { startedAt: number; durationSec?: number; sample?: boolean; simulated?: boolean };
 
+/** What the Pillion planner reads: the time, the rides, and when Pillion was first met. */
 export type PillionPlanInput = {
   now: number;
   rides: Ridden[];

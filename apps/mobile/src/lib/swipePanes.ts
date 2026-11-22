@@ -1,3 +1,4 @@
+/** The distances and speeds that decide whether a swipe changes the pane. */
 export type SwipeTuning = { distance: number; flick: number; flickMin: number; edge: number; edgeMax: number };
 
 /** Where the pane sits for a pull of `dx` points: it follows the finger, except past the first or last pane, where it gives only a little. */

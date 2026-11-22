@@ -4,6 +4,7 @@ export type FixitDifficulty = "easy" | "moderate" | "hard";
 /** A word a first-timer may not know, said in plain words. Shown on the guide that uses it. */
 export type FixitTerm = { term: string; meaning: string };
 
+/** One step of a repair guide. */
 export type FixitStep = {
   /** One action, in one short sentence. */
   text: string;
@@ -18,6 +19,7 @@ export type FixitStep = {
 /** A major part of the bike that guides are grouped under: Tyres, Brakes, Drivetrain. `cover` is the art id of its picture, or null. */
 export type FixitSection = { id: string; title: string; cover: string | null };
 
+/** A repair guide: what to do, in order, with the tools and parts it needs. */
 export type FixitGuide = {
   id: string;
   /** Id of the FixitSection this guide sits under. */
@@ -39,8 +41,10 @@ export type FixitGuide = {
   review: { by: string; on: string } | null;
 };
 
+/** A tool to carry, and why. */
 export type FixitTool = { id: string; name: string; why: string; /** Carried on every ride, or only far from a workshop. */ kit: "base" | "remote" };
 
+/** One line of the pre-ride check, with how to do it and the guides that fix what it finds. */
 export type FixitCheckItem = { id: string; label: string; how: string; /** Art id of the picture on its card, when it has its own; else the card borrows its first guide's section picture. */ cover?: string | null; /** Guide ids to offer when it needs fixing. */ guides: string[]; /** For a check that is not a repair (papers): where to go instead. */ route?: string };
 
 /** A picture: its widths in R2, by pixel width (as bike pictures are), and what it shows for people who cannot see it. */
@@ -60,21 +64,26 @@ export type FixitContent = {
   art: Record<string, FixitArt>;
 };
 
+/** An id is lowercase words joined by hyphens. */
 export const FIXIT_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 /** An art id is the guide id, a slash, and a slot: "flat-tyre-tubeless/plug". */
 /** The picture on the "What to carry" card. It belongs to no guide. */
 export const FIXIT_CARRY_ART = "carry/kit";
+/** An art id is a guide id, a slash and a slot name, both in the same lowercase-hyphen form. */
 export const FIXIT_ART_ID = /^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/;
 /** The R2 key of one width of one picture, under the public bucket: organised by guide. */
 export const fixitArtKey = (artId: string, width: number) => `fixit/${artId}-${width}.webp`;
 
+/** Finds a guide by id. */
 export const guideById = (c: Pick<FixitContent, "guides">, id: string): FixitGuide | undefined => c.guides.find((g) => g.id === id);
 
+/** The guides a check item points to, skipping any id that no longer exists. */
 export const guidesForCheck = (c: Pick<FixitContent, "guides">, item: FixitCheckItem): FixitGuide[] => item.guides.map((id) => guideById(c, id)).filter((g): g is FixitGuide => !!g);
 
 /** The kit for a ride: the base kit, plus the remote extras when the ride is far from help. */
 export const kitFor = (c: Pick<FixitContent, "tools">, remote: boolean): FixitTool[] => c.tools.filter((t) => remote || t.kit === "base");
 
+/** The tools a guide needs, skipping any id that no longer exists. */
 export const toolsOf = (c: Pick<FixitContent, "tools">, g: FixitGuide): FixitTool[] => g.tools.map((id) => c.tools.find((t) => t.id === id)).filter((t): t is FixitTool => !!t);
 
 /** Every art id a guide names, in reading order. */
@@ -136,6 +145,7 @@ export function isFixitContent(x: unknown): x is FixitContent {
   return c.guides.length > 0 && c.guides.every((g) => g && typeof g.id === "string" && typeof g.title === "string" && Array.isArray(g.steps) && g.steps.length > 0 && g.steps.every((s) => typeof s?.text === "string") && Array.isArray(g.stopIf) && g.stopIf.length > 0 && Array.isArray(g.tools) && Array.isArray(g.terms));
 }
 
+/** A section of the guide list with the guides that belong to it. */
 export type FixitSectionGroup = { section: FixitSection; guides: FixitGuide[] };
 
 /**

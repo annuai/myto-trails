@@ -1,3 +1,5 @@
+// The tab bar. A fresh install is sent to the welcome flow first; everyone else lands on the tabs.
+
 import { View } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { useFirstRun } from '@/features/onboarding/useFirstRun';

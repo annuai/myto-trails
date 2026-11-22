@@ -1,3 +1,5 @@
+// Following turn-by-turn directions as the rider moves.
+
 import type { LatLng } from './geo';
 import { trackOnLine } from './routeFollow';
 import { parseTrip, route, type Directions, type RoutePrefs, type Step, type ValhallaAnswer } from './routing';
@@ -9,6 +11,7 @@ export function parseDirections(body: ValhallaAnswer): Directions {
   return parseTrip(body.trip);
 }
 
+/** What can shape a request for directions: the heading, route preferences and a way to cancel. */
 export type DirectionsOptions = { /** The way the rider faces, when moving. */ heading?: number; prefs?: RoutePrefs; signal?: AbortSignal };
 
 /** The road to `to` for a motorcycle, with its turns. Falls back to a second router; see lib/routing. */

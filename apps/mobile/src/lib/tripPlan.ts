@@ -6,6 +6,7 @@ import type { TripStop } from './tripStops';
 export type TripRoute =
   | { kind: 'trail'; slug: string; name: string; status: 'good' | 'caution' | 'stop' | 'unknown'; statusLabel: string }
   | { kind: 'mine'; id: string; name: string };
+/** One day of a trip: a note, its route and its stops. */
 export type TripDay = { id: string; note?: string; route?: TripRoute; /** Fuel, food and rest stops along the day, in order. */ stops?: TripStop[] };
 
 /**
@@ -24,10 +25,13 @@ export const startTimeText = (minutes: number) => clockLabel(minutes);
 export const LEAD_CHOICES = [0, 5, 10, 15, 30, 60] as const;
 export const leadLabel = (min: number) => (min === 0 ? 'Off' : min === 60 ? '1 hour' : `${min} min`);
 
+/** The most days in a trip. */
 export const MAX_TRIP_DAYS = 30;
 const count = (t: Schedule) => Math.max(1, t.days?.length ?? 1);
 
+/** The date of a trip's day, counted from its start date. */
 export const dayDate = (startDate: string, index: number) => addDays(startDate, index);
+/** The date of a trip's last day. */
 export const lastDate = (t: Schedule & { startDate: string }) => addDays(t.startDate, count(t) - 1);
 
 /**

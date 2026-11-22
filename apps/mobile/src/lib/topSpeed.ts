@@ -7,6 +7,7 @@ const MIN_STEPS = 3;
 const MIN_STEP_S = 0.5;
 const MAX_STEP_S = 60;
 
+/** The middle value of a list of numbers, or 0 for an empty list. */
 export const medianOf = (xs: number[]): number => { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)]! : 0; };
 
 /**

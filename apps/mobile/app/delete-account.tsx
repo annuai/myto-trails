@@ -1,3 +1,5 @@
+// Asks the rider to confirm deleting their account.
+
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Trash2 } from 'lucide-react-native';

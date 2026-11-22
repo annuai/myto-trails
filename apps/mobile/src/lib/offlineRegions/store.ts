@@ -12,6 +12,7 @@ import { regionsChanged } from '../offlineRouting';
 /** The phone side of offline regions: real files, real network. The logic worth testing lives in `download.ts`. */
 
 const BASE = process.env.EXPO_PUBLIC_REGIONS_BASE_URL;
+/** Where the list of downloadable regions is published. */
 export const MANIFEST_URL = `${BASE ?? ''}/regions/manifest.json`;
 const DIR = `${documentDirectory ?? ''}regions/`;
 const CHUNK = 1024 * 1024;

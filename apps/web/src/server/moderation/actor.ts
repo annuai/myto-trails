@@ -1,5 +1,6 @@
 import type { Sql, TransactionSql } from "postgres";
 
+/** A moderator or admin acting, with the countries they may act in. */
 export type Actor = {
   id: string;
   role: "moderator" | "admin";
@@ -25,4 +26,5 @@ export function canActIn(actor: Actor, countryId: string | null | undefined): bo
   return actor.countryIds === null || (!!countryId && actor.countryIds.includes(countryId));
 }
 
+/** The answer to anyone who is not allowed to moderate. */
 export const FORBIDDEN = { ok: false, reason: "forbidden" } as const;

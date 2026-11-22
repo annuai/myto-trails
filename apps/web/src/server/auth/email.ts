@@ -1,11 +1,16 @@
+// Sending email: the sign-in message, a Resend sender for production, and a console sender for development.
+
 import type { EmailConfig } from "../env";
 
+/** A plain-text email to one address. */
 export type EmailMessage = { to: string; subject: string; text: string };
 
+/** Anything that can send an email: the real provider, or a stand-in for tests and development. */
 export interface EmailSender {
   send(message: EmailMessage): Promise<void>;
 }
 
+/** The sign-in email with its link and how long the link works. */
 export function signInEmail(i: { link: string; minutes: number }): { subject: string; text: string } {
   return {
     subject: "Your Moto Trails sign-in link",
@@ -30,6 +35,7 @@ export class ConsoleEmailSender implements EmailSender {
   }
 }
 
+/** Sends email through Resend. */
 export class ResendEmailSender implements EmailSender {
   readonly #config: { apiKey: string; from: string };
   constructor(config: { apiKey: string; from: string }) {
@@ -51,6 +57,7 @@ export class ResendEmailSender implements EmailSender {
   }
 }
 
+/** The sender the configuration asks for: Resend, or the console sender otherwise. */
 export function createEmailSender(config: EmailConfig): EmailSender {
   return config.provider === "resend" ? new ResendEmailSender({ apiKey: config.apiKey, from: config.from }) : new ConsoleEmailSender();
 }

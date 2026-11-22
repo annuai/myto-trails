@@ -1,3 +1,5 @@
+// Purchases that raise a group ride's size limit. Provider-neutral: billing events are mapped onto it by decide.ts.
+
 import type { Sql } from "postgres";
 import { decideEvent, validateEntitlement, type BillingEvent, type EntitlementKind, type EntitlementStatus, type Invalid } from "./decide";
 

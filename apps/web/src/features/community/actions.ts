@@ -1,4 +1,5 @@
 "use server";
+// Server actions of a trail page's community features: marking a trail ridden, and posting, editing, deleting and reporting comments.
 
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/session";
@@ -17,6 +18,7 @@ async function signedIn(slug: string) {
 
 const back = (slug: string, result: string, anchor: string): never => redirect(`/trails/${encodeURIComponent(slug)}?c=${encodeURIComponent(result)}#${anchor}`);
 
+/** Marks the trail as ridden by the rider. */
 export async function markRiddenAction(formData: FormData): Promise<void> {
   const slug = text(formData, "slug");
   const user = await signedIn(slug);
@@ -24,6 +26,7 @@ export async function markRiddenAction(formData: FormData): Promise<void> {
   back(slug, r.ok ? "ridden" : `ridden_${r.reason}`, "riders");
 }
 
+/** Removes the rider's ridden mark. */
 export async function unmarkRiddenAction(formData: FormData): Promise<void> {
   const slug = text(formData, "slug");
   const user = await signedIn(slug);
@@ -31,6 +34,7 @@ export async function unmarkRiddenAction(formData: FormData): Promise<void> {
   back(slug, "unridden", "riders");
 }
 
+/** Posts a comment on the trail. */
 export async function postCommentAction(formData: FormData): Promise<void> {
   const slug = text(formData, "slug");
   const user = await signedIn(slug);
@@ -38,6 +42,7 @@ export async function postCommentAction(formData: FormData): Promise<void> {
   back(slug, r.ok ? (r.status === "pending" ? "comment_pending" : "comment_posted") : `comment_${r.reason}`, "comments");
 }
 
+/** Edits the rider's own comment. */
 export async function editCommentAction(formData: FormData): Promise<void> {
   const slug = text(formData, "slug");
   const user = await signedIn(slug);
@@ -45,6 +50,7 @@ export async function editCommentAction(formData: FormData): Promise<void> {
   back(slug, r.ok ? "comment_edited" : `comment_${r.reason}`, "comments");
 }
 
+/** Deletes the rider's own comment. */
 export async function deleteCommentAction(formData: FormData): Promise<void> {
   const slug = text(formData, "slug");
   const user = await signedIn(slug);
@@ -52,6 +58,7 @@ export async function deleteCommentAction(formData: FormData): Promise<void> {
   back(slug, "comment_deleted", "comments");
 }
 
+/** Reports someone else's comment to the moderators. */
 export async function reportCommentAction(formData: FormData): Promise<void> {
   const slug = text(formData, "slug");
   const user = await signedIn(slug);

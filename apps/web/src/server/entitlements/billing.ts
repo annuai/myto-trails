@@ -19,6 +19,7 @@ export interface BillingProvider {
   verifyWebhook(i: { headers: Record<string, string | undefined>; rawBody: string }): Promise<BillingEvent>;
 }
 
+/** Whether paid plans can be bought. False for now. */
 export function billingEnabled(): boolean {
   return false;
 }

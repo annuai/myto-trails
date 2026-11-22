@@ -1,9 +1,12 @@
+// The rider's year in review.
+
 import { toISO } from './dates';
 import { monthsRidden, titleFor, type TitleId } from './story/titles';
 import type { Ride } from '@/store/rides';
 
 type RecapRide = Pick<Ride, 'name' | 'startedAt' | 'durationSec' | 'distanceKm' | 'maxKmh' | 'sample'>;
 
+/** The figures of a year: rides, distance, time, days and months ridden, the longest ride, top speed, the busiest month and more. */
 export type YearRecap = {
   year: number;
   rides: number;

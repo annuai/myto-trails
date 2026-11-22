@@ -8,16 +8,23 @@ import { shortDistanceM, spoken } from './units';
  */
 export const PREPARE_MIN_M = 400;
 export const PREPARE_MAX_M = 2_000;
+/** How many seconds before a turn the first voice cue is spoken, at the rider's speed. */
 export const PREPARE_S = 25;
+/** The least distance for the 'now' cue. */
 export const NOW_MIN_M = 60;
+/** How many seconds before a turn the 'now' cue is spoken, at the rider's speed. */
 export const NOW_S = 7;
 /** A turn with the same words but this much further away than before is the next one (a trail has many "Turn left"s). */
 const NEW_TURN_JUMP_M = 100;
 
+/** What has been said for the current instruction. */
 export type VoiceState = { key: string; lastDistM: number | null; prepared: boolean; now: boolean; arrived: boolean; off: boolean };
+/** The state before anything has been said. */
 export const startVoice: VoiceState = { key: '', lastDistM: null, prepared: false, now: false, arrived: false, off: false };
 
+/** The distance at which the first cue is spoken, for a speed. */
 export const prepareAtM = (speedMps: number): number => Math.min(PREPARE_MAX_M, Math.max(PREPARE_MIN_M, speedMps * PREPARE_S));
+/** The distance at which the 'now' cue is spoken, for a speed. */
 export const nowAtM = (speedMps: number): number => Math.max(NOW_MIN_M, speedMps * NOW_S);
 
 /** A distance as a rider would say it: tidy steps, never "In 437 metres". */
@@ -30,6 +37,7 @@ export function sayDistance(m: number): string {
 const after = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
 const clean = (text: string) => text.replace(/\.$/, '');
 
+/** Works out what to say, if anything, for the current instruction and speed, and the new state. */
 export function voiceStep(s: VoiceState, ins: Instruction, speedMps: number): { state: VoiceState; say?: string } {
   if (ins.arrived) return s.arrived ? { state: s } : { state: { ...startVoice, arrived: true }, say: clean(ins.text) || 'You have arrived' };
   if (ins.off) return s.off ? { state: s } : { state: { ...s, off: true }, say: 'Off the route. Finding a new way' };

@@ -5,7 +5,9 @@ import type { JournalEntry } from '@/lib/journalEntries';
 /** An error whose message is fit to show the rider as it is. */
 export class UserFacingError extends Error {}
 
+/** Recording a voice note: start, and stop with the file's address. */
 export type VoiceAdapter = { start: () => Promise<void>; stop: () => Promise<string | undefined> };
+/** What recording needs from outside: adding an entry, saving the file and the time. */
 export type VoiceDeps = { add: (e: JournalEntry) => void; save: (uri: string, id: string) => Promise<void>; now: () => number };
 
 type State = {

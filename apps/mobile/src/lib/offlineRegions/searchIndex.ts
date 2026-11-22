@@ -5,6 +5,7 @@ import type { Place } from '../placeSearch';
 /** One row of the search file as `searchLocal` reads it. */
 export type PlaceRow = { name: string; detail: string | null; lat: number; lng: number };
 
+/** A search row as a place with a name, detail and point. */
 export const rowToPlace = (r: PlaceRow): Place => ({ name: r.name, detail: r.detail ?? '', point: { lat: r.lat, lng: r.lng } });
 
 /**

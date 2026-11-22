@@ -1,6 +1,10 @@
+// Home and work, saved as places.
+
 import type { StateCreator } from 'zustand';
 
+/** A saved place: its position, label and when it was set. */
 export type SavedPlace = { lat: number; lng: number; label: string; setAt: number };
+/** Home or work. */
 export type PlaceKind = 'home' | 'work';
 
 /** Home and Work as the rider saved them. Kept on the phone only, never sent to the server. */
@@ -18,6 +22,7 @@ export type PlacesState = {
 
 const validCoord = (lat: number, lng: number) => Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
 
+/** The store's actions and starting state, separate from persistence so they can be tested. */
 export const placesSlice = (): StateCreator<PlacesState> => (set) => ({
   home: undefined,
   work: undefined,

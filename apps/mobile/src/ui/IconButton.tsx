@@ -1,3 +1,5 @@
+// A round button that holds an icon.
+
 import type { LucideIcon } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Icon } from './Icon';
@@ -5,6 +7,7 @@ import { ScalePressable } from './motion';
 
 type Props = { icon: LucideIcon; label: string; onPress?: () => void; plain?: boolean; size?: number; tone?: 'ink' | 'muted' | 'accent' | 'stop' };
 
+/** An icon button with an accessibility label. */
 export function IconButton({ icon, label, onPress, plain, size = 48, tone = 'ink' }: Props) {
   const { c } = useTheme();
   return (

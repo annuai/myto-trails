@@ -1,5 +1,8 @@
+// The slides of the welcome flow.
+
 import type { ImageSourcePropType } from 'react-native';
 
+/** A slide: its title, text and picture. */
 export type Slide = { key: string; title: string; body: string; art: ImageSourcePropType };
 
 /**

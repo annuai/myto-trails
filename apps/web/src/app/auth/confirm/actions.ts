@@ -1,4 +1,5 @@
 "use server";
+// Server action that confirms a sign-in link and starts the session.
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";

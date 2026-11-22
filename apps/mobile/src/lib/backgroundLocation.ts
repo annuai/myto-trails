@@ -7,6 +7,7 @@ import { useRecorder } from '@/store/recorder';
 // Start and stop are queued so a quick pause then resume cannot start while the stop is still running.
 const inOrder = createSerial();
 
+/** The name of the background task that records the ride. */
 export const TASK_NAME = 'myto-ride-recording';
 
 /**
@@ -88,6 +89,7 @@ export const setRecordingProfile = (p: RecordingProfile): Promise<void> => inOrd
 /** The profile the background task is recording with, `full` when none is running or it is not known. */
 export const activeRecordingProfile = (): RecordingProfile => profile ?? 'full';
 
+/** Stops recording in the background. */
 export const stopBackground = (): Promise<void> => inOrder(stopNow);
 async function stopNow(): Promise<void> {
   profile = null;

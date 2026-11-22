@@ -1,3 +1,5 @@
+// The screen wrapper: scrolling, the safe areas and the tab bar's room.
+
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Platform, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -16,7 +18,9 @@ import { CONTENT_MAX, useLayout } from './useLayout';
 import { useAnimatedValue } from './useAnimatedValue';
 import { useLatest } from '@/lib/useLatest';
 
+/** The height of the tab bar in portrait. */
 export const TAB_BAR_HEIGHT = 100;
+/** The height of the tab bar in landscape. */
 export const TAB_BAR_HEIGHT_LANDSCAPE = 84;
 export { CONTENT_MAX };
 

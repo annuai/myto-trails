@@ -1,3 +1,5 @@
+// The Clubs tab: the rides you host or answered, open rides, and clubs to find.
+
 import { useState } from 'react';
 import { useDistanceUnit } from '@/store/region';
 import { View } from 'react-native';

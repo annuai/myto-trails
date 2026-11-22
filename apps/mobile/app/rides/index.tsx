@@ -1,3 +1,5 @@
+// The log of recorded rides, where a GPX from another app can be added as a ride.
+
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
 import { useRouter } from 'expo-router';

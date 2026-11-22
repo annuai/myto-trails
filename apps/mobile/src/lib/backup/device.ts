@@ -25,6 +25,7 @@ export function currentSnapshot(): Snapshot {
   return { places: { home, work, endStrikes }, rideSwitches: { autoEnd, batterySaver }, licence, vehicle, contacts, medical, photos, todos: useTodos.getState().todos, rides: useRides.getState().rides, journal: useJournal.getState().entries, journalTitles: useJournal.getState().titles, routes: useMyRoutes.getState().routes, trips: useTrips.getState().trips, fuel: useFuel.getState().history };
 }
 
+/** How a backup reads this phone's data and restores it: the profile, to-dos, rides and the rest. */
 export const phoneTarget: Target = {
   get: currentSnapshot,
   set: (s) => {
@@ -74,6 +75,7 @@ export async function pickBackupFile(): Promise<string | undefined> {
   return r.canceled ? undefined : r.assets[0].uri;
 }
 
+/** Deletes the backup file the rider picked, if it exists. */
 export function discardPickedBackup(uri: string) {
   const f = new File(uri);
   if (f.exists) f.delete();
