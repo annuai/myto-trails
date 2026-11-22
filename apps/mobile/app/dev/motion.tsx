@@ -65,7 +65,7 @@ export default function MotionPreview() {
       return n + 1;
     }), preview.homeStepMs);
     return () => clearInterval(id);
-  }, [homing]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [homing]); // eslint-disable-line react-hooks/exhaustive-deps -- the timer restarts only when homing starts or stops
   const everyone = homeN >= crew.length;
 
   const [skel, setSkel] = useState(0);

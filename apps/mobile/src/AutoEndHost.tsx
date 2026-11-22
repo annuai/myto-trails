@@ -173,6 +173,6 @@ export function AutoEndHost() {
   useEffect(() => { at.current = path; go.current = router; }, [path, router]);
   useEffect(() => watchAutoEnd({ now: Date.now, liveShowing: () => liveShowingNow(at.current), replace: (p) => go.current.replace(p as never), setProfile: (p) => void setRecordingProfile(p) }), []);
   const tap = useTappedRoute();
-  useEffect(() => { if (tap?.id === WARN_ID) useAutoEndPrompt.getState().keep(); }, [tap?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (tap?.id === WARN_ID) useAutoEndPrompt.getState().keep(); }, [tap?.key]); // eslint-disable-line react-hooks/exhaustive-deps -- once per tap (its key), not on every new tap object
   return null;
 }

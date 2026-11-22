@@ -77,11 +77,11 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
   const arrowTurn = shownHeading !== undefined ? turnBetween(bearing, shownHeading) : 0;
   // While the camera follows, the arrow stands still at the middle of the clear part of the map and the road moves under it; a pin on the map would jump at every fix.
   const arrowFixed = arrow && !!follow && following;
-  const posData = useMemo(() => points(position && !arrow ? [position] : []), [position?.lat, position?.lng, arrow]); // eslint-disable-line react-hooks/exhaustive-deps
+  const posData = useMemo(() => points(position && !arrow ? [position] : []), [position?.lat, position?.lng, arrow]); // eslint-disable-line react-hooks/exhaustive-deps -- keyed on the coordinates, not on the position object
   const clusters = useMemo(() => clusterMarks(riderMarks ?? [], zoom), [riderMarks, zoom]);
   const open = clusters.find((c) => c.id === openId && c.marks.length > 1);
   const picking = !!open;
-  useEffect(() => { onPicker?.(picking); }, [picking]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onPicker?.(picking); }, [picking]); // eslint-disable-line react-hooks/exhaustive-deps -- tells the parent when the cluster picker opens or closes; the callback is not a trigger
   const start = useMapStart();
   useEffect(() => { if (focus) safeMove(() => camera.current?.flyTo({ center: [focus.lng, focus.lat], zoom: 12 })); }, [focus]);
   const bounds = useMemo(() => {
@@ -117,7 +117,7 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
     if (flyNext.current) { flyNext.current = false; safeMove(() => camera.current?.flyTo({ ...stop, duration: RECENTER_MS })); }
     // A steady glide at a constant speed over the time between fixes: an eased move would speed up and slow down every second.
     else safeMove(() => camera.current?.easeTo({ ...stop, duration: zoomed ? ZOOM_EASE_MS : glideMs ?? FOLLOW_EASE_MS, easing: 'linear' }));
-  }, [follow, following, position?.lat, position?.lng, heading, padding, followZoom]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [follow, following, position?.lat, position?.lng, heading, padding, followZoom]); // eslint-disable-line react-hooks/exhaustive-deps -- one camera move per new fix or follow change; `stop` is rebuilt from these values
   // A closed loop on the camera: the moves above are asked for and not checked, and a move the phone drops would leave the map facing the wrong way for good. If the measured bearing stays far from the wanted one, the camera is set to it outright.
   useEffect(() => {
     if (!follow || !following || !position || heading === undefined) { offSince.current = 0; return; }
@@ -128,7 +128,7 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
     offSince.current = 0; setHealed((n) => n + 1);
     camBearing.current = unwrapBearing(bearing, heading);
     safeMove(() => camera.current?.jumpTo({ center: [position.lng, position.lat], zoom: followZoom, bearing: norm(camBearing.current), padding }));
-  }, [bearing, follow, following, position?.lat, position?.lng, heading, padding, followZoom]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [bearing, follow, following, position?.lat, position?.lng, heading, padding, followZoom]); // eslint-disable-line react-hooks/exhaustive-deps -- compares the measured and wanted bearing when either, or the fix, changes
   // While following, a pinch changes only the zoom, about the rider, so the map never slides away from them; the map's own pinch (about the fingers) is off.
   // Each pinch step changes the zoom by its own share (scaleChange), so nothing about where the gesture began has to be remembered.
   const pinch = useMemo(() => Gesture.Pinch().runOnJS(true).enabled(!!follow && following).onChange((e) => setFollowZoom((z) => Math.max(MIN_FOLLOW_ZOOM, Math.min(MAX_FOLLOW_ZOOM, z + Math.log2(e.scaleChange))))), [follow, following]);

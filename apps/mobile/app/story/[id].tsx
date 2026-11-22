@@ -77,7 +77,7 @@ function StoryBody() {
     fetchOutcome(token, slug).then((o) => { if (o && !cancelled) useRides.getState().setOutcome(ride.id, o); }).catch(() => undefined);
     return () => { cancelled = true; };
   }, [token, slug, ride?.id]);
-  useEffect(() => { if (reportOpen && ride && !ride.conditionAsked) useRides.getState().markConditionAsked(ride.id); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (reportOpen && ride && !ride.conditionAsked) useRides.getState().markConditionAsked(ride.id); }, []); // eslint-disable-line react-hooks/exhaustive-deps -- marks the condition question as asked once, when the sheet first opens
   const allRides = useRides((s) => s.rides);
   const places = useSavedPlaces();
   // What leaves the phone (a GPX file, a condition report's position) never shows the ends near Home or Work. Worked out once per

@@ -45,7 +45,7 @@ export function useProgress(play: boolean, ms: number, o: { delay?: number; run?
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [animate, ms, o.delay, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [animate, ms, o.delay, key]); // eslint-disable-line react-hooks/exhaustive-deps -- restarts only when the animation, its length, delay or key changes
   return !animate ? 1 : state.key === key ? state.p : 0;
 }
 

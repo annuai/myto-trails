@@ -27,7 +27,7 @@ export async function getFixitContent(sql: Sql): Promise<FixitContent> {
         (select max(updated_at) from fixit_tool), (select max(updated_at) from fixit_guide), (select max(updated_at) from fixit_step),
         (select max(updated_at) from fixit_term), (select max(updated_at) from fixit_check_item), (select max(updated_at) from fixit_art), (select max(updated_at) from fixit_section)) as at,
       ((select count(*) from fixit_tool) + (select count(*) from fixit_guide) + (select count(*) from fixit_step) + (select count(*) from fixit_term) + (select count(*) from fixit_check_item) + (select count(*) from fixit_art) + (select count(*) from fixit_section))::int as n`;
-  type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- rows come back from raw SQL untyped and are mapped to typed DTOs
   const tools = (r?.tools ?? []) as Row[];
   const guides = (r?.guides ?? []) as Row[];
   const sections = (r?.sections ?? []) as Row[];

@@ -18,6 +18,6 @@ export function useStatusSince(riders: GroupRiderView[]): Record<string, number>
     seen.current = next;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- derived from the group's signals, which arrive outside React
     setSince(Object.fromEntries(Object.entries(next).map(([id, v]) => [id, v.at])));
-  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps -- re-stamps when a rider's status changes (`key`), not on every new riders array
   return since;
 }

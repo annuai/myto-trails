@@ -1,3 +1,4 @@
+/** The part of expo-secure-store used here, so the storage can be tested without the native module. */
 export type KeychainLike = {
   getItemAsync(key: string): Promise<string | null>;
   setItemAsync(key: string, value: string, options?: { keychainAccessible?: number }): Promise<void>;
@@ -18,6 +19,7 @@ export function keychainStorage(kc: KeychainLike, onUnreadable: () => void) {
     getItem: async (key: string): Promise<string | null> => {
       let value: string | null;
       try { value = await kc.getItemAsync(key); } catch { onUnreadable(); return null; }
+      // Move an item saved the old way to the new setting. Best effort: if the write fails, the next read tries again.
       if (value !== null) kc.setItemAsync(key, value, options).catch(() => {});
       return value;
     },

@@ -36,7 +36,7 @@ export function TurnCard({ instruction, compact, onStop, stopLabel = 'Stop guidi
   // A new instruction fades in rather than snapping, so a change of turn reads as one smooth move.
   const shown = useAnimatedValue(1);
   const kindKey = `${i.kind}|${i.text}`;
-  useEffect(() => { shown.setValue(0.3); Animated.timing(shown, { toValue: 1, duration: 180, easing: Easing.out(Easing.quad), useNativeDriver: true }).start(); }, [kindKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { shown.setValue(0.3); Animated.timing(shown, { toValue: 1, duration: 180, easing: Easing.out(Easing.quad), useNativeDriver: true }).start(); }, [kindKey]); // eslint-disable-line react-hooks/exhaustive-deps -- the fade plays once per new instruction (`kindKey`)
   // What the guidance is about leads the last line, after the instruction: "Group destination · 3.2 km to go".
   const togo = [i.eyebrow, i.remainingM === null || i.arrived ? '' : `${asText(distanceKm(i.remainingM / 1000))} to go${i.etaMin ? ` · about ${asText(durationParts(i.etaMin * 60))}` : ''}`].filter(Boolean).join(' · ');
   const tile = compact ? size.button : size.bigButton;
@@ -110,7 +110,7 @@ export function GroupRail({ tiles, onSelect, onAll, since }: { tiles: RiderTile[
     if (wanted.some((t) => t.status !== 'ok' && !ids.includes(t.id))) scroller.current?.scrollTo({ x: 0, animated: true });
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the row's order is held in state so the change can be animated just before it happens
     setIds(wantedIds);
-  }, [wantedKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [wantedKey]); // eslint-disable-line react-hooks/exhaustive-deps -- reorders the row when the wanted order changes (`wantedKey`), not on every riders update
   const byId = new Map(tiles.map((t) => [t.id, t]));
   const shown = ids.flatMap((id) => (byId.has(id) && !byId.get(id)!.isMe ? [byId.get(id)!] : []));
   const [view, setView] = useState({ x: 0, width: 0, content: 0 });

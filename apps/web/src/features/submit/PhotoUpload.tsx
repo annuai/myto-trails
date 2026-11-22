@@ -41,7 +41,7 @@ export function PhotoUpload({ initial, errors, max }: { initial: PhotoRow[]; err
       <ul className="flex flex-col gap-6">
         {rows.map((r, i) => (
           <li key={r.mediaId} className="flex flex-col gap-3 border border-border p-4 sm:flex-row">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized variants from R2; next/image would add per-request transform cost (docs/05) */}
             {r.thumbUrl ? <img src={r.thumbUrl} alt="" className="h-28 w-40 object-cover" /> : null}
             <div className="flex flex-1 flex-col gap-3">
               <p className="text-sm text-muted">{i === 0 ? "Cover photo" : `Photo ${i + 1}`}</p>

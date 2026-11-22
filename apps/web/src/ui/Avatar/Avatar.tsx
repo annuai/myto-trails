@@ -3,7 +3,7 @@ export function Avatar({ name, url, size = 40 }: { name: string; url: string | n
   const initials = name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
   const style = { width: size, height: size, fontSize: size * 0.4 };
   return url ? (
-    // eslint-disable-next-line @next/next/no-img-element
+    // eslint-disable-next-line @next/next/no-img-element -- pre-sized variants from R2; next/image would add per-request transform cost (docs/05)
     <img src={url} alt="" width={size} height={size} style={style} className="shrink-0 rounded-full object-cover" />
   ) : (
     <span aria-hidden="true" style={style} className="inline-flex shrink-0 items-center justify-center rounded-full bg-accent font-semibold text-on-art">{initials}</span>

@@ -6,6 +6,7 @@ import { keychainStorage } from './authStorage';
 
 // The device token goes in the Keychain / Keystore on a phone. The web build has no such store, so it uses localStorage:
 // fine for testing, and the reason the production web build should not hold long-lived tokens.
+// Set when a read failed because the phone was still locked, so the token is read again once the app comes to the front (bottom of this file).
 let unreadable = false;
 const keychain = keychainStorage(SecureStore, () => { unreadable = true; });
 const secure = {
@@ -29,4 +30,10 @@ export const useAuth = create<State>()(
 );
 
 // A background wake that could not read the token (see authStorage) reads it again once the app comes to the front.
-if (Platform.OS !== 'web') AppState.addEventListener('change', (st) => { if (st === 'active' && unreadable) { unreadable = false; void useAuth.persist.rehydrate(); } });
+if (Platform.OS !== 'web') {
+  AppState.addEventListener('change', (state) => {
+    if (state !== 'active' || !unreadable) return;
+    unreadable = false;
+    void useAuth.persist.rehydrate();
+  });
+}

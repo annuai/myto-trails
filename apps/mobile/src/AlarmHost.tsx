@@ -32,7 +32,7 @@ export function AlarmHost() {
     void read();
     const app = AppState.addEventListener('change', (s) => { if (s === 'active') void read(); });
     return () => app.remove();
-  }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps -- reads the woken alarms when the host becomes ready, and again each time the app comes to the front
 
   useEffect(() => {
     // Snooze only takes the ring away: the next one is already set.
@@ -41,7 +41,7 @@ export function AlarmHost() {
     useAlarms.getState().markWoke(response.group, Date.now());
     // A tap on the ring itself is opened by the notification host; the button is not.
     if (response.action === 'up') router.push(alarmRoute(response.group) as never);
-  }, [response?.key, ready]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [response?.key, ready]); // eslint-disable-line react-hooks/exhaustive-deps -- one handling per notification response (its key), once the host is ready
 
   return null;
 }
