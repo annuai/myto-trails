@@ -1,6 +1,7 @@
 import { isValidSlug, reportPriority, validateReport } from "@moto-trails/domain";
 import type { Sql } from "postgres";
 
+/** A saved report with its short reference, or why it was not saved. */
 export type CreateReportResult = { ok: true; ref: string } | { ok: false; reason: "invalid" | "not_found" | "rate_limited" };
 
 const refOf = (id: string) => id.replace(/-/g, "").slice(0, 8).toUpperCase();

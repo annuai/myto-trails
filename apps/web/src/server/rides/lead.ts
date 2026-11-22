@@ -16,6 +16,7 @@ export const LOW_BATTERY_PCT = 7;
 /** A rider heard from within this is there to take the lead. */
 export const FRESH_MS = 5 * 60_000;
 
+/** A rider who could take over the lead, with their titles, when they joined and when they were last heard from. */
 export type Candidate = { userId: string; titles: RiderTitle[]; joinedAt: Date; seenAt: Date | null };
 
 const fresh = (c: Candidate, now: Date) => c.seenAt !== null && now.getTime() - c.seenAt.getTime() <= FRESH_MS;

@@ -2,11 +2,13 @@ import type {
   TrailCarry, AccessClass, Difficulty, OperationalStatus, RouteShape, Sensitivity, VerificationLevel,
 } from "@moto-trails/domain";
 
+/** A place's slug and name. */
 export type PlaceDto = { slug: string; name: string };
 
 /** The cover photo of a trail, in the widths that exist. */
 export type CoverDto = { variants: Record<string, string>; altText: string; width: number | null; height: number | null };
 
+/** A trail as the lists show it (search, regions, saved). Single-trail reads leave `cover` out. */
 export type TrailSummaryDto = {
   /** Filled in by list queries (search, regions, saved); absent on single-trail reads. */
   cover?: CoverDto | null;
@@ -39,6 +41,7 @@ export type TrailSummaryDto = {
   updatedAt: string;
 };
 
+/** A trail as its own page shows it: the summary plus description, suitability and best months. */
 export type TrailDetailDto = TrailSummaryDto & {
   description: string | null;
   suitableFor: string[];
@@ -69,6 +72,7 @@ export type TrailDetailDto = TrailSummaryDto & {
   carry: TrailCarry | null;
 };
 
+/** A trail's route statistics: distance, climb and elevation. */
 export type RouteDto = {
   distanceKm: number;
   elevGainM: number | null;
@@ -82,6 +86,7 @@ export type RouteDto = {
   line: [number, number][];
 };
 
+/** A country, state or district. */
 export type RegionDto = {
   kind: "country" | "state" | "district";
   name: string;
@@ -92,6 +97,7 @@ export type RegionDto = {
   countryIso2: string | null;
 };
 
+/** A trail video with its poster, caption and text description. */
 export type VideoDto = {
   position: number;
   /** A text equivalent of the video, shown under it. */
@@ -105,6 +111,7 @@ export type VideoDto = {
   durationS: number;
 };
 
+/** A trail photo with its caption, alt text and credit. */
 export type MediaDto = {
   role: "cover" | "gallery";
   position: number;

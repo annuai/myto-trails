@@ -1,3 +1,6 @@
+// Cached region reads for the pages: each one checks its slugs first, then reads through the cache (refreshed hourly and when trails
+// change).
+
 import { isValidSlug } from "@moto-trails/domain";
 import { cacheLife, cacheTag } from "next/cache";
 import { getSql, withPublicRole } from "../db/client";
@@ -11,6 +14,7 @@ async function loadRegion(countrySlug: string, stateSlug: string, districtSlug: 
   return withPublicRole(getSql(), (tx) => queryRegionBySlugs(tx, countrySlug, stateSlug, districtSlug));
 }
 
+/** A state or district page's region, or null for an unknown or malformed address. */
 export async function getRegion(countrySlug: string, stateSlug: string, districtSlug?: string): Promise<RegionDto | null> {
   if (!isValidSlug(countrySlug) || !isValidSlug(stateSlug) || (districtSlug !== undefined && !isValidSlug(districtSlug))) return null;
   return loadRegion(countrySlug, stateSlug, districtSlug);
@@ -23,10 +27,12 @@ async function loadDistricts(countrySlug: string, stateSlug: string): Promise<Re
   return withPublicRole(getSql(), (tx) => queryDistricts(tx, countrySlug, stateSlug));
 }
 
+/** The districts of a state. */
 export async function getDistricts(countrySlug: string, stateSlug: string): Promise<RegionDto[]> {
   return isValidSlug(countrySlug) && isValidSlug(stateSlug) ? loadDistricts(countrySlug, stateSlug) : [];
 }
 
+/** The regions listed on the regions hub page. */
 export async function getRegionsForHub(): Promise<RegionDto[]> {
   "use cache";
   cacheTag("trails");

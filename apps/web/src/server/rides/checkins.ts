@@ -16,8 +16,11 @@ const PING_GAP_SECONDS = 20;
 const CREATES_PER_DAY = 10;
 const MAX_OPEN = 3;
 
+/** Where a check-in stands: active, overdue, arrived or expired. */
 export type CheckinStatus = "active" | "overdue" | "arrived" | "expired";
+/** Details a rider may include for their safety contact: name, blood group, allergies and bike. */
 export type Emergency = { riderName?: string; bloodGroup?: string; allergies?: string; bikeName?: string };
+/** A location fix and when it was taken. */
 export type Position = { lat: number; lng: number; at: Date };
 
 /** Computed from the times alone, so it is right whenever it is read, even if no scheduled job has run. */
@@ -34,6 +37,7 @@ const text = (v: unknown, max: number) => {
 };
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
+/** Reads a position sent by the phone. Null unless it has a valid latitude, longitude and time. */
 export function parsePosition(v: unknown): Position | null {
   if (typeof v !== "object" || v === null) return null;
   const p = v as Record<string, unknown>;
@@ -49,8 +53,10 @@ export function parseExpectedAt(v: unknown, from: Date): Date | null {
   return d;
 }
 
+/** What a rider sets up before a solo ride: when they expect to be back and who to tell if they are not. */
 export type NewCheckin = { timeZone: string; rideName: string | null; expectedAt: Date; contactName: string; contactEmail: string | null; shareLive: boolean; position: Position | null; emergency: Emergency | null };
 
+/** Checks and cleans a new check-in. Null when it is not valid. */
 export function parseNewCheckin(b: Record<string, unknown>, now: Date): NewCheckin | null {
   const expectedAt = parseExpectedAt(b.expectedAt, now);
   const contactName = text(b.contactName, 60);
@@ -75,6 +81,7 @@ export function parseNewCheckin(b: Record<string, unknown>, now: Date): NewCheck
 
 type Fail<R extends string> = { ok: false; reason: R };
 
+/** Starts a check-in for a signed-in rider. Limited per day. The result carries the check-in's id and a token. */
 export async function createCheckin(sql: Sql, i: { userId: string; input: NewCheckin; now: Date }): Promise<{ ok: true; id: string; token: string } | Fail<"invalid" | "rate_limited" | "too_many">> {
   if (!UUID.test(i.userId)) return { ok: false, reason: "invalid" };
   return sql.begin(async (tx) => {
@@ -122,6 +129,7 @@ export async function pingCheckin(sql: Sql, i: { userId: string; id: string; pos
   return { ok: true };
 }
 
+/** Moves the expected return time later, while the check-in is still running and within the maximum span. */
 export async function extendCheckin(sql: Sql, i: { userId: string; id: string; expectedAt: Date; now: Date }): Promise<{ ok: true } | Fail<"not_found" | "ended" | "invalid">> {
   const c = await mine(sql, i.userId, i.id);
   if (!c) return { ok: false, reason: "not_found" };
@@ -142,6 +150,10 @@ export async function arriveCheckin(sql: Sql, i: { userId: string; id: string; n
   return { ok: true };
 }
 
+/**
+ * What the contact sees on the tracking page: the status, the expected time, and where the rider shared them, the last position, battery
+ * and emergency details.
+ */
 export type TrackView =
   | { found: false }
   | {
@@ -175,6 +187,7 @@ export async function viewCheckin(sql: Sql, token: string, now: Date): Promise<T
   };
 }
 
+/** The email to the contact when the rider is overdue. Line breaks are removed from the rider's name and it is cut to 60 characters. */
 export function overdueEmail(i: { riderName: string; rideName: string | null; expectedAt: Date; timeZone?: string }): { subject: string; text: string } {
   const zone = i.timeZone ?? DEFAULT_TIME_ZONE;
   const when = i.expectedAt.toLocaleString("en-GB", { timeZone: zone, day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });

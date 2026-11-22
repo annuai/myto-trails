@@ -15,6 +15,7 @@ const mapRegion = (r: Row): RegionDto => ({
   countryIso2: r.country_iso2,
 });
 
+/** A state, or a district when `districtSlug` is given, by the slugs in its page address. Null for a malformed slug or no such region. */
 export async function queryRegionBySlugs(sql: Sql, countrySlug: string, stateSlug: string, districtSlug?: string): Promise<RegionDto | null> {
   if (!isValidSlug(countrySlug) || !isValidSlug(stateSlug) || (districtSlug !== undefined && !isValidSlug(districtSlug))) return null;
   const rows = (
@@ -25,10 +26,12 @@ export async function queryRegionBySlugs(sql: Sql, countrySlug: string, stateSlu
   return rows[0] ? mapRegion(rows[0]) : null;
 }
 
+/** Every state, by name. */
 export async function queryStates(sql: Sql): Promise<RegionDto[]> {
   return ((await sql`select * from public_regions where kind = 'state' order by name`) as Row[]).map(mapRegion);
 }
 
+/** The districts of one state, or none for a malformed slug. */
 export async function queryDistricts(sql: Sql, countrySlug: string, stateSlug: string): Promise<RegionDto[]> {
   if (!isValidSlug(countrySlug) || !isValidSlug(stateSlug)) return [];
   return ((await sql`select * from public_regions where kind = 'district' and parent_slug = ${stateSlug} and country_slug = ${countrySlug} order by name`) as Row[]).map(mapRegion);

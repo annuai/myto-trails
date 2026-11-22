@@ -23,6 +23,7 @@ export function mapCarry(r: Row): TrailCarry | null {
   return carry.waterLitres === null && carry.items.length === 0 && carry.notes === null && carry.arrival === null && carry.arrivalNote === null ? null : carry;
 }
 
+/** Turns a database row into the summary of a trail used in lists. */
 export function mapSummary(r: Row, now: Date): TrailSummaryDto {
   return {
     id: r.id,
@@ -50,6 +51,7 @@ export function mapSummary(r: Row, now: Date): TrailSummaryDto {
   };
 }
 
+/** One published trail with everything its page shows. Null for a malformed slug or an unpublished trail. */
 export async function queryTrailBySlug(sql: Sql, slug: string, now: Date): Promise<TrailDetailDto | null> {
   if (!isValidSlug(slug)) return null;
   const [r] = (await sql`select * from public_trail_detail where slug = ${slug}`) as Row[];
@@ -82,6 +84,7 @@ export async function queryTrailBySlug(sql: Sql, slug: string, now: Date): Promi
   };
 }
 
+/** A trail's route, or null when it has none. */
 export async function queryTrailRoute(sql: Sql, slug: string): Promise<RouteDto | null> {
   if (!isValidSlug(slug)) return null;
   const [r] = (await sql`select * from public_trail_route where slug = ${slug}`) as Row[];
@@ -98,6 +101,7 @@ export async function queryTrailRoute(sql: Sql, slug: string): Promise<RouteDto 
   };
 }
 
+/** A trail's photos in their display order. */
 export async function queryTrailMedia(sql: Sql, slug: string): Promise<MediaDto[]> {
   if (!isValidSlug(slug)) return [];
   const rows = (await sql`
@@ -115,6 +119,7 @@ export async function queryTrailMedia(sql: Sql, slug: string): Promise<MediaDto[
   }));
 }
 
+/** A trail's videos in their display order. */
 export async function queryTrailVideos(sql: Sql, slug: string): Promise<VideoDto[]> {
   if (!isValidSlug(slug)) return [];
   const rows = (await sql`
@@ -140,6 +145,7 @@ export async function attachCovers<T extends { slug: string }>(sql: Sql, items: 
   return items.map((i) => ({ ...i, cover: byslug.get(i.slug) ?? null }));
 }
 
+/** The published trails of a state or district. */
 export async function queryTrailsInRegion(
   sql: Sql,
   region: { countrySlug: string; stateSlug: string; districtSlug?: string },
@@ -154,6 +160,7 @@ export async function queryTrailsInRegion(
   return attachCovers(sql, rows.map((r) => mapSummary(r, now)));
 }
 
+/** The trails and regions that belong in the sitemap. `excludeSample` leaves out the seeded sample trails. */
 export async function querySitemapEntries(
   sql: Sql,
   opts: { excludeSample: boolean },

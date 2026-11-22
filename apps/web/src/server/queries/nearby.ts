@@ -4,7 +4,9 @@ import { countryAt } from "../db/boundaries";
 import { withPublicRole } from "../db/client";
 import { searchTrails, type SearchItem } from "./search.sql";
 
+/** How many nearby trails are shown. */
 export const NEARBY_COUNT = 6;
+/** How far from the visitor a trail may be to count as nearby. */
 export const NEARBY_RADIUS_KM = 300;
 
 /**

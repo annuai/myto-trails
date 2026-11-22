@@ -1,3 +1,6 @@
+// Road-condition reports on a trail: a rider reports what the road is like now, others confirm or dispute it, and a report stays 'fresh'
+// for two weeks.
+
 import { isValidSlug } from "@moto-trails/domain";
 import type { Sql } from "postgres";
 import { cleanBody, LINK } from "../community/comments";
@@ -8,6 +11,7 @@ import { CONFIRMATIONS_TO_VERIFY, stateOfConditionReport } from "@moto-trails/do
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY = 86_400_000;
+/** What a rider can report the road as. */
 export const KINDS = ["clear", "muddy", "blocked", "washed_out", "closed"] as const;
 export type ConditionKind = (typeof KINDS)[number];
 const REPORTS_PER_DAY = 30;
@@ -18,6 +22,7 @@ const MAX_AGE_DAYS = 30;
 const CLOCK_SKEW_MS = 5 * 60_000;
 const LISTED_DAYS = 60;
 
+/** True while a report is recent enough to count as current. */
 export const isFresh = (reportedAt: Date, now: Date) => now.getTime() - reportedAt.getTime() <= FRESH_DAYS * DAY;
 
 type Fail<R extends string> = { ok: false; reason: R };
@@ -84,6 +89,7 @@ async function awardIfVerified(sql: Sql, r: { reportId: string; reporterId: stri
   await awardTrailmarks(sql, { userId: r.reporterId, action: "condition_confirmed", refType: "condition_report", refId: r.reportId, trailId: r.trailId, state, confirmedBy, now: r.now }).catch(() => undefined);
 }
 
+/** A report as anyone sees it: its kind, when, how many confirmed or disputed it, and whether it is fresh. */
 export type PublicConditionReport = { id: string; kind: ConditionKind; at: string; confirmations: number; disputes: number; fresh: boolean };
 
 /** Recent reports for a trail, newest first. No rider, note or position is exposed. Null for an unknown trail. */
