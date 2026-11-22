@@ -33,7 +33,7 @@ export function Wheel({ items, index, onIndex, label, variant = 'section', flex 
   useEffect(() => {
     const i = clampRow(index);
     if (i !== at.current || settled === 0) { at.current = i; place(i, false); }
-  }, [index, items.length, settled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [index, items.length, settled]); // eslint-disable-line react-hooks/exhaustive-deps -- follows the parent's index and list length; `place` and `clampRow` are rebuilt each render
   useEffect(() => () => clearTimeout(timer.current), []);
   const settle = useLatest((offset: number) => {
     const i = clampRow(Math.round(offset / ROW));

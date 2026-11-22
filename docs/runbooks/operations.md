@@ -16,6 +16,7 @@ insert into user_role (user_id, role) select id, 'admin' from app_user where ema
 
 ## Backups and restore drill **(needs account)**
 - Production uses a paid Supabase plan with daily backups and point-in-time recovery. Free projects have no backups and pause when idle: do not launch on them.
+- Synced rides, trips and to-dos deleted by mistake: `npm run sync:restore -w @moto-trails/web -- --email <rider> --since <time>` lists what the 30-day recycle bin still holds (add `--apply` to restore). Details: [sync-design](../sync-design.md).
 - Weekly logical backup kept outside the provider: `pg_dump --format=custom --no-owner "$DATABASE_URL" > moto-trails-$(date +%F).dump`.
 - Object storage (R2): enable bucket versioning for `originals/` and `public/`; the database is the index, so restore the database first, then objects.
 - **Restore drill before beta:** restore the latest dump into a scratch database (`createdb`, `pg_restore --no-owner`), run `npm run db:migrate`, run the app against it, open three trails and one GPX download, then record the date and time taken here.

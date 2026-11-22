@@ -76,7 +76,7 @@ export default function ClubScreen() {
   // A post of photos that finished sending shows up in the feed.
   const waiting = usePhotoOutbox((s) => s.items.filter((i) => i.clubId === id).length);
   const waitingBefore = useRef(waiting);
-  useEffect(() => { if (waiting < waitingBefore.current) { c.reload(); posts.reload(); setOlder(undefined); setReacts({}); } waitingBefore.current = waiting; }, [waiting]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (waiting < waitingBefore.current) { c.reload(); posts.reload(); setOlder(undefined); setReacts({}); } waitingBefore.current = waiting; }, [waiting]); // eslint-disable-line react-hooks/exhaustive-deps -- runs when the outbox count drops (a post finished sending); the reload functions are not triggers
   /** Runs a server action; on success the screen reloads and any open sheet closes. */
   const submit = async (fn: () => Promise<unknown>, then?: () => void) => {
     if (!token) return;

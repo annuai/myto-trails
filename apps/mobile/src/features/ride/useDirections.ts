@@ -82,7 +82,7 @@ export function useDirections(here: LatLng | undefined, to: LatLng | undefined, 
     const off = step.state.phase === 'off';
     setRerouting((was) => (was === off ? was : off));
     if (step.ask) ask(step.seq, true);
-  }, [hereLat, hereLng, toLat, toLng]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hereLat, hereLng, toLat, toLng]); // eslint-disable-line react-hooks/exhaustive-deps -- judged once per new position or destination, by their coordinates
 
   return { directions, failed: failedFlag, rerouting: rerouting && !!directions, rerouted };
 }

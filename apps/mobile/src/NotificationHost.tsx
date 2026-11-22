@@ -74,7 +74,7 @@ export function NotificationHost() {
     // A tap on a ride nudge counts as opening it, which the plan learns from.
     if (tap.id.startsWith('nudge:')) useNudges.getState().markTapped(tap.id, Date.now());
     router.push(tap.route as never);
-  }, [tap?.key, ready]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tap?.key, ready]); // eslint-disable-line react-hooks/exhaustive-deps -- once per tap (its key), not on every new tap object
   return null;
 }
 

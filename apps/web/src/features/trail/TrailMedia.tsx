@@ -24,7 +24,7 @@ function PhotoFigure({ m }: { m: MediaDto }) {
   const srcSet = widths.map((w) => `${m.variants[String(w)]} ${w}w`).join(", ");
   return (
     <figure>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized variants from R2; next/image would add per-request transform cost (docs/05) */}
       <img
         src={m.variants[String(first)]}
         srcSet={srcSet}

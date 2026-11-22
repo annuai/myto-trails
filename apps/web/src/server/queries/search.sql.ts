@@ -9,7 +9,7 @@ import type { TrailSummaryDto } from "./types";
 // Uncached search queries. Run them on a connection that is already the anonymous role (withPublicRole).
 // Everything user-supplied is a bound parameter; LIKE wildcards in user text are escaped.
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any -- rows come back from raw SQL untyped and are mapped to typed DTOs */
 type Row = Record<string, any>;
 
 export type SearchItem = TrailSummaryDto & {

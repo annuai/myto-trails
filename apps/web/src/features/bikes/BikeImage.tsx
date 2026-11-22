@@ -12,7 +12,7 @@ export function BikeImage({ own, preset, want, alt, className = "" }: { own?: So
   const frame = `aspect-[3/2] overflow-hidden rounded-lg ${className}`;
   return url ? (
     <div className={frame}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized variants from R2; next/image would add per-request transform cost (docs/05) */}
       <img src={url} alt={alt} loading="lazy" className={`size-full ${isOwn ? "object-cover" : "object-contain"}`} />
     </div>
   ) : (

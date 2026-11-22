@@ -40,7 +40,7 @@ export function useHomeOfferNow(): { offer: HomeOffer | null; copy?: { title: st
   const { pos, now } = world;
   useEffect(() => {
     if (home && pos) void loadSunset(pos.lat, pos.lng, now).then((fresh) => { if (fresh) bump(); });
-  }, [home, pos?.lat, pos?.lng, isoOf(now)]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [home, pos?.lat, pos?.lng, isoOf(now)]); // eslint-disable-line react-hooks/exhaustive-deps -- once per place and day; `pos` and `now` are rebuilt on every tick
 
   return useMemo(() => {
     const offer = decideHomeOffer(world);

@@ -21,7 +21,7 @@ function useNearbyTrails(at: LatLng | undefined, enabled: boolean): TrailSummary
     const ctl = new AbortController();
     api<SearchResult>(`/trails?near=me&lat=${at.lat}&lon=${at.lng}&radius=25`, { signal: ctl.signal }).then((r) => setItems(r.items.slice(0, 4))).catch(() => undefined);
     return () => ctl.abort();
-  }, [key, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, enabled]); // eslint-disable-line react-hooks/exhaustive-deps -- `key` is the position rounded to about 1 km, so nearby trails are fetched per area, not per fix
   return items;
 }
 

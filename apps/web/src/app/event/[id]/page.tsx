@@ -21,6 +21,7 @@ export default async function EventPage({ params }: PageProps<"/event/[id]">) {
   const download = getAppDownloadUrl(process.env);
   return (
     <section className="flex max-w-2xl flex-col gap-6 py-(--space-section)">
+      {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized variants from R2; next/image would add per-request transform cost (docs/05) */}
       {ev.coverUrl ? <img src={ev.coverUrl} alt="" className="aspect-video w-full rounded-lg object-cover" /> : null}
       <div className="flex flex-col gap-2">
         <h1 className="display-md">{ev.title}</h1>

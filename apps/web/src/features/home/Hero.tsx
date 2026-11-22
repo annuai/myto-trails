@@ -19,7 +19,7 @@ const QUICK = [
 export function Hero({ imageSrc }: { imageSrc: string }) {
   return (
     <section aria-labelledby="hero-title" className="relative ml-[calc(50%-50vw)] w-screen overflow-hidden bg-background">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- a ready-made WebP from /public; next/image would add per-request transform cost (docs/05) */}
       <img src={imageSrc} alt="" fetchPriority="high" className="absolute inset-x-0 bottom-0 h-80 w-full object-cover object-[80%_bottom] sm:inset-0 sm:h-full sm:object-right-bottom" />
       <div className="absolute inset-x-0 bottom-0 h-80 bg-gradient-to-b from-background via-transparent via-45% to-transparent sm:inset-0 sm:h-auto sm:bg-gradient-to-r sm:from-background sm:via-background/60 sm:via-50% sm:to-transparent" />
       <div className="relative container-wide flex min-h-[28rem] flex-col justify-center gap-6 pb-56 pt-28 sm:min-h-[36rem] sm:pb-24 sm:pt-40">

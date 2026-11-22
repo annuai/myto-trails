@@ -9,6 +9,7 @@ Monorepo: `apps/web` (Next.js on Vercel), `apps/mobile` (Expo, "Myto Moto"), `pa
 - Fix stale docs in place; do not add new doc files or copy facts between docs (link instead). New decision → new ADR only if it changes an existing one's direction.
 - Reading a web page: `npx @only-cli/oc open <url>` (run `npx @only-cli/oc --help` once), not raw HTML.
 - Small changes: edit and run only the affected test, not the whole suite.
+- **Comment the why (rule):** a guard, workaround or non-obvious rule gets a short code comment naming the failure it prevents (a lint suppression ends ` -- why`, never bare); a bug fix gets a test that fails without it; and the owning doc gets its line in the same commit (below).
 - **Lean docs (rule):** document as you build, in the same commit as the code. Update the one existing doc that owns the fact; a row, a line or a short paragraph (about 5 lines at most), no new doc files, no repeating code, no copying facts between docs (link). State the decision and the why, not the walkthrough. A change that needs more than that is a sign the code or the name should say it instead.
 
 ## Commands (repo root)

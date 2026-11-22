@@ -38,7 +38,7 @@ export function TrailDetail({ trail, media, videos = [], route = null, actions, 
 
       <div className="aspect-[21/9] w-full overflow-hidden rounded-lg bg-stone">
         {cover && widths.length > 0 ? (
-          // eslint-disable-next-line @next/next/no-img-element
+          // eslint-disable-next-line @next/next/no-img-element -- pre-sized variants from R2; next/image would add per-request transform cost (docs/05)
           <img
             src={cover.variants[String(widths.find((w) => w >= 1200) ?? widths[widths.length - 1])]}
             srcSet={widths.map((w) => `${cover.variants[String(w)]} ${w}w`).join(", ")}

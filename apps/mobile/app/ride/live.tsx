@@ -114,7 +114,7 @@ function LiveBody() {
   const motionStopped = useMotion((s) => s.stopped);
   const gpsError = useLocation((s) => s.error);
   const lastPoint = r.points[r.points.length - 1];
-  const breaks = useMemo(() => mergeBreaks(breaksOf(splitSegments(r.points)), r.pauseBreaks), [r.points.length, r.pauseBreaks]); // eslint-disable-line react-hooks/exhaustive-deps
+  const breaks = useMemo(() => mergeBreaks(breaksOf(splitSegments(r.points)), r.pauseBreaks), [r.points.length, r.pauseBreaks]); // eslint-disable-line react-hooks/exhaustive-deps -- keyed on the point count, which changes only when a point is added
   // The dot follows the live GPS fix straight away; on a simulated ride it follows the simulated track.
   const last = r.source === 'sim' ? lastPoint : fix ? { lat: fix.lat, lng: fix.lng } : lastPoint;
   // The same spot as an object that only changes when the position does, so the map is not redrawn every second.
@@ -132,7 +132,7 @@ function LiveBody() {
   const rescue = useGuideTarget((s) => s.rescue);
   const rescueRider = rescue ? live.riders.find((x) => x.id === rescue.riderId) : undefined;
   const rescueLat = rescueRider?.lat, rescueLng = rescueRider?.lng;
-  const rescueSpot = useMemo(() => (rescue && rescueLat != null && rescueLng != null ? { lat: rescueLat, lng: rescueLng, name: rescue.name } : undefined), [rescue?.name, rescueLat, rescueLng]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rescueSpot = useMemo(() => (rescue && rescueLat != null && rescueLng != null ? { lat: rescueLat, lng: rescueLng, name: rescue.name } : undefined), [rescue?.name, rescueLat, rescueLng]); // eslint-disable-line react-hooks/exhaustive-deps -- keyed on the rescued rider's name and position, not on objects rebuilt at every update
   const target = rescueSpot ?? baseTarget;
   const regroup = useMemo(() => (live.regroup ? { lat: live.regroup.lat, lng: live.regroup.lng, name: live.regroup.note ?? undefined } : undefined), [live.regroup]);
   const destination = target ?? regroup;
@@ -219,7 +219,7 @@ function LiveBody() {
     follow.current = step.state;
     if (step.wentOff && !target) { setOff(true); setRejoinTo(rejoinTarget(trail, g.guide.alongM, speedMps)); Vibration.vibrate([0, 400, 200, 400]); }
     if (step.backOn) { setOff(false); setRejoinTo(undefined); }
-  }, [last?.lat, last?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [last?.lat, last?.lng]); // eslint-disable-line react-hooks/exhaustive-deps -- runs once per new GPS fix; everything else it reads is current at that moment
   // What to tell the rider next. A route in hand is followed by its own bends; before its start, and with no route, the road to a place is asked for.
   const start = routeLine?.[0];
   const toStart = !!routeLine && guide?.phase === 'to_start';
@@ -229,7 +229,7 @@ function LiveBody() {
   const { directions, failed: roadFailed, rerouting, rerouted } = useDirections(lastSpot, roadTo, { motion: { accM: fix?.accuracy ?? undefined, speedMps: r.speedKmh / 3.6, headingDeg: course } });
   // One buzz for each new way found, and a longer one when the road is left (the trail's own monitor buzzes for the trail).
   useEffect(() => { if (rerouted > 0) buzz.reroute(); }, [rerouted]);
-  useEffect(() => { if (rerouting && !rejoining) Vibration.vibrate([0, 300, 150, 300]); }, [rerouting]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (rerouting && !rejoining) Vibration.vibrate([0, 300, 150, 300]); }, [rerouting]); // eslint-disable-line react-hooks/exhaustive-deps -- buzz once when rerouting starts; `rejoining` is only read, not a trigger
   // The position and heading the map and the turn card show are steadied, not raw: on a road they are the road's, elsewhere the fix and the smoothed direction of travel.
   const followLine = rescueSpot ? directions?.line : simRoad?.directions.line ?? (roadTo ? directions?.line : undefined) ?? routeLine;
   const followRoad = useMemo(() => (followLine && followLine.length > 1 ? prepareTrail(followLine) : undefined), [followLine]);
@@ -249,7 +249,7 @@ function LiveBody() {
       return { kind: 'straight', distM: haversine(spot, roadTo), text: `Head ${compassWord(spot, roadTo)}${rejoining ? ' to rejoin the trail' : ''}. ${roadFailed ? 'The road service could not be reached' : 'Finding the road…'}`, eyebrow, remainingM: null, etaMin: null, off: false, arrived: false };
     }
     return routeLine && guide ? fromTrail(guide, start, spot, off) : undefined;
-  }, [spot, roadTo?.lat, roadTo?.lng, toStart, target, rescueSpot, directions, roadFailed, routeLine, simRoad, guide, start, off, rerouting, rejoining]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [spot, roadTo?.lat, roadTo?.lng, toStart, target, rescueSpot, directions, roadFailed, routeLine, simRoad, guide, start, off, rerouting, rejoining]); // eslint-disable-line react-hooks/exhaustive-deps -- `roadTo` is keyed on its coordinates, not on the object
   useVoiceGuidance(instruction, r.speedKmh / 3.6);
   // On reaching the rider, or when they say they are OK, the card asks whether to carry on: one tap goes back to the ride as it was.
   const helpResolved = !!rescue && !!rescueRider && rescue.startStatus !== 'ok' && rescueRider.status === 'ok';
