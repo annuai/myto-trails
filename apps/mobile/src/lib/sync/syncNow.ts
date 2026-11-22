@@ -45,6 +45,7 @@ export function scanNow(): void {
   if (s.enabled && loaded()) useSync.setState(scan(s, syncAdapters, Date.now()));
 }
 
+/** Turns sync on, clears any error and runs it once. */
 export async function enableSync(): Promise<void> {
   useSync.setState({ enabled: true, lastError: null, blocked: null });
   await syncNow();

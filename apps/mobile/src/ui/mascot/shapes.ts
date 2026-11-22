@@ -4,6 +4,7 @@
  */
 export const VERB = { M: 0, L: 1, C: 2, Z: 3 } as const;
 
+/** One shape of the mascot's picture: its colour and how high and low it reaches. */
 export type ShapeInfo = {
   color: number;
   /** The highest and lowest y the shape reaches, as drawn. */
@@ -15,6 +16,7 @@ export type ShapeInfo = {
   pointCount: number;
 };
 
+/** Every shape of the mascot's picture, with the path verbs and the points of each. */
 export type Shapes = {
   shapes: ShapeInfo[];
   verbs: Uint8Array;

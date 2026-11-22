@@ -20,6 +20,7 @@ const TAIL = LEG_COUNT + 1;
 const BODY = LEG_COUNT + 2;
 const DEG = Math.PI / 180;
 
+/** The mascot's drawing with what moves: which shapes stay still, and how strongly each point follows the stride. */
 export type Rig = Shapes & {
   /** Whether each shape stays still (the rock fill, its darker patches and the grass). Indexed like `shapes`. */
   still: boolean[];
@@ -27,6 +28,7 @@ export type Rig = Shapes & {
   weights: Float32Array;
 };
 
+/** One moment of the mascot: how far the body and each paw have moved, the head and tail angles, the scale and the opacity. */
 export type Pose = {
   /** The body's move from where it is drawn, and each paw's move (world, not relative to the body). */
   dx: number;
@@ -107,6 +109,7 @@ export function buildRig(): Rig {
   return { ...parsed, still, weights };
 }
 
+/** The mascot standing still. */
 export const restPose: Pose = { dx: 0, dy: 0, feet: R.legs.map(() => ({ x: 0, y: 0 })), headDeg: 0, tailDeg: 0, scaleX: 1, scaleY: 1, alpha: 1 };
 
 /** Finishes fast, slightly overshooting 1: the head lifts, passes the drawn pose a little, and settles. */
@@ -246,6 +249,7 @@ export function rockRegion(): number[] {
   return pts;
 }
 
+/** A polygon (x, y pairs) as an SVG path that closes at the end. */
 export const toPath = (poly: number[]): string => {
   let d = '';
   for (let i = 0; i < poly.length; i += 2) d += `${i ? 'L' : 'M'}${poly[i]} ${poly[i + 1]}`;

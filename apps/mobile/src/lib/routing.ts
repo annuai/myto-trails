@@ -9,21 +9,27 @@ import { haversine, type LatLng } from './geo';
  */
 const VALHALLA = 'https://valhalla1.openstreetmap.de/route';
 const OSRM = 'https://routing.openstreetmap.de/routed-car/route/v1/driving';
+/** How long a routing request may take before it is given up, in milliseconds. */
 export const TIMEOUT_MS = 12_000;
 /** Below this speed the phone's heading is noise, so it is not sent. */
 export const HEADING_MIN_MPS = 2;
 /** How far the router may turn the start from the rider's heading. */
 const HEADING_TOLERANCE = 45;
 
+/** The kinds of turn an instruction can be. */
 export type TurnKind = 'straight' | 'left' | 'right' | 'slight left' | 'slight right' | 'sharp left' | 'sharp right' | 'uturn' | 'roundabout' | 'arrive';
 /** One manoeuvre: what to do, and how far along the line it is. */
 export type Step = { text: string; kind: TurnKind; /** Metres from the start of the line to where it happens. */ atM: number };
 export type Provider = 'device' | 'valhalla' | 'osrm';
+/** A route to follow: its line, its turns, its length and time, and which router answered. */
 export type Directions = { line: LatLng[]; steps: Step[]; totalM: number; etaMin: number; /** Which router answered; `osrm` ignored the rider's preferences. */ provider?: Provider };
 
+/** What the rider wants to avoid or allow: highways, tolls, ferries, smaller roads and unpaved roads. */
 export type RoutePrefs = { avoidHighways: boolean; avoidTolls: boolean; avoidFerries: boolean; smallerRoads: boolean; allowUnpaved: boolean };
+/** No preferences set. */
 export const DEFAULT_PREFS: RoutePrefs = { avoidHighways: false, avoidTolls: false, avoidFerries: false, smallerRoads: false, allowUnpaved: false };
 
+/** What is asked of a router: the stops, the rider's heading when moving, and their preferences. */
 export type RouteRequest = {
   stops: LatLng[];
   /** The way the rider is travelling, sent only when they are moving: the new route then starts the way they face. */
@@ -81,6 +87,7 @@ export function motorcycleCosting(p: RoutePrefs = DEFAULT_PREFS): Record<string,
   return o;
 }
 
+/** The request body for Valhalla: the stops, the heading on the first one when the rider is moving, and the preferences. */
 export function valhallaBody(r: RouteRequest): object {
   const moving = r.heading !== undefined && Number.isFinite(r.heading);
   return {
@@ -94,6 +101,7 @@ export function valhallaBody(r: RouteRequest): object {
 
 type VManeuver = { instruction?: string; type?: number; begin_shape_index?: number };
 type VTrip = { legs?: { shape?: string; maneuvers?: VManeuver[] }[]; summary?: { time?: number } };
+/** Valhalla's reply: the best trip and any alternatives. */
 export type ValhallaAnswer = { trip?: VTrip; alternates?: { trip?: VTrip }[] };
 
 /** One Valhalla trip as a single line with its turns. Legs are joined end to end (each shares its first point with the last leg's end). */
@@ -132,6 +140,7 @@ export function parseValhalla(body: ValhallaAnswer): Directions[] {
 type OManeuver = { type?: string; modifier?: string; exit?: number };
 type OStep = { maneuver?: OManeuver; name?: string; ref?: string; distance?: number };
 type ORoute = { geometry?: string; distance?: number; duration?: number; legs?: { steps?: OStep[] }[] };
+/** OSRM's reply: a status code and its routes. */
 export type OsrmAnswer = { code?: string; routes?: ORoute[] };
 
 const OSRM_KIND: Record<string, TurnKind> = {
@@ -163,6 +172,7 @@ function osrmKind(m: OManeuver | undefined): TurnKind {
   return OSRM_KIND[m?.modifier ?? ''] ?? 'straight';
 }
 
+/** One OSRM route as Directions. Throws when the route has no line or legs. */
 export function parseOsrmRoute(r: ORoute | undefined): Directions {
   if (!r?.geometry || !r.legs?.length) throw new Error('routing returned no route');
   const line = decodePolyline(r.geometry);
@@ -184,6 +194,7 @@ export function parseOsrmRoute(r: ORoute | undefined): Directions {
   return { line, steps, totalM, etaMin: Math.round((r.duration ?? 0) / 60), provider: 'osrm' };
 }
 
+/** Every usable route in an OSRM reply as Directions. Throws when the reply is not Ok or has no route. */
 export function parseOsrm(body: OsrmAnswer): Directions[] {
   if (body.code !== 'Ok' || !body.routes?.length) throw new Error(`routing ${body.code ?? 'returned no route'}`);
   const out: Directions[] = [];
@@ -192,6 +203,7 @@ export function parseOsrm(body: OsrmAnswer): Directions[] {
   return out;
 }
 
+/** The OSRM request address for the stops, with the rider's heading when moving. */
 export function osrmUrl(r: RouteRequest): string {
   const coords = r.stops.map((p) => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`).join(';');
   const q = new URLSearchParams({ steps: 'true', overview: 'full', geometries: 'polyline6' });
@@ -244,6 +256,7 @@ type Fetcher = typeof fetchWithTimeout;
  */
 export type LocalRouter = (stops: LatLng[], requestJson: string) => Promise<string | null>;
 let localRouter: LocalRouter | undefined;
+/** Sets (or clears) the router that runs on the phone from installed offline regions. */
 export function setLocalRouter(r: LocalRouter | undefined): void { localRouter = r; }
 
 async function askLocal(r: RouteRequest, local: LocalRouter): Promise<Directions[] | null> {

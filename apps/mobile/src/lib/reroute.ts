@@ -14,6 +14,7 @@ import { pointAt, type TrailLine } from './trailGuide';
  */
 export type Phase = 'on' | 'suspect' | 'off';
 
+/** The least distance from the route that can count as being off it. */
 export const MIN_OFF_M = 35;
 /** The limit is this many times the GPS's own error, if that is more than the minimum. */
 export const ACC_FACTOR = 2.5;
@@ -39,6 +40,10 @@ export const STALE_M = 150;
 export const REJOIN_MIN_AHEAD_M = 150;
 export const REJOIN_AHEAD_S = 15;
 
+/**
+ * Where the watch stands: its phase, when the rider first went beyond the limit, how far they have gone since, and the state of asking for
+ * a new way.
+ */
 export type RerouteState = {
   phase: Phase;
   /** When the rider first went beyond the limit, and how far they have travelled since. */
@@ -55,6 +60,7 @@ export type RerouteState = {
 };
 export const startReroute: RerouteState = { phase: 'on', suspectSince: null, wrongWayM: 0, travelM: 0, nextAskAt: 0, failures: 0, asking: 0, seq: 0 };
 
+/** What one step looks at: the time, the distance from the route, and the GPS and motion readings. */
 export type Reading = {
   now: number;
   /** Metres from the route. */
@@ -73,6 +79,7 @@ export type Reading = {
 /** How far from the route is "off" for this fix. */
 export const offLimitM = (accM: number | undefined, speedMps: number): number => Math.min(MAX_OFF_M, Math.max(MIN_OFF_M, ACC_FACTOR * (accM ?? 0), speedMps * 1.5));
 
+/** The new state and what just happened: that the rider went off the route, or came back on. */
 export type Step = {
   state: RerouteState;
   /** Just became sure the rider is off the route. */

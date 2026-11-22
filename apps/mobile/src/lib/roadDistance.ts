@@ -20,8 +20,7 @@ export function parseTable(body: unknown, count: number): (number | null)[] | un
 }
 
 /**
- * Road distances in kilometres from one place to several, with null for any that could not be worked out. Undefined when the service could
- * not be reached.
+ * Road distances in kilometres from one place to several, with null for any that could not be worked out. The main server is tried first and then a backup. Undefined when neither answered.
  */
 export async function roadDistancesKm(from: LatLng, to: LatLng[], signal?: AbortSignal): Promise<(number | null)[] | undefined> {
   if (!to.length) return [];

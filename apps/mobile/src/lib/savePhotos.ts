@@ -25,4 +25,5 @@ export async function savePhotos(urls: string[]): Promise<{ saved: number; probl
   return { saved };
 }
 
+/** The message after saving `n` photos. */
 export const savedText = (n: number) => (n === 1 ? 'Saved to your photos' : `Saved ${n} photos to your photos`);

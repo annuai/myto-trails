@@ -10,6 +10,7 @@ export type ReminderPrefs = { todos: boolean; trips: boolean; paused: boolean; /
 /** One notification the app wants to show. `title` and `body` are the full text; `lock` is what shows when details are hidden. */
 export type Reminder = { id: string; fireAt: number; title: string; body: string; lock: string; route: string; kind: 'todo' | 'trip' | 'ride' | 'nudge' | 'pillion' | 'alarm'; /** A ring of a ride alarm sent as a notification (see lib/alarm/backend.ts). */ alarm?: { group: string; snooze: boolean } };
 
+/** What the reminder planner reads: the time, the to-dos, the distance recorded, the preferences and the planned trip. */
 export type PlanInput = {
   now: number; todos: Todo[]; appKm: number; prefs: ReminderPrefs;
   /** The planned trip. `iso` is its date (YYYY-MM-DD); a trip with no date (the rider chose "Ride this trail") gets no reminders. */

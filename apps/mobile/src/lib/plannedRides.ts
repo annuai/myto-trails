@@ -8,6 +8,7 @@ export const LATE_WINDOW_MIN = 12 * 60;
 export const NOW_WINDOW_MIN = 5;
 
 type PlannedTrip = Schedule & { id: string; startDate?: string; days?: unknown[]; rideIds: string[]; startTime?: number };
+/** One planned ride to offer: the trip, which day of it, its date, its start time and how long before or after the start it is. */
 export type PlannedSlot<T extends PlannedTrip> = { trip: T; dayIndex: number; date: string; at: number; /** Minutes since the planned start: negative before it, positive after. */ sinceMin: number };
 
 /**

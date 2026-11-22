@@ -9,5 +9,7 @@ export const OPENFREEMAP = 'https://tiles.openfreemap.org/styles';
 /** The map style for light screens and for the dark live-ride screen. */
 export const mapStyleUrl = (dark?: boolean): string => MAP_STYLE_URL || `${OPENFREEMAP}/${dark ? 'dark' : 'liberty'}`;
 
+/** The colour a planned route is drawn in. */
 export const ROUTE_COLOR = fixed.route;
+/** The colour a recorded track is drawn in. */
 export const TRACK_COLOR = fixed.track;
