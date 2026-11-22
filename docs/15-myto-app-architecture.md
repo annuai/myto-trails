@@ -107,7 +107,7 @@ The app is a shell with **modules**, one per tab. A module owns its screens, its
 ### 4.4 Authentication
 
 - The website signs in by email link. The app reuses it: the rider enters their email, the link opens the app (universal link), and the app exchanges it for a **device token** with scopes. The existing token system (hashed, scoped, revocable, listed at *Account → Connected devices*) already does the server side.
-- Tokens live in the phone's secure storage (Keychain / Keystore). Optional app lock with fingerprint or face.
+- Tokens live in the phone's secure storage (Keychain / Keystore), readable after the first unlock on iPhone because the ride-recording task wakes the app with the phone locked (`apps/mobile/src/store/authStorage.ts`). Optional app lock with fingerprint or face.
 - The app shows the same 18+ and licence declaration as the website before any community feature.
 - Shared sign-in with the Myto shop at `myto-moto.com`: see §4.5 (recommended: one identity, each backend checks the token locally).
 

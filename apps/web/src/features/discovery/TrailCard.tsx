@@ -26,7 +26,7 @@ function CoverImage({ trail }: { trail: TrailSummaryDto }) {
   if (!cover || widths.length === 0) return <PlaceholderArt slug={trail.slug} className="h-full w-full" />;
   const pick = widths.find((w) => w >= 800) ?? widths[widths.length - 1]!;
   return (
-    // eslint-disable-next-line @next/next/no-img-element
+    // eslint-disable-next-line @next/next/no-img-element -- pre-sized variants from R2; next/image would add per-request transform cost (docs/05)
     <img
       src={cover.variants[String(pick)]}
       srcSet={widths.map((w) => `${cover.variants[String(w)]} ${w}w`).join(", ")}

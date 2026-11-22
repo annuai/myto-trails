@@ -2,7 +2,7 @@ import { isValidSlug } from "@moto-trails/domain";
 import type { Sql } from "postgres";
 import type { RegionDto } from "./types";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any -- rows come back from raw SQL untyped and are mapped to typed DTOs */
 type Row = Record<string, any>;
 
 const mapRegion = (r: Row): RegionDto => ({

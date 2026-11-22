@@ -135,7 +135,7 @@ export function useClubs(text: string) {
       .catch((e: unknown) => { if (!ctl.signal.aborted && generation.current === gen) setOthers((o) => ({ ...o, loading: false, error: e instanceof ApiFailure ? e.message : 'Something went wrong.' })); })
       .finally(() => { if (generation.current === gen) inFlight.current = false; });
     return () => ctl.abort();
-  }, [token, q, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [token, q, tick]); // eslint-disable-line react-hooks/exhaustive-deps -- keyed on `q`, from which `search` is built
 
   const loadMore = useCallback(() => {
     const cursor = cursorRef.current;
@@ -149,7 +149,7 @@ export function useClubs(text: string) {
       .finally(() => { if (generation.current === mineGen) inFlight.current = false; });
   }, [token, search]);
 
-  const reload = useCallback(() => { mine.reload(); setTick((n) => n + 1); }, [mine.reload]); // eslint-disable-line react-hooks/exhaustive-deps
+  const reload = useCallback(() => { mine.reload(); setTick((n) => n + 1); }, [mine.reload]); // eslint-disable-line react-hooks/exhaustive-deps -- the rule asks for `mine`, which is new each render; `mine.reload` itself is stable
   return { mine, others: { ...others, hasMore: others.cursor !== null, loadMore }, /** The words the lists are showing results for, which trail what was typed by the pause. */ searched: q, reload };
 }
 

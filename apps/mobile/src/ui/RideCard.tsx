@@ -38,7 +38,7 @@ export const RideCard = forwardRef<ComponentRef<typeof View>, { model: CardModel
   const box = mapBoxOf(model);
   const [loaded, setLoaded] = useState(0);
   const total = map?.tiles.length ?? 0;
-  useEffect(() => { if (loaded >= total) onMapReady?.(); }, [loaded, total]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (loaded >= total) onMapReady?.(); }, [loaded, total]); // eslint-disable-line react-hooks/exhaustive-deps -- tells the parent once all tiles have loaded; the callback is not a trigger
   const tileDone = () => setLoaded((n) => n + 1);
   const routeSide = Math.min(W - PAD * 2, H * 0.46);
   const routeTop = H * 0.2;

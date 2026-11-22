@@ -24,7 +24,7 @@ export function ImagePicker({ name, label, hint }: { name: string; label: string
       <p id={`${name}-help`} className="text-sm text-muted">{hint ?? "JPEG, PNG, WebP or AVIF, up to 10 MB. Location data is removed."}</p>
       {state.busy ? <p role="status">Uploading…</p> : null}
       {state.preview ? (
-        // eslint-disable-next-line @next/next/no-img-element
+        // eslint-disable-next-line @next/next/no-img-element -- a local preview of an unsaved file, which has no variant to serve
         <img src={state.preview} alt="Your new photo, not saved yet" className="h-28 w-auto max-w-full self-start rounded-2xl object-cover" />
       ) : null}
       {state.error ? <p role="alert" className="text-sm font-medium text-status-stop">{state.error}</p> : null}

@@ -43,7 +43,7 @@ export function useSmoothedRide({ position, speedMps, course, line }: { position
     // The arrow follows more tightly than the map: a road's direction right away, or the smoothed course elsewhere.
     arrow.current = m ? smoothHeading(arrow.current, sample, speedMps, dt, true) : heading.current;
     setOut({ position: at, heading: heading.current, arrow: arrow.current, glideMs: glideMs(since) });
-  }, [lat, lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lat, lng]); // eslint-disable-line react-hooks/exhaustive-deps -- smoothed once per new fix; speed and the rest are read at that moment
 
   return out;
 }

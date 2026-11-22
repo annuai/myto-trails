@@ -59,7 +59,7 @@ function OsmMapView({ height, line, heat, track, trackBreaks, position, waypoint
   const clusters = useMemo(() => clusterMarks(riderMarks ?? [], view.zoom), [riderMarks, view.zoom]);
   const open = clusters.find((c) => c.id === openId && c.marks.length > 1);
   const picking = !!open;
-  useEffect(() => { onPicker?.(picking); }, [picking]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onPicker?.(picking); }, [picking]); // eslint-disable-line react-hooks/exhaustive-deps -- tells the parent when the cluster picker opens or closes; the callback is not a trigger
 
   useEffect(() => {
     let cancelled = false;

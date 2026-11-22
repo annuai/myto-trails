@@ -5,7 +5,7 @@ import type { CoverDto, MediaDto, RouteDto, VideoDto, TrailDetailDto, TrailSumma
 // Uncached query functions. Callers pass a connection that is already running as the anonymous role
 // (see withPublicRole). Slugs are validated first and always sent as query parameters.
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any -- rows come back from raw SQL untyped and are mapped to typed DTOs */
 type Row = Record<string, any>;
 
 const iso = (d: Date | string) => (d instanceof Date ? d.toISOString() : d);

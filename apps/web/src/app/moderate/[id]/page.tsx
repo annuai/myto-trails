@@ -77,7 +77,7 @@ export default async function ReviewPage({ params, searchParams }: PageProps<"/m
           <ul className="grid gap-4 sm:grid-cols-2">
             {v.photos.map((p, i) => (
               <li key={i}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized variants from R2; next/image would add per-request transform cost (docs/05) */}
                 <img src={p.url} alt={p.altText} className="h-auto w-full" loading="lazy" />
                 <p className="text-sm text-muted">{p.role} · {p.altText}{p.credit ? ` · ${p.credit}` : ""}</p>
               </li>

@@ -2,7 +2,7 @@
 export function ClubCover({ name, url, className = "h-40" }: { name: string; url: string | null; className?: string }) {
   const initials = name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
   return url ? (
-    // eslint-disable-next-line @next/next/no-img-element
+    // eslint-disable-next-line @next/next/no-img-element -- pre-sized variants from R2; next/image would add per-request transform cost (docs/05)
     <img src={url} alt="" className={`${className} w-full rounded-3xl object-cover`} />
   ) : (
     <div aria-hidden="true" className={`${className} flex w-full items-center justify-center rounded-3xl bg-accent text-4xl font-semibold tracking-widest text-on-art`}>{initials}</div>

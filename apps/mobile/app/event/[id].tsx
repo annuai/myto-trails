@@ -56,7 +56,7 @@ export default function EventScreen() {
     if (!a) return;
     if (ev.status === 'cancelled' || ev.status === 'ended' || (!ev.mine && ev.myResponse !== 'going')) useAlarms.getState().remove(a.key);
     else if (a.startsAt !== Date.parse(ev.startsAt) || a.title !== ev.title) useAlarms.getState().set({ ...a, startsAt: Date.parse(ev.startsAt), title: ev.title });
-  }, [ev?.id, ev?.status, ev?.myResponse, ev?.startsAt, ev?.title, ev?.mine]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ev?.id, ev?.status, ev?.myResponse, ev?.startsAt, ev?.title, ev?.mine]); // eslint-disable-line react-hooks/exhaustive-deps -- re-sync the alarm only when a field it stores changes, not on every new event object
 
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoProblem, setPhotoProblem] = useState<string>();

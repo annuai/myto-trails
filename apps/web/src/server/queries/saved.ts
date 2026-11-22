@@ -7,7 +7,7 @@ import type { TrailSummaryDto } from "./types";
 // Saved trails (the default collection). Every function takes the user id from a verified session and
 // filters by it, so one user can never read or change another user's list.
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any -- rows come back from raw SQL untyped and are mapped to typed DTOs */
 type Row = Record<string, any>;
 
 export type SavedItem = {

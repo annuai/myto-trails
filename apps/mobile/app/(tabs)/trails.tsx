@@ -55,7 +55,7 @@ export default function Trails() {
       .then((km) => km && setRoad(new Map(nearest.flatMap((n, i) => (km[i] == null ? [] : [[n.t.slug, km[i]!] as const])))))
       .catch(() => undefined);
     return () => ctl.abort();
-  }, [cell, slugs]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cell, slugs]); // eslint-disable-line react-hooks/exhaustive-deps -- refetch when the rider moves to another map cell or the nearest list changes, not on every GPS fix
   const near = useMemo(() => nearest.map((n) => ({ ...n, km: road.get(n.t.slug) ?? n.km, byRoad: road.has(n.t.slug) })).sort((a, b) => a.km - b.km), [nearest, road]);
 
   const source: TrailSummary[] | undefined =
