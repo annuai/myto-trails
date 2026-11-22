@@ -1,4 +1,8 @@
+// What became of a ride the rider sent for review, as the app words it.
+
+/** A submission as the server reports it. */
 export type ServerSubmission = { id: string; status: string; title: string | null; trailSlug: string | null; updatedAt: string };
+/** How the outcome should feel: good, caution, stop or unknown. */
 export type OutcomeTone = 'good' | 'caution' | 'stop' | 'unknown';
 
 const SHOWN = new Set(['submitted', 'changes_requested', 'approved', 'rejected']);

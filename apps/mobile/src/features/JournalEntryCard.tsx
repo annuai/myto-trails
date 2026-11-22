@@ -32,6 +32,7 @@ function VoiceRow({ entry }: { entry: JournalEntry }) {
 /** The shape given to a photo whose size is not known. */
 const FALLBACK_RATIO = 4 / 3;
 
+/** One journal entry (note, voice note or photo) with its delete, film look and share actions. */
 export function JournalEntryCard({ entry, onDelete, onFilm, onShare }: { entry: JournalEntry; onDelete: () => void; onFilm?: () => void; onShare?: () => void }) {
   // A photo whose look was applied but whose original is gone (a restored backup) cannot be re-filmed.
   const canFilm = !!onFilm && (!entry.look || hasOriginal(entry.id));

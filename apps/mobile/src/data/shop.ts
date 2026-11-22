@@ -3,9 +3,12 @@
 // Prices are left out on purpose: they change and the website is the one place they are right.
 // shop.myto-moto.com did not exist on that date (it returned DEPLOYMENT_NOT_FOUND), so SHOP_BASE is the one line to change when it does.
 
+/** The shop's web address. */
 export const SHOP_BASE = 'https://www.myto-moto.com';
+/** The shop's host name, used to recognise its links. */
 export const SHOP_HOST = 'myto-moto.com';
 
+/** The shop's product categories. */
 export const SHOP_CATEGORIES = [
   { id: 'originals', name: 'Myto Originals', blurb: 'Made by myto-moto, designed and tested for long roads.' },
   { id: 'touring', name: 'Touring Essentials', blurb: 'What a long ride is packed with.' },
@@ -14,8 +17,10 @@ export const SHOP_CATEGORIES = [
   { id: 'accessories', name: 'Riding Accessories', blurb: 'Small things that make a ride better.' },
   { id: 'camping', name: 'Camping and Outdoors', blurb: 'For nights away from a bed.' },
 ] as const;
+/** The id of a shop category. */
 export type ShopCategoryId = (typeof SHOP_CATEGORIES)[number]['id'];
 
+/** A product the app can show from the shop. */
 export type ShopProduct = {
   /** Also the path on the website: `${SHOP_BASE}/products/${slug}`. */
   slug: string;
@@ -32,6 +37,7 @@ export type ShopProduct = {
   sample?: true;
 };
 
+/** The products the app lists. */
 export const SHOP_PRODUCTS: readonly ShopProduct[] = [
   {
     slug: 'trail-beam', name: 'Trail Beam', tagline: 'Light that cuts through every condition.',
@@ -50,10 +56,12 @@ export const SHOP_PRODUCTS: readonly ShopProduct[] = [
   },
 ];
 
+/** Groups of products shown together, by product slug. */
 export const SHOP_COLLECTIONS: readonly { id: string; name: string; blurb: string; slugs: readonly string[] }[] = [
   { id: 'ecosystem', name: 'Lighting, navigation, utility', blurb: 'Three tools designed to work together.', slugs: ['trail-beam', 'navi', 'trail-kit'] },
 ];
 
+/** The shop's name and its one-paragraph description. */
 export const SHOP_BRAND = {
   name: 'myto-moto',
   blurb: 'Thoughtfully engineered tools for riders who travel further. Designed through research, prototyping and real-world testing, specified for years of road use, and repairable with common tools.',

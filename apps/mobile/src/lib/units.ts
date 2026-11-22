@@ -7,17 +7,23 @@ export const NARROW_SPACE = ' ';
 
 const grouped = (n: number, maxDecimals: number) => n.toLocaleString(deviceLocale(), { maximumFractionDigits: maxDecimals });
 
+/** Kilometres or miles. */
 export type DistanceUnit = 'km' | 'mi';
 // Everything is stored in kilometres and metres; the unit is only how it is shown. The region store sets this from the rider's home country or their choice.
 let unit: DistanceUnit = 'km';
+/** Sets the unit every figure is shown in. */
 export const setDistanceUnit = (u: DistanceUnit): void => { unit = u; };
+/** The unit in force. */
 export const getDistanceUnit = (): DistanceUnit => unit;
 
 const KM_PER_MILE = 1.609344;
 const FEET_PER_METRE = 3.280839895;
 
+/** A distance in kilometres as a value and unit in the rider's unit. */
 export const distanceKm = (km: number): Quantity => (unit === 'mi' ? { value: grouped(km / KM_PER_MILE, 1), unit: 'mi' } : { value: grouped(km, 1), unit: 'km' });
+/** A speed in km/h as a value and unit (km/h or mph). */
 export const speedKmh = (kmh: number): Quantity => (unit === 'mi' ? { value: grouped(Math.round(kmh / KM_PER_MILE), 0), unit: 'mph' } : { value: grouped(Math.round(kmh), 0), unit: 'km/h' });
+/** A height in metres as a value and unit (m or ft). */
 export const elevationM = (m: number): Quantity => (unit === 'mi' ? { value: grouped(Math.round(m * FEET_PER_METRE), 0), unit: 'ft' } : { value: grouped(Math.round(m), 0), unit: 'm' });
 
 /** A quantity as plain text with an ordinary space, for strings that are matched or spoken ("1.2 km"). */

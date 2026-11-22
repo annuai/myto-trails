@@ -6,6 +6,7 @@ import { useRegion } from '@/store/region';
 /** A position older than this is not where the rider is now. */
 const FRESH_MS = 30 * 60_000;
 
+/** The emergency number in use and where it came from, which can also be a number the rider typed over it. */
 export type EmergencyChoice = Omit<EmergencyNumber, 'source'> & { source: EmergencyNumber['source'] | 'edited' };
 
 /** The number to dial right now: the rider's own edit if they made one this session, else the number for where they are. */

@@ -1,3 +1,5 @@
+// Tabs in a row, one selected, with a sliding highlight.
+
 import { buzz } from '@/lib/haptics';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
@@ -10,6 +12,7 @@ import { segmentedTabs } from './SegmentedTabs.tokens';
 import { Text } from './Text';
 import { useAnimatedValue } from './useAnimatedValue';
 
+/** One tab: its key and label. */
 export type SegmentedTab<T extends string> = { key: T; label: string };
 
 /**

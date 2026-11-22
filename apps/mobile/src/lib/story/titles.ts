@@ -10,6 +10,7 @@ export const TITLES: readonly { id: TitleId; name: string; rung: number; hint: s
   { id: 'road-veteran', name: 'Road veteran', rung: 5, hint: '80 rides across 18 months, 20 trails' },
 ];
 
+/** What a title is worked out from: rides, months ridden and trails ridden. */
 export type TitleStats = { rides: number; monthsRidden: number; trailsRidden?: number };
 
 const NEEDS: Record<TitleId, { rides: number; months: number; trails: number }> = {

@@ -6,6 +6,7 @@ export type QueuedSubmission = {
   form: Omit<RideSubmission, 'points' | 'waypoints' | 'clientId'>;
   tries: number; /** Do not try again before this time (ms). */ nextAt: number;
 };
+/** The rides waiting to be sent for review. */
 export type SubmissionQueue = QueuedSubmission[];
 
 const BACKOFF_BASE_MS = 30_000;
@@ -18,6 +19,7 @@ export const enqueueSubmission = (q: SubmissionQueue, item: Omit<QueuedSubmissio
 /** The oldest submission that is due. One at a time: each is several requests and a signal that comes and goes should finish one before starting the next. */
 export const dueSubmission = (q: SubmissionQueue, now: number): QueuedSubmission | undefined => q.find((i) => i.nextAt <= now);
 
+/** Takes a ride out of the queue. */
 export const removeSubmission = (q: SubmissionQueue, rideId: string): SubmissionQueue => q.filter((i) => i.rideId !== rideId);
 
 /** A failed attempt waits 30 s, then 1 min, 2 min and so on up to an hour. */

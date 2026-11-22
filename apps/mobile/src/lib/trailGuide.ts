@@ -13,10 +13,15 @@ export function prepareTrail(line: LatLng[]): TrailLine {
   return { line, cum, totalM: cum[cum.length - 1] ?? 0 };
 }
 
+/** Heading to the start, on the trail, or finished. */
 export type GuidePhase = 'to_start' | 'on_trail' | 'finished';
+/** The phase and how far along the line the rider has got. */
 export type GuideState = { phase: GuidePhase; /** The furthest the rider has got along the line. It keeps a loop, whose end is its start, from looking finished at once. */ furthestM: number; /** The segment last matched, to search near it first. */ segment: number };
+/** The state at the start of a ride: heading to the start. */
 export const startGuide: GuideState = { phase: 'to_start', furthestM: 0, segment: 0 };
+/** The next turn and how far away it is. */
 export type Turn = { dir: 'left' | 'right' | 'sharp left' | 'sharp right'; distM: number };
+/** What guiding shows: the phase, the distances to the start, along, remaining and off the line, and the next turn. */
 export type Guide = { phase: GuidePhase; toStartM: number; alongM: number; remainingM: number; offM: number; next?: Turn };
 
 /** Close enough to the start (or to the line anywhere) to count as on the trail. */

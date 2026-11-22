@@ -1,8 +1,13 @@
+// The words shown for event answers and reasons.
+
 import type { DeclineReason, EventResponse, RideEvent } from '@/api/types';
 import { formatRideWhen } from '@/lib/community';
 
+/** The words for each reason for declining. */
 export const REASON_LABEL: Record<DeclineReason, string> = { work: 'Work came up', bike: 'Bike in service', distance: 'Too far', other: 'Something else' };
+/** The reasons in the order they are offered. */
 export const REASONS: DeclineReason[] = ['work', 'bike', 'distance', 'other'];
+/** The words for each answer to an invitation. */
 export const RESPONSE_LABEL: Record<EventResponse, string> = { going: 'Going', maybe: 'Maybe', declined: 'Can’t make it', waitlisted: 'On the waitlist' };
 
 /** "Sun, 7 Jun · 6:30 AM · Nandi Hills gate" */

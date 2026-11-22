@@ -22,6 +22,7 @@ export type PlacesState = {
 
 const validCoord = (lat: number, lng: number) => Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
 
+/** The store's actions and starting state, separate from persistence so they can be tested. */
 export const placesSlice = (): StateCreator<PlacesState> => (set) => ({
   home: undefined,
   work: undefined,

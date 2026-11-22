@@ -9,6 +9,7 @@ import { routePrefs } from '@/store/routePrefs';
 /** A place that has moved less than this keeps its road. */
 const TARGET_MOVED_M = 100;
 
+/** How the rider is moving: the GPS error, speed and heading. */
 export type Motion = { /** The GPS's own error in metres. */ accM?: number; speedMps: number; /** The way the rider is travelling. */ headingDeg?: number };
 
 /**

@@ -7,7 +7,9 @@ import type { PillionPose } from './moment';
  */
 export type VisitId = 'hello' | 'waiting' | 'rest' | 'map' | 'finished' | 'campfire';
 
+/** The Pillion visits. */
 export const VISIT_IDS: readonly VisitId[] = ['hello', 'waiting', 'rest', 'map', 'finished', 'campfire'];
+/** True when the value is a visit id. */
 export const isVisitId = (v: unknown): v is VisitId => typeof v === 'string' && (VISIT_IDS as readonly string[]).includes(v);
 
 export type Visit = {

@@ -16,6 +16,7 @@ const sums = (ds: number[]) => { let a = 0; return ds.map((d) => (a += d)); };
 const opt = (xs: (number | undefined | null)[], scale: number) => xs.map((x) => (typeof x === 'number' && Number.isFinite(x) ? Math.round(x * scale) : null));
 const unopt = (xs: (number | null)[], scale: number): (number | undefined)[] => xs.map((x) => (x === null ? undefined : x / scale));
 
+/** Packs a track and its breaks into compact bytes for sync. */
 export function encodeTrack(points: LatLng[], breaks: number[] = []): Uint8Array {
   const t = opt(points.map((p) => p.t), 1);
   const cols: Cols = {
@@ -28,6 +29,7 @@ export function encodeTrack(points: LatLng[], breaks: number[] = []): Uint8Array
   return gzipSync(strToU8(JSON.stringify(cols)), { level: 6 });
 }
 
+/** Unpacks bytes made by encodeTrack. */
 export function decodeTrack(bytes: Uint8Array): { points: LatLng[]; breaks: number[] } {
   const c = JSON.parse(strFromU8(gunzipSync(bytes))) as Cols;
   if (c.v !== VERSION) throw new Error('This ride was saved by a newer version of the app.');

@@ -34,6 +34,7 @@ export type NudgesState = {
 
 const empty = { level: undefined, muted: [] as NudgeType[], firstSeenAt: undefined, history: [] as NudgeHistory[], planned: [] as Nudge[], tapped: {} as Record<string, number>, seen: {} as Record<string, number>, forecast: undefined, clubs: undefined };
 
+/** The store's actions and starting state, separate from persistence so they can be tested. */
 export const nudgesSlice = (): StateCreator<NudgesState> => (set) => ({
   ...empty,
   setLevel: (level) => set({ level }),

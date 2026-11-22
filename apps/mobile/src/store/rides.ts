@@ -14,6 +14,7 @@ import { storage } from './persist';
 export type Waypoint = { name: string; lat: number; lng: number; kind?: WaypointKind };
 export type SubmissionState = { /** `queued`: waiting for a signal. `failed`: the site refused it, see `error`. */ status: 'submitted' | 'queued' | 'failed'; error?: string; at: number; trailName: string; slug: string; clientId: string; /** What the moderators did with it, as last fetched. */ outcome?: { status: string; feedback?: string; checkedAt: number } };
 
+/** A recorded ride: its details, route, stops and where it stands for review. */
 export type Ride = {
   id: string; name: string; startedAt: number; durationSec: number; /** Time the rider spent paused, already left out of durationSec. */ pausedSec?: number; distanceKm: number; maxKmh: number; points: LatLng[]; /** Indices into `points` where a new GPS segment starts. Absent on rides saved before gaps were tracked. */ breaks?: number[];
   waypoints: Waypoint[]; sample?: boolean; updatedAt?: number; submission?: SubmissionState; /** Stays the same across upload attempts so a retry continues the same draft. */ clientId?: string;

@@ -1,3 +1,5 @@
+// Hooks for animations that run on the JavaScript thread: eased values and counting up.
+
 import { useEffect, useRef, useState } from 'react';
 import { Easing } from 'react-native';
 import { rollTicks } from '@/lib/haptics';

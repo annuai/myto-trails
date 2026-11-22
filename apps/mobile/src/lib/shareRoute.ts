@@ -1,12 +1,17 @@
+// Turning a route into what is sent to share it as a link.
+
 import { haversine, pathLength, type LatLng } from './geo';
 import { elevationProfile } from './elevation';
 import { awayFromPlaces, forSharing, SHARE_TRIM_M } from './privacy';
 import { simplifyTo } from './routePlan';
 
+/** The most points in a shared route, the same as the server allows. */
 export const MAX_SHARED_POINTS = 2000;
+/** The most waypoints in a shared route, the same as the server allows. */
 export const MAX_SHARED_WAYPOINTS = 50;
 const MAX_NAME = 80;
 
+/** What is sent to share a route. */
 export type SharedRoutePayload = {
   name: string;
   points: [number, number][];

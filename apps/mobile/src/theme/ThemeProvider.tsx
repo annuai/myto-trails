@@ -1,8 +1,11 @@
+// Provides the colours to the whole app, light or dark.
+
 import { createContext, useContext, type ReactNode } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { useAppearance } from '@/store/appearance';
 import { dark, light, type Palette } from './tokens';
 
+/** Light or dark. */
 export type Mode = 'light' | 'dark';
 type Ctx = { mode: Mode; c: Palette };
 const ThemeContext = createContext<Ctx>({ mode: 'light', c: light });
@@ -25,4 +28,5 @@ export function Theme({ mode, children, fixed = false, screen = false }: { mode:
     </ThemeContext.Provider>
   );
 }
+/** The current colours and mode. */
 export const useTheme = () => useContext(ThemeContext);

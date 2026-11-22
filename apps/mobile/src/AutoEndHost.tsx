@@ -20,6 +20,7 @@ import type { PlaceKind } from '@/store/places';
 import { useRecorder } from '@/store/recorder';
 import { useTrips } from '@/store/trips';
 
+/** The id of the warning notification shown before a ride is ended automatically, so a tap on it can be told from any other. */
 export const WARN_ID = 'auto-end-warn';
 const ASK_ID = 'auto-end-ask';
 const LIVE = '/ride/live';

@@ -70,6 +70,7 @@ async function flushOutbox() {
 
 /** Sends the rider's signal to the group now rather than at the next poll. Set while the host is mounted. */
 let pollGroupNow: (() => void) | undefined;
+/** Asks the group ride to sync straight away instead of waiting for the next poll. */
 export const syncGroupNow = () => pollGroupNow?.();
 
 /** When the leader was last told the group is stretched, so the warning does not repeat every poll. */

@@ -1,12 +1,17 @@
+// The rider's choice about standing, and the cohort figures fetched for it.
+
 import type { CohortRow, StandingMetric } from '@moto-trails/domain';
 import type { StateCreator } from 'zustand';
 
+/** How long fetched cohort figures are kept before they are fetched again. */
 export const REFRESH_EVERY_MS = 6 * 3_600_000;
 /** Never coordinates: a plain label for where the cohort is. */
 export const REGION_LABEL = 'your area';
 
+/** A cohort's figures for a period and metric. */
 export type StandingCohort = { region: string; /** YYYY-MM the row is for. */ period: string; metric: StandingMetric; value: number; row: CohortRow; fetchedAt: number };
 
+/** The opt-in choice and the cohort figures. */
 export type StandingPrefState = {
   /** Off until the rider turns it on. */
   optIn: boolean;
@@ -35,6 +40,7 @@ export type StandingPrefState = {
   refreshStanding: (token: string | null | undefined) => Promise<void>;
 };
 
+/** What the slice needs from outside, so it can be tested. */
 export type StandingPrefDeps = {
   now: () => number;
   current: () => { cell: string; value: number; period: string } | undefined;
@@ -43,6 +49,7 @@ export type StandingPrefDeps = {
   newRef?: () => string;
 };
 
+/** The store's actions and starting state, separate from persistence so they can be tested. */
 export const standingPrefSlice = (deps: StandingPrefDeps): StateCreator<StandingPrefState> => (set, get) => ({
   optIn: false, queue: [], refs: {}, cohort: undefined, pendingOptOut: false, error: undefined,
   // Opting out clears the queue and the cohort at once, so nothing queued can be uploaded afterwards.

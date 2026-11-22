@@ -1,3 +1,4 @@
+/** A photo sent with a submission: its upload and alt text. */
 export type SubmissionPhoto = { mediaId: string; altText: string };
 /** The most photos a submission takes; the server refuses more. */
 export const MAX_SUBMISSION_PHOTOS = 8;

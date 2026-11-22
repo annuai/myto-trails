@@ -18,6 +18,7 @@ export const RECAP_DESIGNS: readonly { id: RecapDesign; name: string }[] = [
   { id: 'longest', name: 'Longest ride' },
   { id: 'title', name: 'Your title' },
 ];
+/** The recap card designs that apply to this year's figures. */
 export const designsFor = (r: YearRecap) => RECAP_DESIGNS.filter((d) => (d.id === 'title' ? !!r.title : d.id === 'longest' ? !!r.longest && r.rides > 1 : true));
 
 /** A year's riding in hours when it is an hour or more ("112 h"), else minutes. A year of rides is never shown to the minute. */

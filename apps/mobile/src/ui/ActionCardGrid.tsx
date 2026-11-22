@@ -1,3 +1,5 @@
+// A grid of coloured action cards.
+
 import { View } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -7,6 +9,7 @@ import { Text } from './Text';
 import { ScalePressable } from './motion';
 import { actionCard } from './ActionCardGrid.tokens';
 
+/** One card: its colour, icon, title, detail and what a tap does. */
 export type ActionCardItem = { key: 'clay' | 'sage' | 'sand' | 'sky'; icon: LucideIcon; title: string; detail: string; onPress: () => void };
 
 /**

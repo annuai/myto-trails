@@ -12,6 +12,7 @@ export function trailStartPoint(d: Located): LatLng | undefined {
   return p ? { lat: p.lat, lng: p.lon } : undefined;
 }
 
+/** True when the rider is within the start radius of the trail's start. */
 export const atTrailStart = (metres: number | undefined): boolean => metres !== undefined && metres <= START_RADIUS_M;
 
 /** "850 m" under a kilometre, otherwise in the rider's unit. */

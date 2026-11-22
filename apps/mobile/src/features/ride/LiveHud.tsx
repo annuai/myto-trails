@@ -94,6 +94,7 @@ export function StatsStrip({ distance, time, speed, paused, note }: { distance: 
 // Android needs layout animations switched on once.
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) UIManager.setLayoutAnimationEnabledExperimental(true);
 
+/** The row of rider tiles on the live ride screen. Tapping one selects that rider, and `onAll` shows the whole group. */
 export function GroupRail({ tiles, onSelect, onAll, since }: { tiles: RiderTile[]; onSelect: (t: RiderTile) => void; onAll: () => void; /** When each rider's signal was first seen (useStatusSince), to put the one who asked first first. */ since?: Record<string, number> }) {
   const { c } = useTheme();
   const { shown: wanted, total } = railOrder(tiles, RAIL_MAX, since);

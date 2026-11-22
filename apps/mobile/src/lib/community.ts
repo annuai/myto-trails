@@ -11,6 +11,7 @@ const ist = (iso: string) => new Date(new Date(iso).getTime() + IST_MIN * 60_000
 /** A ride's start as the instant the server expects: a date ('YYYY-MM-DD') and minutes after midnight, India time. */
 export const rideAtISO = (date: string, minutes: number) => `${date}T${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}:00+05:30`;
 
+/** Minutes since midnight as a 12-hour clock time. */
 export const clockLabel = (minutes: number) => {
   const h = Math.floor(minutes / 60);
   return `${h % 12 || 12}:${pad(minutes % 60)} ${h < 12 ? 'AM' : 'PM'}`;
