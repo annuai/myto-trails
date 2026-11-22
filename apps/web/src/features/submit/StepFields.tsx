@@ -1,3 +1,5 @@
+// The fields of each step of the submit-a-trail form.
+
 import { ACCESS_BASES, ACCESS_CLASSES, CARRY_ITEMS, CARRY_ITEM_LABEL, DIFFICULTIES, EVIDENCE_KINDS, HAZARDS, RESTRICTIONS, ROUTE_SHAPES, SUITABILITIES, TERRAINS, minutesToHhmm } from "@moto-trails/domain";
 import { RouteMap } from "@/features/map/RouteMap";
 import { ElevationProfile } from "@/features/trail/ElevationProfile";
@@ -8,6 +10,7 @@ import { GpxUpload } from "./GpxUpload";
 import { PhotoUpload, type PhotoRow } from "./PhotoUpload";
 
 type Values = Record<string, unknown>;
+/** What the fields need besides the draft: the states to pick from and the route preview. */
 export type StepContext = {
   states: { slug: string; name: string }[];
   route: RoutePreview | null;

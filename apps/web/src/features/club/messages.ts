@@ -1,3 +1,6 @@
+// The short notes shown on the club pages after an action, by code.
+
+/** The note for each result code, with a tone: good news or a stop. */
 export const CLUB_NOTES: Record<string, { tone: "good" | "stop"; text: string }> = {
   created: { tone: "good", text: "Your club is ready. You are its admin." },
   requested: { tone: "good", text: "Request sent. The club's admins can see your phone number and will decide." },

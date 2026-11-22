@@ -14,6 +14,10 @@ function describe(c: SavedChange): string {
   }
 }
 
+/**
+ * A saved trail as a card with what changed since the rider last looked, and a button to remove it. A trail that is no longer published
+ * shows only the button.
+ */
 export function SavedItemCard({ item, remove }: { item: SavedItem; remove: (formData: FormData) => void | Promise<void> }) {
   const removeButton = "inline-flex min-h-11 items-center text-sm underline underline-offset-4";
   if (!item.trail) {

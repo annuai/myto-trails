@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Field, inputClass } from "./Field";
 import { uploadFile } from "./upload-client";
 
+/** One photo in the form: its upload, thumbnail, alt text, caption and credit. */
 export type PhotoRow = { mediaId: string; thumbUrl: string; altText: string; caption: string; credit: string };
 
 /** Photo rows with alt text; each photo uploads as soon as it is chosen. The first photo becomes the cover. */

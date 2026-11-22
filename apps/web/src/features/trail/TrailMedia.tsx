@@ -1,5 +1,6 @@
 import type { MediaDto, VideoDto } from "@/server/queries/types";
 
+/** A duration in seconds as minutes and seconds, like 2:05. */
 export const formatSeconds = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 type Item = { kind: "photo"; photo: MediaDto } | { kind: "video"; video: VideoDto };

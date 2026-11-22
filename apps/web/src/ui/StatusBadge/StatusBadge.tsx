@@ -34,6 +34,7 @@ function GlyphIcon({ glyph }: { glyph: Glyph }) {
   }
 }
 
+/** A status as a badge with a word and a shape, so it never relies on colour. */
 export function StatusBadge(props: Props) {
   const { label: word, tone, glyph } = statusFor(props.kind as "access", props.value as AccessClass);
   const label = props.label ?? word;

@@ -38,6 +38,7 @@ const columns = [
   },
 ];
 
+/** The footer of every page: links and the site's notices. */
 export function SiteFooter() {
   return (
     <footer className="mt-24 bg-background">

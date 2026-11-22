@@ -9,6 +9,7 @@ const STATUS: Record<QuestionView["status"], string> = { pending: "Waiting for a
 const when = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 const minutes = (s: number) => (s >= 3600 ? `${Math.ceil(s / 3600)} h` : `${Math.max(1, Math.ceil(s / 60))} min`);
 
+/** The server actions the inbox calls: answer, decline, block, report, offer a phone number, take the offer back, and reveal it. */
 export type InboxActions = {
   answer: Action; decline: Action; block: Action; report: Action; offer: Action; withdraw: Action;
   reveal: (prev: RevealState, formData: FormData) => Promise<RevealState>;

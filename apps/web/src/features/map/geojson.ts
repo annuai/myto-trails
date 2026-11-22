@@ -1,6 +1,9 @@
+// Turns trail points into the GeoJSON the map draws.
+
 import type { AccessClass } from "@moto-trails/domain";
 import { statusFor } from "@/ui/StatusBadge/status-map";
 
+/** A trail's public point and what the map shows for it. */
 export type MapPoint = {
   slug: string;
   name: string;
@@ -10,6 +13,7 @@ export type MapPoint = {
   accessClass: AccessClass;
 };
 
+/** The marker shapes. */
 export type MarkerShape = "circle" | "triangle" | "square" | "open-circle";
 
 /** The marker shape carries the access class, so it never relies on colour. */
@@ -27,12 +31,14 @@ export function markerShape(access: AccessClass): MarkerShape {
   }
 }
 
+/** A map point as a GeoJSON feature. */
 export type TrailFeature = {
   type: "Feature";
   geometry: { type: "Point"; coordinates: [number, number] };
   properties: { slug: string; name: string; place: string; shape: MarkerShape; access: string };
 };
 
+/** The points as a GeoJSON feature collection. A point with no position is left out. */
 export function toFeatureCollection(points: MapPoint[]): { type: "FeatureCollection"; features: TrailFeature[] } {
   const features: TrailFeature[] = [];
   for (const p of points) {

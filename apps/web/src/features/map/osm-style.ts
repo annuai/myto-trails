@@ -1,5 +1,8 @@
+// The map style used when none is configured.
+
 import type { StyleSpecification } from "maplibre-gl";
 
+/** The credit OpenStreetMap's licence requires on the map. */
 export const OSM_ATTRIBUTION = "© OpenStreetMap contributors";
 
 /**

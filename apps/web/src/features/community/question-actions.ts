@@ -1,4 +1,5 @@
 "use server";
+// Server actions of the questions between riders, and of sharing a phone number.
 
 import { redirect } from "next/navigation";
 import { getSiteUrl } from "@/lib/site";
@@ -30,6 +31,7 @@ export async function askRiderAction(formData: FormData): Promise<void> {
   redirect(`/trails/${encodeURIComponent(slug)}?c=${r.ok ? "ask_sent" : `ask_${r.reason}`}#riders`);
 }
 
+/** Answers a question the rider received. */
 export async function answerAction(formData: FormData): Promise<void> {
   const user = await member("/account/questions");
   const sql = getSql();
@@ -38,30 +40,35 @@ export async function answerAction(formData: FormData): Promise<void> {
   back(r.ok ? "answered" : `err_${r.reason}`);
 }
 
+/** Declines a question. */
 export async function declineAction(formData: FormData): Promise<void> {
   const user = await member("/account/questions");
   const r = await declineQuestion(getSql(), { userId: user.id, questionId: text(formData, "questionId") });
   back(r.ok ? "declined" : `err_${r.reason}`);
 }
 
+/** Blocks the rider who asked, so they cannot ask again. */
 export async function blockAction(formData: FormData): Promise<void> {
   const user = await member("/account/questions");
   const r = await blockAsker(getSql(), { userId: user.id, questionId: text(formData, "questionId") });
   back(r.ok ? "blocked" : `err_${r.reason}`);
 }
 
+/** Lifts a block. */
 export async function unblockAction(formData: FormData): Promise<void> {
   const user = await member("/account/questions");
   await unblockRider(getSql(), { userId: user.id, blockedId: text(formData, "blockedId") });
   back("unblocked");
 }
 
+/** Reports a question to the moderators. */
 export async function reportQuestionAction(formData: FormData): Promise<void> {
   const user = await member("/account/questions");
   const r = await reportQuestion(getSql(), { userId: user.id, questionId: text(formData, "questionId"), reason: text(formData, "reason") });
   back(r.ok ? "reported" : `err_${r.reason}`);
 }
 
+/** Offers the asker the rider's phone number for a short time. */
 export async function offerPhoneAction(formData: FormData): Promise<void> {
   const user = await member("/account/questions");
   const sql = getSql();
@@ -70,12 +77,14 @@ export async function offerPhoneAction(formData: FormData): Promise<void> {
   back(r.ok ? "offered" : `err_${r.reason}`);
 }
 
+/** Takes back an offered phone number. */
 export async function withdrawOfferAction(formData: FormData): Promise<void> {
   const user = await member("/account/questions");
   await withdrawPhoneOffer(getSql(), { userId: user.id, questionId: text(formData, "questionId") });
   back("withdrawn");
 }
 
+/** The state of revealing a phone number: the number and time left, or an error. */
 export type RevealState = { phone?: string; expiresAt?: string; remainingSeconds?: number; error?: string };
 
 /** Returns the number to the page that asked, for the time left in its window. It is never put in a URL or a cookie. */

@@ -1,3 +1,5 @@
+// Search-engine and sharing data for a trail page.
+
 import type { Metadata } from "next";
 import type { TrailDetailDto } from "@/server/queries/types";
 
@@ -10,6 +12,7 @@ function truncate(text: string): string {
   return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
+/** The page title, description (cut to 160 characters), address and sharing details of a trail. */
 export function trailMetadata(trail: TrailDetailDto, siteUrl: string): Metadata {
   const url = `${siteUrl}/trails/${trail.slug}`;
   const place = [trail.district?.name, trail.state.name].filter(Boolean).join(", ");

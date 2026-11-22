@@ -5,6 +5,7 @@ const LABELS: Record<SortMode, string> = {
   relevance: "Relevance", nearest: "Nearest", recent: "Recently added", distance: "Shortest", difficulty: "Easiest first",
 };
 
+/** Links for the sort orders. Nearest needs a position and relevance needs a search text, so they are offered only then. */
 export function SortLinks({ params }: { params: SearchParams }) {
   const available = SORT_MODES.filter((m) => (m === "nearest" ? Boolean(params.near) : m === "relevance" ? Boolean(params.q) : true));
   return (

@@ -1,7 +1,9 @@
 import Link from "next/link";
 
+/** One step of a breadcrumb trail: its label and where it links (none for the current page). */
 export type Crumb = { label: string; href?: string };
 
+/** The breadcrumb navigation. */
 export function Breadcrumbs({ items }: { items: Crumb[] }) {
   return (
     <nav aria-label="Breadcrumb">

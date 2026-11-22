@@ -48,6 +48,10 @@ function drawMarker(shape: MarkerShape, color: string): ImageData {
   return ctx.getImageData(0, 0, size, size);
 }
 
+/**
+ * The map of search results with a marker per trail. The map style defaults to NEXT_PUBLIC_MAP_STYLE_URL. If the map cannot start or load,
+ * the page falls back to the list.
+ */
 export function TrailMap({ points, styleUrl = process.env.NEXT_PUBLIC_MAP_STYLE_URL }: { points: MapPoint[]; styleUrl?: string }) {
   const container = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<Status>("loading");

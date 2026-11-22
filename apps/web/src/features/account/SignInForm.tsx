@@ -1,5 +1,6 @@
 import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
+/** The email sign-in form. `next` is where to go after signing in; `message` is shown above the field. */
 export function SignInForm({ action, next, message }: { action: (formData: FormData) => void | Promise<void>; next: string; message?: string }) {
   return (
     <form action={action} className="flex max-w-md flex-col gap-4">

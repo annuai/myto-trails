@@ -1,4 +1,5 @@
 "use server";
+// Server actions to mark or unmark a trail as women-safe.
 
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/session";
@@ -9,6 +10,7 @@ const slugOf = (f: FormData) => String(f.get("slug") ?? "");
 const here = (slug: string) => `/trails/${encodeURIComponent(slug)}`;
 const back = (slug: string, result: string): never => redirect(`${here(slug)}?c=${encodeURIComponent(result)}#women-safe`);
 
+/** Adds the rider's women-safe mark to a trail. */
 export async function markWomenSafeAction(formData: FormData): Promise<void> {
   const slug = slugOf(formData);
   const user = await getCurrentUser();
@@ -17,6 +19,7 @@ export async function markWomenSafeAction(formData: FormData): Promise<void> {
   back(slug, r.ok ? "women_safe" : `women_safe_${r.reason}`);
 }
 
+/** Removes the rider's mark. */
 export async function unmarkWomenSafeAction(formData: FormData): Promise<void> {
   const slug = slugOf(formData);
   const user = await getCurrentUser();

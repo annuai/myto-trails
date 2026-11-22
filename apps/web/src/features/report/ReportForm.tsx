@@ -1,3 +1,5 @@
+// The form to report a problem with a trail.
+
 import type { ReportType } from "@moto-trails/domain";
 import { SubmitButton } from "@/ui/SubmitButton/SubmitButton";
 
@@ -12,8 +14,10 @@ const TYPES: { value: ReportType; label: string }[] = [
   { value: "other", label: "Something else" },
 ];
 
+/** The errors by field. */
 export type ReportFormErrors = { type?: string; details?: string };
 
+/** The report form: what kind of problem and the details, with the errors shown beside the fields and what was typed kept. */
 export function ReportForm({
   action, slug, errors, values, message,
 }: {

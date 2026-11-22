@@ -1,3 +1,5 @@
+// Words for where a submission stands.
+
 const LABELS: Record<string, string> = {
   draft: "Draft",
   submitted: "In review",
@@ -7,4 +9,5 @@ const LABELS: Record<string, string> = {
   withdrawn: "Withdrawn",
 };
 
+/** The label for a submission status; an unknown status is shown as it is. */
 export const statusLabel = (status: string) => LABELS[status] ?? status;

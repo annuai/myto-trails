@@ -1,17 +1,26 @@
+// The search settings carried in the address of the trails page: reading them from a request and writing them back, so every search is a
+// shareable link.
+
 import {
   ACCESS_CLASSES, DIFFICULTIES, SUITABILITIES, TERRAINS, isValidSlug,
   type AccessClass, type Difficulty, type Suitability, type Terrain,
 } from "@moto-trails/domain";
 
+/** The orders a search can be sorted in. */
 export const SORT_MODES = ["relevance", "nearest", "recent", "distance", "difficulty"] as const;
 export type SortMode = (typeof SORT_MODES)[number];
+/** The radii (km) offered for a nearby search. */
 export const RADIUS_OPTIONS = [25, 50, 100, 150, 200, 300] as const;
+/** The radius used when none is chosen. */
 export const DEFAULT_RADIUS_KM = 150;
+/** The highest page number accepted. */
 export const MAX_PAGE = 1000;
+/** How many trails one page lists. */
 export const PAGE_SIZE = 20;
 const MAX_QUERY_LENGTH = 100;
 const MAX_KM = 5000;
 
+/** Everything a search can be narrowed by: text, country, filters, position, sort, view and page. */
 export type SearchParams = {
   q: string;
   /** ISO 3166-1 alpha-2, upper case. Absent means every open country. */
