@@ -1,3 +1,6 @@
+// The API's main route table: trails, search, accounts and tokens, saved trails, uploads, submissions, bikes and the rest. The other route
+// files add theirs to it. Each route's summary feeds the generated OpenAPI description.
+
 import { isValidSlug } from "@moto-trails/domain";
 import { deleteAccount, isDeleteConfirmed } from "../account/delete";
 import { parseSearchParams } from "@/features/discovery/search-params";
@@ -67,6 +70,7 @@ function searchRaw(url: URL) {
 }
 const num = (v: string | null) => (v === null || v.trim() === "" ? undefined : Number.isFinite(Number(v)) ? Number(v) : undefined);
 
+/** Every route of the API (version 1), in the order they are matched. */
 export const routes: RouteDef[] = [
   {
     method: "GET", path: "/openapi.json", access: "public", cache: "day", summary: "This description of the API",

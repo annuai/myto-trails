@@ -1,17 +1,25 @@
+// Email sign-in and sessions: asking for a link, confirming it into a session, reading the session from its token, and signing out. Only
+// hashes of tokens are stored.
+
 import type { Sql } from "postgres";
 import type { EmailSender } from "./email";
 import { signInEmail } from "./email";
 import { safeNextPath } from "./safe-next";
 import { generateToken, hashToken } from "./tokens";
 
+/** How long a sign-in link works. */
 export const LOGIN_TOKEN_MINUTES = 15;
+/** How long a session lasts. */
 export const SESSION_DAYS = 30;
 
+/** A staff role. Everyone else has none. */
 export type Role = "moderator" | "admin";
+/** The signed-in person: id, email, name, staff roles, and whether they made the 18+ and licence declaration. */
 export type SessionUser = { id: string; email: string; displayName: string; roles: Role[]; /** The rider has made the 18+ and driving licence declaration. */ confirmed: boolean };
 
 const EMAIL = /^[^@\s]+@[^@\s]+$/;
 
+/** Trims and lowercases an email address. Null when it is empty, too long or not an address. */
 export function normalizeEmail(input: string): string | null {
   const email = input.trim().toLowerCase();
   return email.length > 0 && email.length <= 254 && EMAIL.test(email) ? email : null;
@@ -69,6 +77,7 @@ export async function peekLoginToken(sql: Sql, token: string): Promise<boolean> 
   return rows.length > 0;
 }
 
+/** A new session and its user, or a failure that does not say why. */
 export type ConfirmResult = { ok: true; sessionToken: string; user: SessionUser } | { ok: false; reason: "invalid" };
 
 /** Consumes a sign-in token (atomically, once) and starts a new session. Every failure looks the same. */
@@ -100,6 +109,7 @@ export async function confirmSignIn(sql: Sql, i: { token: string }): Promise<Con
   return result as ConfirmResult;
 }
 
+/** The user for a session token, or null for a missing, unknown or expired one. */
 export async function getSessionUser(sql: Sql, token: string): Promise<SessionUser | null> {
   if (!token || token.length > 200) return null;
   const hash = hashToken(token);
@@ -113,14 +123,17 @@ export async function getSessionUser(sql: Sql, token: string): Promise<SessionUs
   return { id: row.id, email: row.email, displayName: row.display_name, roles: roles.map((r) => r.role as Role), confirmed: row.adult_confirmed_at !== null };
 }
 
+/** Ends the session for one token. */
 export async function signOut(sql: Sql, token: string): Promise<void> {
   if (token) await sql`delete from auth_session where token_hash = ${hashToken(token)}`;
 }
 
+/** Ends every session of a user. */
 export async function signOutEverywhere(sql: Sql, userId: string): Promise<void> {
   await sql`delete from auth_session where user_id = ${userId}`;
 }
 
+/** Changes a user's display name. It must be 2 to 40 characters. */
 export async function updateDisplayName(sql: Sql, userId: string, name: string): Promise<void> {
   const trimmed = name.trim();
   if (trimmed.length < 2 || trimmed.length > 40) throw new Error("Display name must be 2 to 40 characters");

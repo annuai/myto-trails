@@ -1,3 +1,5 @@
+// The emails sent to contributors and reporters after a moderation decision.
+
 import type { Sql } from "postgres";
 import type { EmailMessage, EmailSender } from "../auth/email";
 import type { Notify } from "./decisions";
@@ -5,6 +7,7 @@ import type { ReportOutcome } from "./reports";
 
 const oneLine = (s: string) => s.replace(/[\r\n\u2028\u2029]+/g, " ").trim().slice(0, 120);
 
+/** The email telling a contributor how their submission was decided. */
 export function decisionEmail(n: Notify, siteUrl: string): Pick<EmailMessage, "subject" | "text"> {
   const title = oneLine(n.title);
   const mine = `${siteUrl}/account/contributions`;
@@ -26,6 +29,7 @@ export function decisionEmail(n: Notify, siteUrl: string): Pick<EmailMessage, "s
   };
 }
 
+/** The email telling a reporter what became of their report. */
 export function reportOutcomeEmail(n: { reporterId: string | null; outcome: ReportOutcome; trailName: string; note: string }, siteUrl: string): Pick<EmailMessage, "subject" | "text"> {
   const result = { accepted: "We acted on your report.", rejected: "We reviewed your report and could not confirm the problem.", needs_info: "We need a little more information about your report.", duplicate: "Another report already covers this; thank you for confirming it." }[n.outcome];
   return {

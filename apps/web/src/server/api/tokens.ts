@@ -1,7 +1,11 @@
+// App tokens: the long-lived tokens a phone signs in with. Only a hash is stored, so a token can be shown once and never read back.
+
 import type { Sql } from "postgres";
 import { generateToken, hashToken } from "../auth/tokens";
 
+/** What kind of device a token belongs to. */
 export const TOKEN_KINDS = ["app_ios", "app_android", "navi"] as const;
+/** What a token may do: read saved trails, write submissions, or sync. */
 export const TOKEN_SCOPES = ["saved", "write:submission", "sync"] as const;
 export type TokenKind = (typeof TOKEN_KINDS)[number];
 export type TokenScope = (typeof TOKEN_SCOPES)[number];
@@ -9,6 +13,7 @@ const MAX_TOKENS = 10;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SHAPE = /^mt_[A-Za-z0-9_-]{43}$/;
 
+/** Makes a token for a rider's device and returns it once. Limited in how many a rider can hold. */
 export async function createToken(
   sql: Sql,
   i: { userId: string; kind: TokenKind; label: string; scopes: TokenScope[] },
@@ -26,6 +31,7 @@ export async function createToken(
   });
 }
 
+/** Who a valid token belongs to and what it allows. */
 export type VerifiedToken = { userId: string; tokenId: string; scopes: TokenScope[]; kind: TokenKind };
 
 /** Looks a bearer token up by its hash. Revoked tokens and tokens of inactive accounts do not verify. */
@@ -42,14 +48,17 @@ export async function verifyToken(sql: Sql, token: string): Promise<VerifiedToke
   return row ? { userId: row.user_id, tokenId: row.id, scopes: row.scopes, kind: row.kind } : null;
 }
 
+/** Revokes one of the rider's tokens. A token that is not theirs or is already revoked reads as not found. */
 export async function revokeToken(sql: Sql, i: { userId: string; tokenId: string }): Promise<{ ok: true } | { ok: false; reason: "not_found" }> {
   if (!UUID.test(i.tokenId)) return { ok: false, reason: "not_found" };
   const rows = await sql`update api_token set revoked_at = now() where id = ${i.tokenId} and user_id = ${i.userId} and revoked_at is null returning id`;
   return rows.length ? { ok: true } : { ok: false, reason: "not_found" };
 }
 
+/** A token as the rider sees it in their device list: never the token itself. */
 export type TokenListItem = { id: string; kind: TokenKind; label: string; scopes: TokenScope[]; createdAt: string; lastUsedAt: string | null; revoked: boolean };
 
+/** The rider's tokens, including revoked ones. */
 export async function listTokens(sql: Sql, userId: string): Promise<TokenListItem[]> {
   const rows = await sql`select id, kind, label, scopes, created_at, last_used_at, revoked_at from api_token where user_id = ${userId} order by created_at desc limit 50`;
   return rows.map((r) => ({ id: r.id, kind: r.kind, label: r.label, scopes: r.scopes, createdAt: (r.created_at as Date).toISOString(), lastUsedAt: r.last_used_at ? (r.last_used_at as Date).toISOString() : null, revoked: r.revoked_at !== null }));

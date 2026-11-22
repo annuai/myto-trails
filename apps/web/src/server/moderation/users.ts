@@ -1,3 +1,5 @@
+// Admin actions on people: granting and revoking staff roles, suspending accounts, and listing who holds a role.
+
 import type { Sql } from "postgres";
 import { FORBIDDEN, getActor, type Actor } from "./actor";
 import { audit, record } from "./audit";
@@ -11,6 +13,7 @@ async function adminActor(tx: Sql, userId: string): Promise<Actor | null> {
   return a?.role === "admin" ? a : null;
 }
 
+/** An admin gives someone a staff role, for the country the moderator acts in. */
 export async function grantRole(sql: Sql, i: { actorId: string; email: string; role: Role; /** ISO code a moderator acts in; India when absent. Ignored for admins. */ country?: string }): Promise<{ ok: true; userId: string } | { ok: false; reason: "forbidden" | "not_found" | "invalid" }> {
   return sql.begin(async (tx) => {
     const actor = await adminActor(tx as unknown as Sql, i.actorId);
@@ -26,6 +29,7 @@ export async function grantRole(sql: Sql, i: { actorId: string; email: string; r
   });
 }
 
+/** An admin takes a staff role away. */
 export async function revokeRole(sql: Sql, i: { actorId: string; userId: string; role: Role }): Promise<{ ok: true } | { ok: false; reason: "forbidden" | "not_found" | "invalid" | "self" }> {
   return sql.begin(async (tx) => {
     const actor = await adminActor(tx as unknown as Sql, i.actorId);
@@ -39,6 +43,7 @@ export async function revokeRole(sql: Sql, i: { actorId: string; userId: string;
   });
 }
 
+/** An admin suspends or reinstates an account, with a reason. */
 export async function setSuspended(sql: Sql, i: { actorId: string; userId: string; suspended: boolean; reason: string }): Promise<{ ok: true } | { ok: false; reason: "forbidden" | "not_found" | "invalid" | "self" | "protected" }> {
   return sql.begin(async (tx) => {
     const actor = await adminActor(tx as unknown as Sql, i.actorId);
@@ -59,6 +64,7 @@ export async function setSuspended(sql: Sql, i: { actorId: string; userId: strin
   });
 }
 
+/** Everyone who holds a staff role. Admins only. */
 export async function listRoleHolders(sql: Sql, actorId: string): Promise<{ ok: true; items: { userId: string; name: string; role: Role; grantedAt: string }[] } | typeof FORBIDDEN> {
   if (!(await adminActor(sql, actorId))) return FORBIDDEN;
   const rows = await sql`select r.user_id, u.display_name, r.role, r.granted_at from user_role r join app_user u on u.id = r.user_id order by r.granted_at`;

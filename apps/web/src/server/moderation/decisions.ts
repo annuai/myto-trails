@@ -1,3 +1,6 @@
+// Moderator decisions on submitted trails: the review queue, requesting changes, rejecting and approving. Risky trails need a second
+// approver.
+
 import type { Sql, TransactionSql } from "postgres";
 import { ensureDistrict } from "../db/regions";
 import { STEP_KEYS, type SubmissionData } from "../submissions/schema";
@@ -5,12 +8,15 @@ import { FORBIDDEN, canActIn, getActor, type Actor } from "./actor";
 import { awardInTransaction } from "../trailmarks/trailmarks";
 import { audit, record } from "./audit";
 
+/** The standard reasons for rejecting a submission. */
 export const REASON_CODES = ["duplicate", "insufficient_information", "unverifiable_access", "private_property", "protected_area_risk", "unsafe_content", "inaccurate_gpx", "copyright", "spam"] as const;
 export type ReasonCode = (typeof REASON_CODES)[number];
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** A restricted-access trail, or one in a protected area, needs two different approvers. */
 export const needsSecondApproval = (accessClass: string, restrictions: string[]) => accessClass === "restricted" || restrictions.includes("protected_area");
 
+/** What to tell the contributor after a decision. */
 export type Notify = { contributorId: string; outcome: "approved" | "changes_requested" | "rejected"; title: string; comment?: string; slug?: string };
 type Fail = { ok: false; reason: "forbidden" | "not_found" | "invalid" | "own_submission" | "wrong_state" | "cannot_publish" | "same_approver" };
 
@@ -34,11 +40,13 @@ const isFail = (v: Locked | Fail): v is Fail => "ok" in v;
 
 // ---- queue and review --------------------------------------------------------------------------------------
 
+/** A submission waiting for review, and whether it needs or is awaiting a second approval. */
 export type QueueItem = {
   submissionId: string; title: string; state: string; accessClass: string; restrictions: string[];
   submittedAt: string; version: number; needsSecondApproval: boolean; awaitingSecond: boolean;
 };
 
+/** The submissions waiting for review. Forbidden for anyone who is not a moderator. */
 export async function listQueue(sql: Sql, actorId: string): Promise<{ ok: true; items: QueueItem[] } | typeof FORBIDDEN> {
   const actor = await getActor(sql, actorId);
   if (!actor) return FORBIDDEN;
@@ -61,6 +69,7 @@ export async function listQueue(sql: Sql, actorId: string): Promise<{ ok: true; 
   };
 }
 
+/** Everything a moderator sees when reviewing one submission. */
 export type Review = {
   submissionId: string; title: string; status: string; version: number; contributorName: string; submittedAt: string | null;
   data: Partial<SubmissionData>; duplicates: unknown[]; contributorNote: string | null; needsSecondApproval: boolean; firstApproverName: string | null; trailSlug: string;
@@ -110,6 +119,7 @@ export async function getReview(sql: Sql, actorId: string, submissionId: string)
 
 type DecisionResult = ({ ok: true; notify: Notify } & Record<string, unknown>) | Fail;
 
+/** Sends a submission back to its contributor with a comment and optional per-field comments. */
 export async function requestChanges(sql: Sql, i: { actorId: string; submissionId: string; comment: string; fieldComments?: Record<string, string> }): Promise<DecisionResult> {
   return sql.begin(async (tx): Promise<DecisionResult> => {
     const l = await lockForDecision(tx, i.actorId, i.submissionId);
@@ -127,6 +137,7 @@ export async function requestChanges(sql: Sql, i: { actorId: string; submissionI
   });
 }
 
+/** Rejects a submission with a reason code and a comment. */
 export async function rejectSubmission(sql: Sql, i: { actorId: string; submissionId: string; reasonCode: ReasonCode; comment: string }): Promise<DecisionResult> {
   return sql.begin(async (tx): Promise<DecisionResult> => {
     const l = await lockForDecision(tx, i.actorId, i.submissionId);
@@ -143,6 +154,7 @@ export async function rejectSubmission(sql: Sql, i: { actorId: string; submissio
   });
 }
 
+/** What an approver decides: the location sensitivity and the public point to show. */
 export type ApproveInput = { actorId: string; submissionId: string; sensitivity: "standard" | "sensitive" | "restricted_geometry"; publicPoint?: { lat: number; lon: number }; publishGpx?: boolean };
 
 /** Approves a submission. Restricted or protected-area trails need two different approvers; the second one publishes. */

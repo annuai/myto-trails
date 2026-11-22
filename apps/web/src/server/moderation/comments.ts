@@ -4,6 +4,7 @@ import { audit } from "./audit";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** A trail comment in the moderation queue, with any reports against it. */
 export type CommentQueueItem = {
   commentId: string; trailSlug: string; trailName: string; authorName: string; body: string; status: string; createdAt: string;
   reports: { reason: string; createdAt: string }[];
@@ -28,6 +29,7 @@ export async function listCommentQueue(sql: Sql, actorId: string): Promise<{ ok:
   };
 }
 
+/** What a moderator can do with a comment. */
 export type CommentAction = "approve" | "hide" | "restore" | "dismiss";
 
 /** Approve, hide (with a reason), restore, or dismiss the reports on a comment. Every action is audited. */
@@ -68,6 +70,7 @@ export async function moderateComment(
   });
 }
 
+/** A rider's question that another rider reported. */
 export type QuestionReportItem = { reportId: string; questionId: string; askerName: string; question: string; reason: string; createdAt: string };
 
 /** Reported questions between riders. A moderator sees the question the reporter chose to report, nothing else of the exchange. */
@@ -80,6 +83,7 @@ export async function listQuestionReports(sql: Sql, actorId: string): Promise<{ 
   return { ok: true, items: rows.map((r) => ({ reportId: r.report_id, questionId: r.question_id, askerName: r.display_name, question: r.question, reason: r.reason, createdAt: (r.created_at as Date).toISOString() })) };
 }
 
+/** A moderator closes a report on a question without acting on it. */
 export async function dismissQuestionReport(sql: Sql, i: { actorId: string; reportId: string }): Promise<{ ok: true } | { ok: false; reason: "forbidden" | "not_found" }> {
   return sql.begin(async (tx) => {
     const actor = await getActor(tx, i.actorId);

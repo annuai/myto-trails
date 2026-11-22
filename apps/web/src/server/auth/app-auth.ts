@@ -3,6 +3,7 @@ import type { Sql } from "postgres";
 import { createToken, type TokenKind } from "../api/tokens";
 import { generateToken, hashToken } from "./tokens";
 
+/** How long a one-time sign-in code for the app stays valid. */
 export const APP_CODE_MINUTES = 5;
 const CHALLENGE = /^[A-Za-z0-9_-]{43}$/;
 const VERIFIER = /^[A-Za-z0-9._~-]{43,128}$/;
@@ -19,8 +20,10 @@ export const isAllowedRedirect = (uri: string, list: string[]) => list.includes(
 
 /** RFC 7636, method S256. */
 export const pkceChallenge = (verifier: string) => createHash("sha256").update(verifier).digest("base64url");
+/** True when the text has the shape of a PKCE code challenge. */
 export const isChallenge = (s: string) => CHALLENGE.test(s);
 
+/** Makes a one-time code for the app to exchange for a token, bound to the app's PKCE challenge. Old codes are cleared as it goes. */
 export async function createAppCode(sql: Sql, i: { userId: string; challenge: string; now?: Date }): Promise<string> {
   if (!CHALLENGE.test(i.challenge)) throw new Error("invalid challenge");
   const code = generateToken();
@@ -29,6 +32,7 @@ export async function createAppCode(sql: Sql, i: { userId: string; challenge: st
   return code;
 }
 
+/** A token, or why the code could not be exchanged. */
 export type ExchangeResult = { ok: true; token: string } | { ok: false; reason: "invalid_grant" | "invalid_request" | "too_many_tokens" };
 
 /** The code is consumed before the verifier is checked, so a wrong guess cannot be retried against the same code. */

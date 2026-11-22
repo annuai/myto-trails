@@ -13,6 +13,7 @@ export async function audit(
       ${e.before === undefined ? null : tx.json(e.before as never)}, ${e.after === undefined ? null : tx.json(e.after as never)})`;
 }
 
+/** Writes one entry to the moderation audit log: who did what to what, and why. */
 export async function record(
   tx: Sql | TransactionSql,
   r: { subjectType: "revision" | "report" | "media" | "gpx" | "user"; subjectId: string; moderatorId: string; action: string; reasonCode?: string | null; comment?: string | null; fieldComments?: Record<string, string>; visibleToAuthor?: boolean },

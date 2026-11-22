@@ -1,3 +1,6 @@
+// API routes for clubs (membership, requests, posts, photo posts), trails ridden, and trail comments. Each route's summary is the API's own
+// documentation.
+
 import { isValidSlug } from "@moto-trails/domain";
 import { validTimeZone } from "@/lib/time-zone";
 import { clubAdminIds, createClub, decideJoinRequest, hidePost, leaveClub, listFeed, listJoinRequests, postToClub, removeMember, requestJoin, respondToRide, setMemberRole, withdrawJoinRequest } from "../community/clubs";
@@ -100,6 +103,7 @@ const trailSlug = (c: Ctx) => {
   return s;
 };
 
+/** The community routes, registered by the router in routes.ts. */
 export const communityRoutes: RouteDef[] = [
   {
     method: "POST", path: "/clubs", access: "write:submission", summary: "Start a club; you become its admin (body: name, description, womenOnly)",

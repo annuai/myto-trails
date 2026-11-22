@@ -1,3 +1,6 @@
+// API routes for syncing a rider's phones: pushing and pulling changes, ride tracks, usage and erasing the synced data. The rules are in
+// docs/sync-design.md.
+
 import { SYNC_KINDS, SYNC_LIMITS, isSyncId, isSyncKind, type SyncKind } from "@moto-trails/domain";
 import { eraseSyncData, getTrack, getUsage, pullChanges, pushChanges, putTrack, type SyncChange } from "../sync/sync";
 import { ApiError, fail, ok, readBytesCapped, type Ctx, type RouteDef } from "./http";
@@ -40,6 +43,7 @@ const rideIdOf = (c: Ctx) => {
   return id;
 };
 
+/** The sync routes, registered by the router in routes.ts. */
 export const syncRoutes: RouteDef[] = [
   {
     method: "POST", path: "/sync/push", access: "sync",

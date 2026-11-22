@@ -11,6 +11,7 @@ export async function requireModerator(returnTo: string): Promise<Actor> {
   return actor;
 }
 
+/** Requires a signed-in admin. A moderator who is not an admin gets the not-found page. */
 export async function requireAdmin(returnTo: string): Promise<Actor> {
   const actor = await requireModerator(returnTo);
   if (actor.role !== "admin") notFound();

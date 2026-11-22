@@ -1,14 +1,25 @@
+// The API's plumbing: the request context, the shape of a route, errors, JSON helpers and the matching of a request to a route.
+
 import type { Sql } from "postgres";
 import { clientIp, hashIp } from "../auth/request-context";
 import type { StorageProvider } from "../storage";
 import { applyCachePolicy, type CachePolicy } from "./cache";
 import { verifyToken, type TokenScope, type VerifiedToken } from "./tokens";
 
+/** The largest request body the API reads. */
 export const MAX_BODY_BYTES = 64 * 1024;
 const PUBLIC_PER_MINUTE = 120;
 const TOKEN_PER_MINUTE = 600;
 
+/**
+ * What the API needs from outside: the database, storage, the current time, the site address and the browser origins allowed to call it.
+ * Tests pass their own.
+ */
 export type Deps = { sql: Sql; storage: StorageProvider; now: Date; siteUrl: string; /** Browser origins allowed to call the API (the app's web build). Native apps need no CORS. */ corsOrigins?: string[] };
+/**
+ * Everything a route handler gets: the dependencies, the request and its URL, the path parameters, the verified token if any, the caller's
+ * user id on token routes, and a reader for the JSON body.
+ */
 export type Ctx = Deps & {
   req: Request;
   url: URL;
@@ -18,6 +29,7 @@ export type Ctx = Deps & {
   userId: string;
   body(): Promise<unknown>;
 };
+/** One API route: where it lives, who may call it, what it does and its handler. */
 export type RouteDef = {
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   /** Relative to /api/v1, with {param} segments. */
@@ -30,6 +42,7 @@ export type RouteDef = {
   handler: (ctx: Ctx) => Promise<Response>;
 };
 
+/** An error a handler throws to answer with a specific HTTP status and error code. */
 export class ApiError extends Error {
   constructor(readonly status: number, readonly code: string, message: string, readonly extra?: Record<string, unknown>) {
     super(message);
@@ -39,7 +52,9 @@ export class ApiError extends Error {
 const json = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers } });
 
+/** A JSON success response. */
 export const ok = (body: unknown, status = 200) => json(status, body);
+/** A JSON error response in the API's `{ error: { code, message } }` shape. */
 export const fail = (status: number, code: string, message: string, extra?: Record<string, unknown>) => json(status, { error: { code, message, ...extra } });
 
 function compile(path: string): RegExp {
@@ -47,6 +62,10 @@ function compile(path: string): RegExp {
   return new RegExp(`^${escaped}/?$`);
 }
 
+/**
+ * Finds the route for a method and path and its path parameters. Returns "method" when the path exists but not for that method, and null
+ * when no route has that path.
+ */
 export function matchRoute(routes: RouteDef[], method: string, path: string): { route: RouteDef; params: Record<string, string> } | "method" | null {
   let pathMatched = false;
   for (const route of routes) {
