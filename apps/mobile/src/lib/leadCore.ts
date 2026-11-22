@@ -7,11 +7,14 @@ import { isStale, type GroupRiderView, type RiderTile } from './groupCore';
 
 /** At these levels a leader is warned, then asked who should lead if the phone turns off. */
 export const BATTERY_WARN_PCT = 15;
+/** The battery level at which the second battery warning is shown. */
 export const BATTERY_WARN2_PCT = 7;
+/** The battery level at which a leader is asked who should lead if the phone turns off. */
 export const BATTERY_ASK_PCT = 5;
 /** A phone back above this, or charging, starts the warnings afresh. */
 const BATTERY_RESET_PCT = 20;
 
+/** How far the battery warnings have gone: none, low, lower or asking. */
 export type BatteryStage = 'none' | 'low' | 'lower' | 'ask';
 const ORDER: BatteryStage[] = ['none', 'low', 'lower', 'ask'];
 

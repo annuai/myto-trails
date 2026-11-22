@@ -1,11 +1,16 @@
+// Where a map first opens when it has no route to show.
+
 import { countryBox } from './countryBoundaries';
 
+/** Where to open the map: on a point and zoom, in a box, or on the whole world. */
 export type MapStart =
   | { kind: 'point'; center: [number, number]; zoom: number }
   | { kind: 'bounds'; bounds: [number, number, number, number] }
   | { kind: 'world'; center: [number, number]; zoom: number };
 
+/** The centre of the world view. */
 export const WORLD_CENTER: [number, number] = [0, 20];
+/** The zoom of the world view. */
 export const WORLD_ZOOM = 1.5;
 const POSITION_ZOOM = 10;
 

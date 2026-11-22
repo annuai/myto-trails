@@ -8,6 +8,7 @@ type Started = { startedAt: number; sample?: boolean };
 
 /** How long before the usual time the rider can ask to be reminded; ten minutes when not chosen. */
 export const HABIT_LEAD_CHOICES = [5, 10, 15, 30] as const;
+/** How many minutes before the usual ride time the reminder is sent, until the rider changes it. */
 export const DEFAULT_HABIT_LEAD_MIN = 10;
 
 const LOOKBACK_DAYS = 21;

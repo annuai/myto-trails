@@ -1,7 +1,12 @@
+// Telling from GPS fixes whether the bike has stopped.
+
 import { haversine } from './geo';
 
+/** A GPS reading with its speed, where the phone has one. */
 export type MotionFix = { t: number; lat: number; lng: number; /** metres per second; null or negative means the phone has no reading */ speed?: number | null; /** metres */ acc?: number };
+/** Whether the bike is stopped, and when and where the current slow period began. */
 export type MotionState = { stopped: boolean; /** when the current slow period began */ runStart?: number; /** where it began */ anchor?: { lat: number; lng: number }; lastFixAt: number; /** fixes in a row that argue against a stop; a stop is only left on two */ against?: number; /** when the current spell of poor-accuracy fixes began, while stopped */ poorSince?: number };
+/** The state before any fix: not stopped. */
 export const initialMotion: MotionState = { stopped: false, lastFixAt: 0 };
 
 const DWELL_MS = 8000;

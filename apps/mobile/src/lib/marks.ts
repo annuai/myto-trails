@@ -7,8 +7,10 @@ export type MarkId = 'first-ride' | 'km-100' | 'km-500' | 'km-1000' | 'km-5000' 
 /** How a mark is drawn: a glyph, or the number it stands for. */
 export type MarkGlyph = 'route' | 'moon' | 'riders' | 'dial' | 'nut' | { km: number };
 
+/** A mark a rider can earn: its title, what earns it and its picture. */
 export type MarkDef = { id: MarkId; title: string; /** What earns it, in one plain line. */ hint: string; glyph: MarkGlyph };
 
+/** Every mark. */
 export const MARKS: readonly MarkDef[] = [
   { id: 'first-ride', title: 'First ride', hint: 'Record your first ride.', glyph: 'route' },
   { id: 'km-100', title: '100 km', hint: 'Ride 100 km in Myto.', glyph: { km: 100 } },
@@ -21,9 +23,12 @@ export const MARKS: readonly MarkDef[] = [
   { id: 'first-fix', title: 'First fix', hint: 'Finish a Fix it guide.', glyph: 'nut' },
 ];
 
+/** A mark by id, or undefined for an unknown id. */
 export const markDef = (id: string): MarkDef | undefined => MARKS.find((m) => m.id === id);
 
+/** A ride as marks are worked out: distance, time, pauses and whether it was a group ride. */
 export type MarkRide = { sample?: boolean; distanceKm: number; startedAt: number; durationSec: number; pausedSec?: number; groupId?: string };
+/** What marks are worked out from: the rides and the rider's other history. */
 export type MarkInput = {
   rides: MarkRide[];
   /** Service to-dos the rider has marked done at least once. */

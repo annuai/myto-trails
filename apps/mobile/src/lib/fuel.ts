@@ -1,9 +1,15 @@
+// Fuel stops along a route and the longest stretch without one.
+
 import { pathLength, type LatLng } from './geo';
 import { nearestOnLine } from './routeFollow';
 
+/** A box on the map: its south, west, north and east edges. */
 export type Bbox = { south: number; west: number; north: number; east: number };
+/** A fuel station: its name and position. */
 export type FuelStation = { name: string; lat: number; lng: number };
+/** A fuel station on the route, with how far along it is. */
 export type FuelStop = FuelStation & { /** Kilometres from the start of the route. */ km: number };
+/** The fuel stops on a route, the longest stretch without one and where it lies. */
 export type FuelGaps = { totalKm: number; stops: FuelStop[]; longestGapKm: number; /** Where the longest stretch without fuel begins and ends, in km along the route. */ longestGap: { fromKm: number; toKm: number } };
 
 /** Stations further than this from the route are not on the way. */

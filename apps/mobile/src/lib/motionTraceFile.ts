@@ -28,7 +28,9 @@ export function traceEnd() {
   try { const f = file(); f.create({ overwrite: true }); f.write(encodeTrace(lines)); } catch { /* a trace is a convenience: never break a ride for it */ }
 }
 
+/** True when a trace file exists. Never on the web. */
 export const traceExists = () => Platform.OS !== 'web' && file().exists;
+/** Clears the trace and deletes its file. */
 export function traceDelete() { lines = []; try { if (file().exists) file().delete(); } catch { /* nothing to remove */ } }
 
 /** Opens the share sheet with the last trace. It holds the route taken, so the rider chooses where it goes. */

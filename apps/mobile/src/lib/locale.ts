@@ -21,6 +21,7 @@ export const regionFromLocale = (tag: string): string | null => {
   return /[-_]([A-Za-z]{2})(?:[-_]|$)/.exec(tag)?.[1]?.toUpperCase() ?? null;
 };
 
+/** The region (country) code of the phone's language setting, or null when it has none. */
 export const deviceRegion = (tag: string = deviceLocale()): string | null => regionFromLocale(tag);
 
 /** Places that sign roads in miles and speeds in mph. Everywhere else is kilometres. */

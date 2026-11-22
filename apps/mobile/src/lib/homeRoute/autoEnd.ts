@@ -4,12 +4,15 @@ import type { PlaceKind } from '../../store/places';
 
 /** A ride shorter than this in distance or time is never ended for the rider. */
 export const MIN_RIDE_M = 1_000;
+/** A ride shorter than this is never ended automatically. */
 export const MIN_RIDE_MS = 5 * 60_000;
 /** Standing still this long inside the arrival circle gives the warning; the end follows if still standing. */
 export const WARN_AFTER_STOP_MS = 60_000;
+/** How long after the warning the ride ends if the rider does not answer. */
 export const END_AFTER_WARN_MS = 30_000;
 /** The same, when the rider is being guided to that place: arriving there is the plan, so wait less. */
 export const GUIDED_WARN_AFTER_STOP_MS = 20_000;
+/** A position older than this is not used to decide. */
 export const FRESH_FIX_MS = 30_000;
 /** After this many "no, keep riding" answers for a place, ask instead of ending. */
 export const STRIKES_TO_ASK = 2;
@@ -18,6 +21,7 @@ const GUIDED_TO_M = 50;
 
 const KINDS: PlaceKind[] = ['home', 'work'];
 
+/** What the automatic ending looks at: the time, the ride, the position and the saved places. */
 export type AutoEndWorld = {
   now: number;
   pos?: LatLng;
@@ -36,8 +40,10 @@ export type AutoEndWorld = {
 
 /** `left`: the ride has been LEAVE_RADIUS_M or more from the place. `warnedAt`/`warnedKind`: the warning (or question) already given for this arrival. */
 export type AutoEndState = { left: Record<PlaceKind, boolean>; warnedAt: number | null; warnedKind: PlaceKind | null };
+/** The state at the start of a ride: not left home or work, nothing warned. */
 export const startAutoEnd: AutoEndState = { left: { home: false, work: false }, warnedAt: null, warnedKind: null };
 
+/** The new state and what to do: warn, end, ask, or nothing. */
 export type AutoEndStep = { state: AutoEndState; action: 'warn' | 'end' | 'ask' | null; kind?: PlaceKind };
 
 /**

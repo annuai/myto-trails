@@ -1,7 +1,9 @@
 /** The kinds of ride nudge. `cls` groups them for the spacing rules: a "ride" nudge asks the rider to go riding, an "after" nudge follows a ride. */
 export type NudgeType = 'first' | 'lapse' | 'weekend' | 'weather' | 'club' | 'milestone' | 'photos' | 'home' | 'standing';
+/** How often the rider wants nudges: off, occasional or regular. */
 export type NudgeLevel = 'off' | 'occasional' | 'regular';
 
+/** Each kind of nudge: its name, a hint, and whether it comes before or after a ride. */
 export const NUDGE_META: Record<NudgeType, { label: string; hint: string; cls: 'ride' | 'after' }> = {
   first: { label: 'Your first ride', hint: 'A nudge or two to take your first ride', cls: 'ride' },
   lapse: { label: 'It\'s been a while', hint: 'After a week, three weeks and two months without a ride, then it stops', cls: 'ride' },
@@ -13,11 +15,13 @@ export const NUDGE_META: Record<NudgeType, { label: string; hint: string; cls: '
   home: { label: 'Ride home', hint: 'A reminder to head home after a ride', cls: 'after' },
   standing: { label: 'Standing', hint: 'How you compare near home, if you chose that', cls: 'ride' },
 };
+/** Every kind of nudge. */
 export const NUDGE_TYPES = Object.keys(NUDGE_META) as NudgeType[];
 
 /** A nudge that has come due on the phone. `opened` is when the rider tapped it. */
 export type NudgeHistory = { id: string; type: NudgeType; fireAt: number; opened?: number };
 
+/** A day's weather: its date, code, highest temperature and chance of rain. */
 export type DayForecast = { iso: string; code: number; tempMax: number; rainPct: number };
 /** A club ride coming up that the rider has not answered. */
 export type ClubRide = { id: string; title: string; clubName: string; startsAt: number; going: number };

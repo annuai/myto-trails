@@ -16,6 +16,7 @@ export const FIX_MAX_AGE_MS = 120_000;
 export const QUIET_AFTER_DISMISS_MS = 3 * 3_600_000;
 /** This many dismissals within QUIET_WINDOW_MS silence the offer until QUIET_LONG_MS after the latest. */
 export const QUIET_DISMISSALS = 3;
+/** The window in which dismissals are counted. */
 export const QUIET_WINDOW_MS = 14 * 86_400_000;
 export const QUIET_LONG_MS = 14 * 86_400_000;
 
@@ -38,5 +39,7 @@ export type HomeWorld = {
   dismissals: number[];
 };
 
+/** Why a ride home is offered: dusk, a ride just ended, or the usual time. */
 export type HomeReason = 'dusk' | 'ride-ended' | 'usual-time';
+/** An offer to ride home, with its reason and distance. */
 export type HomeOffer = { reason: HomeReason; distanceM: number };

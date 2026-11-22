@@ -30,8 +30,10 @@ export function nameHash(text: string): string {
 
 /** The note file for a key, and the picture file for a key and the address it came from (a new address is a new name, so the screen never shows a stale copy). */
 export const metaName = (key: ImageKey) => `${nameHash(key)}.json`;
+/** The file name for a cached image, from its key and address. */
 export const imageName = (key: ImageKey, url: string) => `${nameHash(key)}-${nameHash(url)}.img`;
 
+/** What to do with a cached file: delete it, keep it or download it. */
 export type Plan = 'delete' | 'keep' | 'download';
 
 /** What to do given the address now wanted and what is stored. */

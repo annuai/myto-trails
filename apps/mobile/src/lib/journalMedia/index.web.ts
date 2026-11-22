@@ -2,6 +2,7 @@
 import { photoTokens } from './photo.tokens';
 import { uid } from '../id';
 
+/** A journal file is a photo or a voice note. */
 export type MediaKind = 'photo' | 'voice';
 const files = new Map<string, string>();
 const staged = new Map<string, string>();
@@ -14,7 +15,9 @@ export async function savePhoto(sourceUri: string, rendered?: string): Promise<{
   return { id, ...photoTokens.size };
 }
 export async function saveVoice(sourceUri: string, id: string): Promise<void> { files.set(key(id, 'voice'), sourceUri); }
+/** The address of a stored file, or empty when there is none. */
 export const mediaUri = (id: string, kind: MediaKind) => files.get(key(id, kind)) ?? '';
+/** True when the file is held. */
 export const hasMedia = (id: string, kind: MediaKind) => files.has(key(id, kind));
 export const readBase64 = async (id: string, kind: MediaKind) => {
   const uri = files.get(key(id, kind));
@@ -24,9 +27,12 @@ export const readBase64 = async (id: string, kind: MediaKind) => {
   let s = ''; buf.forEach((b) => { s += String.fromCharCode(b); });
   return btoa(s);
 };
+/** Forgets a file (and a photo's original). */
 export const removeMedia = (id: string, kind: MediaKind) => { files.delete(key(id, kind)); if (kind === 'photo') files.delete(`original:${id}`); };
+/** Forgets every file, staged ones too. */
 export const removeAllMedia = () => { files.clear(); staged.clear(); };
 export async function stageMedia(id: string, kind: MediaKind, base64: string) { staged.set(key(id, kind), `data:${kind === 'photo' ? 'image/jpeg' : 'audio/mp4'};base64,${base64}`); }
+/** Throws away staged files. */
 export const discardStaged = () => staged.clear();
 export function commitStaged(mode: 'replace' | 'merge'): { finalize: () => void; rollback: () => void } {
   const before = new Map(files);
@@ -36,7 +42,9 @@ export function commitStaged(mode: 'replace' | 'merge'): { finalize: () => void;
   return { finalize: () => undefined, rollback: () => { files.clear(); for (const [k, v] of before) files.set(k, v); } };
 }
 
+/** The address of a photo's original, or empty when there is none. */
 export const originalUri = (id: string) => files.get(`original:${id}`) ?? '';
+/** True when a photo's original is held. */
 export const hasOriginal = (id: string) => files.has(`original:${id}`);
 export async function applyFilm(id: string, rendered: string | null): Promise<void> {
   const original = files.get(`original:${id}`);

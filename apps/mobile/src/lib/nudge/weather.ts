@@ -21,9 +21,11 @@ export function parseForecast(json: unknown): DayForecast[] {
 
 /** Where to ask, rounded to about 11 km so the exact place of a ride is never sent. */
 export const coarse = (n: number): number => Math.round(n * 10) / 10;
+/** The address of the weather forecast for a position. */
 export const forecastUrl = (lat: number, lng: number): string =>
   `https://api.open-meteo.com/v1/forecast?latitude=${coarse(lat)}&longitude=${coarse(lng)}&daily=weather_code,temperature_2m_max,precipitation_probability_max&timezone=auto&forecast_days=7`;
 
+/** Fetches the daily forecast for a position. */
 export async function fetchForecast(lat: number, lng: number, signal?: AbortSignal): Promise<DayForecast[]> {
   const res = await fetch(forecastUrl(lat, lng), { signal });
   if (!res.ok) throw new Error(`weather ${res.status}`);

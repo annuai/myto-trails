@@ -4,6 +4,7 @@ export function digitsOf(km: number, min = 5): number[] {
   return s.split('').map(Number);
 }
 
+/** One column of the odometer: where it starts and where it ends. */
 export type Roll = { from: number; /** Where the column ends, counted forward on a strip of two 0 to 9 runs: 10 to 19 means it wrapped through 9. */ to: number };
 
 /**

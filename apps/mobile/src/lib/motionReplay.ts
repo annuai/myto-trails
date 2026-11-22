@@ -1,6 +1,10 @@
+// Replays recorded readings through the activity detector to check it against what really happened.
+
 import { initialFusion, stepFusion, type Activity, type Evidence } from './motionFusion';
 
+/** The detector's activity and confidence over time. */
 export type Timeline = { t: number; state: Activity; confidence: number }[];
+/** What really happened over time spans: moving, stopped or on foot. */
 export type Truth = { from: number; to: number; state: 'moving' | 'stopped' | 'on_foot' }[];
 
 /** Runs recorded or made-up evidence through the detector, one tick a second between events, and returns what it said when. */

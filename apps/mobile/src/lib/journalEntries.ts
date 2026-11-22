@@ -1,5 +1,8 @@
+// Entries in a ride's journal: notes, voice notes and photos.
+
 import type { FilmLook } from './filmLook';
 
+/** What an entry is: a note, a voice note or a photo. */
 export type JournalKind = 'note' | 'voice' | 'photo';
 
 /**
@@ -29,6 +32,7 @@ export function summarise(entries: JournalEntry[]): string {
   return [n('note') && label(n('note'), 'note', 'notes'), n('voice') && label(n('voice'), 'voice', 'voice'), n('photo') && label(n('photo'), 'photo', 'photos')].filter(Boolean).join(' · ');
 }
 
+/** A ride's entries and the time of the latest one. */
 export type RideJournal = { rideKey: number; entries: JournalEntry[]; /** time of the latest entry */ last: number };
 
 /** One journal per ride: rides with the most recent entry first, each ride's entries oldest first. */

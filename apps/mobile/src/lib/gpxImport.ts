@@ -1,5 +1,8 @@
+// Reading a GPX file into a route the app can follow.
+
 import type { LatLng } from './geo';
 
+/** A route read from a file: its name, line and waypoints. */
 export type ImportedRoute = { name: string; points: LatLng[]; waypoints: { name: string; lat: number; lng: number }[] };
 
 const unesc = (s: string) => s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&').trim();
