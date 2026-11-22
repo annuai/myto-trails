@@ -1,3 +1,6 @@
+// Questions between riders, and the optional sharing of a phone number after an answer: asking, answering, declining, blocking, and an
+// offered number that can be revealed for a short time.
+
 import type { Sql, TransactionSql } from "postgres";
 import { OFFER_TTL_HOURS, PHONE_OFFERS_PER_DAY, QUESTIONS_PER_DAY, QUESTION_TTL_DAYS, REVEAL_WINDOW_SECONDS } from "./constants";
 import { decryptSecret, encryptSecret } from "./crypto-box";
@@ -34,6 +37,10 @@ async function audit(sql: Db, userId: string, action: string, entityId: string):
 
 type AskFail = { ok: false; reason: "not_member" | "not_found" | "invalid" | "blocked" | "already_pending" | "rate_limited" };
 
+/**
+ * A member asks another rider a question, optionally about a trail. Only public riders can be asked, and anyone else looks the same as a
+ * rider who does not exist. Limited per day.
+ */
 export async function askRider(sql: Sql, i: { userId: string; riderId: string; slug?: string | null; question: string; now: Date }): Promise<{ ok: true; id: string; answererId: string } | AskFail> {
   if (!(await isMember(sql, i.userId))) return { ok: false, reason: "not_member" };
   const question = clean(i.question);
@@ -60,11 +67,13 @@ export async function askRider(sql: Sql, i: { userId: string; riderId: string; s
 
 // ---- inbox ---------------------------------------------------------------------------------------------------
 
+/** Where an offered phone number stands: none, offered, revealed, expired or withdrawn, with the seconds left. */
 export type ShareView = {
   state: "none" | "offered" | "revealed" | "expired" | "withdrawn";
   /** Seconds left to reveal (offered) or to save the number (revealed). */
   remainingSeconds: number;
 };
+/** A question as one side of it sees it, with what that side can do next. */
 export type QuestionView = {
   id: string; otherName: string; trailSlug: string | null; trailName: string | null; question: string; answer: string | null;
   status: "pending" | "answered" | "declined" | "expired"; createdAt: string; share: ShareView;
@@ -74,6 +83,7 @@ export type QuestionView = {
   canReveal: boolean;
 };
 
+/** The questions a rider has received and sent. Expired questions and number offers are tidied up first. */
 export async function listQuestions(sql: Sql, userId: string, now: Date): Promise<{ received: QuestionView[]; sent: QuestionView[] }> {
   await purgeExpiredContactShares(sql, now);
   await sql`update rider_question set status = 'expired' where status = 'pending' and expires_at <= ${now} and (asker_id = ${userId} or answerer_id = ${userId})`;
@@ -108,6 +118,7 @@ export async function listQuestions(sql: Sql, userId: string, now: Date): Promis
 
 type Fail = { ok: false; reason: "not_member" | "not_found" | "invalid" | "wrong_state" | "rate_limited" | "expired" };
 
+/** The asked rider answers a question that is still pending and has not expired. */
 export async function answerQuestion(sql: Sql, i: { userId: string; questionId: string; answer: string; now: Date }): Promise<{ ok: true; askerId: string } | Fail> {
   if (!UUID.test(i.questionId)) return { ok: false, reason: "not_found" };
   const answer = clean(i.answer);
@@ -120,6 +131,7 @@ export async function answerQuestion(sql: Sql, i: { userId: string; questionId: 
   return { ok: false, reason: !q ? "not_found" : q.status === "pending" ? "expired" : "wrong_state" };
 }
 
+/** The asked rider declines a pending question. */
 export async function declineQuestion(sql: Sql, i: { userId: string; questionId: string }): Promise<{ ok: true } | Fail> {
   if (!UUID.test(i.questionId)) return { ok: false, reason: "not_found" };
   const rows = await sql`update rider_question set status = 'declined' where id = ${i.questionId} and answerer_id = ${i.userId} and status = 'pending' returning id`;
@@ -139,11 +151,13 @@ export async function blockAsker(sql: Sql, i: { userId: string; questionId: stri
   });
 }
 
+/** Lifts a block the rider had put on someone. */
 export async function unblockRider(sql: Sql, i: { userId: string; blockedId: string }): Promise<{ ok: true }> {
   if (UUID.test(i.blockedId)) await sql`delete from rider_block where blocker_id = ${i.userId} and blocked_id = ${i.blockedId}`;
   return { ok: true };
 }
 
+/** The riders a rider has blocked. */
 export async function listBlocked(sql: Sql, userId: string): Promise<{ blockedId: string; name: string }[]> {
   const rows = await sql`select b.blocked_id, u.display_name from rider_block b join app_user u on u.id = b.blocked_id where b.blocker_id = ${userId} order by b.created_at desc`;
   return rows.map((r) => ({ blockedId: r.blocked_id, name: r.display_name }));
@@ -187,6 +201,7 @@ export async function offerPhone(sql: Sql, i: { userId: string; questionId: stri
   });
 }
 
+/** The rider takes back an offered phone number: the stored number is erased and the offer is marked withdrawn. */
 export async function withdrawPhoneOffer(sql: Sql, i: { userId: string; questionId: string }): Promise<{ ok: true } | Fail> {
   if (!UUID.test(i.questionId)) return { ok: false, reason: "not_found" };
   const rows = await sql`update contact_share set phone_ciphertext = null, status = 'withdrawn' where question_id = ${i.questionId} and sharer_id = ${i.userId} and status in ('offered', 'revealed') returning id`;

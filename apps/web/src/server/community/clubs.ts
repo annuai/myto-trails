@@ -1,3 +1,5 @@
+// Clubs: finding and creating a club, its members and their roles, join requests, and the club's posts and ride plans.
+
 import type { Sql, TransactionSql } from "postgres";
 import { DEFAULT_TIME_ZONE } from "@/lib/time-zone";
 import { CLUB_CREATES_PER_DAY, CLUB_POSTS_PER_HOUR, JOIN_PHONE_RETENTION_DAYS, JOIN_REQUEST_TTL_DAYS, JOIN_REQUESTS_PER_DAY } from "./constants";
@@ -24,11 +26,13 @@ const line = (s: unknown) => cleanBody(s).replace(/\s*\n\s*/g, " ");
 const uniqueViolation = (e: unknown) => typeof e === "object" && e !== null && (e as { code?: string }).code === "23505";
 
 type Club = { id: string; womenOnly: boolean };
+/** Finds a live (not archived) club by its public id. Null for an id that is not a UUID or has no club. */
 export async function findClub(sql: Db, publicId: string): Promise<Club | null> {
   if (!UUID.test(publicId)) return null;
   const [c] = await sql`select id, women_only from club where public_id = ${publicId} and archived_at is null`;
   return c ? { id: c.id as string, womenOnly: c.women_only as boolean } : null;
 }
+/** A rider's role in a club, or null when they are not a member. */
 export async function roleIn(sql: Db, clubId: string, userId: string): Promise<"admin" | "member" | null> {
   if (!UUID.test(userId)) return null;
   const [m] = await sql`select cm.role from club_member cm join app_user u on u.id = cm.user_id where cm.club_id = ${clubId} and cm.user_id = ${userId} and u.status = 'active'`;
@@ -51,6 +55,10 @@ export async function setClubCover(sql: Sql, i: { userId: string; clubId: string
 
 // ---- creating and browsing ---------------------------------------------------------------------------------
 
+/**
+ * Creates a club with the rider as its first admin. Only declared members may; names and descriptions cannot contain links; creating is
+ * rate-limited per day.
+ */
 export async function createClub(
   sql: Sql,
   i: { userId: string; name: string; description: string; womenOnly: boolean; now: Date },
@@ -122,6 +130,9 @@ export async function listClubs(sql: Sql, userId: string): Promise<ClubSummary[]
 
 export type { ClubView };
 
+/**
+ * One club as a declared member sees it: counts, their own role, and whether a join request of theirs is waiting. Null for anyone else.
+ */
 export async function getClub(sql: Sql, i: { userId: string; clubId: string }): Promise<ClubView | null> {
   if (!(await isMember(sql, i.userId)) || !UUID.test(i.clubId)) return null;
   const [r] = await sql`
@@ -135,6 +146,7 @@ export async function getClub(sql: Sql, i: { userId: string; clubId: string }): 
 }
 
 export type { ClubMember };
+/** A club's members with their bikes, for the club's own members only. Null when the caller is not one. */
 export async function listMembers(sql: Sql, i: { userId: string; clubId: string }): Promise<ClubMember[] | null> {
   const club = await findClub(sql, i.clubId);
   if (!club || !(await roleIn(sql, club.id, i.userId))) return null;
@@ -182,6 +194,7 @@ export async function requestJoin(sql: Sql, i: { userId: string; clubId: string;
   }
 }
 
+/** Withdraws the rider's pending request and wipes the phone number they sent with it. Always succeeds, so it reveals nothing. */
 export async function withdrawJoinRequest(sql: Sql, i: { userId: string; clubId: string }): Promise<{ ok: true }> {
   const club = await findClub(sql, i.clubId);
   if (club && UUID.test(i.userId)) {
@@ -190,6 +203,7 @@ export async function withdrawJoinRequest(sql: Sql, i: { userId: string; clubId:
   return { ok: true };
 }
 
+/** A join request as a club admin sees it. */
 export type JoinRequestView = { id: string; name: string; phone: string | null; message: string | null; status: "pending" | "accepted" | "declined" | "withdrawn"; createdAt: Date };
 
 /** Admins only. Pending requests and decisions from the last 30 days; a number past its retention time is never returned. */
@@ -207,6 +221,7 @@ export async function listJoinRequests(sql: Sql, i: { userId: string; clubId: st
   });
 }
 
+/** An admin accepts or declines a pending request. Accepting a women-only club's request needs an applicant who is a woman. */
 export async function decideJoinRequest(sql: Sql, i: { userId: string; requestId: string; accept: boolean; now: Date }): Promise<{ ok: true; applicantId: string; clubName: string } | { ok: false; reason: "not_found" | "not_admin" | "wrong_state" | "women_only" }> {
   if (!UUID.test(i.requestId)) return { ok: false, reason: "not_found" };
   return sql.begin(async (tx) => {
@@ -245,6 +260,7 @@ export async function clubAdminIds(sql: Sql, clubId: string): Promise<string[]> 
 
 type AdminFail = { ok: false; reason: "not_found" | "not_admin" | "last_admin" | "invalid" };
 
+/** A member leaves a club. The last admin cannot, or the club would have no one to run it. */
 export async function leaveClub(sql: Sql, i: { userId: string; clubId: string }): Promise<{ ok: true } | { ok: false; reason: "not_found" | "last_admin" }> {
   const club = await findClub(sql, i.clubId);
   if (!club) return { ok: false, reason: "not_found" };
@@ -265,6 +281,10 @@ async function adminTarget(tx: Db, i: { userId: string; clubId: string; memberId
   return { club, target: { id: t.user_id as string, role: t.role as string } };
 }
 
+/**
+ * An admin removes a member. Admins cannot remove themselves, and removing an admin locks the admin list so two admins cannot remove each
+ * other at once.
+ */
 export async function removeMember(sql: Sql, i: { userId: string; clubId: string; memberId: string }): Promise<{ ok: true } | AdminFail> {
   return sql.begin(async (tx): Promise<{ ok: true } | AdminFail> => {
     const r = await adminTarget(tx, i);
@@ -281,6 +301,7 @@ export async function removeMember(sql: Sql, i: { userId: string; clubId: string
   });
 }
 
+/** An admin promotes a member or steps an admin down. The last admin cannot be stepped down. */
 export async function setMemberRole(sql: Sql, i: { userId: string; clubId: string; memberId: string; role: "admin" | "member" }): Promise<{ ok: true } | AdminFail> {
   if (i.role !== "admin" && i.role !== "member") return { ok: false, reason: "invalid" };
   return sql.begin(async (tx): Promise<{ ok: true } | AdminFail> => {
@@ -300,6 +321,10 @@ export async function setMemberRole(sql: Sql, i: { userId: string; clubId: strin
 
 type PostFail = { ok: false; reason: "not_member" | "not_found" | "invalid" | "rate_limited" };
 
+/**
+ * Adds a post, a reply or a ride plan to a club's feed. Only members of the club may; the text is cleaned first and posting is rate-limited
+ * per hour.
+ */
 export async function postToClub(
   sql: Sql,
   i: { userId: string; clubId: string; body: string; parentId?: string | null; ridePlan?: { at: Date; place: string; timeZone?: string } | null; now: Date },
@@ -330,7 +355,9 @@ export async function postToClub(
   return { ok: true, postId: p!.id as string };
 }
 
+/** A reply under a club post. */
 export type FeedReply = { id: string; authorName: string; body: string; createdAt: Date; mine: boolean };
+/** A club post or ride plan as it is shown in the feed, with its replies, photos and reactions. */
 export type FeedPost = {
   id: string; kind: "post" | "ride_plan"; authorName: string; authorHandle: string; body: string; createdAt: Date; mine: boolean;
   at: Date | null; timeZone: string; place: string | null; going: number; maybe: number; myResponse: "going" | "maybe" | null; replies: FeedReply[];
@@ -386,6 +413,7 @@ export async function listFeed(
   };
 }
 
+/** A member answers a ride plan with going or maybe; null takes the answer back. */
 export async function respondToRide(sql: Sql, i: { userId: string; postId: string; response: "going" | "maybe" | null }): Promise<{ ok: true } | { ok: false; reason: "not_member" | "not_found" | "invalid" }> {
   if (i.response !== null && i.response !== "going" && i.response !== "maybe") return { ok: false, reason: "invalid" };
   if (!UUID.test(i.postId) || !(await isMember(sql, i.userId))) return { ok: false, reason: UUID.test(i.postId) ? "not_member" : "not_found" };

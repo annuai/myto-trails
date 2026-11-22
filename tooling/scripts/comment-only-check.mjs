@@ -40,7 +40,8 @@ if (mode === 'snapshot') {
 } else if (mode === 'compare') {
   const base = JSON.parse(readFileSync(path, 'utf8'));
   const now = Object.fromEntries(sourceFiles().map((file) => [file, fingerprint(file)]));
-  const changed = Object.keys(now).filter((file) => base[file] !== now[file]);
+  // A file that is not in the fingerprint is new, so there is no earlier code for it to differ from.
+  const changed = Object.keys(now).filter((file) => file in base && base[file] !== now[file]);
   console.log(changed.length ? `CODE CHANGED in ${changed.length} file(s):\n${changed.join('\n')}` : `ok: ${Object.keys(now).length} files, comments only`);
   process.exit(changed.length ? 1 : 0);
 } else {

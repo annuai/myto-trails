@@ -19,6 +19,7 @@ export function checkInWindow(startsAt: Date, now: Date): "early" | "open" | "cl
   return t > 6 * HOUR ? "closed" : "open";
 }
 
+/** Whether a rider may check in now, or why not: too early, closed, too far from the start place, or a position too inaccurate to tell. */
 export type CheckInVerdict = { ok: true } | { ok: false; reason: "early" | "closed" | "far" | "inaccurate" };
 
 /** A fix that cannot tell whether the rider is inside the radius is refused rather than guessed at. */
@@ -29,6 +30,7 @@ export function checkInVerdict(ev: Point & { radiusM: number; startsAt: Date }, 
   return distanceM(ev, at) <= ev.radiusM ? { ok: true } : { ok: false, reason: "far" };
 }
 
+/** Going if the event has room, otherwise the waiting list. No capacity means no limit. */
 export const seatDecision = (goingCount: number, capacity: number | null): "going" | "waitlisted" => (capacity !== null && goingCount >= capacity ? "waitlisted" : "going");
 
 /** An event starts in the future, and not more than 365 days away. */

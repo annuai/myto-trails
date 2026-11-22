@@ -4,15 +4,20 @@
 /** The three copies of a photo, made on the rider's phone: a preview for the feed, a screen-sized one for the viewer, and the one kept and downloaded. */
 export const PHOTO_SIZES = { thumb: 400, view: 1080, full: 2048 } as const;
 export type PhotoSize = keyof typeof PHOTO_SIZES;
+/** The sizes every photo is stored in. */
 export const SIZES = Object.keys(PHOTO_SIZES) as PhotoSize[];
+/** The reactions a rider can leave on a post. */
 export const REACTIONS = ["like", "love", "fire", "laugh", "wow", "thanks"] as const;
 export type Reaction = (typeof REACTIONS)[number];
+/** True when the value is one of the reactions. */
 export const isReaction = (v: unknown): v is Reaction => typeof v === "string" && (REACTIONS as readonly string[]).includes(v);
 
 /** Where a copy lives: the same place in the quarantine bucket (before it is checked) and the public one (after). */
 export const photoKey = (ownerId: string, assetId: string, size: PhotoSize) => `post/${ownerId}/${assetId}-${PHOTO_SIZES[size]}.jpg`;
+/** The path of a photo without its size and extension: the same stem is used in the quarantine and public buckets. */
 export const photoStem = (ownerId: string, assetId: string) => `post/${ownerId}/${assetId}`;
 
+/** The addresses and size of a photo's three copies. */
 export type PhotoUrls = { id: string; width: number; height: number; colour: string | null; thumbUrl: string; viewUrl: string; fullUrl: string };
 /** The public addresses of a photo's three copies. */
 export const photoUrls = (publicUrl: (key: string) => string, a: { id: string; stem: string; width: number; height: number; colour: string | null }): PhotoUrls => ({

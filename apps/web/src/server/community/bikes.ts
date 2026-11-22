@@ -2,9 +2,11 @@ import type { Sql } from "postgres";
 import type { BikeMake, BikeMakeList, BikeModel, BikeModelPage } from "@moto-trails/domain";
 import { isBikeCategory } from "./bike-catalogue";
 
+/** How many bike models one page of the picker holds. */
 export const BIKE_PAGE_SIZE = 48;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
+/** What the bike picker can filter by: search text, make, category and page. `all` also lists models that have no picture yet. */
 export type BikeQuery = { q?: string; make?: string; category?: string; page?: number; all?: boolean };
 
 /** Escapes % _ and \ so a search term is matched literally by like. */

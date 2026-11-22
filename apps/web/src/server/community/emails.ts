@@ -11,10 +11,12 @@ export function newQuestionEmail(askerName: string, siteUrl: string): Msg {
   };
 }
 
+/** Tells a rider that their question was answered. */
 export function answeredEmail(riderName: string, siteUrl: string): Msg {
   return { subject: `${oneLine(riderName)} answered your question`, text: ["A rider answered your question on Moto Trails.", "", `Read the answer: ${siteUrl}/account/questions`].join("\n") };
 }
 
+/** Tells a rider that someone offered to share a phone number, and for how long it can be revealed and then seen. */
 export function phoneOfferedEmail(riderName: string, siteUrl: string, hours: number, minutes: number): Msg {
   return {
     subject: `${oneLine(riderName)} offered to share their phone number`,
@@ -36,6 +38,7 @@ export function joinRequestEmail(riderName: string, clubName: string, clubUrl: s
   };
 }
 
+/** Tells a rider whether the club accepted their join request. A decline gives no reason. */
 export function joinDecisionEmail(clubName: string, accepted: boolean, clubUrl: string): Msg {
   return accepted
     ? { subject: `You are in: ${oneLine(clubName)}`, text: ["Your request to join the club was accepted.", "", `Open the club: ${clubUrl}`].join("\n") }

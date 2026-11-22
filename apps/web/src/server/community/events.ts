@@ -1,3 +1,6 @@
+// Ride events: listing and reading them, creating one, answering an invitation (going, maybe, declined, waiting list), checking in at the
+// start place, cancelling, and the public preview of an open event.
+
 import type { Row, Sql, TransactionSql } from "postgres";
 import type { DeclineReason, EventInput, EventResponse, EventRole, EventStatus, RideEvent, RideEventDetail, RosterRow } from "@moto-trails/domain";
 import { DEFAULT_TIME_ZONE } from "@/lib/time-zone";
@@ -46,6 +49,7 @@ const SELECT = (sql: Db, userId: string) => sql`
   from ride_event e join app_user h on h.id = e.host_id left join club c on c.id = e.club_id left join group_ride g on g.id = e.group_ride_id`;
 const UPCOMING = (sql: Db, now: Date) => sql`((e.status = 'scheduled' and e.starts_at > ${new Date(now.getTime() - 6 * HOUR)}) or (e.status = 'live' and g.ended_at is null))`;
 
+/** Which events a list shows. */
 export type EventScope = "discover" | "club" | "mine";
 
 /** Upcoming and live events, soonest first. `discover` is the open ones; `club` is one club's; `mine` is those I host or answered. */
@@ -66,6 +70,7 @@ export async function listEvents(
   return { ok: true, items: rows.map((r) => listRow(r, i.userId, i.now)) };
 }
 
+/** One event with the viewer's own state and, where they may see it, the roster. Not found when the viewer is not allowed to see it. */
 export async function getEvent(sql: Sql, i: { userId: string; eventId: string; now: Date }): Promise<{ ok: true; event: RideEventDetail } | Fail<"not_found">> {
   if (!UUID.test(i.eventId)) return { ok: false, reason: "not_found" };
   const [r] = await sql`${SELECT(sql, i.userId)} where e.public_id = ${i.eventId} and ${visibleTo(sql, i.userId)}`;
@@ -94,6 +99,10 @@ export async function getEvent(sql: Sql, i: { userId: string; eventId: string; n
 
 // ---- creating ----------------------------------------------------------------------------------------------
 
+/**
+ * Checks and cleans what a host submitted for an event: title, place, start time, radius, capacity and club. Returns the cleaned values, or
+ * the problem found.
+ */
 export function parseEventInput(b: Record<string, unknown>, now: Date): { ok: true; v: Required<Omit<EventInput, "clubId" | "capacity" | "coverMediaId">> & { clubId: string | null; capacity: number | null; coverMediaId: string | null; startsAtDate: Date } } | Fail<"invalid"> {
   const title = line(b.title, 80, 3);
   const place = line(b.placeName, 120);
@@ -176,6 +185,7 @@ async function promote(tx: Db, e: Locked) {
   }
 }
 
+/** A member answers an event: going, maybe or declined (with an optional reason). Going on a full event puts them on the waiting list. */
 export async function respond(
   sql: Sql,
   i: { userId: string; eventId: string; response: unknown; reason?: unknown; note?: unknown; now: Date },
@@ -205,6 +215,10 @@ export async function respond(
 
 // ---- arriving ----------------------------------------------------------------------------------------------
 
+/**
+ * Checks a rider in at the start place if they are close enough, with a position accurate enough, within the event's window. A waitlisted
+ * rider cannot check in.
+ */
 export async function checkIn(
   sql: Sql,
   i: { userId: string; eventId: string; lat: unknown; lng: unknown; accuracyM: unknown; now: Date },
@@ -323,6 +337,7 @@ export async function setEventCover(sql: Sql, i: { hostId: string; eventId: stri
   return { ok: true, coverUrl: pickVariant(r?.cover, COVER_WIDTH) };
 }
 
+/** The host cancels an event that has not started. */
 export async function cancelEvent(sql: Sql, i: { hostId: string; eventId: string }): Promise<{ ok: true } | Fail<"not_found" | "not_host" | "closed">> {
   if (!UUID.test(i.eventId)) return { ok: false, reason: "not_found" };
   const [e] = await sql`select host_id, status from ride_event where public_id = ${i.eventId}`;
@@ -335,6 +350,7 @@ export async function cancelEvent(sql: Sql, i: { hostId: string; eventId: string
 
 // ---- the public page ---------------------------------------------------------------------------------------
 
+/** What a link to an open event shows to anyone. */
 export type PublicEvent = { coverUrl: string | null; title: string; startsAt: Date; timeZone: string; placeName: string; clubName: string | null; going: number; status: EventStatus };
 
 /** What anyone with the link may see: an open event's name, time, place and how many are going. Members-only and unknown events are null. */

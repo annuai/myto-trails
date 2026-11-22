@@ -3,10 +3,12 @@ import { isValidSlug } from "@moto-trails/domain";
 import { withPublicRole } from "../db/client";
 import { isMember } from "./members";
 
+/** What a trail comment can be tagged as. */
 export const COMMENT_TAGS = ["gate_closed", "water_high", "blocked", "good_condition", "tip"] as const;
 export type CommentTag = (typeof COMMENT_TAGS)[number];
 const EDIT_WINDOW_MS = 10 * 60_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Matches text that contains a link or a bare web address. Comments, questions and bios may not contain one. */
 export const LINK = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|in|org|net|co|io|app|dev|me|ly)\b\/?)/i;
 
 /** Control characters are removed, line breaks are kept but limited to two in a row. */
@@ -16,6 +18,10 @@ export function cleanBody(raw: unknown): string {
 
 type Fail = { ok: false; reason: "not_member" | "not_found" | "invalid" | "no_links" | "rate_limited" | "too_late" | "forbidden" };
 
+/**
+ * Adds a comment (or a reply) on a trail. Only declared members may; the text is cleaned first. A comment is either visible at once or
+ * waits for a moderator.
+ */
 export async function postComment(
   sql: Sql,
   i: { userId: string; slug: string; body: string; tag?: string | null; parentId?: string | null },
@@ -46,6 +52,7 @@ export async function postComment(
   });
 }
 
+/** The author edits their own comment within ten minutes of writing it. Links are refused. */
 export async function editComment(sql: Sql, i: { userId: string; commentId: string; body: string; now: Date }): Promise<{ ok: true } | Fail> {
   if (!UUID.test(i.commentId)) return { ok: false, reason: "not_found" };
   const body = cleanBody(i.body);
@@ -59,12 +66,14 @@ export async function editComment(sql: Sql, i: { userId: string; commentId: stri
   return { ok: true };
 }
 
+/** The author deletes their own comment. It is marked deleted, not removed. */
 export async function deleteComment(sql: Sql, i: { userId: string; commentId: string }): Promise<{ ok: true } | Fail> {
   if (!UUID.test(i.commentId)) return { ok: false, reason: "not_found" };
   const rows = await sql`update trail_comment set deleted_at = now() where id = ${i.commentId} and user_id = ${i.userId} and deleted_at is null returning id`;
   return rows.length ? { ok: true } : { ok: false, reason: "not_found" };
 }
 
+/** A trail comment as a reader sees it. */
 export type CommentView = {
   id: string;
   body: string;

@@ -1,10 +1,13 @@
 /** Paging and search terms for the club list. Pure, so it is tested without a database. */
 export const CLUB_PAGE_DEFAULT = 20;
+/** The most clubs one page may ask for. */
 export const CLUB_PAGE_MAX = 100;
+/** The longest club search text that is used; anything longer is cut. */
 export const CLUB_QUERY_MAX = 60;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TIMESTAMP = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d{1,6})?([+-]\d{2}(:?\d{2})?|Z)?$/;
 
+/** A place in the newest-first club list. */
 export type ClubCursor = { at: string; id: string };
 
 /** A place in the newest-first list: the club's creation time as the database wrote it (keeping its microseconds) and its id. */
