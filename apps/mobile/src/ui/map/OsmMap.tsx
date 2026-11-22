@@ -8,6 +8,7 @@ import type { LatLng } from '@/lib/geo';
 import { fixed, size, space } from '@/theme/tokens';
 import { clusterMarks } from '@/lib/riderClusters';
 import { norm, turnBetween, unwrapBearing } from '@/lib/rideCamera';
+import { safeMove } from './cameraMove';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { IconButton } from '../IconButton';
 import { Text } from '../Text';
@@ -82,7 +83,7 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
   const picking = !!open;
   useEffect(() => { onPicker?.(picking); }, [picking]); // eslint-disable-line react-hooks/exhaustive-deps
   const start = useMapStart();
-  useEffect(() => { if (focus) camera.current?.flyTo({ center: [focus.lng, focus.lat], zoom: 12 }); }, [focus]);
+  useEffect(() => { if (focus) safeMove(() => camera.current?.flyTo({ center: [focus.lng, focus.lat], zoom: 12 })); }, [focus]);
   const bounds = useMemo(() => {
     const all = [...(route ?? []), ...(track ?? []), ...(heat?.lines.length ? heat.lines.flatMap((l) => l.points) : heat?.dots ?? [])];
     if (!all.length) return undefined;
@@ -112,11 +113,10 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
     const stop = { center: [position.lng, position.lat] as [number, number], zoom: followZoom, bearing: heading === undefined ? undefined : norm(camBearing.current), padding };
     const zoomed = lastZoomSent.current !== followZoom;
     lastZoomSent.current = followZoom;
-    try {
-      if (flyNext.current) { flyNext.current = false; camera.current?.flyTo({ ...stop, duration: RECENTER_MS }); }
-      // A steady glide at a constant speed over the time between fixes: an eased move would speed up and slow down every second.
-      else camera.current?.easeTo({ ...stop, duration: zoomed ? ZOOM_EASE_MS : glideMs ?? FOLLOW_EASE_MS, easing: 'linear' });
-    } catch { /* the map is not drawn yet: the next position moves it */ }
+    // A move that does not land (map not drawn yet, or already closing) is dropped: the next position moves the camera.
+    if (flyNext.current) { flyNext.current = false; safeMove(() => camera.current?.flyTo({ ...stop, duration: RECENTER_MS })); }
+    // A steady glide at a constant speed over the time between fixes: an eased move would speed up and slow down every second.
+    else safeMove(() => camera.current?.easeTo({ ...stop, duration: zoomed ? ZOOM_EASE_MS : glideMs ?? FOLLOW_EASE_MS, easing: 'linear' }));
   }, [follow, following, position?.lat, position?.lng, heading, padding, followZoom]); // eslint-disable-line react-hooks/exhaustive-deps
   // A closed loop on the camera: the moves above are asked for and not checked, and a move the phone drops would leave the map facing the wrong way for good. If the measured bearing stays far from the wanted one, the camera is set to it outright.
   useEffect(() => {
@@ -127,7 +127,7 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
     if (now - offSince.current < OFF_MS) return;
     offSince.current = 0; setHealed((n) => n + 1);
     camBearing.current = unwrapBearing(bearing, heading);
-    try { camera.current?.jumpTo({ center: [position.lng, position.lat], zoom: followZoom, bearing: norm(camBearing.current), padding }); } catch { /* not drawn yet */ }
+    safeMove(() => camera.current?.jumpTo({ center: [position.lng, position.lat], zoom: followZoom, bearing: norm(camBearing.current), padding }));
   }, [bearing, follow, following, position?.lat, position?.lng, heading, padding, followZoom]); // eslint-disable-line react-hooks/exhaustive-deps
   // While following, a pinch changes only the zoom, about the rider, so the map never slides away from them; the map's own pinch (about the fingers) is off.
   // Each pinch step changes the zoom by its own share (scaleChange), so nothing about where the gesture began has to be remembered.
@@ -139,9 +139,9 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
     if (all.length < 2) return;
     setFollowing(false);
     // Kept clear of what floats over the map, and turned back to north-up so the spread of the group reads at a glance.
-    camera.current?.fitBounds([Math.min(...all.map((p) => p.lng)), Math.min(...all.map((p) => p.lat)), Math.max(...all.map((p) => p.lng)), Math.max(...all.map((p) => p.lat))], { padding: insetMap ? FIT_PADDING : { top: FIT_PADDING.top + coverTop, bottom: FIT_PADDING.bottom + coverBottom, left: FIT_PADDING.left + coverLeft, right: FIT_PADDING.right }, duration: GROUP_VIEW_MS });
+    safeMove(() => camera.current?.fitBounds([Math.min(...all.map((p) => p.lng)), Math.min(...all.map((p) => p.lat)), Math.max(...all.map((p) => p.lng)), Math.max(...all.map((p) => p.lat))], { padding: insetMap ? FIT_PADDING : { top: FIT_PADDING.top + coverTop, bottom: FIT_PADDING.bottom + coverBottom, left: FIT_PADDING.left + coverLeft, right: FIT_PADDING.right }, duration: GROUP_VIEW_MS }));
   };
-  const fit = () => { if (bounds && !follow) camera.current?.fitBounds(bounds, { padding: FIT_PADDING, duration: 0 }); };
+  const fit = () => { if (bounds && !follow) safeMove(() => camera.current?.fitBounds(bounds, { padding: FIT_PADDING, duration: 0 })); };
   // MapLibre reports the map as loaded after every style load, so a style switch must not snap the camera back to the route: refit on the first load only.
   const fitted = useRef(false);
   const fitOnFirstLoad = () => { if (fitted.current) return; fitted.current = true; fit(); };
