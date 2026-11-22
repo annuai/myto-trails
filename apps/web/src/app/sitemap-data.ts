@@ -1,3 +1,5 @@
+// Builds the sitemap and robots rules as plain data, so they can be tested without Next.js.
+
 import type { MetadataRoute } from "next";
 
 type Entries = { trails: { slug: string; updatedAt: string }[]; regions: { path: string }[] };

@@ -1,3 +1,5 @@
+// The clubs list, with a form to start a club. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";

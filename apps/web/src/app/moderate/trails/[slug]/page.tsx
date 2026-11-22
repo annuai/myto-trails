@@ -1,3 +1,5 @@
+// A moderator's controls for one trail: verify access, set the condition, unpublish. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";

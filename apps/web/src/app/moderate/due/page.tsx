@@ -1,3 +1,5 @@
+// Trails whose verified access is due for a re-check. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";

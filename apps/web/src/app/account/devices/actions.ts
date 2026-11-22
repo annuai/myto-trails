@@ -1,4 +1,5 @@
 "use server";
+// Server actions of the devices page: connect a device (shows its token once) and revoke one.
 
 import { redirect } from "next/navigation";
 import type { DeviceState } from "@/features/account/DeviceForm";

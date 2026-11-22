@@ -1,3 +1,5 @@
+// Placeholder shown while the trail search loads.
+
 import { LoadingScreen, Skeleton, TrailCardSkeleton } from "@/ui/Skeleton/Skeleton";
 
 export default function TrailsLoading() {

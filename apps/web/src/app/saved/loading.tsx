@@ -1,3 +1,5 @@
+// Placeholder shown while the saved trails load.
+
 import { CardListSkeleton, LoadingScreen, Skeleton } from "@/ui/Skeleton/Skeleton";
 
 export default function Loading() {

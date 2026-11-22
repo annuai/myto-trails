@@ -1,3 +1,5 @@
+// The Donate page.
+
 import type { Metadata } from "next";
 import { DonateContent } from "@/features/legal/DonateContent";
 

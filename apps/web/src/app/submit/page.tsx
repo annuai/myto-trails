@@ -1,3 +1,5 @@
+// The rider's draft and submitted trails, and the button to start a new one. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/server/auth/session";

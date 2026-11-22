@@ -1,3 +1,5 @@
+// A route a member shared as a link, with its map. Not indexed.
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";

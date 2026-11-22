@@ -1,3 +1,5 @@
+// The rider's account page: avatar, bike, and profile and privacy choices. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/server/auth/session";

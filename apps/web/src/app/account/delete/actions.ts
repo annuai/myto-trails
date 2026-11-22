@@ -1,4 +1,5 @@
 "use server";
+// Server action that deletes the rider's account once they have typed the confirmation word.
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";

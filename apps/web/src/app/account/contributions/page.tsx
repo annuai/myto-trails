@@ -1,3 +1,5 @@
+// The rider's own contributions and their state. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/server/auth/session";

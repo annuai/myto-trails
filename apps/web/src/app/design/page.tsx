@@ -1,3 +1,5 @@
+// The design system, shown on one page for the people building the site. Not indexed.
+
 import type { Metadata } from "next";
 import { ACCESS_CLASSES, OPERATIONAL_STATUSES, VERIFICATION_LEVELS } from "@moto-trails/domain";
 import { StatusBadge } from "@/ui/StatusBadge/StatusBadge";

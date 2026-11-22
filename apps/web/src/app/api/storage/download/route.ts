@@ -1,3 +1,5 @@
+// Serves files from the local development storage through signed addresses. Answers 404 when the site does not use local storage.
+
 import { connection } from "next/server";
 import { getLocalStorage } from "@/server/storage/local-instance";
 

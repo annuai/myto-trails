@@ -1,3 +1,5 @@
+// Tells the rider to check their email for the sign-in link. Not indexed.
+
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Check your email", robots: { index: false, follow: false } };

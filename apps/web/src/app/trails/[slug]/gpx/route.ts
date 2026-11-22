@@ -1,3 +1,6 @@
+// Downloads a trail's GPX file. Refuses with 403 or 404 and a plain message when the trail does not allow it, and limits how often one
+// visitor can download.
+
 import { buildGpxExport } from "@/server/gpx/export";
 import { getSiteUrl } from "@/lib/site";
 import { clientIp, hashIp } from "@/server/auth/request-context";

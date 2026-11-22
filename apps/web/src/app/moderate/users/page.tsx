@@ -1,3 +1,5 @@
+// Admin page for staff roles and suspending accounts. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSql } from "@/server/db/client";

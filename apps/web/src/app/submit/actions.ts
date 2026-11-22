@@ -1,4 +1,5 @@
 "use server";
+// Server actions of the submit-a-trail form: start a draft, save a step, autosave, and submit.
 
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";

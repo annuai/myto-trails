@@ -1,3 +1,5 @@
+// Shown after an account is deleted. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 

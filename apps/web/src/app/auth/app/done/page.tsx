@@ -1,3 +1,5 @@
+// Where the sign-in link lands for someone signing in from the app: it hands them back to the Myto app (see OpenApp). Not indexed.
+
 import type { Metadata } from "next";
 import { OpenApp } from "./OpenApp";
 

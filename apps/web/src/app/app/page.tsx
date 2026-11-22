@@ -1,3 +1,5 @@
+// The page about the Myto Moto phone app and what it does.
+
 import type { Metadata } from "next";
 import Image from "next/image";
 import { JoinListForm } from "@/features/app-beta/JoinListForm";

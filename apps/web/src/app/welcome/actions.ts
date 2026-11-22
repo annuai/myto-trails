@@ -1,4 +1,5 @@
 "use server";
+// Server action that records the 18+ and driving-licence declaration after the first sign-in.
 
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/session";

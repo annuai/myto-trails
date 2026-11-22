@@ -1,3 +1,5 @@
+// Asks the rider to confirm deleting their account, and says what it removes. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { soleAdminClubs } from "@/server/account/delete";

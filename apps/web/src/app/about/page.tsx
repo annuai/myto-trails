@@ -1,3 +1,5 @@
+// The About page: what Moto Trails is.
+
 import type { Metadata } from "next";
 import { LegalDocument } from "@/features/legal/LegalDocument";
 

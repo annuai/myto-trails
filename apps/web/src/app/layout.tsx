@@ -1,3 +1,5 @@
+// The root layout of every page: fonts, the site header and footer, analytics and the default metadata.
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Michroma } from "next/font/google";
 import { Suspense } from "react";

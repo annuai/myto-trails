@@ -1,3 +1,5 @@
+// The form to report a problem with a trail. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";

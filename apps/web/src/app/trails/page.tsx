@@ -1,3 +1,5 @@
+// Explore trails: search, filters, a list and a map.
+
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import Link from "next/link";

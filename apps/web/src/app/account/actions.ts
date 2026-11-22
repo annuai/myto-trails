@@ -1,4 +1,5 @@
 "use server";
+// Server actions of the account page: sign out, sign out everywhere, and change the display name.
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";

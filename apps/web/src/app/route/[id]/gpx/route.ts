@@ -1,3 +1,5 @@
+// Downloads a shared route as a GPX file. Answers 404 for an unknown route.
+
 import { getSiteUrl } from "@/lib/site";
 import { getSql } from "@/server/db/client";
 import { getSharedRoute, sharedRouteGpx } from "@/server/rides/shared-routes";

@@ -1,3 +1,5 @@
+// Where Moto Trails is open, and where it is coming soon.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "@/ui/Breadcrumbs/Breadcrumbs";

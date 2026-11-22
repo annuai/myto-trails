@@ -1,3 +1,5 @@
+// Placeholder shown while the rider's questions load.
+
 import { CardListSkeleton, LoadingScreen, Skeleton } from "@/ui/Skeleton/Skeleton";
 
 export default function Loading() {

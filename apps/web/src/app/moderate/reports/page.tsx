@@ -1,3 +1,5 @@
+// The reports riders made about trails. Not indexed.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSql } from "@/server/db/client";

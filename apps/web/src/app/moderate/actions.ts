@@ -1,4 +1,5 @@
 "use server";
+// Server actions of the moderation pages: decide a submission, act on a trail, and resolve a report.
 
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
