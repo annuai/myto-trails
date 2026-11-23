@@ -108,8 +108,10 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            if (project.hasProperty('appIdSuffix')) applicationIdSuffix project.property('appIdSuffix') // e.g. -PappIdSuffix=.debug installs next to the store build
         }
         release {
+            if (project.hasProperty('appIdSuffix')) applicationIdSuffix project.property('appIdSuffix')
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.debug

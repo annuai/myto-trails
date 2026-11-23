@@ -43,6 +43,7 @@ All keyed by `(user_id, id)` where `id` is the id the phone already uses (`rideI
 - A visible "waiting to sync: 3" in Profile, not a spinner.
 - First sync is opt-in with plain wording; the Profile disclaimer "stays on this device" changes at the same time.
 - Pull applies changes through the same stores; `rideId` makes it idempotent.
+- A pulled page is applied 25 changes at a time, one store write per chunk, with the progress saved after each (`runSync.ts`): a store write is a full write to phone storage, so one per item made a pull of 100 take over a minute, and a pull cut short started again. Deletes of things the phone never had are skipped, and a ride whose route is not on the server yet is left out and a full pull is retried next round.
 
 ## Free-tier numbers (check before building)
 

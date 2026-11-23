@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SYNC_LIMITS, decideSync, forkId } from '@moto-trails/domain';
-import { initialState, scan, hashOf, stable, type Adapter, type Item, type Pulled, type SyncState } from './syncCore';
-import { runSync, type SyncApi } from './runSync';
+import { initialState, scan, hashOf, stable, type Adapter, type ApplyOp, type Item, type Pulled, type SyncState } from './syncCore';
+import { APPLY_CHUNK, runSync, type SyncApi } from './runSync';
 import { decodeTrack, encodeTrack } from './trackCodec';
 import type { LatLng } from '@/lib/geo';
 
@@ -205,5 +205,55 @@ describe('two phones', () => {
     await sync(a, s, now); await sync(b, s, now); await sync(a, s, now);
     expect(a.rides.get('r1')?.data.name).toBe('Old ride');
     expect(b.rides.get('r1')?.data.name).toBe('Old ride');
+  });
+});
+
+describe('pulling a long history', () => {
+  const syncWith = (p: ReturnType<typeof phone>, api: SyncApi, now: { t: number }) => runSync({ api, adapters: p.adapters, get: () => p.state, set: (st) => { p.state = st; }, now: () => now.t });
+
+  it('does no work for deletes of things this phone never had, and writes each store once per chunk, not once per item', async () => {
+    const now = { t: 1_000_000 }; const s = server(now); const a = phone('dev-aaaa-0001', now); const c = phone('dev-cccc-0003', now);
+    for (let n = 0; n < 100; n++) a.editTodo(`t${n}`, { title: `Todo ${n}` });
+    await sync(a, s, now);
+    for (let n = 0; n < 30; n++) a.todos.delete(`t${n}`);
+    await sync(a, s, now);
+    // A fresh phone whose todo adapter counts how it is written to.
+    let removes = 0, puts = 0; const manyCalls: number[] = [];
+    const todo = c.adapters.find((x) => x.kind === 'todo')!;
+    const counted = { ...todo, put: (...args: Parameters<typeof todo.put>) => { puts += 1; todo.put(...args); }, remove: (id: string) => { removes += 1; todo.remove(id); }, applyMany: (ops: ApplyOp[]) => { manyCalls.push(ops.length); for (const op of ops) { if (op.type === 'remove') todo.remove(op.id); else todo.put(op.id, op.data, op.updatedAt, op.extra); } } };
+    await runSync({ api: s.api(c.deviceId), adapters: [c.adapters[0]!, counted], get: () => c.state, set: (st) => { c.state = st; }, now: () => now.t });
+    expect(c.todos.size).toBe(70);
+    expect(manyCalls.reduce((x, y) => x + y, 0)).toBe(70); // the 30 tombstones were not even handed to the store
+    expect(manyCalls.every((n) => n <= APPLY_CHUNK)).toBe(true);
+    expect(manyCalls).toHaveLength(Math.ceil(70 / APPLY_CHUNK));
+    expect(puts).toBe(0); expect(removes).toBe(0); // everything went through the single-write path
+    expect(Object.keys(c.state.baseline).some((k) => k === 'todo:t0')).toBe(false);
+  });
+
+  it('a pull that stops half way keeps what it applied and does not download those routes again', async () => {
+    const now = { t: 1_000_000 }; const s = server(now); const a = phone('dev-aaaa-0001', now); const b = phone('dev-bbbb-0002', now);
+    for (let n = 0; n < 30; n++) a.editRide(`r${String(n).padStart(2, '0')}`, { name: `Ride ${n}` }, pts(4));
+    await sync(a, s, now);
+    const real = s.api(b.deviceId); let calls = 0;
+    await syncWith(b, { ...real, getTrack: async (id) => { calls += 1; if (calls > APPLY_CHUNK) throw new Error('signal lost'); return real.getTrack(id); } }, now).catch(() => undefined);
+    expect(b.rides.size).toBe(APPLY_CHUNK); // the first chunk was applied and saved
+    let second = 0;
+    await syncWith(b, { ...real, getTrack: async (id) => { second += 1; return real.getTrack(id); } }, now);
+    expect(second).toBe(30 - APPLY_CHUNK);
+    expect(b.rides.size).toBe(30);
+    for (const r of b.rides.values()) expect(r.points).toHaveLength(4);
+  });
+
+  it('a ride whose route is not there yet is left out, and comes in on the next round without losing its place', async () => {
+    const now = { t: 1_000_000 }; const s = server(now); const a = phone('dev-aaaa-0001', now); const b = phone('dev-bbbb-0002', now);
+    a.editRide('r1', { name: 'One' }, pts(6)); a.editTodo('t1', { title: 'x' });
+    await sync(a, s, now);
+    const real = s.api(b.deviceId);
+    await syncWith(b, { ...real, getTrack: async () => null }, now);
+    expect(b.rides.has('r1')).toBe(false); expect(b.todos.has('t1')).toBe(true);
+    expect(b.state.fullPull).toBe(true); // the cursor moved on, so the next round pulls everything again
+    await syncWith(b, real, now);
+    expect(b.rides.get('r1')!.points).toHaveLength(6);
+    expect(b.state.fullPull).toBe(false);
   });
 });

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { whenHydrated } from '@/lib/whenHydrated';
+import { isApplying } from '@/lib/sync/applying';
 import { scanNow, syncNow, syncStores } from '@/lib/sync/syncNow';
 import { useAuth } from '@/store/auth';
 import { useRides } from '@/store/rides';
@@ -31,7 +32,8 @@ function start(): () => void {
     const app = AppState.addEventListener('change', (s) => { if (s === 'active') void syncNow(); });
     let quiet: ReturnType<typeof setTimeout> | undefined;
     const edited = () => {
-      if (!useSync.getState().enabled) return;
+      // Sync's own writes (a pulled page) are not edits: scanning after each one is what made a pull take minutes.
+      if (isApplying() || !useSync.getState().enabled) return;
       scanNow();
       clearTimeout(quiet);
       quiet = setTimeout(() => void syncNow(), EDIT_QUIET_MS);
