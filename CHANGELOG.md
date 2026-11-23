@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.13.0](https://github.com/annuai/myto-trails/compare/v0.12.0...v0.13.0) (2026-11-23)
+
+
+### Features
+
+* **mobile:** Android ride card stays when swiped, calmer design with the Myto mark ([#75](https://github.com/annuai/myto-trails/issues/75)) ([dbe7e95](https://github.com/annuai/myto-trails/commit/dbe7e956e67e94dcf7a047f94a95c6fe14c3a9a3))
+* **mobile:** custom ride alarm time, card hides after the start ([0405812](https://github.com/annuai/myto-trails/commit/0405812d1338804d8a2620320a60b26a242bf37c))
+* **mobile:** ride wake-up alarms with a sunrise-aware snooze ([3b48ff8](https://github.com/annuai/myto-trails/commit/3b48ff86bd713ef886196eb9d2cc5499ad32668c))
+* **offline-regions:** --route-only build and upload, named parks in the search file ([#73](https://github.com/annuai/myto-trails/issues/73)) ([12b0650](https://github.com/annuai/myto-trails/commit/12b0650a9d58f836de2d06df97a2995222b3e99d))
+
+
+### Bug Fixes
+
+* **ios:** widget extension version follows the app ([e7b22c6](https://github.com/annuai/myto-trails/commit/e7b22c688346b1fa34fd167d60c723b0b684f5f6))
+* **ios:** widget extension version follows the app (0.12.0, was 0.10.0) ([5e7aa03](https://github.com/annuai/myto-trails/commit/5e7aa030af6c8db6527802e39b51cdb9acbb65d4))
+* **mobile:** camera moves and sign-in token no longer fail unhandled; every lint suppression states its reason ([#80](https://github.com/annuai/myto-trails/issues/80)) ([5d60483](https://github.com/annuai/myto-trails/commit/5d60483b93bc295f535404591b9acc67b2b77f52))
+* **mobile:** film look on a photo whose file is gone no longer crashes ([#76](https://github.com/annuai/myto-trails/issues/76)) ([a99ebe5](https://github.com/annuai/myto-trails/commit/a99ebe59b8a7094f688529fef0062e07c1465962))
+* **mobile:** recenter arrow no longer jumps; Home and You balance landscape columns; recording keeps the status bar in portrait ([#83](https://github.com/annuai/myto-trails/issues/83)) ([c98d4fc](https://github.com/annuai/myto-trails/commit/c98d4fccf92b371c01e42517ec1d3b3653d75d96))
+* **mobile:** routes draw on Android; Stop guiding keeps the place ([#74](https://github.com/annuai/myto-trails/issues/74)) ([73fc759](https://github.com/annuai/myto-trails/commit/73fc759503bd7f2114eeb1d24ae330f3bf0a7a71))
+* **sync:** a ride put back by an import is no longer deleted again by the old delete on the server ([#78](https://github.com/annuai/myto-trails/issues/78)) ([b5b8df7](https://github.com/annuai/myto-trails/commit/b5b8df7dceba2b4d90c9d1d98a21da035d586320))
+
 ## [0.12.0](https://github.com/annuai/myto-trails/compare/v0.11.0...v0.12.0) (2026-11-15)
 
 
