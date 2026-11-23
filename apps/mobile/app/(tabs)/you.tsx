@@ -70,18 +70,24 @@ export default function You() {
   return (
     <Screen tabs brand fadeTabs endCap={<RiderBanner />}>
       <PageTitle>You</PageTitle>
-      <Columns rightStartsWithSection left={<>
+      {/* Landscape: what you ride and keep on the left, account and settings on the right, so the two columns come out about equal. Portrait keeps this list's order. */}
+      <Columns rightStartsWithSection items={[
+        { key: 'ridden', side: 'left', node: <>
       <Card style={{ padding: space[6], gap: space[2] }}>
         <Text variant="label" tone="muted">Ridden with Myto Moto</Text>
         <Measure parts={distanceKm(totalKm(rides))} size="liveSecondary" />
         <Text variant="label" tone="muted">{real} ride{real === 1 ? '' : 's'} recorded</Text>
       </Card>
+      </> },
+        { key: 'bike', side: 'left', node: <>
       {signedIn ? (
         <>
           <SectionTitle>Your bike</SectionTitle>
           <BikeCard bike={bike} onPress={() => router.push('/bike')} />
         </>
       ) : null}
+      </> },
+        { key: 'account', side: 'right', at: 0, node: <>
       <SectionTitle>Account</SectionTitle>
       {signedIn ? (
         // Just who you are: the picture and the name. Opens Profile settings.
@@ -98,7 +104,8 @@ export default function You() {
         </Card>
       )}
       {authError ? <Text variant="label" tone="stop" style={{ marginTop: space[2] }}>{authError}</Text> : null}
-      </>} right={<>
+      </> },
+        { key: 'keep', side: 'left', node: <>
       <SectionTitle>Keep track</SectionTitle>
       <ListCard>
         <Row icon={RouteIcon} label="Ride log" value={`${rides.length}`} mono onPress={() => router.push('/rides')} />
@@ -113,6 +120,8 @@ export default function You() {
         <Row icon={Wrench} label="Fix it" sub="Repair guides, pre-ride check and toolkit" onPress={() => router.push('/fixit')} />
         <Row icon={IdCard} label="Documents and emergency" sub={docs || 'Licence, vehicle, emergency contacts'} onPress={() => router.push('/documents')} />
       </ListCard>
+      </> },
+        { key: 'settings', side: 'right', at: 1, node: <>
       <SectionTitle>Settings</SectionTitle>
       <ListCard>
         <Row icon={ShieldAlert} label="Crash detection" sub="Beta. Asks if you are OK after a crash" onPress={() => router.push('/safety')} />
@@ -135,7 +144,8 @@ export default function You() {
       <ListCard>
         <Row icon={TriangleAlert} tone="stop" label="Danger zone" sub="Erase my data, delete my account" onPress={() => router.push('/danger')} />
       </ListCard>
-      </>} />
+      </> },
+      ]} />
       {signedIn ? <View style={{ marginTop: space[8] }}><Button variant="soft" icon={LogOut} label="Sign out" onPress={() => void signOut()} /></View> : null}
       <View style={{ marginTop: space[6], gap: space[4] }}>
         <Button variant="soft" icon={Share2} label="Share Myto Moto" onPress={() => void Share.share({ message: `Myto Moto, the motorcycle trails app: ${MYTO_URL}`, url: MYTO_URL })} />
