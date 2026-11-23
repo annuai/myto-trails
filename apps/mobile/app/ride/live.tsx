@@ -413,7 +413,7 @@ function LiveBody() {
         <SosActions emergency={emergency} onShare={() => void shareHere()} />
       </Sheet>
     </>}>
-      <StatusBar hidden />
+      <StatusBar hidden={landscape} />
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: size.target }}>
         <View style={{ flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
           <View accessible accessibilityLabel={r.paused ? 'Paused' : 'Recording'} style={{ width: size.dot, height: size.dot, borderRadius: radius.chip, backgroundColor: r.paused ? c.muted : c.stop }} />
@@ -422,8 +422,8 @@ function LiveBody() {
           </Pressable>
           {/* Upright there is no room for a word beside the buttons: the dot says recording (red) or paused (grey), and Pause turns into Resume. */}
           {landscape ? <Text variant="labelMedium" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>{r.paused ? 'Paused' : r.source === 'sim' ? 'Recording (simulated)' : 'Recording'}</Text> : null}
-          {/* The system status bar is hidden on this screen (see <StatusBar hidden /> below); the time is the one thing worth keeping from it. The page already redraws every second, so no timer of its own. */}
-          <Text variant="labelMedium" numberOfLines={1} style={{ flexShrink: 0 }} accessibilityLabel={`The time is ${new Date(nowMs()).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`}>{new Date(nowMs()).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</Text>
+          {/* Landscape only: the system status bar is hidden there (see <StatusBar hidden> below), so the time, its one useful part, moves into this row. Upright the bar stays and already shows the time. The page redraws every second, so no timer of its own. */}
+          {landscape ? <Text variant="labelMedium" numberOfLines={1} style={{ flexShrink: 0 }}>{new Date(nowMs()).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</Text> : null}
         </View>
         <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}
