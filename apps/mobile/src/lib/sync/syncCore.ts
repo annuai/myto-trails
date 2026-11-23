@@ -12,8 +12,15 @@ export const splitKey = (k: Key): { kind: SyncKind; id: string } => { const i = 
 /** An item as it travels: only the fields that sync (a ride's points travel as a track, its review state stays on the phone). */
 export type Item = { id: string; /** The rider's last edit, when the store records it. */ updatedAt?: number; data: Record<string, unknown> };
 
+/** One change to a store, for `applyMany`. */
+export type ApplyOp =
+  | { type: 'put'; id: string; data: Record<string, unknown>; updatedAt: number; extra?: { points?: unknown; breaks?: number[] } }
+  | { type: 'remove'; id: string };
+
 export type Adapter = {
   kind: SyncKind;
+  /** Apply many pulled changes with ONE store update (each update is written to the phone's storage, so one per item is slow). Without it, `put` and `remove` run once per item. */
+  applyMany?(ops: ApplyOp[]): void;
   list(): Item[];
   get(id: string): Item | undefined;
   /** Create or replace the local copy with what another phone sent. A ride also gets its points once they are downloaded. */
