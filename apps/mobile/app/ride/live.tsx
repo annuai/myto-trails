@@ -7,6 +7,7 @@ import { isWeak, startGpsHealth, stepGpsHealth } from '@/lib/gpsHealth';
 import { shownSpeedKmh } from '@/lib/liveSpeed';
 import { AppState, Linking, Platform, Pressable, ScrollView, Share, Vibration, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { Camera, Eye, EyeOff, Flag, Megaphone, Mic, Minus, Pause, PenLine, Play, Search, Square, Siren, Users } from 'lucide-react-native';
 import { RideDestinationSheet } from '@/features/ride/RideDestinationSheet';
 import { CheckinSheet } from '@/features/CheckinSheet';
@@ -412,6 +413,7 @@ function LiveBody() {
         <SosActions emergency={emergency} onShare={() => void shareHere()} />
       </Sheet>
     </>}>
+      <StatusBar hidden={landscape} />
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: size.target }}>
         <View style={{ flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: space[3] }}>
           <View accessible accessibilityLabel={r.paused ? 'Paused' : 'Recording'} style={{ width: size.dot, height: size.dot, borderRadius: radius.chip, backgroundColor: r.paused ? c.muted : c.stop }} />
@@ -420,6 +422,8 @@ function LiveBody() {
           </Pressable>
           {/* Upright there is no room for a word beside the buttons: the dot says recording (red) or paused (grey), and Pause turns into Resume. */}
           {landscape ? <Text variant="labelMedium" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>{r.paused ? 'Paused' : r.source === 'sim' ? 'Recording (simulated)' : 'Recording'}</Text> : null}
+          {/* Landscape only: the system status bar is hidden there (see <StatusBar hidden> below), so the time, its one useful part, moves into this row. Upright the bar stays and already shows the time. The page redraws every second, so no timer of its own. */}
+          {landscape ? <Text variant="labelMedium" numberOfLines={1} style={{ flexShrink: 0 }}>{new Date(nowMs()).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</Text> : null}
         </View>
         <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: space[4] }}>
           {landscape ? <Pressable accessibilityRole="button" onPress={() => setReportOpen(true)} style={{ minHeight: size.target, justifyContent: 'center' }}><Text variant="labelMedium" tone="accent">Report</Text></Pressable> : null}

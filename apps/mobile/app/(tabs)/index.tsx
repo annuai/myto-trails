@@ -167,9 +167,11 @@ export default function Home() {
         <Button variant="danger" icon={Trash2} label="Discard" onPress={() => void discardRecovered()} />
       </Sheet>
     </>}>
+      {/* Landscape: the next-ride cluster is the tall left column; the latest ride and the lists under it make the right one, so the two come out about equal. Portrait keeps this list's order. */}
       <Columns
         rightStartsWithSection
-        left={<>
+        items={[
+        { key: 'now', side: 'left', node: <>
       <MomentCard />
       {recoverable ? (
         <View style={{ marginBottom: space[3] }}>
@@ -268,6 +270,8 @@ export default function Home() {
         ) : null}
       </View>
 
+        </> },
+        { key: 'lists', side: 'right', at: 1, node: <>
       {planned.length ? (
         <>
           <SectionTitle>Planned trips</SectionTitle>
@@ -302,8 +306,8 @@ export default function Home() {
 
       {focused ? null : <View style={{ marginTop: space[6] }}><ListCard><Row icon={ShoppingBag} label="Shop" sub="Gear picked for the road. You buy on the myto-moto website." onPress={() => router.push('/shop')} /></ListCard></View>}
 
-        </>}
-        right={<>
+        </> },
+        { key: 'latest', side: 'right', at: 0, node: <>
       {focused ? null : <>
       <SectionTitle>Your latest ride</SectionTitle>
       {latest ? (
@@ -323,7 +327,8 @@ export default function Home() {
         <Button variant="soft" label="All rides" arrow onPress={() => router.push('/rides')} />
       </View> : null}
       </>}
-        </>}
+        </> },
+        ]}
       />
     </Screen>
   );
