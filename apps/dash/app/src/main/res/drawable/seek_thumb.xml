@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Slider thumb: an ink dot, the size of a page dot's touch ring. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="@color/seek_fill" />
+    <size android:width="@dimen/space_4" android:height="@dimen/space_4" />
+</shape>

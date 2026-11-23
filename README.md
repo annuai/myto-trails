@@ -18,6 +18,7 @@ Read the row for your task, then only the section you need. Do not read `docs/su
 | Web architecture, data model, security | [ARCHITECTURE.md](ARCHITECTURE.md) → [docs/05](docs/05-technical-architecture.md), [docs/06](docs/06-data-model.md), [docs/10](docs/10-component-architecture.md), [docs/11](docs/11-security-and-moderation.md) |
 | Web ↔ app API | [docs/14](docs/14-platform-contract.md), [docs/ride-contract.md](docs/ride-contract.md) |
 | Phone app architecture and UI | [apps/mobile/README.md](apps/mobile/README.md), [docs/15](docs/15-myto-app-architecture.md), [docs/16](docs/16-myto-app-ui.md) |
+| Myto Dash (Android head-unit launcher, Kotlin, GPL fork of Dashline) | [apps/dash/README.md](apps/dash/README.md) |
 | Design direction and tokens | [DESIGN.md](DESIGN.md) → [docs/08](docs/08-visual-direction.md), [docs/09](docs/09-design-system.md); phone tokens: [docs/design-tokens.md](docs/design-tokens.md) |
 | One feature's design | [docs/superpowers/specs/](docs/superpowers/specs/) (one per feature); also [photo-posts](docs/photo-posts.md), [ride-nudges](docs/ride-nudges.md), [sync-design](docs/sync-design.md) (not built), [universal-links](docs/universal-links.md), [pull-down-quotes](docs/pull-down-quotes.md) |
 | Setup, env vars, storage, Vercel | [docs/runbooks/dev-setup.md](docs/runbooks/dev-setup.md) |

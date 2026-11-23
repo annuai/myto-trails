@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Grab bar between the cards while customising: a sheet handle in ink. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    <item android:gravity="center">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/text_secondary" />
+            <corners android:radius="@dimen/radius_chip" />
+            <size android:width="48dp" android:height="@dimen/space_1" />
+        </shape>
+    </item>
+</layer-list>

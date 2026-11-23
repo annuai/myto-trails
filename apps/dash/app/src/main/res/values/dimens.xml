@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Dashboard sizes for compact units (800x480), built from tokens.xml.
+  values-h600dp/ steps them up for 1024x600 and taller.
+-->
+<resources>
+    <dimen name="bar_height">@dimen/size_target</dimen>
+    <dimen name="tab_bar_height">64dp</dimen>
+    <dimen name="panel_padding">@dimen/space_5</dimen>
+
+    <dimen name="clock_text">@dimen/type_live_compact</dimen>
+    <dimen name="date_text">@dimen/type_label</dimen>
+    <dimen name="date_margin_bottom">@dimen/space_3</dimen>
+
+    <dimen name="weather_icon">@dimen/icon_lg</dimen>
+    <dimen name="weather_temp">@dimen/type_data_large</dimen>
+    <dimen name="weather_desc">@dimen/type_label</dimen>
+    <dimen name="forecast_icon">@dimen/icon_md</dimen>
+    <dimen name="forecast_margin_top">@dimen/space_3</dimen>
+
+    <dimen name="shortcut_margin_top">@dimen/space_4</dimen>
+    <dimen name="shortcut_height">@dimen/size_compact</dimen>
+
+    <dimen name="album_art">72dp</dimen>
+    <dimen name="album_art_padding">@dimen/space_5</dimen>
+    <dimen name="media_title">@dimen/type_body</dimen>
+    <dimen name="phone_card_height">104dp</dimen>
+    <dimen name="analog_clock">132dp</dimen>
+    <dimen name="chrono_text">@dimen/type_live_secondary_compact</dimen>
+    <dimen name="chrono_button">@dimen/size_compact</dimen>
+    <dimen name="chrono_width">128dp</dimen>
+</resources>
