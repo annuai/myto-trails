@@ -9,10 +9,10 @@ import JSZip from "jszip";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { MONTHS, inrShort } from "../model.mjs";
-import { here, slides, model, cells, one, ARCH, TRAILS_NOTE, DECK } from "./deck-data.mjs";
+import { here, slides, model, cells, one, ARCH, TRAILS_NOTE, DECK, DECK_CFG } from "./deck-data.mjs";
 
 const PITCH = DECK === "pitch";
-const OUT = join(here, "exports", PITCH ? "myto-pitch-deck.pptx" : "myto-strategy-deck.pptx");
+const OUT = join(here, "exports", DECK_CFG.out + ".pptx");
 const U = 13.3333 / 1000; // reference px -> inches
 const u = (v) => v * U;
 const PT = 0.96; // 1 reference px = 0.96 pt
@@ -24,7 +24,7 @@ const THEME = {
 };
 const pres = new pptxgen();
 pres.layout = "LAYOUT_WIDE";
-pres.title = PITCH ? "Myto investor pitch" : "Myto strategy deck"; pres.author = "Myto"; pres.company = "Myto"; pres.subject = "Strategy and plan, Nov 2026 to Oct 2027";
+pres.title = DECK_CFG.title; pres.author = "Myto"; pres.company = "Myto"; pres.subject = "Strategy and plan, Nov 2026 to Oct 2027";
 pres.theme = { headFontFace: THEME.headFontFace, bodyFontFace: THEME.bodyFontFace };
 const C = pres.SchemeColor;
 const COL = { ink: C.text1, muted: C.text2, card: C.background1, paper: C.background2, accent: C.accent1, sky: C.accent2, sage: C.accent3, sand: C.accent4, clay: C.accent5, good: C.accent6 };
@@ -173,7 +173,7 @@ function heading(s, d, x, y, w, o = {}) { // headline + sub; returns bottom y
 }
 const bodyZoneTitle = (s, d, x = 43, w = 700) => heading(s, d, x, 87, w);
 
-const SECTIONS = PITCH ? [["Story", 1, 5], ["Product", 6, 7], ["Market and business", 8, 11], ["Proof, vision and the raise", 12, 15]] : [["Opening", 1, 2], ["Problem and audience", 3, 5], ["Product", 6, 11], ["Business model", 12, 16], ["Positioning and vision", 17, 19]];
+const SECTIONS = DECK === "grant" ? [["Startup and problem", 1, 4], ["Product and difference", 5, 7], ["Market, beneficiaries and competitors", 8, 10], ["Model, impact and the ask", 11, 14]] : PITCH ? [["Story", 1, 5], ["Product", 6, 7], ["Market and business", 8, 11], ["Proof, vision and the raise", 12, 15]] : [["Opening", 1, 2], ["Problem and audience", 3, 5], ["Product", 6, 11], ["Business model", 12, 16], ["Positioning and vision", 17, 19]];
 const SECTION_OF = (n) => SECTIONS.find(([, a, b]) => n >= a && n <= b)[0];
 
 // definition list (title + text, hairlines between), used on slides 9 and 10
@@ -243,7 +243,7 @@ B.cover = async (d) => {
 B.vision = async (d) => {
   const s = frame(d, "Myto content");
   heading(s, d, 43, 87, 360);
-  await addPic(s, one(d, "img"), 43, 234, 411, 245, { r: 22, pos: [42, 50], alt: "A rider on a mountain ridge" });
+  await addPic(s, one(d, "img"), 43, 234, 411, 245, { r: 22, pos: [42, 50], alt: one(d, "alt") || "A rider on a mountain ridge" });
   d.items.forEach((it, k) => {
     const [t, st, tx] = cells(it); const x = 484 + (k % 2) * 243, y = 88 + Math.floor(k / 2) * 203;
     card(s, x, y, 229, 188, TINTS_B[k], { name: `Card: ${t}` });
@@ -257,7 +257,7 @@ B.vision = async (d) => {
 B.problem = async (d) => {
   const s = frame(d, "Myto content");
   heading(s, d, 43, 87, 530);
-  await addPic(s, one(d, "img"), 43, 211, 347, 267, { r: 22, alt: "Riders on a trail, one stopped with an incident" });
+  await addPic(s, one(d, "img"), 43, 211, 347, 267, { r: 22, alt: one(d, "alt") || "Riders on a trail, one stopped with an incident" });
   card(s, 413, 211, 543, 267, COL.card, { name: "Problem list" });
   d.items.forEach((it, k) => {
     const [t, tx] = cells(it); const step = 251.2 / d.items.length; const y = 211 + 8 + k * step + (step - 62.8) / 2;
@@ -272,7 +272,7 @@ B.problem = async (d) => {
 B.audience = async (d) => {
   const s = frame(d, "Myto content");
   heading(s, d, 43, 87, 900);
-  await addPic(s, one(d, "img"), 43, 181, 192, 297, { r: 22, pos: [30, 50], alt: "Riders gathered beside their motorcycles" });
+  await addPic(s, one(d, "img"), 43, 181, 192, 297, { r: 22, pos: [30, 50], alt: one(d, "alt") || "Riders gathered beside their motorcycles" });
   const fills = [COL.sage, COL.sky, COL.sand];
   d.items.forEach((it, k) => {
     const [t, pay, tx] = cells(it); const x = 258 + k * 240, y = 181, w = 218, h = 297;
@@ -470,7 +470,7 @@ B.partnerships = async (d) => {
       if (k < arr.length - 1) hair(s, x + 18, y + 78 + (step - 98.5) / 2 + 4, 226);
     });
   });
-  await addPic(s, one(d, "img"), 610, 88, 346, 391, { r: 22, pos: [34, 50], alt: "Riders at a roadside stop" });
+  await addPic(s, one(d, "img"), 610, 88, 346, 391, { r: 22, pos: [34, 50], alt: one(d, "alt") || "Riders at a roadside stop" });
   return s;
 };
 

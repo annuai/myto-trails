@@ -23,8 +23,10 @@ function loadPlaywright() {
 (async () => {
   const { chromium } = loadPlaywright();
   const here = __dirname;
-  const pitch = process.env.DECK === "pitch";
-  const out = process.argv[2] || path.join(here, "exports", pitch ? "myto-pitch-deck.pdf" : "myto-strategy-deck.pdf");
+  // Mirrors DECKS in deck-data.mjs (this file is CommonJS and cannot import it).
+  const decks = { strategy: ["index.html", "myto-strategy-deck"], pitch: ["index-pitch.html", "myto-pitch-deck"], grant: ["index-grant.html", "myto-grant-deck"] };
+  const [html, name] = decks[process.env.DECK || "strategy"] || (() => { throw new Error("Unknown DECK " + process.env.DECK); })();
+  const out = process.argv[2] || path.join(here, "exports", name + ".pdf");
   fs.mkdirSync(path.dirname(out), { recursive: true });
   let browser;
   try { browser = await chromium.launch({ channel: "chrome" }); }
@@ -33,7 +35,7 @@ function loadPlaywright() {
   const failed = [];
   page.on("requestfailed", (r) => failed.push(r.url()));
   page.on("response", (r) => { if (r.status() >= 400) failed.push(r.url()); });
-  await page.goto("file://" + path.join(here, pitch ? "index-pitch.html" : "index.html") + "?print=1", { waitUntil: "load" });
+  await page.goto("file://" + path.join(here, html) + "?print=1", { waitUntil: "load" });
   await page.waitForSelector("body[data-ready='1']");
   await page.evaluate(() => Promise.all([...document.images].map((i) => (i.complete ? 0 : new Promise((r) => { i.onload = i.onerror = r; })))));
   await page.pdf({ path: out, width: "1920px", height: "1080px", printBackground: true, preferCSSPageSize: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } });
