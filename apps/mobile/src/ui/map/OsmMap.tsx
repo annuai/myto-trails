@@ -8,7 +8,7 @@ import type { LatLng } from '@/lib/geo';
 import { fixed, size, space } from '@/theme/tokens';
 import { clusterMarks } from '@/lib/riderClusters';
 import { norm, turnBetween, unwrapBearing } from '@/lib/rideCamera';
-import { safeMove } from './cameraMove';
+import { arrowIsFixed, safeMove } from './cameraMove';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { IconButton } from '../IconButton';
 import { Text } from '../Text';
@@ -76,7 +76,9 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
   // While the map follows, the arrow is turned by how far the way the rider faces is from the way the map really faces (measured, not assumed): in a corner the arrow is ahead of the map, and if the map has not turned yet the arrow still points the right way on it.
   const arrowTurn = shownHeading !== undefined ? turnBetween(bearing, shownHeading) : 0;
   // While the camera follows, the arrow stands still at the middle of the clear part of the map and the road moves under it; a pin on the map would jump at every fix.
-  const arrowFixed = arrow && !!follow && following;
+  // It stays a marker during the flight back after "centre on me" (see arrowIsFixed), or it would jump to the middle while the map is still gliding there.
+  const [recentering, setRecentering] = useState(false);
+  const arrowFixed = arrowIsFixed(arrow, !!follow, following, recentering);
   const posData = useMemo(() => points(position && !arrow ? [position] : []), [position?.lat, position?.lng, arrow]); // eslint-disable-line react-hooks/exhaustive-deps -- keyed on the coordinates, not on the position object
   const clusters = useMemo(() => clusterMarks(riderMarks ?? [], zoom), [riderMarks, zoom]);
   const open = clusters.find((c) => c.id === openId && c.marks.length > 1);
@@ -132,7 +134,14 @@ function OsmMapView({ height, line: route, heat, track, trackBreaks, position, w
   // While following, a pinch changes only the zoom, about the rider, so the map never slides away from them; the map's own pinch (about the fingers) is off.
   // Each pinch step changes the zoom by its own share (scaleChange), so nothing about where the gesture began has to be remembered.
   const pinch = useMemo(() => Gesture.Pinch().runOnJS(true).enabled(!!follow && following).onChange((e) => setFollowZoom((z) => Math.max(MIN_FOLLOW_ZOOM, Math.min(MAX_FOLLOW_ZOOM, z + Math.log2(e.scaleChange))))), [follow, following]);
-  const recenter = () => { flyNext.current = true; setFollowing(true); };
+  // The flight is RECENTER_MS, and a fix that lands mid-flight replaces it with a glide of FOLLOW_EASE_MS, so the arrow is released after both.
+  const recenterTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(recenterTimer.current), []);
+  const recenter = () => {
+    flyNext.current = true; setFollowing(true); setRecentering(true);
+    clearTimeout(recenterTimer.current);
+    recenterTimer.current = setTimeout(() => setRecentering(false), RECENTER_MS + FOLLOW_EASE_MS);
+  };
   /** The whole group in view: everyone with a position, and this phone. The camera stops following until the rider taps to centre again. */
   const showGroup = () => {
     const all = [...(riderMarks ?? []), ...(position ? [position] : [])];

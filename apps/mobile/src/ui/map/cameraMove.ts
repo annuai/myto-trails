@@ -7,3 +7,12 @@
 export function safeMove(move: () => Promise<unknown> | void): void {
   try { Promise.resolve(move()).catch(() => {}); } catch { /* the map is not drawn yet */ }
 }
+
+/**
+ * Whether the heading arrow is the fixed screen-centre overlay (true) or a marker on the map (false). It is fixed only while the camera follows AND is
+ * not mid-flight back to the rider: tapping "centre on me" sets following at once, but the camera needs RECENTER_MS to arrive, so a fixed arrow would
+ * jump to the middle of the screen while the rider's real spot was still gliding there. Until the flight lands it stays a marker, which moves with the map.
+ */
+export function arrowIsFixed(arrow: boolean, follow: boolean, following: boolean, recentering: boolean): boolean {
+  return arrow && follow && following && !recentering;
+}
