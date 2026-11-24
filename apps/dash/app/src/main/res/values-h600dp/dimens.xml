@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Roomier dashboard sizes for screens at least 600dp tall (1024x600, 1280x720). -->
+<resources>
+    <dimen name="bar_height">56dp</dimen>
+    <dimen name="tab_bar_height">72dp</dimen>
+    <dimen name="panel_padding">@dimen/space_6</dimen>
+
+    <dimen name="clock_text">@dimen/type_live</dimen>
+    <dimen name="date_text">@dimen/type_body</dimen>
+    <dimen name="date_margin_bottom">@dimen/space_5</dimen>
+
+    <dimen name="weather_icon">48dp</dimen>
+    <dimen name="weather_temp">@dimen/type_live_secondary_compact</dimen>
+    <dimen name="weather_desc">@dimen/type_body</dimen>
+    <dimen name="forecast_icon">@dimen/space_8</dimen>
+    <dimen name="forecast_margin_top">@dimen/space_4</dimen>
+
+    <dimen name="shortcut_margin_top">@dimen/space_8</dimen>
+    <dimen name="shortcut_height">@dimen/size_target</dimen>
+
+    <dimen name="album_art">104dp</dimen>
+    <dimen name="album_art_padding">@dimen/space_6</dimen>
+    <dimen name="media_title">@dimen/type_section</dimen>
+    <dimen name="phone_card_height">152dp</dimen>
+    <dimen name="analog_clock">180dp</dimen>
+    <dimen name="chrono_text">@dimen/type_live_secondary</dimen>
+    <dimen name="chrono_button">@dimen/size_target</dimen>
+    <dimen name="chrono_width">160dp</dimen>
+</resources>

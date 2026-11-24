@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive-icon background: Myto's ink fill (#13161C), so Dash sits beside the red Myto app icon as its quieter sibling. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#13161C" />
+</shape>

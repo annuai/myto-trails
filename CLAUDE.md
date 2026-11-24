@@ -1,6 +1,6 @@
 # Moto Trails: agent instructions
 
-Monorepo: `apps/web` (Next.js on Vercel), `apps/mobile` (Expo, "Myto Moto"), `packages/{tokens,domain}`, `tooling`.
+Monorepo: `apps/web` (Next.js on Vercel), `apps/mobile` (Expo, "Myto Moto"), `apps/dash` (Kotlin head-unit launcher "Myto Dash", GPL-3.0, Gradle not npm), `packages/{tokens,domain}`, `tooling`.
 **Documentation index: [README.md](README.md#where-to-look-the-documentation-index).** Check it and grep `docs/` before exploring code.
 
 ## Working rules (token-lean)

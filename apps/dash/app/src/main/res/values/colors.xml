@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Myto light palette. Values copy the `light` palette of the Myto phone app
+  (packages/tokens/src/mobile.ts in Moto Trails); dark is values-night/colors.xml.
+  Names are roles, not colours, so every layout follows the theme.
+-->
+<resources>
+    <!-- Surfaces -->
+    <color name="bg">#F2EDE8</color>            <!-- paper -->
+    <color name="surface">#FBF9F6</color>       <!-- card -->
+    <color name="surface_light">#F2F0EC</color> <!-- raised -->
+    <color name="bar">#FFFFFF</color>           <!-- floating bars -->
+    <color name="divider">#1A000000</color>     <!-- line: hairlines only -->
+    <color name="edge">#857E77</color>          <!-- resting outline of a control -->
+
+    <!-- Text and icons -->
+    <color name="text_primary">#1A1A1A</color>   <!-- ink -->
+    <color name="text_secondary">#6B6560</color> <!-- muted -->
+    <color name="tab_label">#58524D</color>      <!-- bar labels: muted at 7:1 on the bar -->
+    <color name="icon_tint">#1A1A1A</color>
+    <color name="accent">#1F4A6B</color>         <!-- survey blue: the one accent -->
+
+    <!-- The ink fill: primary buttons, the play button, selected controls -->
+    <color name="ink_fill">#13161C</color>
+    <color name="on_ink">#FFFFFF</color>
+
+    <!-- Dash card tints, one per kind of card -->
+    <color name="tint_sky">#CFDDE8</color>
+    <color name="tint_sand">#E8DCCB</color>
+    <color name="tint_sage">#CFE0C8</color>
+    <color name="tint_clay">#EFCFC2</color>
+
+    <!-- Translucent: the empty part of a progress bar (scrim.track) -->
+    <color name="seek_track">#40808080</color>
+    <color name="seek_fill">@color/ink_fill</color>
+    <color name="art_bg">@color/surface_light</color>
+    <color name="tile">@color/surface</color>
+    <color name="on_accent">@color/on_ink</color>
+</resources>

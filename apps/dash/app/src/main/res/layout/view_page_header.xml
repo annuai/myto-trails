@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Shared header for secondary pages: round Back / Home buttons around a
+  Michroma title, on paper (the app's FloatingHeader). The launcher runs
+  fullscreen with the system bars hidden, so these are the only way out.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/size_header"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="@dimen/space_4"
+    android:paddingEnd="@dimen/space_4"
+    android:paddingTop="@dimen/space_2"
+    android:paddingBottom="@dimen/space_2">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/navBack"
+        style="@style/Widget.Myto.IconButton"
+        android:contentDescription="@string/nav_back"
+        app:srcCompat="@drawable/ic_back" />
+
+    <TextView
+        android:id="@+id/pageTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="@dimen/space_4"
+        android:layout_marginEnd="@dimen/space_4"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="@string/app_name"
+        android:textAppearance="@style/TextAppearance.Myto.HeaderTitle"
+        android:fontFamily="@font/michroma"
+        android:textSize="@dimen/type_body"
+        android:textColor="@color/text_primary" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/navHome"
+        style="@style/Widget.Myto.IconButton"
+        android:contentDescription="@string/nav_home"
+        app:srcCompat="@drawable/ic_home" />
+
+</LinearLayout>

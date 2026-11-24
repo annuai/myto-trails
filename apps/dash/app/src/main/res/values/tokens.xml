@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Myto design tokens (apps/mobile/src/theme/tokens.ts in Moto Trails), as
+  Android resources. Layouts use these, never raw numbers: a value off the
+  4dp scale snaps to the nearest step rather than becoming a new token.
+-->
+<resources>
+    <!-- space -->
+    <dimen name="space_half">2dp</dimen>
+    <dimen name="space_1">4dp</dimen>
+    <dimen name="space_2">8dp</dimen>
+    <dimen name="space_3">12dp</dimen>
+    <dimen name="space_4">16dp</dimen>
+    <dimen name="space_5">20dp</dimen>
+    <dimen name="space_6">24dp</dimen>
+    <dimen name="space_8">32dp</dimen>
+    <dimen name="space_12">48dp</dimen>
+
+    <!-- radius: control 16, card 24, sheet 28; chip is any pill or circle -->
+    <dimen name="radius_control">16dp</dimen>
+    <dimen name="radius_card">24dp</dimen>
+    <dimen name="radius_thumb">18dp</dimen>
+    <dimen name="radius_sheet">28dp</dimen>
+    <dimen name="radius_chip">999dp</dimen>
+
+    <!-- size -->
+    <dimen name="size_target">48dp</dimen>
+    <dimen name="size_compact">44dp</dimen>
+    <dimen name="size_chip">32dp</dimen>
+    <dimen name="size_button">56dp</dimen>
+    <dimen name="size_row">64dp</dimen>
+    <dimen name="size_header">56dp</dimen>
+    <dimen name="size_rule">1dp</dimen>
+    <dimen name="size_dot">10dp</dimen>
+    <dimen name="icon_sm">20dp</dimen>
+    <dimen name="icon_md">24dp</dimen>
+    <dimen name="icon_lg">32dp</dimen>
+    <dimen name="app_icon">56dp</dimen>
+
+    <!-- type sizes (TextAppearance.Myto.* in styles.xml carries family + size) -->
+    <dimen name="type_hero">26sp</dimen>
+    <dimen name="type_title">24sp</dimen>
+    <dimen name="type_section">21sp</dimen>
+    <dimen name="type_body">17sp</dimen>
+    <dimen name="type_label">15sp</dimen>
+    <dimen name="type_caption">13sp</dimen>
+    <dimen name="type_data">15sp</dimen>
+    <dimen name="type_data_large">24sp</dimen>
+    <dimen name="type_live">80sp</dimen>
+    <dimen name="type_live_compact">56sp</dimen>
+    <dimen name="type_live_secondary">40sp</dimen>
+    <dimen name="type_live_secondary_compact">32sp</dimen>
+
+</resources>

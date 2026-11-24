@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Text styles: the Myto `type` scale. Michroma for big titles (wide, one
+      weight, so smaller sizes), Geist for text, Geist Mono for data and the
+      live numbers. Sentence case everywhere, never all caps.
+    -->
+    <style name="TextAppearance.Myto" parent="">
+        <item name="android:fontFamily">@font/geist_regular</item>
+        <item name="fontFamily">@font/geist_regular</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+    <style name="TextAppearance.Myto.Hero">
+        <item name="android:fontFamily">@font/michroma</item>
+        <item name="fontFamily">@font/michroma</item>
+        <item name="android:textSize">@dimen/type_hero</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+    <style name="TextAppearance.Myto.Title">
+        <item name="android:fontFamily">@font/michroma</item>
+        <item name="fontFamily">@font/michroma</item>
+        <item name="android:textSize">@dimen/type_title</item>
+    </style>
+    <!-- Michroma at header size: the title of a page header. -->
+    <style name="TextAppearance.Myto.HeaderTitle">
+        <item name="android:fontFamily">@font/michroma</item>
+        <item name="fontFamily">@font/michroma</item>
+        <item name="android:textSize">@dimen/type_body</item>
+    </style>
+    <style name="TextAppearance.Myto.Section">
+        <item name="android:fontFamily">@font/geist_semibold</item>
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:textSize">@dimen/type_section</item>
+    </style>
+    <style name="TextAppearance.Myto.Body">
+        <item name="android:textSize">@dimen/type_body</item>
+    </style>
+    <style name="TextAppearance.Myto.BodyMedium">
+        <item name="android:fontFamily">@font/geist_medium</item>
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:textSize">@dimen/type_body</item>
+    </style>
+    <style name="TextAppearance.Myto.Label">
+        <item name="android:textSize">@dimen/type_label</item>
+    </style>
+    <style name="TextAppearance.Myto.LabelMedium">
+        <item name="android:fontFamily">@font/geist_medium</item>
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:textSize">@dimen/type_label</item>
+    </style>
+    <style name="TextAppearance.Myto.Caption">
+        <item name="android:textSize">@dimen/type_caption</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+    <style name="TextAppearance.Myto.Muted">
+        <item name="android:textSize">@dimen/type_label</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+    <style name="TextAppearance.Myto.Data">
+        <item name="android:fontFamily">@font/geist_mono_regular</item>
+        <item name="fontFamily">@font/geist_mono_regular</item>
+        <item name="android:textSize">@dimen/type_data</item>
+    </style>
+    <style name="TextAppearance.Myto.DataLarge">
+        <item name="android:fontFamily">@font/geist_mono_medium</item>
+        <item name="fontFamily">@font/geist_mono_medium</item>
+        <item name="android:textSize">@dimen/type_data_large</item>
+    </style>
+    <!-- The dashboard clock: Michroma, Myto's display face, at the `live` sizes. -->
+    <style name="TextAppearance.Myto.Live">
+        <item name="android:fontFamily">@font/michroma</item>
+        <item name="fontFamily">@font/michroma</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <!-- ===== Components ===== -->
+
+    <!-- Primary button: ink fill, onInk label, control corner, 56dp tall. -->
+    <style name="Widget.Myto.Button" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">@dimen/size_button</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingStart">@dimen/space_6</item>
+        <item name="android:paddingEnd">@dimen/space_6</item>
+        <item name="android:background">@drawable/btn_primary</item>
+        <item name="android:textColor">@color/on_ink</item>
+        <item name="android:textAppearance">@style/TextAppearance.Myto.BodyMedium</item>
+        <item name="android:fontFamily">@font/geist_medium</item>
+        <item name="fontFamily">@font/geist_medium</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <!-- Soft button: the card colour, ink label. -->
+    <style name="Widget.Myto.Button.Soft">
+        <item name="android:background">@drawable/btn_soft</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <!-- A round icon button: the Back and Home of a page header. -->
+    <style name="Widget.Myto.IconButton" parent="">
+        <item name="android:layout_width">@dimen/size_compact</item>
+        <item name="android:layout_height">@dimen/size_compact</item>
+        <item name="android:padding">@dimen/space_3</item>
+        <item name="android:background">@drawable/btn_round</item>
+    </style>
+
+    <!-- Action button along the bottom of the Customize screen. -->
+    <style name="CustomizeButton" parent="Widget.Myto.Button.Soft">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">@dimen/space_1</item>
+        <item name="android:layout_marginEnd">@dimen/space_1</item>
+        <item name="android:minHeight">@dimen/size_target</item>
+        <item name="android:paddingStart">@dimen/space_3</item>
+        <item name="android:paddingEnd">@dimen/space_3</item>
+        <item name="android:textAppearance">@style/TextAppearance.Myto.LabelMedium</item>
+        <item name="android:textSize">@dimen/type_label</item>
+    </style>
+
+    <!-- Phone-projection shortcut under the weather: a pill chip. -->
+    <style name="ProjectionTile">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">@dimen/space_1</item>
+        <item name="android:layout_marginEnd">@dimen/space_1</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minHeight">@dimen/shortcut_height</item>
+        <item name="android:paddingStart">@dimen/space_4</item>
+        <item name="android:paddingEnd">@dimen/space_4</item>
+        <item name="android:background">@drawable/chip_bg</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <!-- One day in the weather forecast strip. -->
+    <style name="FcCell">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:paddingStart">@dimen/space_1</item>
+        <item name="android:paddingEnd">@dimen/space_1</item>
+    </style>
+
+    <!-- Settings: a section title over each group (SectionTitle in the app). -->
+    <style name="SettingsSection">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">@dimen/space_1</item>
+        <item name="android:layout_marginTop">@dimen/space_8</item>
+        <item name="android:layout_marginBottom">@dimen/space_3</item>
+        <item name="android:textAppearance">@style/TextAppearance.Myto.Section</item>
+        <item name="android:fontFamily">@font/geist_semibold</item>
+        <item name="fontFamily">@font/geist_semibold</item>
+        <item name="android:textSize">@dimen/type_section</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <!-- Settings: one card per group, rows separated by hairlines (ListCard). -->
+    <style name="SettingsGroup">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:background">@drawable/card_dark</item>
+    </style>
+
+    <!-- Settings row: title on the left, current value on the right. -->
+    <style name="SettingsRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:minHeight">@dimen/size_row</item>
+        <item name="android:paddingStart">@dimen/space_5</item>
+        <item name="android:paddingEnd">@dimen/space_5</item>
+        <item name="android:paddingTop">@dimen/space_3</item>
+        <item name="android:paddingBottom">@dimen/space_3</item>
+        <item name="android:background">?android:attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <style name="SettingsRowTitle">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">@dimen/type_body</item>
+    </style>
+
+    <style name="SettingsRowValue">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">@dimen/space_3</item>
+        <item name="android:gravity">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:fontFamily">@font/geist_mono_regular</item>
+        <item name="fontFamily">@font/geist_mono_regular</item>
+        <item name="android:textSize">@dimen/type_data</item>
+    </style>
+
+    <!-- Hairline between rows inside a group, inset to the text. -->
+    <style name="SettingsDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/size_rule</item>
+        <item name="android:layout_marginStart">@dimen/space_5</item>
+        <item name="android:layout_marginEnd">@dimen/space_5</item>
+        <item name="android:background">@color/divider</item>
+    </style>
+
+    <!-- A setup step: a card row with a title and the current choice under it. -->
+    <style name="SetupRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:background">@drawable/card_dark</item>
+        <item name="android:foreground">?android:attr/selectableItemBackground</item>
+        <item name="android:paddingStart">@dimen/space_5</item>
+        <item name="android:paddingEnd">@dimen/space_5</item>
+        <item name="android:paddingTop">@dimen/space_4</item>
+        <item name="android:paddingBottom">@dimen/space_4</item>
+        <item name="android:layout_marginBottom">@dimen/space_3</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+</resources>

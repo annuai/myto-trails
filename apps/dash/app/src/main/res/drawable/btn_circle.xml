@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The play button: a circle of ink fill, its icon in onInk. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="@color/divider">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/ink_fill" />
+        </shape>
+    </item>
+</ripple>

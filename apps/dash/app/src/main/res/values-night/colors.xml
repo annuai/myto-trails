@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Myto dark palette (`dark` in packages/tokens/src/mobile.ts): used at night. -->
+<resources>
+    <color name="bg">#121211</color>
+    <color name="surface">#1C1C1A</color>
+    <color name="surface_light">#242422</color>
+    <color name="bar">#1C1C1A</color>
+    <color name="divider">#24FFFFFF</color>
+    <color name="edge">#7F7A73</color>
+
+    <color name="text_primary">#F2EDE8</color>
+    <color name="text_secondary">#A8A29B</color>
+    <color name="tab_label">#BDB7B0</color>
+    <color name="icon_tint">#F2EDE8</color>
+    <color name="accent">#8FBBDC</color>
+
+    <!-- Dark flips ink to cream, so filled controls are light with dark text. -->
+    <color name="ink_fill">#F2EDE8</color>
+    <color name="on_ink">#121211</color>
+
+    <color name="tint_sky">#27363F</color>
+    <color name="tint_sand">#3D352A</color>
+    <color name="tint_sage">#2F3D2F</color>
+    <color name="tint_clay">#4A2F27</color>
+</resources>
