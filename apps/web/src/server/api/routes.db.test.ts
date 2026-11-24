@@ -4,6 +4,7 @@ import { line, makeGpx } from "../gpx/fixtures";
 import { ingestGpx, insertRoute } from "../gpx/ingest";
 import { seedRegions } from "../db/seed-regions";
 import { MemoryStorageProvider } from "../storage/memory-provider";
+import { hashIp } from "../auth/request-context";
 import { createTestDatabase } from "../testing/db";
 import { insertTrailFixture } from "../testing/fixtures";
 import { makeUser } from "../testing/submission-fixture";
@@ -60,6 +61,16 @@ describe("errors, auth and limits", () => {
   it("limits anonymous callers per address", async () => {
     const h = { "x-real-ip": "203.0.113.77" };
     for (let i = 0; i < 120; i++) expect((await call("GET", "/openapi.json", { headers: h })).status).toBe(200);
+    // rate_limit_hit counts per wall-clock minute of the database, so when the
+    // 121 calls straddle a minute boundary the count restarts and the 121st was
+    // let through (main CI, 2026-11-23). Fill both this minute and the next to
+    // the limit, so the next call is over it whichever side it lands on.
+    const key = `api:ip:${hashIp("203.0.113.77")}`;
+    await db.sql`
+      insert into rate_limit (key, window_start, count)
+      select ${key}, to_timestamp(floor(extract(epoch from now()) / 60) * 60 + s), 120
+      from (values (0), (60)) as w(s)
+      on conflict (key, window_start) do update set count = greatest(rate_limit.count, 120)`;
     expect((await call("GET", "/openapi.json", { headers: h })).status).toBe(429);
     expect((await call("GET", "/openapi.json", { headers: { "x-real-ip": "203.0.113.78" } })).status).toBe(200);
   });
