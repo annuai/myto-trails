@@ -153,6 +153,7 @@
     <string name="app_not_found">App not found — choose one in Settings</string>
     <string name="now_playing">Now playing</string>
     <string name="widget_none">No widgets available on this device</string>
+    <string name="drawer_page_counter">%1$d / %2$d</string>
     <string name="drawer_page">Page %1$d of %2$d</string>
     <string name="customize_media_card">Media card</string>
     <string name="card_media_player">Media player</string>

@@ -29,4 +29,8 @@
     <dimen name="chrono_text">@dimen/type_live_secondary_compact</dimen>
     <dimen name="chrono_button">@dimen/size_compact</dimen>
     <dimen name="chrono_width">128dp</dimen>
+
+    <!-- Portrait app drawer: header 40 + two 96dp rows + counter 44 + padding 24 + margin 4.
+         It sits in a scroll view, so this minimum is all the height it gets. -->
+    <dimen name="drawer_min_height">312dp</dimen>
 </resources>

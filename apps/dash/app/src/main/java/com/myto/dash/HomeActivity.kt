@@ -50,6 +50,7 @@ class HomeActivity : BaseActivity() {
     private var drawerPages: List<List<AppInfo>> = emptyList()
     private var drawerPage = 0
     private var drawerRows = 0
+    private var drawerColumns = DRAWER_MIN_COLUMNS
     /** One update prompt per launch, however often the dashboard resumes. */
     /** Whether this screen is currently counted as a widget host listener. */
     private var attachedWidgets = false
@@ -597,11 +598,15 @@ class HomeActivity : BaseActivity() {
         val signature = apps.joinToString(",") { it.target }
         val grid = binding.portraitDrawerGrid
         val rows = rowsThatFit(grid)
-        if (signature == drawerSignature && rows == drawerRows && grid.childCount > 0) return
+        val columns = columnsThatFit(grid)
+        if (signature == drawerSignature && rows == drawerRows && columns == drawerColumns &&
+            grid.childCount > 0
+        ) return
         drawerSignature = signature
         drawerRows = rows
+        drawerColumns = columns
 
-        drawerPages = apps.chunked(rows * DRAWER_COLUMNS)
+        drawerPages = apps.chunked(rows * columns)
         drawerPage = drawerPage.coerceIn(0, maxOf(0, drawerPages.lastIndex))
         renderDrawerPage()
     }
@@ -622,12 +627,23 @@ class HomeActivity : BaseActivity() {
         return (available / cell).toInt().coerceIn(1, DRAWER_MAX_ROWS)
     }
 
+    /**
+     * As many columns as the card is wide, from four to six. A fixed four left a
+     * wide card with big gaps and spread 55 apps over 14 pages.
+     */
+    private fun columnsThatFit(grid: android.view.View): Int {
+        val width = grid.width
+        if (width <= 0) return DRAWER_MIN_COLUMNS
+        val cell = DRAWER_CELL_WIDTH_DP * resources.displayMetrics.density
+        return (width / cell).toInt().coerceIn(DRAWER_MIN_COLUMNS, DRAWER_MAX_COLUMNS)
+    }
+
     private fun renderDrawerPage() {
         val grid = binding.portraitDrawerGrid
         grid.removeAllViews()
         val page = drawerPages.getOrNull(drawerPage) ?: emptyList()
 
-        page.chunked(DRAWER_COLUMNS).forEach { rowApps ->
+        page.chunked(drawerColumns).forEach { rowApps ->
             val row = android.widget.LinearLayout(this).apply {
                 orientation = android.widget.LinearLayout.HORIZONTAL
                 isBaselineAligned = false
@@ -644,14 +660,14 @@ class HomeActivity : BaseActivity() {
                 row.addView(item.root, cellParams())
             }
             // Pad the last row so four apps and two apps are the same size.
-            repeat(DRAWER_COLUMNS - rowApps.size) {
+            repeat(drawerColumns - rowApps.size) {
                 row.addView(android.view.View(this), cellParams())
             }
             grid.addView(row)
         }
         // Keep every page the same shape: a short last page shouldn't spread its
         // one row down the middle of the card.
-        repeat(drawerRows - page.chunked(DRAWER_COLUMNS).size) {
+        repeat(drawerRows - page.chunked(drawerColumns).size) {
             grid.addView(
                 android.view.View(this),
                 android.widget.LinearLayout.LayoutParams(
@@ -667,6 +683,11 @@ class HomeActivity : BaseActivity() {
         val dots = binding.portraitDrawerDots
         dots.removeAllViews()
         if (drawerPages.size < 2) return
+
+        if (drawerPages.size > DRAWER_MAX_DOTS) {
+            renderDrawerCounter(dots)
+            return
+        }
 
         val density = resources.displayMetrics.density
         val size = (DRAWER_DOT_DP * density).toInt()
@@ -694,6 +715,26 @@ class HomeActivity : BaseActivity() {
         }
     }
 
+    /**
+     * Many pages: a "3 / 14" counter in Geist Mono instead of a row of dots
+     * (14 dots filled the card and said nothing). Swiping still turns pages;
+     * tapping the counter goes to the next one and wraps round.
+     */
+    private fun renderDrawerCounter(container: android.widget.LinearLayout) {
+        val counter = android.widget.TextView(this).apply {
+            text = getString(R.string.drawer_page_counter, drawerPage + 1, drawerPages.size)
+            typeface = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.geist_mono_regular)
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.type_caption))
+            setTextColor(Ui.color(context, R.color.text_secondary))
+            gravity = android.view.Gravity.CENTER
+            minimumHeight = resources.getDimensionPixelSize(R.dimen.size_compact)
+            minimumWidth = resources.getDimensionPixelSize(R.dimen.size_button)
+            setOnClickListener { showDrawerPage((drawerPage + 1) % drawerPages.size) }
+            contentDescription = getString(R.string.drawer_page, drawerPage + 1, drawerPages.size)
+        }
+        container.addView(counter)
+    }
+
     private fun showDrawerPage(index: Int) {
         if (index !in drawerPages.indices || index == drawerPage) return
         drawerPage = index
@@ -714,7 +755,7 @@ class HomeActivity : BaseActivity() {
     /** Most-used apps first, then the rest alphabetically. */
     private fun drawerApps(): List<AppInfo> {
         val all = AppRepository.loadLaunchableApps(this, prefs.hiddenApps)
-        val frequent = Usage.frequentApps(this, all, DRAWER_COLUMNS * DRAWER_MAX_ROWS)
+        val frequent = Usage.frequentApps(this, all, DRAWER_MAX_COLUMNS * DRAWER_MAX_ROWS)
         return frequent + (all - frequent.toSet())
     }
 
@@ -1343,8 +1384,13 @@ class HomeActivity : BaseActivity() {
         private const val REQ_FAV_BASE = 300
         private const val REQ_PANEL_BASE = 400
         private const val REQ_MEDIA_PANEL_BASE = 420
-        /** Portrait drawer: four across, as many rows as the space allows. */
-        private const val DRAWER_COLUMNS = 4
+        /** Portrait drawer: as many columns as fit (4 to 6), as many rows as the space allows. */
+        private const val DRAWER_MIN_COLUMNS = 4
+        private const val DRAWER_MAX_COLUMNS = 6
+        /** One tile's width: the 56dp icon plus room for a short label. */
+        private const val DRAWER_CELL_WIDTH_DP = 76f
+        /** Past this many pages, dots stop meaning anything: show "3 / 14" instead. */
+        private const val DRAWER_MAX_DOTS = 5
         /** One tile: 56dp icon + label + padding. Rows are derived from this. */
         private const val DRAWER_CELL_DP = 96f
         /** A sanity cap, so a very tall screen doesn't build a hundred tiles. */

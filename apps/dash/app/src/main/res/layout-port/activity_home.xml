@@ -580,7 +580,7 @@
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:layout_marginTop="@dimen/space_2"
-                android:minHeight="140dp"
+                android:minHeight="@dimen/drawer_min_height"
                 android:orientation="vertical"
                 android:padding="@dimen/space_3"
                 android:background="@drawable/card_dark"
