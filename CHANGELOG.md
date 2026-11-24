@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.14.0](https://github.com/annuai/myto-trails/compare/v0.13.0...v0.14.0) (2026-11-24)
+
+
+### Features
+
+* **dash:** add Myto Dash, a head-unit launcher in the Myto design system ([#86](https://github.com/annuai/myto-trails/issues/86)) ([6e0cd9d](https://github.com/annuai/myto-trails/commit/6e0cd9def997ac205c8a2cecfa6df87a726835b0))
+
+
+### Bug Fixes
+
+* **mobile:** sync pulls apply in batches and resume, so a new phone's trips and rides load ([#84](https://github.com/annuai/myto-trails/issues/84)) ([c27acc4](https://github.com/annuai/myto-trails/commit/c27acc4038284155cf4a0c0c7c0f8243b09b7d85))
+
 ## [0.13.0](https://github.com/annuai/myto-trails/compare/v0.12.0...v0.13.0) (2026-11-23)
 
 
